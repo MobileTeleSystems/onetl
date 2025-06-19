@@ -1,0 +1,1653 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../../../../assets/images/icon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Write - onETL Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/autodoc_pydantic.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/interaction.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#writing-to-hive-using-dbwriter" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="onETL Docs" class="md-header__button md-logo" aria-label="onETL Docs" data-md-component="logo">
+      
+  <img src="../../../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            onETL Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Write
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="/en/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/ru/" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="onETL Docs" class="md-nav__button md-logo" aria-label="onETL Docs" data-md-component="logo">
+      
+  <img src="../../../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    onETL Docs
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../concepts" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../quickstart" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../logging" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Logging
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../contributing" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../../changelog/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    changelog
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            changelog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.13.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.13.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.13.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.13.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.11.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.11.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.11.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.10.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.10.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.10.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.8.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.8.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.7.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.7.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.7.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../../db_/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    DB
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            DB
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../db_/reader" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    DBReader
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../db_/writer" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    DBWriter
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Recommendations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recommendations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#use-column-based-write-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use column-based write formats
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-partitioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use partitioning
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use partitioning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-does-it-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      How does it work
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#but-why" class="md-nav__link">
+    <span class="md-ellipsis">
+      But why?
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-columns-should-i-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      Which columns should I use?
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-compression" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use compression
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prefer-creating-large-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prefer creating large files
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sort-data-before-writing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sort data before writing
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Options
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<p>(hive-write)=</p>
+<h1 id="writing-to-hive-using-dbwriter">Writing to Hive using <code>DBWriter</code><a class="headerlink" href="#writing-to-hive-using-dbwriter" title="Permanent link">&para;</a></h1>
+<p>For writing data to Hive, use {obj}<code>DBWriter &lt;onetl.db.db_writer.db_writer.DBWriter&gt;</code>.</p>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hive</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">onetl.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBWriter</span>
+
+<span class="n">hive</span> <span class="o">=</span> <span class="n">Hive</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="o">...</span>  <span class="c1"># data is here</span>
+
+<span class="c1"># Create dataframe with specific number of Spark partitions.</span>
+<span class="c1"># Use the Hive partitioning columns to group the data. Create max 20 files per Hive partition.</span>
+<span class="c1"># Also sort the data by column which most data is correlated with (e.g. user_id), reducing files size.</span>
+
+<span class="n">num_files_per_partition</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">partition_columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;country&quot;</span><span class="p">,</span> <span class="s2">&quot;business_date&quot;</span><span class="p">]</span>
+<span class="n">sort_columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;user_id&quot;</span><span class="p">]</span>
+<span class="n">write_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span>
+    <span class="n">num_files_per_partition</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">partition_columns</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">sort_columns</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">sortWithinPartitions</span><span class="p">(</span><span class="o">*</span><span class="n">partition_columns</span><span class="p">,</span> <span class="o">*</span><span class="n">sort_columns</span><span class="p">)</span>
+
+<span class="n">writer</span> <span class="o">=</span> <span class="n">DBWriter</span><span class="p">(</span>
+    <span class="n">connection</span><span class="o">=</span><span class="n">hive</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="s2">&quot;schema.table&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="n">Hive</span><span class="o">.</span><span class="n">WriteOptions</span><span class="p">(</span>
+        <span class="n">if_exists</span><span class="o">=</span><span class="s2">&quot;append&quot;</span><span class="p">,</span>
+        <span class="c1"># Hive partitioning columns.</span>
+        <span class="n">partitionBy</span><span class="o">=</span><span class="n">partition_columns</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">writer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">write_df</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="recommendations">Recommendations<a class="headerlink" href="#recommendations" title="Permanent link">&para;</a></h2>
+<h3 id="use-column-based-write-formats">Use column-based write formats<a class="headerlink" href="#use-column-based-write-formats" title="Permanent link">&para;</a></h3>
+<p>Prefer these write formats:
+: - <a href="https://spark.apache.org/docs/latest/sql-data-sources-orc.html">ORC</a> (<strong>default</strong>)
+  - <a href="https://spark.apache.org/docs/latest/sql-data-sources-parquet.html">Parquet</a>
+  - <a href="https://iceberg.apache.org/spark-quickstart/">Iceberg</a>
+  - <a href="https://hudi.apache.org/docs/quick-start-guide/">Hudi</a>
+  - <a href="https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake">Delta</a></p>
+<div class="highlight"><pre><span></span><code>.. warning::
+    When using ``DBWriter``, the default spark data format configured in ``spark.sql.sources.default`` is ignored, as  ``Hive.WriteOptions(format=...)`` default value is explicitly set to ``orc``.
+</code></pre></div>
+<p>For column-based write formats, each file contains separated sections where column data is stored. The file footer contains
+location of each column section/group. Spark can use this information to load only sections required by specific query, e.g. only selected columns,
+to drastically speed up the query.</p>
+<p>Another advantage is high compression ratio, e.g. 10x-100x in comparison to JSON or CSV.</p>
+<h3 id="use-partitioning">Use partitioning<a class="headerlink" href="#use-partitioning" title="Permanent link">&para;</a></h3>
+<h4 id="how-does-it-work">How does it work<a class="headerlink" href="#how-does-it-work" title="Permanent link">&para;</a></h4>
+<p>Hive support splitting data to partitions, which are different directories in filesystem with names like <code>some_col=value1/another_col=value2</code>.</p>
+<p>For example, dataframe with content like this:</p>
+<table>
+<thead>
+<tr>
+<th>country: string</th>
+<th>business_date: date</th>
+<th>user_id: int</th>
+<th>bytes: long</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RU</td>
+<td>2024-01-01</td>
+<td>1234</td>
+<td>25325253525</td>
+</tr>
+<tr>
+<td>RU</td>
+<td>2024-01-01</td>
+<td>2345</td>
+<td>23234535243</td>
+</tr>
+<tr>
+<td>RU</td>
+<td>2024-01-02</td>
+<td>1234</td>
+<td>62346634564</td>
+</tr>
+<tr>
+<td>US</td>
+<td>2024-01-01</td>
+<td>5678</td>
+<td>4252345354</td>
+</tr>
+<tr>
+<td>US</td>
+<td>2024-01-02</td>
+<td>5678</td>
+<td>5474575745</td>
+</tr>
+<tr>
+<td>US</td>
+<td>2024-01-03</td>
+<td>5678</td>
+<td>3464574567</td>
+</tr>
+</tbody>
+</table>
+<p>With <code>partitionBy=["country", "business_dt"]</code> data will be stored as files in the following subfolders:
+: - <code>/country=RU/business_date=2024-01-01/</code>
+  - <code>/country=RU/business_date=2024-01-02/</code>
+  - <code>/country=US/business_date=2024-01-01/</code>
+  - <code>/country=US/business_date=2024-01-02/</code>
+  - <code>/country=US/business_date=2024-01-03/</code></p>
+<p>A separated subdirectory is created for each distinct combination of column values in the dataframe.</p>
+<p>Please do not confuse Spark dataframe partitions (a.k.a batches of data handled by Spark executors, usually in parallel)
+and Hive partitioning (store data in different subdirectories).
+Number of Spark dataframe partitions is correlated the number of files created in <strong>each</strong> Hive partition.
+For example, Spark dataframe with 10 partitions and 5 distinct values of Hive partition columns will be saved as 5 subfolders with 10 files each = 50 files in total.
+Without Hive partitioning, all the files are placed into one flat directory.</p>
+<h4 id="but-why">But why?<a class="headerlink" href="#but-why" title="Permanent link">&para;</a></h4>
+<p>Queries which has <code>WHERE</code> clause with filters on Hive partitioning columns, like <code>WHERE country = 'RU' AND business_date='2024-01-01'</code>, will
+read only files from this exact partitions, like <code>/country=RU/business_date=2024-01-01/</code>, and skip files from other partitions.</p>
+<p>This drastically increases performance and reduces the amount of memory used by Spark.
+Consider using Hive partitioning in all tables.</p>
+<h4 id="which-columns-should-i-use">Which columns should I use?<a class="headerlink" href="#which-columns-should-i-use" title="Permanent link">&para;</a></h4>
+<p>Usually Hive partitioning columns are based on event date or location, like <code>country: string</code>, <code>business_date: date</code>, <code>run_date: date</code> and so on.</p>
+<p><strong>Partition columns should contain data with low cardinality.</strong>
+Dates, small integers, strings with low number of possible values are OK.
+But timestamp, float, decimals, longs (like user id), strings with lots oj unique values (like user name or email) should <strong>NOT</strong> be used as Hive partitioning columns.
+Unlike some other databases, range and hash-based partitions are not supported.</p>
+<p>Partition column should be a part of a dataframe. If you want to partition values by date component of <code>business_dt: timestamp</code> column,
+add a new column to dataframe like this: <code>df.withColumn("business_date", date(df.business_dt))</code>.</p>
+<h3 id="use-compression">Use compression<a class="headerlink" href="#use-compression" title="Permanent link">&para;</a></h3>
+<p>Using compression algorithms like <code>snappy</code>, <code>lz4</code> or <code>zstd</code> can reduce the size of files (up to 10x).</p>
+<h3 id="prefer-creating-large-files">Prefer creating large files<a class="headerlink" href="#prefer-creating-large-files" title="Permanent link">&para;</a></h3>
+<p>Storing millions of small files is not that HDFS and S3 are designed for. Minimal file size should be at least 10Mb, but usually it is like 128Mb+ or 256Mb+ (HDFS block size).
+<strong>NEVER</strong> create files with few Kbytes in size.</p>
+<p>Number of files can be different in different cases.
+On one hand, Spark Adaptive Query Execution (AQE) can merge small Spark dataframe partitions into one larger.
+On the other hand, dataframes with skewed data can produce a larger number of files than expected.</p>
+<p>To create small amount of large files, you can reduce number of Spark dataframe partitions.
+Use <a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.repartition.html">df.repartition(N, columns...)</a> function,
+like this: <code>df.repartition(20, "col1", "col2")</code>.
+This creates new Spark dataframe with partitions using <code>hash(df.col1 + df.col2) mod 20</code> expression, avoiding data skew.</p>
+<p>Note: larger dataframe partitions requires more resources (CPU, RAM) on Spark executor. The exact number of partitions
+should be determined empirically, as it depends on the amount of data and available resources.</p>
+<h3 id="sort-data-before-writing">Sort data before writing<a class="headerlink" href="#sort-data-before-writing" title="Permanent link">&para;</a></h3>
+<p>Dataframe with sorted content:</p>
+<table>
+<thead>
+<tr>
+<th>country: string</th>
+<th>business_date: date</th>
+<th>user_id: int</th>
+<th>business_dt: timestamp</th>
+<th>bytes: long</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RU</td>
+<td>2024-01-01</td>
+<td>1234</td>
+<td>2024-01-01T11:22:33.456</td>
+<td>25325253525</td>
+</tr>
+<tr>
+<td>RU</td>
+<td>2024-01-01</td>
+<td>1234</td>
+<td>2024-01-01T12:23:44.567</td>
+<td>25325253525</td>
+</tr>
+<tr>
+<td>RU</td>
+<td>2024-01-02</td>
+<td>1234</td>
+<td>2024-01-01T13:25:56.789</td>
+<td>34335645635</td>
+</tr>
+<tr>
+<td>US</td>
+<td>2024-01-01</td>
+<td>2345</td>
+<td>2024-01-01T10:00:00.000</td>
+<td>12341</td>
+</tr>
+<tr>
+<td>US</td>
+<td>2024-01-02</td>
+<td>2345</td>
+<td>2024-01-01T15:11:22.345</td>
+<td>13435</td>
+</tr>
+<tr>
+<td>US</td>
+<td>2024-01-03</td>
+<td>2345</td>
+<td>2024-01-01T20:22:33.567</td>
+<td>14564</td>
+</tr>
+</tbody>
+</table>
+<p>Has a much better compression rate than unsorted one, e.g. 2x or even higher:</p>
+<table>
+<thead>
+<tr>
+<th>country: string</th>
+<th>business_date: date</th>
+<th>user_id: int</th>
+<th>business_dt: timestamp</th>
+<th>bytes: long</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RU</td>
+<td>2024-01-01</td>
+<td>1234</td>
+<td>2024-01-01T11:22:33.456</td>
+<td>25325253525</td>
+</tr>
+<tr>
+<td>RU</td>
+<td>2024-01-01</td>
+<td>6345</td>
+<td>2024-12-01T23:03:44.567</td>
+<td>25365</td>
+</tr>
+<tr>
+<td>RU</td>
+<td>2024-01-02</td>
+<td>5234</td>
+<td>2024-07-01T06:10:56.789</td>
+<td>45643456747</td>
+</tr>
+<tr>
+<td>US</td>
+<td>2024-01-01</td>
+<td>4582</td>
+<td>2024-04-01T17:59:00.000</td>
+<td>362546475</td>
+</tr>
+<tr>
+<td>US</td>
+<td>2024-01-02</td>
+<td>2345</td>
+<td>2024-09-01T04:24:22.345</td>
+<td>3235</td>
+</tr>
+<tr>
+<td>US</td>
+<td>2024-01-03</td>
+<td>3575</td>
+<td>2024-03-01T21:37:33.567</td>
+<td>346345764</td>
+</tr>
+</tbody>
+</table>
+<p>Choosing columns to sort data by is really depends on the data. If data is correlated with some specific
+column, like in example above the amount of traffic is correlated with both <code>user_id</code> and <code>timestamp</code>,
+use <code>df.sortWithinPartitions("user_id", "timestamp")</code> before writing the data.</p>
+<p>If <code>df.repartition(N, repartition_columns...)</code> is used in combination with <code>df.sortWithinPartitions(sort_columns...)</code>,
+then <code>sort_columns</code> should start with <code>repartition_columns</code> or be equal to it.</p>
+<h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.hive.options
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>.. autopydantic_model:: HiveWriteOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../../../..", "features": ["navigation.indexes", "content.tabs.link", "content.code.copy", "content.code.select"], "search": "../../../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/interaction.js"></script>
+      
+    
+  </body>
+</html>

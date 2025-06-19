@@ -1,0 +1,1423 @@
+
+<!doctype html>
+<html lang="ru" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../../assets/images/icon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>0.11.0 (2024-05-27) - Документация onETL</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/autodoc_pydantic.css">
+    
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/interaction.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#0110-2024-05-27" class="md-skip">
+          Перейти к содержанию
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
+    <a href="../.." title="Документация onETL" class="md-header__button md-logo" aria-label="Документация onETL" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Документация onETL
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              0.11.0 (2024-05-27)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Выберите язык">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="/en/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/ru/" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Навигация" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Документация onETL" class="md-nav__button md-logo" aria-label="Документация onETL" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    Документация onETL
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Архитектура библиотеки
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Быстрый старт
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Руководство по участию
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Безопасность
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../logging" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Логирование
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plugins" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Плагины
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    changelog
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            changelog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.11.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.11.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.10.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.10.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.10.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.8.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.8.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.7.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.7.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.7.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Содержание">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Содержание
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Критические изменения
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Функциональность
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Улучшения
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Исправление ошибок
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="0110-2024-05-27">0.11.0 (2024-05-27)<a class="headerlink" href="#0110-2024-05-27" title="Permanent link">&para;</a></h1>
+<h2 id="_1">Критические изменения<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>Могут быть некоторые изменения в поведении подключения, связанные с обновлениями версий. Поэтому мы отмечаем такие изменения как <strong>breaking</strong>, хотя большинство пользователей не увидят никаких различий.</p>
+<ul>
+<li>Обновление JDBC драйвера Clickhouse до последней версии (<a href="https://github.com/MobileTeleSystems/onetl/pull/249">#249</a>):<ul>
+<li>Пакет был переименован <code>ru.yandex.clickhouse:clickhouse-jdbc</code> → <code>com.clickhouse:clickhouse-jdbc</code>.</li>
+<li>Версия пакета изменена <code>0.3.2</code> → <code>0.6.0-patch5</code>.</li>
+<li>Имя драйвера изменено <code>ru.yandex.clickhouse.ClickHouseDriver</code> → <code>com.clickhouse.jdbc.ClickHouseDriver</code>.</li>
+</ul>
+</li>
+</ul>
+<p>Это приводит к необходимости нескольких изменений для совместимости типов Spark &lt;-&gt; Clickhouse, а также поддержки кластеров Clickhouse.</p>
+<ul>
+<li>
+<p>Обновление других JDBC драйверов до последних версий:</p>
+<ul>
+<li>MSSQL <code>12.2.0</code> → <code>12.6.2</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/254">#254</a>).</li>
+<li>MySQL <code>8.0.33</code> → <code>8.4.0</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/253">#253</a>, <a href="https://github.com/MobileTeleSystems/onetl/pull/285">#285</a>).</li>
+<li>Oracle <code>23.2.0.0</code> → <code>23.4.0.24.05</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/252">#252</a>, <a href="https://github.com/MobileTeleSystems/onetl/pull/284">#284</a>).</li>
+<li>Postgres <code>42.6.0</code> → <code>42.7.3</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/251">#251</a>).</li>
+</ul>
+</li>
+<li>
+<p>Обновление коннектора MongoDB до последней версии: <code>10.1.1</code> → <code>10.3.0</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/255">#255</a>, <a href="https://github.com/MobileTeleSystems/onetl/pull/283">#283</a>).</p>
+</li>
+</ul>
+<p>Благодаря которому появляется поддержка Spark 3.5.</p>
+<ul>
+<li>Обновление пакета <code>XML</code> до последней версии: <code>0.17.0</code> → <code>0.18.0</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/259">#259</a>).</li>
+</ul>
+<p>Которое устраняет несколько ошибок обработки формата datetime.</p>
+<ul>
+<li>Для JDBC соединений добавлен новый класс <code>SQLOptions</code> для метода <code>DB.sql(query, options=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/272">#272</a>).</li>
+</ul>
+<p>Благодаря этому:</p>
+<p>Во-первых, лучше поддерживается согласованность именования.</p>
+<p>Во-вторых, некоторые опции не поддерживаются методом <code>DB.sql(...)</code>, но поддерживаются <code>DBReader</code>.
+  Например, <code>SQLOptions</code> не поддерживает <code>partitioning_mode</code> и требует явного определения <code>lower_bound</code> и <code>upper_bound</code>, когда <code>num_partitions</code> больше 1.
+  <code>ReadOptions</code> поддерживает <code>partitioning_mode</code> и позволяет пропускать значения <code>lower_bound</code> и <code>upper_bound</code>.</p>
+<p>Это требует некоторых изменений в коде. Раньше:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Postgres</span>
+
+<span class="n">postgres</span> <span class="o">=</span> <span class="n">Postgres</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">postgres</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    SELECT *</span>
+<span class="sd">    FROM some.mytable</span>
+<span class="sd">    WHERE key = &#39;something&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="n">Postgres</span><span class="o">.</span><span class="n">ReadOptions</span><span class="p">(</span>
+        <span class="n">partitioning_mode</span><span class="o">=</span><span class="s2">&quot;range&quot;</span><span class="p">,</span>
+        <span class="n">partition_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+        <span class="n">num_partitions</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Теперь:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Postgres</span>
+
+<span class="n">postgres</span> <span class="o">=</span> <span class="n">Postgres</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">postgres</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    SELECT *</span>
+<span class="sd">    FROM some.mytable</span>
+<span class="sd">    WHERE key = &#39;something&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="n">Postgres</span><span class="o">.</span><span class="n">SQLOptions</span><span class="p">(</span>
+        <span class="c1"># partitioning_mode is not supported!</span>
+        <span class="n">partition_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+        <span class="n">num_partitions</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">lower_bound</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># &lt;-- set explicitly</span>
+        <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>  <span class="c1"># &lt;-- set explicitly</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>На данный момент <code>DB.sql(query, options=...)</code> может принимать <code>ReadOptions</code> для сохранения обратной совместимости, но выдает предупреждение об устаревании.
+  Поддержка будет удалена в <code>v1.0.0</code>.</p>
+<ul>
+<li>Разделение класса <code>JDBCOptions</code> на <code>FetchOptions</code> и <code>ExecuteOptions</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/274">#274</a>).</li>
+</ul>
+<p>Новые классы используются методами <code>DB.fetch(query, options=...)</code> и <code>DB.execute(query, options=...)</code> соответственно.
+  Это изменение необходимо в основном для большей консистентности именования.</p>
+<p>Оно также требует некоторых изменений в коде. Раньше:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Postgres</span>
+
+<span class="n">postgres</span> <span class="o">=</span> <span class="n">Postgres</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">postgres</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span>
+    <span class="s2">&quot;SELECT * FROM some.mytable WHERE key = &#39;something&#39;&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="n">Postgres</span><span class="o">.</span><span class="n">JDBCOptions</span><span class="p">(</span>
+        <span class="n">fetchsize</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">query_timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">postgres</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+    <span class="s2">&quot;UPDATE some.mytable SET value = &#39;new&#39; WHERE key = &#39;something&#39;&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="n">Postgres</span><span class="o">.</span><span class="n">JDBCOptions</span><span class="p">(</span><span class="n">query_timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Теперь:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Postgres</span>
+
+<span class="c1"># Using FetchOptions for fetching data</span>
+<span class="n">postgres</span> <span class="o">=</span> <span class="n">Postgres</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">postgres</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span>
+    <span class="s2">&quot;SELECT * FROM some.mytable WHERE key = &#39;something&#39;&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="n">Postgres</span><span class="o">.</span><span class="n">FetchOptions</span><span class="p">(</span>  <span class="c1"># &lt;-- change class name</span>
+        <span class="n">fetchsize</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">query_timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="c1"># Using ExecuteOptions for executing statements</span>
+<span class="n">postgres</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+    <span class="s2">&quot;UPDATE some.mytable SET value = &#39;new&#39; WHERE key = &#39;something&#39;&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="n">Postgres</span><span class="o">.</span><span class="n">ExecuteOptions</span><span class="p">(</span><span class="n">query_timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">),</span>  <span class="c1"># &lt;-- change class name</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>На данный момент <code>DB.fetch(query, options=...)</code> и <code>DB.execute(query, options=...)</code> могут принимать <code>JDBCOptions</code> для сохранения обратной совместимости, но выдают предупреждение об устаревании. Старый класс будет удален в <code>v1.0.0</code>.</p>
+<ul>
+<li>Сериализация <code>ColumnDatetimeHWM</code> в тип <code>DateTime64(6)</code> Clickhouse (точность до микросекунд) вместо <code>DateTime</code> (точность до секунд) (<a href="https://github.com/MobileTeleSystems/onetl/pull/267">#267</a>).</li>
+</ul>
+<p>В предыдущих версиях onETL значение <code>ColumnDatetimeHWM</code> округлялось до секунды, и, таким образом, чтение некоторых строк, которые были прочитаны раньше, приводило к дублированию данных.</p>
+<p>Для версий Clickhouse ниже 21.1 сравнение столбца типа <code>DateTime</code> со значением типа <code>DateTime64</code> не поддерживается, возвращая пустой dataframe.
+  Чтобы избежать этого, замените:</p>
+<div class="highlight"><pre><span></span><code><span class="n">DBReader</span><span class="p">(</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">hwm</span><span class="o">=</span><span class="n">DBReader</span><span class="o">.</span><span class="n">AutoDetectHWM</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_hwm&quot;</span><span class="p">,</span>
+        <span class="n">expression</span><span class="o">=</span><span class="s2">&quot;hwm_column&quot;</span><span class="p">,</span>  <span class="c1"># &lt;--</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>на:</p>
+<div class="highlight"><pre><span></span><code><span class="n">DBReader</span><span class="p">(</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">hwm</span><span class="o">=</span><span class="n">DBReader</span><span class="o">.</span><span class="n">AutoDetectHWM</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_hwm&quot;</span><span class="p">,</span>
+        <span class="n">expression</span><span class="o">=</span><span class="s2">&quot;CAST(hwm_column AS DateTime64)&quot;</span><span class="p">,</span>  <span class="c1"># &lt;-- add explicit CAST</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>Передача дополнительных параметров подключения JDBC как словаря <code>properties</code> вместо URL с "query part" (<a href="https://github.com/MobileTeleSystems/onetl/pull/268">#268</a>).</li>
+</ul>
+<p>Это позволяет передавать пользовательские параметры соединения, такие как <code>Clickhouse(extra={"custom_http_options": "option1=value1,option2=value2"})</code> без необходимости применять urlencode к значению параметра, например <code>option1%3Dvalue1%2Coption2%3Dvalue2</code>.</p>
+<h2 id="_2">Функциональность<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>Улучшение пользовательского опыта при работе с сообщениями Kafka и таблицами баз данных, содержащими сериализованные столбцы, такие как JSON или XML.</p>
+<ul>
+<li>Разрешена передача пользовательской версии пакета в качестве аргумента для метода <code>DB.get_packages(...)</code> нескольких коннекторах к БД:<ul>
+<li><code>Clickhouse.get_packages(package_version=..., apache_http_client_version=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/249">#249</a>).</li>
+<li><code>MongoDB.get_packages(scala_version=..., spark_version=..., package_version=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/255">#255</a>).</li>
+<li><code>MySQL.get_packages(package_version=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/253">#253</a>).</li>
+<li><code>MSSQL.get_packages(java_version=..., package_version=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/254">#254</a>).</li>
+<li><code>Oracle.get_packages(java_version=..., package_version=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/252">#252</a>).</li>
+<li><code>Postgres.get_packages(package_version=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/251">#251</a>).</li>
+<li><code>Teradata.get_packages(package_version=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/256">#256</a>).
+  Теперь пользователи могут понижать или повышать версию подключения, не дожидаясь следующего релиза onETL. Раньше такую возможность поддерживали только <code>Kafka</code> и <code>Greenplum</code>.</li>
+</ul>
+</li>
+<li>Добавлен метод <code>FileFormat.parse_column(...)</code> в несколько классов:<ul>
+<li><code>Avro.parse_column(col)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/265">#265</a>).</li>
+<li><code>JSON.parse_column(col, schema=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/257">#257</a>).</li>
+<li><code>CSV.parse_column(col, schema=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/258">#258</a>).</li>
+<li><code>XML.parse_column(col, schema=...)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/269">#269</a>).
+  Это позволяет анализировать данные в поле <code>value</code> сообщения Kafka или строковый/двоичный столбец некоторой таблицы как вложенную структуру Spark.</li>
+</ul>
+</li>
+<li>Добавлен метод <code>FileFormat.serialize_column(...)</code> в несколько классов:<ul>
+<li><code>Avro.serialize_column(col)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/265">#265</a>).</li>
+<li><code>JSON.serialize_column(col)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/257">#257</a>).</li>
+<li><code>CSV.serialize_column(col)</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/258">#258</a>).
+  Это позволяет сохранять вложенные структуры Spark или массивы в поле <code>value</code> сообщения Kafka или строковый/двоичный столбец некоторой таблицы.</li>
+</ul>
+</li>
+</ul>
+<h2 id="_3">Улучшения<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>Несколько улучшений документации.</p>
+<ul>
+<li><code>assert</code> заменены синтаксисом doctest. Это должно сделать документацию более читаемой (<a href="https://github.com/MobileTeleSystems/onetl/pull/273">#273</a>).</li>
+<li>Добавлено общее руководство <code>Troubleshooting</code> (<a href="https://github.com/MobileTeleSystems/onetl/pull/275">#275</a>).</li>
+<li>Улучшена документация Kafka:<ul>
+<li>Добавлена страница "Prerequisites", описывающая различные аспекты подключения к Kafka.</li>
+<li>Дополнительные примеры и примечания добавлены на страницы "Reading from" и "Writing to" документации Kafka.</li>
+<li>Добавлена страница "Troubleshooting" (<a href="https://github.com/MobileTeleSystems/onetl/pull/276">#276</a>).</li>
+</ul>
+</li>
+<li>Улучшена документация Hive:<ul>
+<li>Добавлена страница "Prerequisites", описывающая различные аспекты подключения к Hive.</li>
+<li>Дополнительные примеры и примечания добавлены на страницы "Reading from" и "Writing to" документации Hive.</li>
+<li>Страница "Executing statements in Hive" документации Hive стала более содержательной. (<a href="https://github.com/MobileTeleSystems/onetl/pull/278">#278</a>).</li>
+</ul>
+</li>
+<li>Добавлена страница "Prerequisites", описывающая различные аспекты использования коннекторов SparkHDFS и SparkS3. (<a href="https://github.com/MobileTeleSystems/onetl/pull/279">#279</a>).</li>
+<li>Добавлены примечания о подключении к кластеру Clickhouse. (<a href="https://github.com/MobileTeleSystems/onetl/pull/280">#280</a>).</li>
+<li>Добавлены примечания о версиях, когда был добавлен, переименован или изменен класс/метод/атрибут/аргумент (<a href="https://github.com/MobileTeleSystems/onetl/pull/282">#282</a>).</li>
+</ul>
+<h2 id="_4">Исправление ошибок<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>После установки <code>pip install onetl[files]</code> ранее отсутствовал пакет <code>pysmb</code>. Теперь этот недостаток устранен.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.tabs.link", "content.code.copy", "content.code.select"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/interaction.js"></script>
+      
+    
+  </body>
+</html>

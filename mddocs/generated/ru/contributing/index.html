@@ -1,0 +1,1648 @@
+
+<!doctype html>
+<html lang="ru" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/icon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Руководство по участию - Документация onETL</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../assets/stylesheets/autodoc_pydantic.css">
+    
+      <link rel="stylesheet" href="../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../assets/mkdocs_puml/interaction.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          Перейти к содержанию
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
+    <a href=".." title="Документация onETL" class="md-header__button md-logo" aria-label="Документация onETL" data-md-component="logo">
+      
+  <img src="../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Документация onETL
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Руководство по участию
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Выберите язык">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="/en/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/ru/" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Навигация" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Документация onETL" class="md-nav__button md-logo" aria-label="Документация onETL" data-md-component="logo">
+      
+  <img src="../assets/images/logo.svg" alt="logo">
+
+    </a>
+    Документация onETL
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Архитектура библиотеки
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Быстрый старт
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Руководство по участию
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Безопасность
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logging" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Логирование
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Плагины
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../changelog/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    changelog
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            changelog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.13.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.13.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.13.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.13.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.12.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.12.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.12.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.12.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.12.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.12.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.11.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.11.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.11.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.10.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.10.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.10.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.9.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.9.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.9.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.9.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.9.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.9.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.8.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.8.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.7.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.7.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/0.7.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Содержание">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Содержание
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ограничения
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Начальная настройка для локальной разработки
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Начальная настройка для локальной разработки">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#git" class="md-nav__link">
+    <span class="md-ellipsis">
+      Установите Git
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Создайте форк
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Клонируйте репозиторий
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      Настройте окружение
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-commit-hooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Включите pre-commit hooks
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      Как тестировать
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Как тестировать">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      Запустите тесты локально
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Запустите тесты локально">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-compose" class="md-nav__link">
+    <span class="md-ellipsis">
+      Используя docker-compose
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docker-compose_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Без docker-compose
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      Соберите документацию
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      Процесс рецензирования
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Процесс рецензирования">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pull-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      Создайте pull request
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#release-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Напишите release notes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Напишите release notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pull-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Примеры добавления записей в журнал изменений в ваши Pull Requests
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      Как пропустить проверку заметок об изменениях?
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      Процесс релиза
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="_1">Руководство по участию<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>Добро пожаловать! Существует множество способов внести свой вклад, включая отправку отчетов об ошибках, улучшение документации, отправку запросов на добавление функций, рецензирование новых материалов или предоставление кода, который можно включить в проект.</p>
+<h2 id="_2">Ограничения<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>При разработке следует придерживаться следующих пунктов:</p>
+<ul>
+<li>Некоторые компании до сих пор используют старые версии Spark, например 2.3.1. Поэтому, по возможности, необходимо сохранять совместимость, например, добавлять ветки для разных версий Spark.</li>
+<li>Разные пользователи используют onETL по-разному - некоторые используют только DB коннекторы, некоторые только файлы. Зависимости, специфичные для коннекторов, должны быть необязательными.</li>
+<li>Вместо создания классов с большим количеством различных опций, лучше разделить их на более мелкие классы, например, класс опций, контекстный менеджер и т.д., и использовать композицию.</li>
+</ul>
+<h2 id="_3">Начальная настройка для локальной разработки<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="git">Установите Git<a class="headerlink" href="#git" title="Permanent link">&para;</a></h3>
+<p>Пожалуйста, следуйте <a href="https://docs.github.com/en/get-started/quickstart/set-up-git">инструкции</a>.</p>
+<h3 id="_4">Создайте форк<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>Если вы не являетесь членом команды разработчиков, создающей onETL, вам следует создать форк, прежде чем вносить какие-либо изменения.</p>
+<p>Пожалуйста, следуйте <a href="https://docs.github.com/en/get-started/quickstart/fork-a-repo">инструкции</a>.</p>
+<h3 id="_5">Клонируйте репозиторий<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>Откройте терминал и выполните следующие команды:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:myuser/onetl.git<span class="w"> </span>-b<span class="w"> </span>develop
+
+<span class="nb">cd</span><span class="w"> </span>onetl
+</code></pre></div>
+<h3 id="_6">Настройте окружение<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>Создайте virtualenv и установите зависимости:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>wheel
+pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>pip<span class="w"> </span>setuptools
+pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/core.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/ftp.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/hdfs.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/kerberos.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/s3.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/sftp.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/webdav.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/dev.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/docs.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/tests/base.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/tests/clickhouse.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/tests/kafka.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/tests/mongodb.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/tests/mssql.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/tests/mysql.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/tests/postgres.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/tests/oracle.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/tests/pydantic-2.txt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-r<span class="w"> </span>requirements/tests/spark-3.5.5.txt
+
+<span class="c1"># TODO: remove after https://github.com/zqmillet/sphinx-plantuml/pull/4</span>
+pip<span class="w"> </span>install<span class="w"> </span>sphinx-plantuml<span class="w"> </span>--no-deps
+</code></pre></div>
+<h3 id="pre-commit-hooks">Включите pre-commit hooks<a class="headerlink" href="#pre-commit-hooks" title="Permanent link">&para;</a></h3>
+<p>Установите pre-commit hooks:</p>
+<div class="highlight"><pre><span></span><code>pre-commit<span class="w"> </span>install<span class="w"> </span>--install-hooks
+</code></pre></div>
+<p>Проверьте запуск pre-commit hooks:</p>
+<div class="highlight"><pre><span></span><code>pre-commit<span class="w"> </span>run
+</code></pre></div>
+<h2 id="_7">Как тестировать<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h3 id="_8">Запустите тесты локально<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<h4 id="docker-compose">Используя docker-compose<a class="headerlink" href="#docker-compose" title="Permanent link">&para;</a></h4>
+<p>Соберите образ для запуска тестов:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>build
+</code></pre></div>
+<p>Запустите все контейнеры с зависимостями:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>--profile<span class="w"> </span>all<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<p>Вы можете запустить ограниченный набор зависимостей:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>--profile<span class="w"> </span>mongodb<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<p>Запустите тесты:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>onetl<span class="w"> </span>./run_tests.sh
+</code></pre></div>
+<p>Вы можете передать дополнительные аргументы, они будут переданы в pytest:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>onetl<span class="w"> </span>./run_tests.sh<span class="w"> </span>-m<span class="w"> </span>mongodb<span class="w"> </span>-lsx<span class="w"> </span>-vvvv<span class="w"> </span>--log-cli-level<span class="o">=</span>INFO
+</code></pre></div>
+<p>Вы можете запустить интерактивную bash сессию и использовать ее:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>onetl<span class="w"> </span>bash
+
+./run_tests.sh<span class="w"> </span>-m<span class="w"> </span>mongodb<span class="w"> </span>-lsx<span class="w"> </span>-vvvv<span class="w"> </span>--log-cli-level<span class="o">=</span>INFO
+</code></pre></div>
+<p>Посмотрите логи тестового контейнера:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>onetl
+</code></pre></div>
+<p>Остановите все контейнеры и удалите созданные тома:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>--profile<span class="w"> </span>all<span class="w"> </span>down<span class="w"> </span>-v
+</code></pre></div>
+<h4 id="docker-compose_1">Без docker-compose<a class="headerlink" href="#docker-compose_1" title="Permanent link">&para;</a></h4>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Для локального запуска тестов HDFS необходимо добавить следующую строку в файл <code>/etc/hosts</code> (путь к файлу зависит от ОС):</p>
+<div class="highlight"><pre><span></span><code># HDFS server returns container hostname as connection address, causing error in DNS resolution
+127.0.0.1 hdfs
+</code></pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Для запуска тестов Oracle необходимо установить <a href="https://www.oracle.com/database/technologies/instant-client.html">Oracle instantclient</a>
+и передать его путь в переменные окружения <code>ONETL_ORA_CLIENT_PATH</code> и <code>LD_LIBRARY_PATH</code>,
+например, <code>ONETL_ORA_CLIENT_PATH=/path/to/client64/lib</code>.</p>
+<p>Также может потребоваться добавить тот же путь в переменную окружения <code>LD_LIBRARY_PATH</code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Для запуска тестов Greenplum необходимо:</p>
+<ul>
+<li>Скачать <a href="https://onetl.readthedocs.io/en/latest/connection/db_connection/greenplum/prerequisites.html">VMware Greenplum connector for Spark</a></li>
+<li>Либо переместить его в <code>~/.ivy2/jars/</code>, либо передать путь к файлу в <code>CLASSPATH</code></li>
+<li>Установить переменную окружения <code>ONETL_GP_PACKAGE_VERSION=local</code>.</li>
+</ul>
+</div>
+<p>Запустите все контейнеры с зависимостями:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>--profile<span class="w"> </span>all<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<p>Вы можете запустить ограниченный набор зависимостей:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>--profile<span class="w"> </span>mongodb<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<p>Загрузите переменные окружения со свойствами подключения:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">source</span><span class="w"> </span>.env.local
+</code></pre></div>
+<p>Запустите тесты:</p>
+<div class="highlight"><pre><span></span><code>./run_tests.sh
+</code></pre></div>
+<p>Вы можете передать дополнительные аргументы, они будут переданы в pytest:</p>
+<div class="highlight"><pre><span></span><code>./run_tests.sh<span class="w"> </span>-m<span class="w"> </span>mongodb<span class="w"> </span>-lsx<span class="w"> </span>-vvvv<span class="w"> </span>--log-cli-level<span class="o">=</span>INFO
+</code></pre></div>
+<p>Остановите все контейнеры и удалите созданные тома:</p>
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>--profile<span class="w"> </span>all<span class="w"> </span>down<span class="w"> </span>-v
+</code></pre></div>
+<h3 id="_9">Соберите документацию<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<p>Соберите документацию с помощью Sphinx:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>docs
+make<span class="w"> </span>html
+</code></pre></div>
+<p>Затем откройте в браузере <code>docs/_build/index.html</code>.</p>
+<h2 id="_10">Процесс рецензирования<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p>Пожалуйста, создайте новую задачу GitHub для любых значительных изменений и улучшений, которые вы хотите внести. Укажите функцию, которую вы хотели бы видеть, зачем она вам нужна и как она будет работать. Обсуждайте свои идеи открыто и получайте отзывы сообщества, прежде чем продолжить.</p>
+<p>Значительные изменения, которые вы хотите внести в проект, следует сначала обсудить в задаче GitHub, в которой четко изложены изменения и преимущества этой функции.</p>
+<p>Небольшие изменения можно сразу же создать и отправить в репозиторий GitHub в виде запроса на включение (Pull Request).</p>
+<h3 id="pull-request">Создайте pull request<a class="headerlink" href="#pull-request" title="Permanent link">&para;</a></h3>
+<p>Зафиксируйте свои изменения:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Commit message&quot;</span>
+git<span class="w"> </span>push
+</code></pre></div>
+<p>Затем откройте интерфейс Github и <a href="https://docs.github.com/en/get-started/quickstart/contributing-to-projects#making-a-pull-request">создайте pull request</a>.
+Пожалуйста, следуйте руководству из шаблона тела PR.</p>
+<p>После создания pull request он получает соответствующий номер, например, 123 (<code>pr_number</code>).</p>
+<h3 id="release-notes">Напишите release notes<a class="headerlink" href="#release-notes" title="Permanent link">&para;</a></h3>
+<p><code>onETL</code> использует <a href="https://pypi.org/project/towncrier/">towncrier</a>
+для управления журналом изменений.</p>
+<p>Чтобы отправить заметку об изменении для вашего PR, добавьте текстовый файл в
+папку <a href="./next_release">docs/changelog/next_release</a>. Он должен содержать
+объяснение того, как применение этого PR изменит способ
+взаимодействия конечных пользователей с проектом. Одного предложения обычно
+достаточно, но не стесняйтесь добавлять столько деталей, сколько считаете необходимым
+для того, чтобы пользователи поняли, что это значит.</p>
+<p><strong>Используйте прошедшее время</strong> для текста в вашем фрагменте, потому что,
+в сочетании с другими, он будет частью "сводки новостей",
+рассказывающей читателям <strong>что изменилось</strong> в конкретной версии
+библиотеки <em>с момента предыдущей версии</em>.</p>
+<p>Вам также следует использовать
+синтаксис reStructuredText для выделения кода (встроенного или блочного),
+связывания частей документации или внешних сайтов.
+Если вы хотите подписать свое изменение, не стесняйтесь добавить <code>-- by
+:user:</code>github-username<code>` в конце (замените</code>github-username`
+на свой собственный!).</p>
+<p>Наконец, назовите свой файл в соответствии с соглашением, которое понимает Towncrier:
+он должен начинаться с номера задачи или PR, за которым следует точка,
+затем добавьте тип патча, например, <code>feature</code>,
+<code>doc</code>, <code>misc</code> и т.д., и добавьте <code>.rst</code> в качестве суффикса. Если вам
+нужно добавить более одного фрагмента, вы можете добавить необязательный
+порядковый номер (разделенный другой точкой) между типом
+и суффиксом.</p>
+<p>В общем, имя будет соответствовать шаблону <code>&lt;pr_number&gt;.&lt;category&gt;.rst</code>,
+где категории:</p>
+<ul>
+<li><code>feature</code>: Любая новая функция</li>
+<li><code>bugfix</code>: Исправление ошибки</li>
+<li><code>improvement</code>: Улучшение</li>
+<li><code>doc</code>: Изменение в документации</li>
+<li><code>dependency</code>: Изменения, связанные с зависимостями</li>
+<li><code>misc</code>: Внутренние изменения в репозитории, такие как CI, тесты и изменения сборки</li>
+</ul>
+<p>Pull request может иметь более одного из этих компонентов, например,
+изменение кода может ввести новую функцию, которая устаревает старую
+функцию, в этом случае следует добавить два фрагмента. Нет
+необходимо делать отдельный фрагмент документации для изменений документации,
+сопровождающих соответствующие изменения кода.</p>
+<h4 id="pull-requests">Примеры добавления записей в журнал изменений в ваши Pull Requests<a class="headerlink" href="#pull-requests" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>Added a <span class="s">``:github:user:``</span> role to Sphinx config -- by <span class="na">:github:user:</span><span class="nv">`someuser`</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Fixed behavior of <span class="s">``WebDAV``</span> connector -- by <span class="na">:github:user:</span><span class="nv">`someuser`</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Added support of <span class="s">``timeout``</span> in <span class="s">``S3``</span> connector
+-- by <span class="na">:github:user:</span><span class="nv">`someuser`</span>, <span class="na">:github:user:</span><span class="nv">`anotheruser`</span> and <span class="na">:github:user:</span><span class="nv">`otheruser`</span>
+</code></pre></div>
+<h4 id="_11">Как пропустить проверку заметок об изменениях?<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h4>
+<p>Просто добавьте метку <code>ci:skip-changelog</code> к pull request.</p>
+<h4 id="_12">Процесс релиза<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h4>
+<p>Перед тем, как сделать релиз из ветки <code>develop</code>, выполните следующие шаги:</p>
+<ol>
+<li>Перейдите в ветку <code>develop</code> и обновите ее до актуального состояния</li>
+</ol>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>checkout<span class="w"> </span>develop
+git<span class="w"> </span>pull<span class="w"> </span>-p
+</code></pre></div>
+<ol>
+<li>Сделайте резервную копию <code>NEXT_RELEASE.rst</code></li>
+</ol>
+<div class="highlight"><pre><span></span><code>cp<span class="w"> </span><span class="s2">&quot;docs/changelog/NEXT_RELEASE.rst&quot;</span><span class="w"> </span><span class="s2">&quot;docs/changelog/temp_NEXT_RELEASE.rst&quot;</span>
+</code></pre></div>
+<ol>
+<li>Соберите Release notes с помощью Towncrier</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="nv">VERSION</span><span class="o">=</span><span class="k">$(</span>cat<span class="w"> </span>onetl/VERSION<span class="k">)</span>
+towncrier<span class="w"> </span>build<span class="w"> </span><span class="s2">&quot;--version=</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span>--yes
+</code></pre></div>
+<ol>
+<li>Измените файл с журналом изменений на номер версии релиза</li>
+</ol>
+<div class="highlight"><pre><span></span><code>mv<span class="w"> </span>docs/changelog/NEXT_RELEASE.rst<span class="w"> </span><span class="s2">&quot;docs/changelog/</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">.rst&quot;</span>
+</code></pre></div>
+<ol>
+<li>Удалите содержимое над заголовком номера версии в файле <code>${VERSION}.rst</code></li>
+</ol>
+<div class="highlight"><pre><span></span><code>awk<span class="w"> </span><span class="s1">&#39;!/^.*towncrier release notes start/&#39;</span><span class="w"> </span><span class="s2">&quot;docs/changelog/</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">.rst&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>temp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>mv<span class="w"> </span>temp<span class="w"> </span><span class="s2">&quot;docs/changelog/</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">.rst&quot;</span>
+</code></pre></div>
+<ol>
+<li>Обновите индекс журнала изменений</li>
+</ol>
+<div class="highlight"><pre><span></span><code>awk<span class="w"> </span>-v<span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="w"> </span><span class="s1">&#39;/DRAFT/{print;print &quot;    &quot; version;next}1&#39;</span><span class="w"> </span>docs/changelog/index.rst<span class="w"> </span>&gt;<span class="w"> </span>temp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>mv<span class="w"> </span>temp<span class="w"> </span>docs/changelog/index.rst
+</code></pre></div>
+<ol>
+<li>Восстановите файл <code>NEXT_RELEASE.rst</code> из резервной копии</li>
+</ol>
+<div class="highlight"><pre><span></span><code>mv<span class="w"> </span><span class="s2">&quot;docs/changelog/temp_NEXT_RELEASE.rst&quot;</span><span class="w"> </span><span class="s2">&quot;docs/changelog/NEXT_RELEASE.rst&quot;</span>
+</code></pre></div>
+<ol>
+<li>Зафиксируйте и отправьте изменения в ветку <code>develop</code></li>
+</ol>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Prepare for release </span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">&quot;</span>
+git<span class="w"> </span>push
+</code></pre></div>
+<ol>
+<li>Слейте ветку <code>develop</code> в <code>master</code>, <strong>БЕЗ</strong> squashing</li>
+</ol>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>checkout<span class="w"> </span>master
+git<span class="w"> </span>pull
+git<span class="w"> </span>merge<span class="w"> </span>develop
+git<span class="w"> </span>push
+</code></pre></div>
+<ol>
+<li>Добавьте git tag к последнему коммиту в ветке <code>master</code></li>
+</ol>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>tag<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
+</code></pre></div>
+<ol>
+<li>Обновите версию в ветке <code>develop</code> <strong>после релиза</strong>:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>checkout<span class="w"> </span>develop
+
+<span class="nv">NEXT_VERSION</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$VERSION</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F.<span class="w"> </span><span class="s1">&#39;/[0-9]+\./{$NF++;print}&#39;</span><span class="w"> </span><span class="nv">OFS</span><span class="o">=</span>.<span class="k">)</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$NEXT_VERSION</span><span class="s2">&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>onetl/VERSION
+
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Bump version&quot;</span>
+git<span class="w"> </span>push
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.indexes", "content.tabs.link", "content.code.copy", "content.code.select"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../assets/mkdocs_puml/interaction.js"></script>
+      
+    
+  </body>
+</html>

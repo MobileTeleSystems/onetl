@@ -1,0 +1,1645 @@
+
+<!doctype html>
+<html lang="ru" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../../../../assets/images/icon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Types - Документация onETL</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/autodoc_pydantic.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/interaction.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mssql-spark-type-mapping" class="md-skip">
+          Перейти к содержанию
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
+    <a href="../../../.." title="Документация onETL" class="md-header__button md-logo" aria-label="Документация onETL" data-md-component="logo">
+      
+  <img src="../../../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Документация onETL
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Types
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Выберите язык">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="/en/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/ru/" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Навигация" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="Документация onETL" class="md-nav__button md-logo" aria-label="Документация onETL" data-md-component="logo">
+      
+  <img src="../../../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    Документация onETL
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../concepts" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Архитектура библиотеки
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../quickstart" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Быстрый старт
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../contributing" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Руководство по участию
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Безопасность
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../logging" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Логирование
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../plugins" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Плагины
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../../changelog/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    changelog
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            changelog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.13.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.13.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.13.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.13.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.12.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.11.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.11.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.11.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.10.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.10.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.10.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.9.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.8.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.8.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.7.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.7.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/0.7.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Содержание">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Содержание
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#type-detection-casting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Type detection &amp; casting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Type detection &amp; casting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reading-from-mssql" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reading from MSSQL
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writing-to-some-existing-mssql-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      Writing to some existing MSSQL table
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-new-table-using-spark" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create new table using Spark
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      References
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Supported types
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supported types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#numeric-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Numeric types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#temporal-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Temporal types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#string-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      String types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#binary-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Binary types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#special-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Special types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explicit-type-cast" class="md-nav__link">
+    <span class="md-ellipsis">
+      Explicit type cast
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Explicit type cast">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dbreader" class="md-nav__link">
+    <span class="md-ellipsis">
+      DBReader
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dbwriter" class="md-nav__link">
+    <span class="md-ellipsis">
+      DBWriter
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<p>(mssql-types)=</p>
+<h1 id="mssql-spark-type-mapping">MSSQL \&lt;-&gt; Spark type mapping<a class="headerlink" href="#mssql-spark-type-mapping" title="Permanent link">&para;</a></h1>
+<div class="highlight"><pre><span></span><code>.. note::
+
+    The results below are valid for Spark 3.5.5, and may differ on other Spark versions.
+</code></pre></div>
+<h2 id="type-detection-casting">Type detection &amp; casting<a class="headerlink" href="#type-detection-casting" title="Permanent link">&para;</a></h2>
+<p>Spark's DataFrames always have a <code>schema</code> which is a list of columns with corresponding Spark types. All operations on a column are performed using column type.</p>
+<h3 id="reading-from-mssql">Reading from MSSQL<a class="headerlink" href="#reading-from-mssql" title="Permanent link">&para;</a></h3>
+<p>This is how MSSQL connector performs this:</p>
+<ul>
+<li>For each column in query result (<code>SELECT column1, column2, ... FROM table ...</code>) get column name and MSSQL type.</li>
+<li>Find corresponding <code>MSSQL type (read)</code> → <code>Spark type</code> combination (see below) for each DataFrame column. If no combination is found, raise exception.</li>
+<li>Create DataFrame from query with specific column names and Spark types.</li>
+</ul>
+<h3 id="writing-to-some-existing-mssql-table">Writing to some existing MSSQL table<a class="headerlink" href="#writing-to-some-existing-mssql-table" title="Permanent link">&para;</a></h3>
+<p>This is how MSSQL connector performs this:</p>
+<ul>
+<li>Get names of columns in DataFrame. [^footnote-1]</li>
+<li>Perform <code>SELECT * FROM table LIMIT 0</code> query.</li>
+<li>Take only columns present in DataFrame (by name, case insensitive). For each found column get MSSQL type.</li>
+<li>Find corresponding <code>Spark type</code> → <code>MSSQL type (write)</code> combination (see below) for each DataFrame column. If no combination is found, raise exception.</li>
+<li>If <code>MSSQL type (write)</code> match <code>MSSQL type (read)</code>, no additional casts will be performed, DataFrame column will be written to MSSQL as is.</li>
+<li>If <code>MSSQL type (write)</code> does not match <code>MSSQL type (read)</code>, DataFrame column will be casted to target column type <strong>on MSSQL side</strong>.
+  For example, you can write column with text data to <code>int</code> column, if column contains valid integer values within supported value range and precision [^footnote-2].</li>
+</ul>
+<p>[^footnote-1]: This allows to write data to tables with <code>DEFAULT</code> and <code>GENERATED</code> columns - if DataFrame has no such column,
+    it will be populated by MSSQL.</p>
+<p>[^footnote-2]: This is true only if DataFrame column is a <code>StringType()</code>, because text value is parsed automatically to target column type.</p>
+<pre><code>But other types cannot be silently converted, like `int -&gt; text`. This requires explicit casting, see [DBWriter].
+</code></pre>
+<h3 id="create-new-table-using-spark">Create new table using Spark<a class="headerlink" href="#create-new-table-using-spark" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>.. warning::
+
+    ABSOLUTELY NOT RECOMMENDED!
+</code></pre></div>
+<p>This is how MSSQL connector performs this:</p>
+<ul>
+<li>Find corresponding <code>Spark type</code> → <code>MSSQL type (create)</code> combination (see below) for each DataFrame column. If no combination is found, raise exception.</li>
+<li>Generate DDL for creating table in MSSQL, like <code>CREATE TABLE (col1 ...)</code>, and run it.</li>
+<li>Write DataFrame to created table as is.</li>
+</ul>
+<p>But some cases this may lead to using wrong column type. For example, Spark creates column of type <code>timestamp</code>
+which corresponds to MSSQL's type <code>timestamp(0)</code> (precision up to seconds)
+instead of more precise <code>timestamp(6)</code> (precision up to nanoseconds).
+This may lead to incidental precision loss, or sometimes data cannot be written to created table at all.</p>
+<p>So instead of relying on Spark to create tables:</p>
+<div class="highlight"><pre><span></span><code>.. dropdown:: See example
+
+    .. code:: python
+
+        writer = DBWriter(
+            connection=mssql,
+            target=&quot;myschema.target_tbl&quot;,
+            options=MSSQL.WriteOptions(
+                if_exists=&quot;append&quot;,
+            ),
+        )
+        writer.run(df)
+</code></pre></div>
+<p>Always prefer creating tables with specific types <strong>BEFORE WRITING DATA</strong>:</p>
+<div class="highlight"><pre><span></span><code>.. dropdown:: See example
+
+    .. code:: python
+
+        mssql.execute(
+            &quot;&quot;&quot;
+            CREATE TABLE schema.table (
+                id bigint,
+                key text,
+                value datetime2(6) -- specific type and precision
+            )
+            &quot;&quot;&quot;,
+        )
+
+        writer = DBWriter(
+            connection=mssql,
+            target=&quot;myschema.target_tbl&quot;,
+            options=MSSQL.WriteOptions(if_exists=&quot;append&quot;),
+        )
+        writer.run(df)
+</code></pre></div>
+<h3 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h3>
+<p>Here you can find source code with type conversions:</p>
+<ul>
+<li><a href="https://github.com/microsoft/mssql-jdbc/blob/v12.2.0/src/main/java/com/microsoft/sqlserver/jdbc/SQLServerResultSetMetaData.java#L117-L170">MSSQL -&gt; JDBC</a></li>
+<li><a href="https://github.com/apache/spark/blob/v3.5.5/sql/core/src/main/scala/org/apache/spark/sql/jdbc/MsSqlServerDialect.scala#L135-L152">JDBC -&gt; Spark</a></li>
+<li><a href="https://github.com/apache/spark/blob/v3.5.5/sql/core/src/main/scala/org/apache/spark/sql/jdbc/MsSqlServerDialect.scala#L154-L163">Spark -&gt; JDBC</a></li>
+<li><a href="https://github.com/microsoft/mssql-jdbc/blob/v12.2.0/src/main/java/com/microsoft/sqlserver/jdbc/DataTypes.java#L625-L676">JDBC -&gt; MSSQL</a></li>
+</ul>
+<h2 id="supported-types">Supported types<a class="headerlink" href="#supported-types" title="Permanent link">&para;</a></h2>
+<p>See <a href="https://learn.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql">official documentation</a></p>
+<h3 id="numeric-types">Numeric types<a class="headerlink" href="#numeric-types" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>+-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
+| MSSQL type (read)             | Spark type                        | MSSQL type (write)            | MSSQL type (create)           |
++===============================+===================================+===============================+===============================+
+| ``decimal``                   | ``DecimalType(P=18, S=0)``        | ``decimal(P=18, S=0)``        | ``decimal(P=18, S=0)``        |
++-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
+| ``decimal(P=0..38)``          | ``DecimalType(P=0..38, S=0)``     | ``decimal(P=0..38, S=0)``     | ``decimal(P=0..38, S=0)``     |
++-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
+| ``decimal(P=0..38, S=0..38)`` | ``DecimalType(P=0..38, S=0..38)`` | ``decimal(P=0..38, S=0..38)`` | ``decimal(P=0..38, S=0..38)`` |
++-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
+| ``real``                      | ``FloatType()``                   | ``real``                      | ``real``                      |
++-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
+| ``float``                     | ``DoubleType()``                  | ``float``                     | ``float``                     |
++-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
+| ``smallint``                  | ``ShortType()``                   | ``smallint``                  | ``smallint``                  |
++-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
+| ``tinyint``                   | ``IntegerType()``                 | ``int``                       | ``int``                       |
++-------------------------------+                                   |                               |                               |
+| ``int``                       |                                   |                               |                               |
++-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
+| ``bigint``                    | ``LongType()``                    | ``bigint``                    | ``bigint``                    |
++-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
+</code></pre></div>
+<h3 id="temporal-types">Temporal types<a class="headerlink" href="#temporal-types" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>.. note::
+
+    MSSQL ``timestamp`` type is alias for ``rowversion`` (see `Special types`_). It is not a temporal type!
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>+------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
+| MSSQL type (read)                        | Spark type                           | MSSQL type (write)                | MSSQL type (create)           |
++==========================================+======================================+===================================+===============================+
+| ``date``                                 | ``DateType()``                       | ``date``                          | ``date``                      |
++------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
+| ``smalldatetime``, minutes               | ``TimestampType()``, microseconds    | ``datetime2(6)``, microseconds    | ``datetime``, milliseconds    |
++------------------------------------------+                                      |                                   |                               |
+| ``datetime``, milliseconds               |                                      |                                   |                               |
++------------------------------------------+                                      |                                   |                               |
+| ``datetime2(0)``, seconds                |                                      |                                   |                               |
++------------------------------------------+                                      |                                   |                               |
+| ``datetime2(3)``, milliseconds           |                                      |                                   |                               |
++------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
+| ``datetime2(6)``, microseconds           | ``TimestampType()``, microseconds    | ``datetime2(6)``, microseconds    | ``datetime``, milliseconds,   |
++------------------------------------------+--------------------------------------+-----------------------------------+ **precision loss** [3]_       |
+| ``datetime2(7)``, 100s of nanoseconds    | ``TimestampType()``, microseconds,   | ``datetime2(6)``, microseconds,   |                               |
+|                                          | **precision loss** [4]_              | **precision loss** [4]_           |                               |
++------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
+| ``time(0)``, seconds                     | ``TimestampType()``, microseconds,   | ``datetime2(6)``, microseconds    | ``datetime``, milliseconds    |
++------------------------------------------+ with time format quirks [5]_         |                                   |                               |
+| ``time(3)``, milliseconds                |                                      |                                   |                               |
++------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
+| ``time(6)``, microseconds                | ``TimestampType()``, microseconds,   | ``datetime2(6)``, microseconds    | ``datetime``, milliseconds,   |
++                                          | with time format quirks [5]_         |                                   | **precision loss** [3]_       |
++------------------------------------------+--------------------------------------+-----------------------------------+                               +
+| ``time``, 100s of nanoseconds            | ``TimestampType()``, microseconds,   | ``datetime2(6)``, microseconds    |                               |
++------------------------------------------+ **precision loss** [4]_,             | **precision loss** [3]_           |                               |
+| ``time(7)``, 100s of nanoseconds         | with time format quirks [5]_         |                                   |                               |
++------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
+| ``datetimeoffset``                       | ``StringType()``                     | ``nvarchar``                      | ``nvarchar``                  |
++------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>.. warning::
+
+    Note that types in MSSQL and Spark have different value ranges:
+
+    +-------------------+--------------------------------+--------------------------------+---------------------+--------------------------------+--------------------------------+
+    | MySQL type        | Min value                      | Max value                      | Spark type          | Min value                      | Max value                      |
+    +===================+================================+================================+=====================+================================+================================+
+    | ``smalldatetime`` | ``1900-01-01 00:00:00``        | ``2079-06-06 23:59:00``        | ``TimestampType()`` | ``0001-01-01 00:00:00.000000`` | ``9999-12-31 23:59:59.999999`` |
+    +-------------------+--------------------------------+--------------------------------+                     |                                |                                |
+    | ``datetime``      | ``1753-01-01 00:00:00.000``    | ``9999-12-31 23:59:59.997``    |                     |                                |                                |
+    +-------------------+--------------------------------+--------------------------------+                     |                                |                                |
+    | ``datetime2``     | ``0001-01-01 00:00:00.000000`` | ``9999-12-31 23:59:59.999999`` |                     |                                |                                |
+    +-------------------+--------------------------------+--------------------------------+                     |                                |                                |
+    | ``time``          | ``00:00:00.0000000``           | ``23:59:59.9999999``           |                     |                                |                                |
+    +-------------------+--------------------------------+--------------------------------+---------------------+--------------------------------+--------------------------------+
+
+    So not all of values in Spark DataFrame can be written to MSSQL.
+
+    References:
+        * `MSSQL date &amp; time types documentation &lt;https://learn.microsoft.com/en-us/sql/t-sql/data-types/date-and-time-types&gt;`_
+        * `Spark DateType documentation &lt;https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html&gt;`_
+        * `Spark TimestampType documentation &lt;https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html&gt;`_
+</code></pre></div>
+<p>[^footnote-3]: MSSQL dialect for Spark generates DDL with type <code>datetime</code> which has precision up to milliseconds (<code>23:59:59.999</code>, 10{superscript}<code>-3</code> seconds).
+    Inserting data with microsecond and higher precision (<code>23:59:59.999999</code> .. <code>23.59:59.9999999</code>, 10{superscript}<code>-6</code> .. 10{superscript}<code>-7</code> seconds)
+    will lead to <strong>throwing away microseconds</strong>.</p>
+<p>[^footnote-4]: MSSQL support timestamp up to 100s of nanoseconds precision (<code>23:59:59.9999999999</code>, 10{superscript}<code>-7</code> seconds),
+    but Spark <code>TimestampType()</code> supports datetime up to microseconds precision (<code>23:59:59.999999</code>, 10{superscript}<code>-6</code> seconds).
+    Last digit will be lost during read or write operations.</p>
+<p>[^footnote-5]: <code>time</code> type is the same as <code>datetime2</code> with date <code>1970-01-01</code>. So instead of reading data from MSSQL like <code>23:59:59.999999</code>
+    it is actually read <code>1970-01-01 23:59:59.999999</code>, and vice versa.</p>
+<h3 id="string-types">String types<a class="headerlink" href="#string-types" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>+-------------------+------------------+--------------------+---------------------+
+| MSSQL type (read) | Spark type       | MSSQL type (write) | MSSQL type (create) |
++===================+==================+====================+=====================+
+| ``char``          | ``StringType()`` | ``nvarchar``       | ``nvarchar``        |
++-------------------+                  |                    |                     |
+| ``char(N)``       |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``nchar``         |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``nchar(N)``      |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``varchar``       |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``varchar(N)``    |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``nvarchar``      |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``nvarchar(N)``   |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``mediumtext``    |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``text``          |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``ntext``         |                  |                    |                     |
++-------------------+                  |                    |                     |
+| ``xml``           |                  |                    |                     |
++-------------------+------------------+--------------------+---------------------+
+</code></pre></div>
+<h3 id="binary-types">Binary types<a class="headerlink" href="#binary-types" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>+--------------------+-------------------+--------------------+---------------------+
+| MSSQL type (read)  | Spark type        | MSSQL type (write) | MSSQL type (create) |
++====================+===================+====================+=====================+
+| ``bit``            | ``BooleanType()`` | ``bit``            | ``bit``             |
++--------------------+-------------------+--------------------+---------------------+
+| ``binary``         | ``BinaryType()``  | ``varbinary``      | ``varbinary``       |
++--------------------+                   |                    |                     |
+| ``binary(N)``      |                   |                    |                     |
++--------------------+                   |                    |                     |
+| ``varbinary``      |                   |                    |                     |
++--------------------+                   |                    |                     |
+| ``varbinary(N)``   |                   |                    |                     |
++--------------------+                   |                    |                     |
+| ``image``          |                   |                    |                     |
++--------------------+-------------------+--------------------+---------------------+
+</code></pre></div>
+<h3 id="special-types">Special types<a class="headerlink" href="#special-types" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>+---------------------------+------------------+--------------------+---------------------+
+| MSSQL type (read)         | Spark type       | MSSQL type (write) | MSSQL type (create) |
++===========================+==================+====================+=====================+
+| ``geography``             | ``BinaryType()`` | ``varbinary``      | ``varbinary``       |
++---------------------------+                  |                    |                     |
+| ``geometry``              |                  |                    |                     |
++---------------------------+                  |                    |                     |
+| ``hierarchyid``           |                  |                    |                     |
++---------------------------+                  |                    |                     |
+| ``rowversion``            |                  |                    |                     |
++---------------------------+------------------+--------------------+---------------------+
+| ``sql_variant``           | unsupported      |                    |                     |
++---------------------------+------------------+--------------------+---------------------+
+| ``sysname``               | ``StringType()`` | ``nvarchar``       | ``nvarchar``        |
++---------------------------+                  |                    |                     |
+| ``uniqueidentifier``      |                  |                    |                     |
++---------------------------+------------------+--------------------+---------------------+
+</code></pre></div>
+<h2 id="explicit-type-cast">Explicit type cast<a class="headerlink" href="#explicit-type-cast" title="Permanent link">&para;</a></h2>
+<h3 id="dbreader"><code>DBReader</code><a class="headerlink" href="#dbreader" title="Permanent link">&para;</a></h3>
+<p>It is possible to explicitly cast column type using <code>DBReader(columns=...)</code> syntax.</p>
+<p>For example, you can use <code>CAST(column AS text)</code> to convert data to string representation on MSSQL side, and so it will be read as Spark's <code>StringType()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">MSSQL</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">onetl.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBReader</span>
+
+<span class="n">mssql</span> <span class="o">=</span> <span class="n">MSSQL</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+
+<span class="n">DBReader</span><span class="p">(</span>
+    <span class="n">connection</span><span class="o">=</span><span class="n">mssql</span><span class="p">,</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;supported_column&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;CAST(unsupported_column AS text) unsupported_column_str&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="c1"># cast column content to proper Spark type</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">supported_column</span><span class="p">,</span>
+    <span class="c1"># explicit cast</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">unsupported_column_str</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;integer&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;parsed_integer&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="dbwriter"><code>DBWriter</code><a class="headerlink" href="#dbwriter" title="Permanent link">&para;</a></h3>
+<p>Convert dataframe column to JSON using <a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html">to_json</a>,
+and write it as <code>text</code> column in MSSQL:</p>
+<div class="highlight"><pre><span></span><code><span class="n">mssql</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    CREATE TABLE schema.target_tbl (</span>
+<span class="sd">        id bigint,</span>
+<span class="sd">        struct_column_json text -- any string type, actually</span>
+<span class="sd">    )</span>
+<span class="sd">    &quot;&quot;&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyspark.sql.functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_json</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">to_json</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">struct_column</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;struct_column_json&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">writer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</code></pre></div>
+<p>Then you can parse this column on MSSQL side - for example, by creating a view:</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span>
+<span class="w">    </span><span class="n">id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">JSON_VALUE</span><span class="p">(</span><span class="n">struct_column_json</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;$.nested.field&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">nested_field</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">target_tbl</span>
+</code></pre></div>
+<p>Or by using <a href="https://learn.microsoft.com/en-us/sql/relational-databases/tables/specify-computed-columns-in-a-table">computed column</a>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="k">schema</span><span class="p">.</span><span class="n">target_table</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">bigint</span><span class="p">,</span>
+<span class="w">    </span><span class="n">supported_column</span><span class="w"> </span><span class="n">datetime2</span><span class="p">(</span><span class="mi">6</span><span class="p">),</span>
+<span class="w">    </span><span class="n">struct_column_json</span><span class="w"> </span><span class="nb">text</span><span class="p">,</span><span class="w"> </span><span class="c1">-- any string type, actually</span>
+<span class="w">    </span><span class="c1">-- computed column</span>
+<span class="w">    </span><span class="n">nested_field</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span><span class="n">JSON_VALUE</span><span class="p">(</span><span class="n">struct_column_json</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;$.nested.field&quot;</span><span class="p">))</span>
+<span class="w">    </span><span class="c1">-- or persisted column</span>
+<span class="w">    </span><span class="c1">-- nested_field AS (JSON_VALUE(struct_column_json, &quot;$.nested.field&quot;)) PERSISTED</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>By default, column value is calculated on every table read.
+Column marked as <code>PERSISTED</code> is calculated during insert, but this require additional space.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../../../..", "features": ["navigation.indexes", "content.tabs.link", "content.code.copy", "content.code.select"], "search": "../../../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": null}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/interaction.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,141 @@
+site_name: onETL Docs
+docs_dir: '../../docs/en'                           # Where to find the English markdown files
+site_dir: '../../generated/en'                      # Where to put the English HTML files
+
+theme:
+  name: material
+  custom_dir: '../../overrides/'                    # This is where the customization of the theme lives
+  logo: assets/images/logo.svg                      # The logo is shared by all languages
+  favicon: assets/images/icon.svg                   # The favicon is shared by all languages
+  language: en
+  features:
+    - navigation.indexes
+    - content.tabs.link
+    - content.code.copy
+    - content.code.select
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night 
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  locale: en
+  highlightjs: true
+  hljs_languages:
+    - yaml
+
+extra_css:
+  - assets/stylesheets/autodoc_pydantic.css         # CSS is shared by all languages
+
+extra:                                              # Language Selection
+  onetl_logo_wide: "[![onETL logo](../en/assets/images/logo_wide.svg)](https://github.com/MobileTeleSystems/onetl)"
+  repo_status_badge: "[![Repo status - Active](https://www.repostatus.org/badges/latest/active.svg)](https://github.com/MobileTeleSystems/onetl)"
+  pypi_release_bage: "[![PyPI - Latest Release](https://img.shields.io/pypi/v/onetl)](https://pypi.org/project/onetl/)"
+  pypi_license_bage: "[![PyPI - License](https://img.shields.io/pypi/l/onetl.svg)](https://github.com/MobileTeleSystems/onetl/blob/develop/LICENSE.txt)"
+  pypi_pyversion_bage: "[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/onetl.svg)](https://pypi.org/project/onetl/)"
+  pypi_downloads_bage: "[![PyPI - Downloads](https://img.shields.io/pypi/dm/onetl)](https://pypi.org/project/onetl/)"
+  docs_status_badge: "[![Documentation - ReadTheDocs](https://readthedocs.org/projects/onetl/badge/?version=stable)](https://onetl.readthedocs.io/)"
+  ci_status_badge: "[![Github Actions - latest CI build status](https://github.com/MobileTeleSystems/onetl/workflows/Tests/badge.svg)](https://github.com/MobileTeleSystems/onetl/actions)"
+  precommit_badge: "[![pre-commit.ci Status](https://results.pre-commit.ci/badge/github/MobileTeleSystems/onetl/develop.svg)](https://results.pre-commit.ci/latest/github/MobileTeleSystems/onetl/develop)"
+  test_cov_badge: "[![Test coverage - percent](https://codecov.io/gh/MobileTeleSystems/onetl/branch/develop/graph/badge.svg?token=RIO8URKNZJ)](https://codecov.io/gh/MobileTeleSystems/onetl)"
+  alternate:  
+
+      # Switch to English
+    - name: English
+      link: /en/
+      lang: en
+
+    # Switch to Russian
+    - name: Русский
+      link: /ru/
+      lang: ru
+
+plugins:
+  - autorefs
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_root_heading: false
+            show_root_toc_entry: false
+  - macros
+  - plantuml:
+      puml_url: https://www.plantuml.com/plantuml/
+      puml_keyword: plantuml
+  # - i18n:
+  #     docs_structure: folder
+  #     languages:
+  #       - locale: en
+  #         default: true
+  #         name: English
+  #         build: true
+  #       - locale: ru
+  #         name: Русский
+  #         build: false
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.details
+  - pymdownx.critic
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+  - toc:
+      permalink: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format  
+
+nav:
+  - "Concepts": concepts
+  - "Quickstart": quickstart
+  - "Logging": logging
+  - "Security": security
+  - "Contributing Guide": contributing
+  - changelog:
+    - changelog/index.md
+    - "0.13.4": changelog/0.13.4
+    - "0.13.3": changelog/0.13.3
+    - "0.13.1": changelog/0.13.1
+    - "0.13.0": changelog/0.13.0
+    - "0.12.5": changelog/0.12.5
+    - "0.12.4": changelog/0.12.4
+    - "0.12.3": changelog/0.12.3
+    - "0.12.2": changelog/0.12.2
+    - "0.12.1": changelog/0.12.1
+    - "0.12.0": changelog/0.12.0
+    - "0.11.2": changelog/0.11.2
+    - "0.11.1": changelog/0.11.1
+    - "0.11.0": changelog/0.11.0
+    - "0.10.2": changelog/0.10.2
+    - "0.10.1": changelog/0.10.1
+    - "0.10.0": changelog/0.10.0
+    - "0.9.5": changelog/0.9.5
+    - "0.9.4": changelog/0.9.4
+    - "0.9.3": changelog/0.9.3
+    - "0.9.2": changelog/0.9.2
+    - "0.9.1": changelog/0.9.1
+    - "0.9.0": changelog/0.9.0
+    - "0.8.1": changelog/0.8.1
+    - "0.8.0": changelog/0.8.0
+    - "0.7.2": changelog/0.7.2
+    - "0.7.1": changelog/0.7.1
+    - "0.7.0": changelog/0.7.0
+  - "DB":
+    - db_/index.md
+    - "DBReader": db_/reader
+    - "DBWriter": db_/writer

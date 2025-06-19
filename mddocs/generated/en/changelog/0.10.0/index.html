@@ -1,0 +1,1950 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../../assets/images/icon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>0.10.0 (2023-12-18) - onETL Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/autodoc_pydantic.css">
+    
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/interaction.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#0100-2023-12-18" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="onETL Docs" class="md-header__button md-logo" aria-label="onETL Docs" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            onETL Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              0.10.0 (2023-12-18)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="/en/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/ru/" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="onETL Docs" class="md-nav__button md-logo" aria-label="onETL Docs" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    onETL Docs
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../logging" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Logging
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    changelog
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            changelog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.11.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.11.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.11.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.10.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.10.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.8.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.8.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.7.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.7.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.7.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../db_/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    DB
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            DB
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../db_/reader" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    DBReader
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../db_/writer" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    DBWriter
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Breaking Changes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bug Fixes
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="0100-2023-12-18">0.10.0 (2023-12-18)<a class="headerlink" href="#0100-2023-12-18" title="Permanent link">&para;</a></h1>
+<h2 id="breaking-changes">Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Upgrade <code>etl-entities</code> from v1 to v2 (<a href="https://github.com/MobileTeleSystems/onetl/pull/172">#172</a>).</li>
+</ul>
+<p>This implies that <code>HWM</code> classes are now have different internal structure than they used to.</p>
+<p>Before:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">etl_entities.old_hwm</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntHWM</span> <span class="k">as</span> <span class="n">OldIntHWM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_entities.source</span><span class="w"> </span><span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Table</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_entities.process</span><span class="w"> </span><span class="kn">import</span> <span class="n">Process</span>
+
+<span class="n">hwm</span> <span class="o">=</span> <span class="n">OldIntHWM</span><span class="p">(</span>
+    <span class="n">process</span><span class="o">=</span><span class="n">Process</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;myprocess&quot;</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="s2">&quot;abc&quot;</span><span class="p">,</span> <span class="n">dag</span><span class="o">=</span><span class="s2">&quot;cde&quot;</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="s2">&quot;myhost&quot;</span><span class="p">),</span>
+    <span class="n">source</span><span class="o">=</span><span class="n">Table</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;schema.table&quot;</span><span class="p">,</span> <span class="n">instance</span><span class="o">=</span><span class="s2">&quot;postgres://host:5432/db&quot;</span><span class="p">),</span>
+    <span class="n">column</span><span class="o">=</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;col1&quot;</span><span class="p">),</span>
+    <span class="n">value</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>After:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">etl_entities.hwm</span><span class="w"> </span><span class="kn">import</span> <span class="n">ColumnIntHWM</span>
+
+<span class="n">hwm</span> <span class="o">=</span> <span class="n">ColumnIntHWM</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;some_unique_name&quot;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;any value you want&quot;</span><span class="p">,</span>
+    <span class="n">source</span><span class="o">=</span><span class="s2">&quot;schema.table&quot;</span><span class="p">,</span>
+    <span class="n">expression</span><span class="o">=</span><span class="s2">&quot;col1&quot;</span><span class="p">,</span>
+    <span class="n">value</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><strong>Breaking change:</strong> If you used HWM classes from <code>etl_entities</code> module, you should rewrite your code to make it compatible with new version.</p>
+<details>
+<summary>More details</summary>
+<ul>
+<li><code>HWM</code> classes used by previous onETL versions were moved from <code>etl_entities</code> to <code>etl_entities.old_hwm</code> submodule. They are here for compatibility reasons, but are planned to be removed in <code>etl-entities</code> v3 release.</li>
+<li>New <code>HWM</code> classes have flat structure instead of nested.</li>
+<li>New <code>HWM</code> classes have mandatory <code>name</code> attribute (it was known as <code>qualified_name</code> before).</li>
+<li>Type aliases used while serializing and deserializing <code>HWM</code> objects to <code>dict</code> representation were changed too: <code>int</code> → <code>column_int</code>.</li>
+</ul>
+</details>
+<p>To make migration simpler, you can use new method:</p>
+<div class="highlight"><pre><span></span><code><span class="n">old_hwm</span> <span class="o">=</span> <span class="n">OldIntHWM</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">new_hwm</span> <span class="o">=</span> <span class="n">old_hwm</span><span class="o">.</span><span class="n">as_new_hwm</span><span class="p">()</span>
+</code></pre></div>
+<p>Which automatically converts all fields from old structure to new one, including <code>qualified_name</code> → <code>name</code>.</p>
+<ul>
+<li>
+<p><strong>Breaking changes:</strong></p>
+</li>
+<li>
+<p>Methods <code>BaseHWMStore.get()</code> and <code>BaseHWMStore.save()</code> were renamed to <code>get_hwm()</code> and <code>set_hwm()</code>.</p>
+</li>
+<li>They now can be used only with new HWM classes from <code>etl_entities.hwm</code>, <strong>old HWM classes are not supported</strong>.</li>
+</ul>
+<p>If you used them in your code, please update it accordingly.</p>
+<ul>
+<li>YAMLHWMStore <strong>CANNOT read files created by older onETL versions</strong> (0.9.x or older).</li>
+</ul>
+<details>
+<summary>Update procedure</summary>
+<div class="highlight"><pre><span></span><code><span class="c1"># pip install onetl==0.9.5</span>
+
+<span class="c1"># Get qualified_name for HWM</span>
+
+
+<span class="c1"># Option 1. HWM is built manually</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_entities</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntHWM</span><span class="p">,</span> <span class="n">FileListHWM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_entities.source</span><span class="w"> </span><span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Table</span><span class="p">,</span> <span class="n">RemoteFolder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_entities.process</span><span class="w"> </span><span class="kn">import</span> <span class="n">Process</span>
+
+<span class="c1"># for column HWM</span>
+<span class="n">old_column_hwm</span> <span class="o">=</span> <span class="n">IntHWM</span><span class="p">(</span>
+    <span class="n">process</span><span class="o">=</span><span class="n">Process</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;myprocess&quot;</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="s2">&quot;abc&quot;</span><span class="p">,</span> <span class="n">dag</span><span class="o">=</span><span class="s2">&quot;cde&quot;</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="s2">&quot;myhost&quot;</span><span class="p">),</span>
+    <span class="n">source</span><span class="o">=</span><span class="n">Table</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;schema.table&quot;</span><span class="p">,</span> <span class="n">instance</span><span class="o">=</span><span class="s2">&quot;postgres://host:5432/db&quot;</span><span class="p">),</span>
+    <span class="n">column</span><span class="o">=</span><span class="n">Column</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;col1&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">qualified_name</span> <span class="o">=</span> <span class="n">old_column_hwm</span><span class="o">.</span><span class="n">qualified_name</span>
+<span class="c1"># &quot;col1#schema.table@postgres://host:5432/db#cde.abc.myprocess@myhost&quot;</span>
+
+<span class="c1"># for file HWM</span>
+<span class="n">old_file_hwm</span> <span class="o">=</span> <span class="n">FileListHWM</span><span class="p">(</span>
+    <span class="n">process</span><span class="o">=</span><span class="n">Process</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;myprocess&quot;</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="s2">&quot;abc&quot;</span><span class="p">,</span> <span class="n">dag</span><span class="o">=</span><span class="s2">&quot;cde&quot;</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="s2">&quot;myhost&quot;</span><span class="p">),</span>
+    <span class="n">source</span><span class="o">=</span><span class="n">RemoteFolder</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;/absolute/path&quot;</span><span class="p">,</span> <span class="n">instance</span><span class="o">=</span><span class="s2">&quot;ftp://ftp.server:21&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">qualified_name</span> <span class="o">=</span> <span class="n">old_file_hwm</span><span class="o">.</span><span class="n">qualified_name</span>
+<span class="c1"># &quot;file_list#/absolute/path@ftp://ftp.server:21#cde.abc.myprocess@myhost&quot;</span>
+
+
+<span class="c1"># Option 2. HWM is generated automatically (by DBReader/FileDownloader)</span>
+<span class="c1"># See onETL logs and search for string like qualified_name = &#39;...&#39;</span>
+
+<span class="n">qualified_name</span> <span class="o">=</span> <span class="s2">&quot;col1#schema.table@postgres://host:5432/db#cde.abc.myprocess@myhost&quot;</span>
+
+
+<span class="c1"># Get .yml file path by qualified_name</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">PurePosixPath</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">onetl.hwm.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">YAMLHWMStore</span>
+
+<span class="c1"># here you should pass the same arguments as used on production, if any</span>
+<span class="n">yaml_hwm_store</span> <span class="o">=</span> <span class="n">YAMLHWMStore</span><span class="p">()</span>
+<span class="n">hwm_path</span> <span class="o">=</span> <span class="n">yaml_hwm_store</span><span class="o">.</span><span class="n">get_file_path</span><span class="p">(</span><span class="n">qualified_name</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">hwm_path</span><span class="p">)</span>
+
+<span class="c1"># for column HWM</span>
+<span class="c1"># LocalPosixPath(&#39;/home/maxim/.local/share/onETL/yml_hwm_store/col1__schema.table__postgres_host_5432_db__cde.abc.myprocess__myhost.yml&#39;)</span>
+
+<span class="c1"># for file HWM</span>
+<span class="c1"># LocalPosixPath(&#39;/home/maxim/.local/share/onETL/yml_hwm_store/file_list__absolute_path__ftp_ftp.server_21__cde.abc.myprocess__myhost.yml&#39;)</span>
+
+
+<span class="c1"># Read raw .yml file content</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">yaml</span><span class="w"> </span><span class="kn">import</span> <span class="n">safe_load</span><span class="p">,</span> <span class="n">dump</span>
+
+<span class="n">raw_old_hwm_items</span> <span class="o">=</span> <span class="n">safe_load</span><span class="p">(</span><span class="n">hwm_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">raw_old_hwm_items</span><span class="p">)</span>
+
+<span class="c1"># for column HWM</span>
+<span class="c1"># [</span>
+<span class="c1">#   {</span>
+<span class="c1">#     &quot;column&quot;: { &quot;name&quot;: &quot;col1&quot;, &quot;partition&quot;: {} },</span>
+<span class="c1">#     &quot;modified_time&quot;: &quot;2023-12-18T10: 39: 47.377378&quot;,</span>
+<span class="c1">#     &quot;process&quot;: { &quot;dag&quot;: &quot;cde&quot;, &quot;host&quot;: &quot;myhost&quot;, &quot;name&quot;: &quot;myprocess&quot;, &quot;task&quot;: &quot;abc&quot; },</span>
+<span class="c1">#     &quot;source&quot;: { &quot;instance&quot;: &quot;postgres: //host:5432/db&quot;, &quot;name&quot;: &quot;schema.table&quot; },</span>
+<span class="c1">#     &quot;type&quot;: &quot;int&quot;,</span>
+<span class="c1">#     &quot;value&quot;: &quot;123&quot;,</span>
+<span class="c1">#   },</span>
+<span class="c1"># ]</span>
+
+<span class="c1"># for file HWM</span>
+<span class="c1"># [</span>
+<span class="c1">#   {</span>
+<span class="c1">#     &quot;modified_time&quot;: &quot;2023-12-18T11:15:36.478462&quot;,</span>
+<span class="c1">#     &quot;process&quot;: { &quot;dag&quot;: &quot;cde&quot;, &quot;host&quot;: &quot;myhost&quot;, &quot;name&quot;: &quot;myprocess&quot;, &quot;task&quot;: &quot;abc&quot; },</span>
+<span class="c1">#     &quot;source&quot;: { &quot;instance&quot;: &quot;ftp://ftp.server:21&quot;, &quot;name&quot;: &quot;/absolute/path&quot; },</span>
+<span class="c1">#     &quot;type&quot;: &quot;file_list&quot;,</span>
+<span class="c1">#     &quot;value&quot;: [&quot;file1.txt&quot;, &quot;file2.txt&quot;],</span>
+<span class="c1">#   },</span>
+<span class="c1"># ]</span>
+
+
+<span class="c1"># Convert file content to new structure, compatible with onETL 0.10.x</span>
+<span class="n">raw_new_hwm_items</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">old_hwm</span> <span class="ow">in</span> <span class="n">raw_old_hwm_items</span><span class="p">:</span>
+    <span class="n">new_hwm</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">qualified_name</span><span class="p">,</span> <span class="s2">&quot;modified_time&quot;</span><span class="p">:</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;modified_time&quot;</span><span class="p">]}</span>
+
+    <span class="k">if</span> <span class="s2">&quot;column&quot;</span> <span class="ow">in</span> <span class="n">old_hwm</span><span class="p">:</span>
+        <span class="n">new_hwm</span><span class="p">[</span><span class="s2">&quot;expression&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;column&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+    <span class="n">new_hwm</span><span class="p">[</span><span class="s2">&quot;entity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+    <span class="n">old_hwm</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;process&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;int&quot;</span><span class="p">:</span>
+        <span class="n">new_hwm</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;column_int&quot;</span>
+        <span class="n">new_hwm</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;date&quot;</span><span class="p">:</span>
+        <span class="n">new_hwm</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;column_date&quot;</span>
+        <span class="n">new_hwm</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;datetime&quot;</span><span class="p">:</span>
+        <span class="n">new_hwm</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;column_datetime&quot;</span>
+        <span class="n">new_hwm</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;file_list&quot;</span><span class="p">:</span>
+        <span class="n">new_hwm</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;file_list&quot;</span>
+        <span class="n">new_hwm</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">fspath</span><span class="p">(</span><span class="n">PurePosixPath</span><span class="p">(</span><span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">old_hwm</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+        <span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;WAT?&quot;</span><span class="p">)</span>
+
+    <span class="n">raw_new_hwm_items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_hwm</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">raw_new_hwm_items</span><span class="p">)</span>
+<span class="c1"># for column HWM</span>
+<span class="c1"># [</span>
+<span class="c1">#   {</span>
+<span class="c1">#     &quot;name&quot;: &quot;col1#schema.table@postgres://host:5432/db#cde.abc.myprocess@myhost&quot;,</span>
+<span class="c1">#     &quot;modified_time&quot;: &quot;2023-12-18T10:39:47.377378&quot;,</span>
+<span class="c1">#     &quot;expression&quot;: &quot;col1&quot;,</span>
+<span class="c1">#     &quot;source&quot;: &quot;schema.table&quot;,</span>
+<span class="c1">#     &quot;type&quot;: &quot;column_int&quot;,</span>
+<span class="c1">#     &quot;value&quot;: 123,</span>
+<span class="c1">#   },</span>
+<span class="c1"># ]</span>
+
+<span class="c1"># for file HWM</span>
+<span class="c1"># [</span>
+<span class="c1">#   {</span>
+<span class="c1">#     &quot;name&quot;: &quot;file_list#/absolute/path@ftp://ftp.server:21#cde.abc.myprocess@myhost&quot;,</span>
+<span class="c1">#     &quot;modified_time&quot;: &quot;2023-12-18T11:15:36.478462&quot;,</span>
+<span class="c1">#     &quot;entity&quot;: &quot;/absolute/path&quot;,</span>
+<span class="c1">#     &quot;type&quot;: &quot;file_list&quot;,</span>
+<span class="c1">#     &quot;value&quot;: [&quot;/absolute/path/file1.txt&quot;, &quot;/absolute/path/file2.txt&quot;],</span>
+<span class="c1">#   },</span>
+<span class="c1"># ]</span>
+
+
+<span class="c1"># Save file with new content</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">hwm_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">dump</span><span class="p">(</span><span class="n">raw_new_hwm_items</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+
+
+<span class="c1"># Stop Python interpreter and update onETL</span>
+<span class="c1"># pip install onetl==0.10.0</span>
+<span class="c1"># Check that new .yml file can be read</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">onetl.hwm.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">YAMLHWMStore</span>
+
+<span class="n">qualified_name</span> <span class="o">=</span> <span class="o">...</span>
+
+<span class="c1"># here you should pass the same arguments as used on production, if any</span>
+<span class="n">yaml_hwm_store</span> <span class="o">=</span> <span class="n">YAMLHWMStore</span><span class="p">()</span>
+<span class="n">yaml_hwm_store</span><span class="o">.</span><span class="n">get_hwm</span><span class="p">(</span><span class="n">qualified_name</span><span class="p">)</span>
+
+<span class="c1"># for column HWM</span>
+<span class="c1"># ColumnIntHWM(</span>
+<span class="c1">#     name=&#39;col1#schema.table@postgres://host:5432/db#cde.abc.myprocess@myhost&#39;,</span>
+<span class="c1">#     description=&#39;&#39;,</span>
+<span class="c1">#     entity=&#39;schema.table&#39;,</span>
+<span class="c1">#     value=123,</span>
+<span class="c1">#     expression=&#39;col1&#39;,</span>
+<span class="c1">#     modified_time=datetime.datetime(2023, 12, 18, 10, 39, 47, 377378),</span>
+<span class="c1"># )</span>
+
+<span class="c1"># for file HWM</span>
+<span class="c1"># FileListHWM(</span>
+<span class="c1">#     name=&#39;file_list#/absolute/path@ftp://ftp.server:21#cde.abc.myprocess@myhost&#39;,</span>
+<span class="c1">#     description=&#39;&#39;,</span>
+<span class="c1">#     entity=AbsolutePath(&#39;/absolute/path&#39;),</span>
+<span class="c1">#     value=frozenset({AbsolutePath(&#39;/absolute/path/file1.txt&#39;), AbsolutePath(&#39;/absolute/path/file2.txt&#39;)}),</span>
+<span class="c1">#     expression=None,</span>
+<span class="c1">#     modified_time=datetime.datetime(2023, 12, 18, 11, 15, 36, 478462)</span>
+<span class="c1"># )</span>
+
+
+<span class="c1"># That&#39;s all!</span>
+</code></pre></div>
+</details>
+<p>But most of users use other HWM store implementations which do not have such issues.</p>
+<ul>
+<li>Several classes and functions were moved from <code>onetl</code> to <code>etl_entities</code>:</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">onETL <code>0.9.x</code> and older</label><label for="__tabbed_1_2">nETL <code>0.10.x</code> and newer</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>    <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.hwm.store</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">detect_hwm_store</span><span class="p">,</span>
+        <span class="n">BaseHWMStore</span><span class="p">,</span>
+        <span class="n">HWMStoreClassRegistry</span><span class="p">,</span>
+        <span class="n">register_hwm_store_class</span><span class="p">,</span>
+        <span class="n">HWMStoreManager</span><span class="p">,</span>
+        <span class="n">MemoryHWMStore</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>    <span class="kn">from</span><span class="w"> </span><span class="nn">etl_entities.hwm_store</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">detect_hwm_store</span><span class="p">,</span>
+        <span class="n">BaseHWMStore</span><span class="p">,</span>
+        <span class="n">HWMStoreClassRegistry</span><span class="p">,</span>
+        <span class="n">register_hwm_store_class</span><span class="p">,</span>
+        <span class="n">HWMStoreManager</span><span class="p">,</span>
+        <span class="n">MemoryHWMStore</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>They still can be imported from old module, but this is deprecated and will be removed in v1.0.0 release.</p>
+<ul>
+<li>Change the way of passing <code>HWM</code> to <code>DBReader</code> and <code>FileDownloader</code> classes:</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">onETL <code>0.9.x</code> and older</label><label for="__tabbed_2_2">onETL <code>0.10.x</code> and newer</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Simple</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">source</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">hwm_column</span><span class="o">=</span><span class="s2">&quot;col1&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+
+
+
+<span class="hll"><span class="c1"># Complex</span>
+</span><span class="hll"><span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+</span><span class="hll">    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+</span><span class="hll">    <span class="n">source</span><span class="o">=...</span><span class="p">,</span>
+</span><span class="hll">    <span class="n">hwm_column</span><span class="o">=</span><span class="p">(</span>
+</span><span class="hll">        <span class="s2">&quot;col1&quot;</span><span class="p">,</span>
+</span><span class="hll">        <span class="s2">&quot;cast(col1 as date)&quot;</span><span class="p">,</span>
+</span><span class="hll">    <span class="p">),</span>
+</span><span class="hll"><span class="p">)</span>
+</span><span class="hll">
+</span>
+<span class="c1"># Files</span>
+<span class="n">downloader</span> <span class="o">=</span> <span class="n">FileDownloader</span><span class="p">(</span>
+    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">source_path</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">target_path</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">hwm_type</span><span class="o">=</span><span class="s2">&quot;file_list&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># Simple</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">source</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">hwm</span><span class="o">=</span><span class="n">DBReader</span><span class="o">.</span><span class="n">AutoDetectHWM</span><span class="p">(</span>
+        <span class="c1"># name is mandatory now!</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_unique_hwm_name&quot;</span><span class="p">,</span>
+        <span class="n">expression</span><span class="o">=</span><span class="s2">&quot;col1&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="hll"><span class="c1"># Complex</span>
+</span><span class="hll"><span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+</span><span class="hll">    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+</span><span class="hll">    <span class="n">source</span><span class="o">=...</span><span class="p">,</span>
+</span><span class="hll">    <span class="n">hwm</span><span class="o">=</span><span class="n">DBReader</span><span class="o">.</span><span class="n">AutoDetectHWM</span><span class="p">(</span>
+</span><span class="hll">        <span class="c1"># name is mandatory now!</span>
+</span><span class="hll">        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_unique_hwm_name&quot;</span><span class="p">,</span>
+</span><span class="hll">        <span class="n">expression</span><span class="o">=</span><span class="s2">&quot;cast(col1 as date)&quot;</span><span class="p">,</span>
+</span><span class="hll">    <span class="p">),</span>
+</span><span class="hll"><span class="p">)</span>
+</span>
+<span class="c1"># Files</span>
+<span class="n">downloader</span> <span class="o">=</span> <span class="n">FileDownloader</span><span class="p">(</span>
+    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">source_path</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">target_path</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">hwm</span><span class="o">=</span><span class="n">FileListHWM</span><span class="p">(</span>
+        <span class="c1"># name is mandatory now!</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;another_unique_hwm_name&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>New HWM classes have <strong>mandatory</strong> <code>name</code> attribute which should be passed explicitly,
+  instead of generating if automatically under the hood.</p>
+<p>Automatic <code>name</code> generation using the old <code>DBReader.hwm_column</code> / <code>FileDownloader.hwm_type</code>
+  syntax is still supported, but will be removed in v1.0.0 release. (<a href="https://github.com/MobileTeleSystems/onetl/pull/179">#179</a>)</p>
+<ul>
+<li>Performance of read Incremental and Batch strategies has been drastically improved. (<a href="https://github.com/MobileTeleSystems/onetl/pull/182">#182</a>).</li>
+</ul>
+<details>
+<summary>Before and after in details</summary>
+<p><code>DBReader.run()</code> + incremental/batch strategy behavior in versions 0.9.x and older:</p>
+<ul>
+<li>Get table schema by making query <code>SELECT * FROM table WHERE 1=0</code> (if <code>DBReader.columns</code> has <code>*</code>)</li>
+<li>Expand <code>*</code> to real column names from table, add here <code>hwm_column</code>, remove duplicates (as some RDBMS does not allow that).</li>
+<li>Create dataframe from query like <code>SELECT hwm_expression AS hwm_column, ...other table columns... FROM table WHERE hwm_expression &gt; prev_hwm.value</code>.</li>
+<li>Determine HWM class using dataframe schema: <code>df.schema[hwm_column].dataType</code>.</li>
+<li>Determine x HWM column value using Spark: <code>df.select(max(hwm_column)).collect()</code>.</li>
+<li>Use <code>max(hwm_column)</code> as next HWM value, and save it to HWM Store.</li>
+<li>Return dataframe to user.</li>
+</ul>
+<p>This was far from ideal:</p>
+<ul>
+<li>
+<p>Dataframe content (all rows or just changed ones) was loaded from the source to Spark only to get min/max values of specific column.</p>
+</li>
+<li>
+<p>Step of fetching table schema and then substituting column names in the next query caused some unexpected errors.</p>
+<p>For example, source contains columns with mixed name case, like <code>"CamelColumn"</code> or <code>"spaced column"</code>.</p>
+<p>Column names were <em>not</em> escaped during query generation, leading to queries that cannot be executed by database.</p>
+<p>So users have to <em>explicitly</em> pass column names <code>DBReader</code>, wrapping columns with mixed naming with <code>"</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">source</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span>  <span class="c1"># passing &#39;*&#39; here leads to wrong SQL query generation</span>
+        <span class="s2">&quot;normal_column&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;&quot;CamelColumn&quot;&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;&quot;spaced column&quot;&#39;</span><span class="p">,</span>
+        <span class="o">...</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+</code></pre></div>
+</li>
+<li>
+<p>Using <code>DBReader</code> with <code>IncrementalStrategy</code> could lead to reading rows already read before.</p>
+<p>Dataframe was created from query with WHERE clause like <code>hwm.expression &gt; prev_hwm.value</code>,
+not <code>hwm.expression &gt; prev_hwm.value AND hwm.expression &lt;= current_hwm.value</code>.</p>
+<p>So if new rows appeared in the source <strong>after</strong> HWM value is determined,
+they can be read by accessing dataframe content (because Spark dataframes are lazy),
+leading to inconsistencies between HWM value and dataframe content.</p>
+<p>This may lead to issues then <code>DBReader.run()</code> read some data, updated HWM value, and next call of <code>DBReader.run()</code>
+will read rows that were already read in previous run.</p>
+</li>
+</ul>
+<p><code>DBReader.run()</code> + incremental/batch strategy behavior in versions 0.10.x and newer:</p>
+<ul>
+<li>Detect type of HWM expression: <code>SELECT hwm.expression FROM table WHERE 1=0</code>.</li>
+<li>Determine corresponding Spark type <code>df.schema[0]</code> and when determine matching HWM class (if <code>DBReader.AutoDetectHWM</code> is used).</li>
+<li>Get min/max values by querying the source: <code>SELECT MAX(hwm.expression) FROM table WHERE hwm.expression &gt;= prev_hwm.value</code>.</li>
+<li>Use <code>max(hwm.expression)</code> as next HWM value, and save it to HWM Store.</li>
+<li>Create dataframe from query <code>SELECT ... table columns ... FROM table WHERE hwm.expression &gt; prev_hwm.value AND hwm.expression &lt;= current_hwm.value</code>, baking new HWM value into the query.</li>
+<li>Return dataframe to user.</li>
+</ul>
+</details>
+<p>Improvements:</p>
+<ul>
+<li>Allow source to calculate min/max instead of loading everything to Spark. This should be <strong>faster</strong> on large amounts of data (<strong>up to x2</strong>), because we do not transfer all the data from the source to Spark. This can be even faster if source have indexes for HWM column.</li>
+<li>Columns list is passed to source as-is, without any resolving on <code>DBReader</code> side. So you can pass <code>DBReader(columns=["*"])</code> to read tables with mixed columns naming.</li>
+<li>Restrict dataframe content to always match HWM values, which leads to never reading the same row twice.</li>
+</ul>
+<p><strong>Breaking change</strong>: HWM column is not being implicitly added to dataframe. It was a part of <code>SELECT</code> clause, but now it is mentioned only in <code>WHERE</code> clause.</p>
+<p>So if you had code like this, you have to rewrite it:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">onETL <code>0.9.x</code> and older</label><label for="__tabbed_3_2">onETL <code>0.10.x</code> and newer</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="hll"><span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+</span><span class="hll">    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+</span><span class="hll">    <span class="n">source</span><span class="o">=...</span><span class="p">,</span>
+</span><span class="hll">    <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+</span><span class="hll">        <span class="s2">&quot;col1&quot;</span><span class="p">,</span>
+</span><span class="hll">        <span class="s2">&quot;col2&quot;</span><span class="p">,</span>
+</span><span class="hll">    <span class="p">],</span>
+</span><span class="hll">    <span class="n">hwm_column</span><span class="o">=</span><span class="s2">&quot;hwm_col&quot;</span><span class="p">,</span>
+</span><span class="hll"><span class="p">)</span>
+</span><span class="hll">
+</span><span class="hll"><span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span class="hll"><span class="c1"># hwm_column value is in the dataframe</span>
+</span><span class="hll"><span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;col1&quot;</span><span class="p">,</span> <span class="s2">&quot;col2&quot;</span><span class="p">,</span> <span class="s2">&quot;hwm_col&quot;</span><span class="p">]</span>
+</span><span class="hll">
+</span><span class="hll">
+</span><span class="hll">
+</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">source</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+        <span class="s2">&quot;col1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;col2&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n">hwm_column</span><span class="o">=</span><span class="p">(</span>
+        <span class="s2">&quot;hwm_col&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cast(hwm_col as int)&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="c1"># hwm_expression value is in the dataframe</span>
+<span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;col1&quot;</span><span class="p">,</span> <span class="s2">&quot;col2&quot;</span><span class="p">,</span> <span class="s2">&quot;hwm_col&quot;</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="hll"><span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+</span><span class="hll">    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+</span><span class="hll">    <span class="n">source</span><span class="o">=...</span><span class="p">,</span>
+</span><span class="hll">    <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+</span><span class="hll">        <span class="s2">&quot;col1&quot;</span><span class="p">,</span>
+</span><span class="hll">        <span class="s2">&quot;col2&quot;</span><span class="p">,</span>
+</span><span class="hll">        <span class="c1"># add hwm_column explicitly</span>
+</span><span class="hll">        <span class="s2">&quot;hwm_col&quot;</span><span class="p">,</span>
+</span><span class="hll">    <span class="p">],</span>
+</span><span class="hll">    <span class="n">hwm_column</span><span class="o">=</span><span class="s2">&quot;hwm_col&quot;</span><span class="p">,</span>
+</span><span class="hll"><span class="p">)</span>
+</span><span class="hll">
+</span><span class="hll"><span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span class="hll"><span class="c1"># if columns list is not updated,</span>
+</span><span class="hll"><span class="c1"># this fill fail</span>
+</span><span class="hll"><span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;col1&quot;</span><span class="p">,</span> <span class="s2">&quot;col2&quot;</span><span class="p">,</span> <span class="s2">&quot;hwm_col&quot;</span><span class="p">]</span>
+</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+    <span class="n">connection</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">source</span><span class="o">=...</span><span class="p">,</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+        <span class="s2">&quot;col1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;col2&quot;</span><span class="p">,</span>
+        <span class="c1"># add hwm_expression explicitly</span>
+        <span class="s2">&quot;cast(hwm_col as int) as hwm_col&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n">hwm_column</span><span class="o">=</span><span class="p">(</span>
+        <span class="s2">&quot;hwm_col&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cast(hwm_col as int)&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="c1"># if columns list is not updated,</span>
+<span class="c1"># this fill fail</span>
+<span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;col1&quot;</span><span class="p">,</span> <span class="s2">&quot;col2&quot;</span><span class="p">,</span> <span class="s2">&quot;hwm_col&quot;</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>But most users just use <code>columns=["*"]</code> anyway, they won't see any changes.</p>
+<ul>
+<li><code>FileDownloader.run()</code> now updates HWM in HWM Store not after each file is being successfully downloaded,
+  but after all files were handled.</li>
+</ul>
+<p>This is because:</p>
+<ul>
+<li>FileDownloader can be used with <code>DownloadOptions(workers=N)</code>, which could lead to race condition - one thread can save to HWM store one HWM value when another thread will save different value.</li>
+<li>FileDownloader can download hundreds and thousands of files, and issuing a request to HWM Store for each file could potentially DDoS HWM Store. (<a href="https://github.com/MobileTeleSystems/onetl/pull/189">#189</a>)</li>
+</ul>
+<p>There is a exception handler which tries to save HWM to HWM store if download process was interrupted. But if it was interrupted by force, like sending <code>SIGKILL</code> event,
+  HWM will not be saved to HWM store, so some already downloaded files may be downloaded again next time.</p>
+<p>But unexpected process kill may produce other negative impact, like some file will be downloaded partially, so this is an expected behavior.</p>
+<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Add Python 3.12 compatibility. (<a href="https://github.com/MobileTeleSystems/onetl/pull/167">#167</a>)</li>
+<li><code>Excel</code> file format now can be used with Spark 3.5.0. (<a href="https://github.com/MobileTeleSystems/onetl/pull/187">#187</a>)</li>
+<li><code>SnapshotBatchStagy</code> and <code>IncrementalBatchStrategy</code> does no raise exceptions if source does not contain any data.
+  Instead they stop at first iteration and return empty dataframe. (<a href="https://github.com/MobileTeleSystems/onetl/pull/188">#188</a>)</li>
+<li>Cache result of <code>connection.check()</code> in high-level classes like <code>DBReader</code>, <code>FileDownloader</code> and so on. This makes logs less verbose. (<a href="https://github.com/MobileTeleSystems/onetl/pull/190">#190</a>)</li>
+</ul>
+<h2 id="bug-fixes">Bug Fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Fix <code>@slot</code> and <code>@hook</code> decorators returning methods with missing arguments in signature (Pylance, VS Code). (<a href="https://github.com/MobileTeleSystems/onetl/pull/183">#183</a>)</li>
+<li>Kafka connector documentation said that it does support reading topic data incrementally by passing <code>group.id</code> or <code>groupIdPrefix</code>.
+  Actually, this is not true, because Spark does not send information to Kafka which messages were consumed.
+  So currently users can only read the whole topic, no incremental reads are supported.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.tabs.link", "content.code.copy", "content.code.select"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/interaction.js"></script>
+      
+    
+  </body>
+</html>

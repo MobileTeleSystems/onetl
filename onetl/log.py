@@ -46,23 +46,22 @@ def setup_notebook_logging(level: int | str = logging.INFO) -> None:
         * Changes onETL logger level to ``level``
         * Disables loggers of underlying client modules
 
-    .. note::
+    !!! note
 
         Should be used only in IDEs (like Jupyter notebooks or PyCharm),
         or scripts (ETL pipelines).
 
-    .. warning::
+    !!! warning
 
         Should **NOT** be used in applications, you should set up logging settings manually,
         according to your framework documentation.
 
-    .. deprecated:: 0.5.0
+    !!! danger "deprecated 0.5.0"
         Use :obj:`~setup_logging` instead
 
-    Parameters
-    ----------
-    level : ``int`` or ``str``, default ``INFO``
-        Log level for onETL module
+    Parameters:
+        level: ``int`` or ``str``, default ``INFO``
+            Log level for onETL module
     """
 
     setup_logging(level)
@@ -78,28 +77,27 @@ def setup_logging(level: int | str = logging.INFO, enable_clients: bool = False)
         * Changes onETL logger level to ``level``
         * Sets up logging level of underlying client modules
 
-    .. note::
+    !!! note
 
         Should be used only in IDEs (like Jupyter notebooks or PyCharm),
         or scripts (ETL pipelines).
 
-    .. versionchanged:: 0.5.0
+    !!! info "version changed 0.5.0"
+    
         Renamed ``setup_notebook_logging`` → ``setup_logging``
 
-    Parameters
-    ----------
-    level : ``int`` or ``str``, default ``INFO``
-        Log level for onETL module
+    Parameters:
+        level: ``int`` or ``str``, default ``INFO``
+            Log level for onETL module
+        enable_clients: ``bool``, default ``False``
+            If ``True``, enable logging of underlying client modules.
+            Otherwise, set client modules log level to ``DISABLED``.
 
-    enable_clients : ``bool``, default ``False``
-        If ``True``, enable logging of underlying client modules.
-        Otherwise, set client modules log level to ``DISABLED``.
+    !!! note
 
-        .. note::
+        For ``level="DEBUG"`` it is recommended to use ``enable_clients=True``
 
-            For ``level="DEBUG"`` it is recommended to use ``enable_clients=True``
-
-        .. versionadded:: 0.9.0
+    !!! info "version added 0.9.0"
     """
 
     logging.basicConfig(level=level)
@@ -121,25 +119,24 @@ def setup_clients_logging(level: int | str = DISABLED) -> None:
         * ``pyspark``
         * ``webdav3``
 
-    .. note::
+    !!! note
 
         Can be used in applications, but it is recommended to set up these loggers
         according to your framework documentation.
 
-    .. versionchanged:: 0.9.0
+    !!! info "version changed 0.9.0"
         Renamed ``disable_clients_logging`` → ``setup_clients_logging``
 
-    Parameters
-    ----------
-    level : ``int`` or ``str``, default ``DISABLED``
-        Log level for client modules
+    Parameters:
+        level: ``int`` or ``str``, default ``DISABLED``
+            Log level for client modules
 
-        .. note::
+    !!! note
 
-            For ``py4j``, logging level with maximum verbosity is ``INFO`` because ``DEBUG`` logs are
-            totally unreadable.
+        For ``py4j``, logging level with maximum verbosity is ``INFO`` because ``DEBUG`` logs are
+        totally unreadable.
 
-        .. versionadded:: 0.9.0
+    !!! info "version added 0.9.0"
     """
 
     for client_module in CLIENT_MODULES:
@@ -155,12 +152,12 @@ def set_default_logging_format() -> None:
 
     Example log message: ``2023-05-31 11:22:33.456 [INFO] MainThread: message``
 
-    .. note::
+    !!! note
 
         Should be used only in IDEs (like Jupyter notebooks or PyCharm),
         or scripts (ETL pipelines).
 
-    .. warning::
+    !!! warning
 
         Should **NOT** be used in applications, you should set up logging settings manually,
         according to your framework documentation.
@@ -192,25 +189,23 @@ def log_with_indent(
 
     Supports all positional and keyword arguments which ``logging.log`` support.
 
-    Example
-    -------
+    Example:
 
-    .. code:: python
+        ```python
+            log_with_indent(logger, "message")
+            log_with_indent(
+                logger,
+                "message with additional %s",
+                "indent",
+                indent=4,
+                level=logging.DEBUG,
+            )
+        ```
+        ```text
 
-        log_with_indent(logger, "message")
-        log_with_indent(
-            logger,
-            "message with additional %s",
-            "indent",
-            indent=4,
-            level=logging.DEBUG,
-        )
-
-    .. code-block:: text
-
-        INFO  onetl.module        message
-        DEBUG onetl.module            message with additional indent
-
+            INFO  onetl.module        message
+            DEBUG onetl.module            message with additional indent
+        ```
     """
     _log(logger, "%s" + inp, " " * (BASE_LOG_INDENT + indent), *args, level=level, stacklevel=stacklevel + 1, **kwargs)
 
@@ -229,23 +224,22 @@ def log_lines(
 
     Does NOT support variable substitution.
 
-    Examples
-    --------
+    Examples:
 
-    .. code:: python
-
+    ```python
         log_lines(logger, "line1\nline2")
         log_lines(logger, "  line1\n      line2\n  line3", level=logging.DEBUG)
+    ```
 
-    .. code-block:: text
+    ```text
 
         INFO  onetl.module        line1
         INFO  onetl.module        line2
 
         DEBUG onetl.module        line1
-        DEBUG onetl.module            line2
+        DEBUG onetl.module        line2
         DEBUG onetl.module        line3
-
+    ```
     """
 
     base_indent = " " * (BASE_LOG_INDENT + indent)
@@ -269,16 +263,16 @@ def log_json(
 
     Does NOT support variable substitution.
 
-    Examples
-    --------
+    Examples:
 
-    .. code:: python
+    ```python
 
         log_json(logger, ["item1", {"item2": "value2"}, None])
 
         log_json(logger, {"item2": "value2"}, name="myvar", level=logging.DEBUG)
+    ```
 
-    .. code-block:: text
+    ```text
 
         INFO  onetl.module        [
         INFO  onetl.module            "item1",
@@ -289,7 +283,7 @@ def log_json(
         DEBUG onetl.module        myvar = {
         DEBUG onetl.module            "item2": "value2"
         DEBUG onetl.module        }
-
+    ```
     """
 
     log_lines(logger, json.dumps(inp, indent=4), name, indent, level, stacklevel=stacklevel + 1)
@@ -308,10 +302,9 @@ def log_collection(
 
     Does NOT support variable substitution.
 
-    Examples
-    --------
+    Examples:
 
-    .. code:: python
+    ```python
 
         log_collection(logger, "myvar", [])
         log_collection(logger, "myvar", ["item1", {"item2": "value2"}, None])
@@ -325,8 +318,9 @@ def log_collection(
             max_items=1,
             level=logging.DEBUG,
         )
+    ```
 
-    .. code-block:: text
+    ```text
 
         INFO  onetl.module        myvar = []
 
@@ -358,7 +352,7 @@ def log_collection(
         DEBUG onetl.module            'item2',
         DEBUG onetl.module            'item3',
         DEBUG onetl.module        ]
-
+    ```
     """
 
     base_indent = " " * (BASE_LOG_INDENT + indent)
@@ -411,19 +405,19 @@ def log_collection(
 def entity_boundary_log(logger: logging.Logger, msg: str, char: str = "=", stacklevel: int = 1) -> None:
     """Prints message with boundary characters.
 
-    Examples
-    --------
+    Examples:
 
-    .. code:: python
+    ```python
 
         entity_boundary_log(logger, "Begin")
         entity_boundary_log(logger, "End", "-")
+    ```
 
-    .. code-block:: text
+    ```text
 
         =================== Begin ====================
         ------------------- End ----------------------
-
+    ```
     """
     filing = char * (HALF_SCREEN_SIZE - len(msg) // 2)
     _log(logger, "%s %s %s", filing, msg, filing, stacklevel=stacklevel + 1)
@@ -439,10 +433,9 @@ def log_options(
 ):
     """Log options dict in following format:
 
-    Examples
-    --------
+    Examples:
 
-    .. code:: python
+    ```python
 
         log_options(
             logger,
@@ -451,8 +444,9 @@ def log_options(
             ),
         )
         log_options(logger, None)
+    ```
 
-    .. code-block:: text
+    ```text
 
         INFO  onetl.module        options = {
         INFO  onetl.module            'some': 'value',
@@ -463,7 +457,7 @@ def log_options(
         INFO  onetl.module        }
 
         INFO  onetl.module        options = None
-
+    ```
     """
 
     stacklevel += 1
@@ -488,19 +482,19 @@ def log_options(
 def log_dataframe_schema(logger: logging.Logger, df: DataFrame, indent: int = 0, stacklevel: int = 1):
     """Log dataframe schema in the following format:
 
-    Examples
-    --------
+    Examples:
 
-    .. code:: python
+    ```python
 
         log_dataframe_schema(logger, df)
+    ```
 
-    .. code-block:: text
+    ```text
 
         root
         |-- age: integer (nullable = true)
         |-- name: string (nullable = true)
-
+    ```
     """
 
     stacklevel += 1
@@ -519,15 +513,15 @@ def log_dataframe_schema(logger: logging.Logger, df: DataFrame, indent: int = 0,
 def log_hwm(logger: logging.Logger, hwm: HWM, indent: int = 0, stacklevel: int = 1):
     """Log HWM in the following format:
 
-    Examples
-    --------
+    Examples:
 
-    .. code:: python
+    ```python
 
         hwm = ColumnIntHWM(name="my_unique_name", source="my_source", value=123)
         log_hwm(logger, hwm)
+    ```
 
-    .. code-block:: text
+    ```text
 
         INFO  onetl.module        hwm = ColumnIntHWM(
         INFO  onetl.module            name = "my_unique_name",
@@ -535,8 +529,9 @@ def log_hwm(logger: logging.Logger, hwm: HWM, indent: int = 0, stacklevel: int =
         INFO  onetl.module            expression = None,
         INFO  onetl.module            value = 123,
         INFO  onetl.module        )
+    ```
 
-    .. code-block:: text
+    ```text
 
         INFO  onetl.module        hwm = FileListHWM(
         INFO  onetl.module            name = "my_unique_name",
@@ -548,6 +543,7 @@ def log_hwm(logger: logging.Logger, hwm: HWM, indent: int = 0, stacklevel: int =
         INFO  onetl.module                AbsolutePath("/some/file3.csv"),
         INFO  onetl.module            ]
         INFO  onetl.module        )
+    ```
     """
     stacklevel += 1
 

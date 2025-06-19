@@ -1,0 +1,1460 @@
+
+<!doctype html>
+<html lang="ru" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../../assets/images/icon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>0.7.0 (2023-05-15) - Документация onETL</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/autodoc_pydantic.css">
+    
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/interaction.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#070-2023-05-15" class="md-skip">
+          Перейти к содержанию
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
+    <a href="../.." title="Документация onETL" class="md-header__button md-logo" aria-label="Документация onETL" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Документация onETL
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              0.7.0 (2023-05-15)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Выберите язык">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="/en/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/ru/" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Навигация" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Документация onETL" class="md-nav__button md-logo" aria-label="Документация onETL" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    Документация onETL
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Архитектура библиотеки
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Быстрый старт
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Руководство по участию
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Безопасность
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../logging" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Логирование
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plugins" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Плагины
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    changelog
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            changelog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.13.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.13.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.12.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.12.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.11.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.11.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.11.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.11.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.10.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.10.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.10.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.10.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.5" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.5
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.4" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.4
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.3" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.9.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.9.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.8.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.8.0" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.8.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.7.2" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.2
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0.7.1" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.1
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    0.7.0
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Содержание">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Содержание
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl" class="md-nav__link">
+    <span class="md-ellipsis">
+      🎉 onETL теперь с открытым исходным кодом 🎉
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Критические изменения
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Функциональность
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Улучшения
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Исправление ошибок
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="070-2023-05-15">0.7.0 (2023-05-15)<a class="headerlink" href="#070-2023-05-15" title="Permanent link">&para;</a></h1>
+<h2 id="onetl">🎉 onETL теперь с открытым исходным кодом 🎉<a class="headerlink" href="#onetl" title="Permanent link">&para;</a></h2>
+<p>Это была долгая дорога, но мы наконец-то преодолели её!</p>
+<h2 id="_1">Критические изменения<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Изменен способ установки.</li>
+</ul>
+<p><strong>TL;DR Что нужно изменить, чтобы восстановить предыдущее поведение</strong></p>
+<p>Простой способ:</p>
+<table>
+<thead>
+<tr>
+<th>onETL &lt; 0.7.0</th>
+<th>onETL &gt;= 0.7.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pip install onetl</td>
+<td>pip install onetl[files,kerberos]</td>
+</tr>
+</tbody>
+</table>
+<p>Правильный способ - перечислить коннекторы, которые должны быть установлены:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>hdfs,ftp,kerberos<span class="o">]</span><span class="w">  </span><span class="c1"># кроме подключений к БД</span>
+</code></pre></div>
+<p><strong>Подробности</strong></p>
+<p>В onetl&lt;0.7 установка пакета выглядит так:</p>
+<div class="highlight"><span class="filename">До</span><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>onetl
+</code></pre></div>
+<p>Но это включает в себя все зависимости для всех коннекторов, даже если пользователь их не использует.
+  Это вызывало некоторые проблемы, например, пользователю приходилось устанавливать библиотеки Kerberos, чтобы иметь возможность установить onETL, даже если он использует только S3 (без поддержки Kerberos).</p>
+<p>Начиная с версии 0.7.0 процесс установки был изменен:</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">После</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="w">  </span><span class="c1"># минимальная установка, только ядро onETL</span>
+<span class="c1"># нет extras для подключений к БД, потому что они используют Java пакеты, которые устанавливаются во время выполнения</span>
+
+pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>ftp,ftps,hdfs,sftp,s3,webdav<span class="o">]</span><span class="w">  </span><span class="c1"># установить зависимости для указанных файловых подключений</span>
+pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>files<span class="o">]</span><span class="w">  </span><span class="c1"># установить зависимости для всех файловых подключений</span>
+
+pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>kerberos<span class="o">]</span><span class="w">  </span><span class="c1"># Поддержка аутентификации Kerberos</span>
+pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>spark<span class="o">]</span><span class="w">  </span><span class="c1"># установить PySpark для использования подключений к БД</span>
+
+pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>spark,kerberos,files<span class="o">]</span><span class="w">  </span><span class="c1"># все файловые подключения + Kerberos + PySpark</span>
+pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>all<span class="o">]</span><span class="w">  </span><span class="c1"># алиас для предыдущего случая</span>
+</code></pre></div></td></tr></table></div>
+<p>Для каждого extras есть соответствующие элементы документации.</p>
+<p>Кроме того, onETL проверяет, что некоторые требования отсутствуют, и выдает исключение с рекомендацией, как их установить:</p>
+<div class="highlight"><span class="filename">исключение при импорте подключения Clickhouse</span><pre><span></span><code>Cannot import module &quot;pyspark&quot;.
+
+Since onETL v0.7.0 you should install package as follows:
+    pip install onetl[spark]
+
+or inject PySpark to sys.path in some other way BEFORE creating MongoDB instance.
+</code></pre></div>
+<div class="highlight"><span class="filename">исключение при импорте подключения FTP</span><pre><span></span><code>Cannot import module &quot;ftputil&quot;.
+
+Since onETL v0.7.0 you should install package as follows:
+    pip install onetl[ftp]
+
+or
+    pip install onetl[files]
+</code></pre></div>
+<ul>
+<li>Добавлен новый аргумент <code>cluster</code> для подключений <code>Hive</code> и <code>HDFS</code>.</li>
+</ul>
+<p>Полное имя <code>Hive</code> (используемое в HWM) содержит имя кластера. Но в onETL&lt;0.7.0 имя кластера имело не изменяемое значение <code>rnd-dwh</code>, что не подходило некоторым пользователям.</p>
+<p>Полное имя соединения <code>HDFS</code> содержит имя хоста (активной namenode кластера Hadoop), но его значение может меняться со временем, что приводит к созданию нового HWM.</p>
+<p>Начиная с onETL 0.7.0, оба подключения <code>Hive</code> и <code>HDFS</code> имеют атрибут <code>cluster</code>, в котором можно установить определенное имя кластера.
+  Для <code>Hive</code> это обязательно, для <code>HDFS</code> это можно опустить (используя хост в качестве запасного варианта).</p>
+<p>Но передача имени кластера каждый раз может привести к ошибкам.</p>
+<p>Теперь <code>Hive</code> и <code>HDFS</code> имеют вложенный класс с именем <code>slots</code> с методами:</p>
+<ul>
+<li><code>normalize_cluster_name</code></li>
+<li><code>get_known_clusters</code></li>
+<li><code>get_current_cluster</code></li>
+<li><code>normalize_namenode_host</code> (только <code>HDFS</code>)</li>
+<li><code>get_cluster_namenodes</code> (только <code>HDFS</code>)</li>
+<li><code>get_webhdfs_port</code> (только <code>HDFS</code>)</li>
+<li><code>is_namenode_active</code> (только <code>HDFS</code>)</li>
+</ul>
+<p>И новый метод <code>HDFS.get_current</code> / <code>Hive.get_current</code>.</p>
+<p>Разработчики могут реализовать хуки, проверяющие ввод пользователя или подставляющие значения для автоматического определения кластера.
+  На наш взгляд, описанная функциональность улучшит пользовательский опыт при использовании этих коннекторов.</p>
+<p>См. документацию по slots.</p>
+<ul>
+<li>
+<p>Обновление драйверов JDBC соединений.</p>
+</li>
+<li>
+<p>Greenplum <code>2.1.3</code> → <code>2.1.4</code>.</p>
+</li>
+<li>MSSQL <code>10.2.1.jre8</code> → <code>12.2.0.jre8</code>. Минимальная поддерживаемая версия MSSQL теперь 2014 вместо 2021.</li>
+<li>MySQL <code>8.0.30</code> → <code>8.0.33</code>:<ul>
+<li>Переименован пакет <code>mysql:mysql-connector-java</code> → <code>com.mysql:mysql-connector-j</code>.</li>
+<li>Переименован класс драйвера <code>com.mysql.jdbc.Driver</code> → <code>com.mysql.cj.jdbc.Driver</code>.</li>
+</ul>
+</li>
+<li>Oracle <code>21.6.0.0.1</code> → <code>23.2.0.0</code>.</li>
+<li>Postgres <code>42.4.0</code> → <code>42.6.0</code>.</li>
+<li>Teradata <code>17.20.00.08</code> → <code>17.20.00.15</code>:<ul>
+<li>Переименован пакет <code>com.teradata.jdbc:terajdbc4</code> → <code>com.teradata.jdbc:terajdbc</code>.</li>
+<li>Драйвер Teradata теперь опубликован в Maven.</li>
+</ul>
+</li>
+</ul>
+<p>См. <a href="https://github.com/MobileTeleSystems/onetl/pull/31">#31</a>.</p>
+<h2 id="_2">Функциональность<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Добавлено подключение MongoDB.</li>
+</ul>
+<p>Используется официальный <a href="https://www.mongodb.com/docs/spark-connector/current/">MongoDB connector for Spark v10</a>. Поддерживается только Spark 3.2+.</p>
+<p>Есть некоторые различия между MongoDB и другими БД-источниками:</p>
+<ul>
+<li>Метод <code>mongodb.pipeline</code> применяется вместо <code>mongodb.sql</code>.</li>
+<li>Нет методов <code>mongodb.fetch</code> и <code>mongodb.execute</code>.</li>
+<li>Типы <code>DBReader.hint</code> и <code>DBReader.where</code> отличаются от типов для БД, поддерживающих SQL:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">where</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;col1&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;$eq&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">hint</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;col1&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+<ul>
+<li>Поскольку MongoDB не имеет схем для коллекций и Spark не может создавать dataframe с динамической схемой, была введена новая опция <code>DBReader.df_schema</code>.
+    Она обязательна для MongoDB, но необязательна для других источников.</li>
+<li>В настоящее время DBReader нельзя использовать с MongoDB и hwm выражения, например, <code>hwm_column=("mycolumn", {"$cast": {"col1": "date"}})</code></li>
+</ul>
+<p>Поскольку в MongoDB нет таблиц, в основных классах были переименованы некоторые опции:</p>
+<ul>
+<li><code>DBReader(table=...)</code> → <code>DBReader(source=...)</code></li>
+<li><code>DBWriter(table=...)</code> → <code>DBWriter(target=...)</code></li>
+</ul>
+<p>Старые имена также можно использовать, они не устарели (<a href="https://github.com/MobileTeleSystems/onetl/pull/30">#30</a>).</p>
+<ul>
+<li>Добавлена опция для отключения некоторых плагинов во время импорта.</li>
+</ul>
+<p>Ранее, если какой-либо плагин не работал во время импорта, единственным способом импортировать onETL было отключить все плагины
+  с помощью переменной окружения.</p>
+<p>Теперь есть несколько переменных с разным поведением:</p>
+<ul>
+<li><code>ONETL_PLUGINS_ENABLED=false</code> - отключить автоматический импорт всех плагинов. Ранее она называлась <code>ONETL_ENABLE_PLUGINS</code>.</li>
+<li><code>ONETL_PLUGINS_BLACKLIST=plugin-name,another-plugin</code> - установить список плагинов, которые НЕ должны импортироваться автоматически.</li>
+<li><code>ONETL_PLUGINS_WHITELIST=plugin-name,another-plugin</code> - установить список плагинов, которые должны импортироваться ТОЛЬКО автоматически.</li>
+</ul>
+<p>Ещё мы улучшили сообщение об исключении с рекомендацией, как отключить неработающий плагин:</p>
+<div class="highlight"><span class="filename">пример сообщения об ошибке</span><pre><span></span><code>Error while importing plugin &#39;mtspark&#39; from package &#39;mtspark&#39; v4.0.0.
+
+Statement:
+    import mtspark.onetl
+
+Check if plugin is compatible with current onETL version 0.7.0.
+
+You can disable loading this plugin by setting environment variable:
+    ONETL_PLUGINS_BLACKLIST=&#39;mtspark,failing-plugin&#39;
+
+You can also define a whitelist of packages which can be loaded by onETL:
+    ONETL_PLUGINS_WHITELIST=&#39;not-failing-plugin1,not-failing-plugin2&#39;
+
+Please take into account that plugin name may differ from package or module name.
+See package metadata for more details
+</code></pre></div>
+<h2 id="_3">Улучшения<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Добавлена совместимость с Python 3.11 и PySpark 3.4.0.</li>
+</ul>
+<p>Файловые подключения работали нормально, но <code>jdbc.fetch</code> и <code>jdbc.execute</code> не работали. Исправлено в <a href="https://github.com/MobileTeleSystems/onetl/pull/28">#28</a>.</p>
+<ul>
+<li>Добавлена проверка отсутствующих пакетов Java.</li>
+</ul>
+<p>Ранее, если подключение к БД пыталось использовать какой-либо Java-класс, который не был загружен в версию Spark, возникало исключение
+  с длинным stacktrace. Большинство пользователей не могли интерпретировать эту информацию.</p>
+<p>Теперь onETL показывает следующее сообщение об ошибке:</p>
+<div class="highlight"><span class="filename">пример сообщения об ошибке</span><pre><span></span><code>|Spark| Cannot import Java class &#39;com.mongodb.spark.sql.connector.MongoTableProvider&#39;.
+
+It looks like you&#39;ve created Spark session without this option:
+    SparkSession.builder.config(&quot;spark.jars.packages&quot;, MongoDB.package_spark_3_2)
+
+Please call `spark.stop()`, restart the interpreter,
+and then create new SparkSession with proper options.
+</code></pre></div>
+<ul>
+<li>
+<p>Улучшения документации.</p>
+</li>
+<li>
+<p>Изменена тема сайта документации - используется <a href="https://github.com/pradyunsg/furo">furo</a>
+    вместо темы по умолчанию <a href="https://github.com/readthedocs/sphinx_rtd_theme">ReadTheDocs</a>.</p>
+<p>Новая тема поддерживает широкие экраны и темный режим.
+См. <a href="https://github.com/MobileTeleSystems/onetl/pull/10">#10</a>.</p>
+</li>
+<li>
+<p>Теперь каждый класс подключения имеет таблицу совместимости для Spark + Java + Python.</p>
+</li>
+<li>
+<p>Добавлена глобальная таблица совместимости для Spark + Java + Python + Scala.</p>
+</li>
+</ul>
+<h2 id="_4">Исправление ошибок<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p>Исправлено несколько проблем с SFTP.</p>
+</li>
+<li>
+<p>Если файл конфигурации SSH <code>~/.ssh/config</code> содержит некоторые параметры, не распознаваемые Paramiko (неизвестный синтаксис, неизвестное имя параметра), предыдущие версии будут выбрасывать исключение до исправления или удаления этого файла. Начиная с версии 0.7.0 исключение заменено предупреждением.</p>
+</li>
+<li>
+<p>Если пользователь передал <code>host_key_check=False</code>, но сервер изменил SSH ключи, предыдущие версии выдавали исключение до принятия нового люча. Начиная с версии 0.7.0 исключение заменено предупреждением, если значение параметра равно <code>False</code>.</p>
+<p>Исправлено в <a href="https://github.com/MobileTeleSystems/onetl/pull/19">#19</a>.</p>
+</li>
+<li>
+<p>Исправлено несколько проблем с S3.</p>
+</li>
+</ul>
+<p>Была ошибка в подключении к S3, которая не позволяла обрабатывать файлы в корне бакета - они были невидимы для коннектора. Исправлено в <a href="https://github.com/MobileTeleSystems/onetl/pull/29">#29</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.tabs.link", "content.code.copy", "content.code.select"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/interaction.js"></script>
+      
+    
+  </body>
+</html>
