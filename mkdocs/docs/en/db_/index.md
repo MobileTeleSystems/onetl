@@ -1,7 +1,5 @@
 # DB
 
-lslsv
-
 ```{toctree}
 :caption: DB classes
 :maxdepth: 1
