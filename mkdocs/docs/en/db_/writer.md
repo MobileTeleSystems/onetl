@@ -1,7 +1,5 @@
 # DB Writer
 
-
-бубуб
 ```{eval-rst}
 .. currentmodule:: onetl.db.db_writer.db_writer
 ```

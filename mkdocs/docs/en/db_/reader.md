@@ -1,8 +1,6 @@
 # DB Reader
 
 
-ыыыыы
-
 ```{eval-rst}
 .. currentmodule:: onetl.db.db_reader.db_reader
 ```
