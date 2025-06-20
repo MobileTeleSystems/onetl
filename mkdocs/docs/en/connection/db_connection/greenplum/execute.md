@@ -26,8 +26,8 @@ Connection opened using this method should be then closed with `connection.close
 ```{eval-rst}
 .. warning::
 
-    ``Greenplum.fetch`` is implemented using Postgres JDBC connection,
-    so types are handled a bit differently than in ``DBReader``. See :ref:`postgres-types`.
+    `Greenplum.fetch` is implemented using Postgres JDBC connection,
+    so types are handled a bit differently than in `DBReader`. See :ref:`postgres-types`.
 ```
 
 #### Syntax support

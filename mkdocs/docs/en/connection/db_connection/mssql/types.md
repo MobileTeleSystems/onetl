@@ -119,23 +119,23 @@ See [official documentation](https://learn.microsoft.com/en-us/sql/t-sql/data-ty
 +-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 | MSSQL type (read)             | Spark type                        | MSSQL type (write)            | MSSQL type (create)           |
 +===============================+===================================+===============================+===============================+
-| ``decimal``                   | ``DecimalType(P=18, S=0)``        | ``decimal(P=18, S=0)``        | ``decimal(P=18, S=0)``        |
+| `decimal`                   | `DecimalType(P=18, S=0)`        | `decimal(P=18, S=0)`        | `decimal(P=18, S=0)`        |
 +-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``decimal(P=0..38)``          | ``DecimalType(P=0..38, S=0)``     | ``decimal(P=0..38, S=0)``     | ``decimal(P=0..38, S=0)``     |
+| `decimal(P=0..38)`          | `DecimalType(P=0..38, S=0)`     | `decimal(P=0..38, S=0)`     | `decimal(P=0..38, S=0)`     |
 +-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``decimal(P=0..38, S=0..38)`` | ``DecimalType(P=0..38, S=0..38)`` | ``decimal(P=0..38, S=0..38)`` | ``decimal(P=0..38, S=0..38)`` |
+| `decimal(P=0..38, S=0..38)` | `DecimalType(P=0..38, S=0..38)` | `decimal(P=0..38, S=0..38)` | `decimal(P=0..38, S=0..38)` |
 +-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``real``                      | ``FloatType()``                   | ``real``                      | ``real``                      |
+| `real`                      | `FloatType()`                   | `real`                      | `real`                      |
 +-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``float``                     | ``DoubleType()``                  | ``float``                     | ``float``                     |
+| `float`                     | `DoubleType()`                  | `float`                     | `float`                     |
 +-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``smallint``                  | ``ShortType()``                   | ``smallint``                  | ``smallint``                  |
+| `smallint`                  | `ShortType()`                   | `smallint`                  | `smallint`                  |
 +-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``tinyint``                   | ``IntegerType()``                 | ``int``                       | ``int``                       |
+| `tinyint`                   | `IntegerType()`                 | `int`                       | `int`                       |
 +-------------------------------+                                   |                               |                               |
-| ``int``                       |                                   |                               |                               |
+| `int`                       |                                   |                               |                               |
 +-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
-| ``bigint``                    | ``LongType()``                    | ``bigint``                    | ``bigint``                    |
+| `bigint`                    | `LongType()`                    | `bigint`                    | `bigint`                    |
 +-------------------------------+-----------------------------------+-------------------------------+-------------------------------+
 ```
 
@@ -144,40 +144,40 @@ See [official documentation](https://learn.microsoft.com/en-us/sql/t-sql/data-ty
 ```{eval-rst}
 .. note::
 
-    MSSQL ``timestamp`` type is alias for ``rowversion`` (see `Special types`_). It is not a temporal type!
+    MSSQL `timestamp` type is alias for `rowversion` (see `Special types`_). It is not a temporal type!
 ```
 
 ```{eval-rst}
 +------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
 | MSSQL type (read)                        | Spark type                           | MSSQL type (write)                | MSSQL type (create)           |
 +==========================================+======================================+===================================+===============================+
-| ``date``                                 | ``DateType()``                       | ``date``                          | ``date``                      |
+| `date`                                 | `DateType()`                       | `date`                          | `date`                      |
 +------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
-| ``smalldatetime``, minutes               | ``TimestampType()``, microseconds    | ``datetime2(6)``, microseconds    | ``datetime``, milliseconds    |
+| `smalldatetime`, minutes               | `TimestampType()`, microseconds    | `datetime2(6)`, microseconds    | `datetime`, milliseconds    |
 +------------------------------------------+                                      |                                   |                               |
-| ``datetime``, milliseconds               |                                      |                                   |                               |
+| `datetime`, milliseconds               |                                      |                                   |                               |
 +------------------------------------------+                                      |                                   |                               |
-| ``datetime2(0)``, seconds                |                                      |                                   |                               |
+| `datetime2(0)`, seconds                |                                      |                                   |                               |
 +------------------------------------------+                                      |                                   |                               |
-| ``datetime2(3)``, milliseconds           |                                      |                                   |                               |
+| `datetime2(3)`, milliseconds           |                                      |                                   |                               |
 +------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
-| ``datetime2(6)``, microseconds           | ``TimestampType()``, microseconds    | ``datetime2(6)``, microseconds    | ``datetime``, milliseconds,   |
+| `datetime2(6)`, microseconds           | `TimestampType()`, microseconds    | `datetime2(6)`, microseconds    | `datetime`, milliseconds,   |
 +------------------------------------------+--------------------------------------+-----------------------------------+ **precision loss** [3]_       |
-| ``datetime2(7)``, 100s of nanoseconds    | ``TimestampType()``, microseconds,   | ``datetime2(6)``, microseconds,   |                               |
+| `datetime2(7)`, 100s of nanoseconds    | `TimestampType()`, microseconds,   | `datetime2(6)`, microseconds,   |                               |
 |                                          | **precision loss** [4]_              | **precision loss** [4]_           |                               |
 +------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
-| ``time(0)``, seconds                     | ``TimestampType()``, microseconds,   | ``datetime2(6)``, microseconds    | ``datetime``, milliseconds    |
+| `time(0)`, seconds                     | `TimestampType()`, microseconds,   | `datetime2(6)`, microseconds    | `datetime`, milliseconds    |
 +------------------------------------------+ with time format quirks [5]_         |                                   |                               |
-| ``time(3)``, milliseconds                |                                      |                                   |                               |
+| `time(3)`, milliseconds                |                                      |                                   |                               |
 +------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
-| ``time(6)``, microseconds                | ``TimestampType()``, microseconds,   | ``datetime2(6)``, microseconds    | ``datetime``, milliseconds,   |
+| `time(6)`, microseconds                | `TimestampType()`, microseconds,   | `datetime2(6)`, microseconds    | `datetime`, milliseconds,   |
 +                                          | with time format quirks [5]_         |                                   | **precision loss** [3]_       |
 +------------------------------------------+--------------------------------------+-----------------------------------+                               +
-| ``time``, 100s of nanoseconds            | ``TimestampType()``, microseconds,   | ``datetime2(6)``, microseconds    |                               |
+| `time`, 100s of nanoseconds            | `TimestampType()`, microseconds,   | `datetime2(6)`, microseconds    |                               |
 +------------------------------------------+ **precision loss** [4]_,             | **precision loss** [3]_           |                               |
-| ``time(7)``, 100s of nanoseconds         | with time format quirks [5]_         |                                   |                               |
+| `time(7)`, 100s of nanoseconds         | with time format quirks [5]_         |                                   |                               |
 +------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
-| ``datetimeoffset``                       | ``StringType()``                     | ``nvarchar``                      | ``nvarchar``                  |
+| `datetimeoffset`                       | `StringType()`                     | `nvarchar`                      | `nvarchar`                  |
 +------------------------------------------+--------------------------------------+-----------------------------------+-------------------------------+
 ```
 
@@ -189,13 +189,13 @@ See [official documentation](https://learn.microsoft.com/en-us/sql/t-sql/data-ty
     +-------------------+--------------------------------+--------------------------------+---------------------+--------------------------------+--------------------------------+
     | MySQL type        | Min value                      | Max value                      | Spark type          | Min value                      | Max value                      |
     +===================+================================+================================+=====================+================================+================================+
-    | ``smalldatetime`` | ``1900-01-01 00:00:00``        | ``2079-06-06 23:59:00``        | ``TimestampType()`` | ``0001-01-01 00:00:00.000000`` | ``9999-12-31 23:59:59.999999`` |
+    | `smalldatetime` | `1900-01-01 00:00:00`        | `2079-06-06 23:59:00`        | `TimestampType()` | `0001-01-01 00:00:00.000000` | `9999-12-31 23:59:59.999999` |
     +-------------------+--------------------------------+--------------------------------+                     |                                |                                |
-    | ``datetime``      | ``1753-01-01 00:00:00.000``    | ``9999-12-31 23:59:59.997``    |                     |                                |                                |
+    | `datetime`      | `1753-01-01 00:00:00.000`    | `9999-12-31 23:59:59.997`    |                     |                                |                                |
     +-------------------+--------------------------------+--------------------------------+                     |                                |                                |
-    | ``datetime2``     | ``0001-01-01 00:00:00.000000`` | ``9999-12-31 23:59:59.999999`` |                     |                                |                                |
+    | `datetime2`     | `0001-01-01 00:00:00.000000` | `9999-12-31 23:59:59.999999` |                     |                                |                                |
     +-------------------+--------------------------------+--------------------------------+                     |                                |                                |
-    | ``time``          | ``00:00:00.0000000``           | ``23:59:59.9999999``           |                     |                                |                                |
+    | `time`          | `00:00:00.0000000`           | `23:59:59.9999999`           |                     |                                |                                |
     +-------------------+--------------------------------+--------------------------------+---------------------+--------------------------------+--------------------------------+
 
     So not all of values in Spark DataFrame can be written to MSSQL.
@@ -223,29 +223,29 @@ See [official documentation](https://learn.microsoft.com/en-us/sql/t-sql/data-ty
 +-------------------+------------------+--------------------+---------------------+
 | MSSQL type (read) | Spark type       | MSSQL type (write) | MSSQL type (create) |
 +===================+==================+====================+=====================+
-| ``char``          | ``StringType()`` | ``nvarchar``       | ``nvarchar``        |
+| `char`          | `StringType()` | `nvarchar`       | `nvarchar`        |
 +-------------------+                  |                    |                     |
-| ``char(N)``       |                  |                    |                     |
+| `char(N)`       |                  |                    |                     |
 +-------------------+                  |                    |                     |
-| ``nchar``         |                  |                    |                     |
+| `nchar`         |                  |                    |                     |
 +-------------------+                  |                    |                     |
-| ``nchar(N)``      |                  |                    |                     |
+| `nchar(N)`      |                  |                    |                     |
 +-------------------+                  |                    |                     |
-| ``varchar``       |                  |                    |                     |
+| `varchar`       |                  |                    |                     |
 +-------------------+                  |                    |                     |
-| ``varchar(N)``    |                  |                    |                     |
+| `varchar(N)`    |                  |                    |                     |
 +-------------------+                  |                    |                     |
-| ``nvarchar``      |                  |                    |                     |
+| `nvarchar`      |                  |                    |                     |
 +-------------------+                  |                    |                     |
-| ``nvarchar(N)``   |                  |                    |                     |
+| `nvarchar(N)`   |                  |                    |                     |
 +-------------------+                  |                    |                     |
-| ``mediumtext``    |                  |                    |                     |
+| `mediumtext`    |                  |                    |                     |
 +-------------------+                  |                    |                     |
-| ``text``          |                  |                    |                     |
+| `text`          |                  |                    |                     |
 +-------------------+                  |                    |                     |
-| ``ntext``         |                  |                    |                     |
+| `ntext`         |                  |                    |                     |
 +-------------------+                  |                    |                     |
-| ``xml``           |                  |                    |                     |
+| `xml`           |                  |                    |                     |
 +-------------------+------------------+--------------------+---------------------+
 ```
 
@@ -255,17 +255,17 @@ See [official documentation](https://learn.microsoft.com/en-us/sql/t-sql/data-ty
 +--------------------+-------------------+--------------------+---------------------+
 | MSSQL type (read)  | Spark type        | MSSQL type (write) | MSSQL type (create) |
 +====================+===================+====================+=====================+
-| ``bit``            | ``BooleanType()`` | ``bit``            | ``bit``             |
+| `bit`            | `BooleanType()` | `bit`            | `bit`             |
 +--------------------+-------------------+--------------------+---------------------+
-| ``binary``         | ``BinaryType()``  | ``varbinary``      | ``varbinary``       |
+| `binary`         | `BinaryType()`  | `varbinary`      | `varbinary`       |
 +--------------------+                   |                    |                     |
-| ``binary(N)``      |                   |                    |                     |
+| `binary(N)`      |                   |                    |                     |
 +--------------------+                   |                    |                     |
-| ``varbinary``      |                   |                    |                     |
+| `varbinary`      |                   |                    |                     |
 +--------------------+                   |                    |                     |
-| ``varbinary(N)``   |                   |                    |                     |
+| `varbinary(N)`   |                   |                    |                     |
 +--------------------+                   |                    |                     |
-| ``image``          |                   |                    |                     |
+| `image`          |                   |                    |                     |
 +--------------------+-------------------+--------------------+---------------------+
 ```
 
@@ -275,19 +275,19 @@ See [official documentation](https://learn.microsoft.com/en-us/sql/t-sql/data-ty
 +---------------------------+------------------+--------------------+---------------------+
 | MSSQL type (read)         | Spark type       | MSSQL type (write) | MSSQL type (create) |
 +===========================+==================+====================+=====================+
-| ``geography``             | ``BinaryType()`` | ``varbinary``      | ``varbinary``       |
+| `geography`             | `BinaryType()` | `varbinary`      | `varbinary`       |
 +---------------------------+                  |                    |                     |
-| ``geometry``              |                  |                    |                     |
+| `geometry`              |                  |                    |                     |
 +---------------------------+                  |                    |                     |
-| ``hierarchyid``           |                  |                    |                     |
+| `hierarchyid`           |                  |                    |                     |
 +---------------------------+                  |                    |                     |
-| ``rowversion``            |                  |                    |                     |
+| `rowversion`            |                  |                    |                     |
 +---------------------------+------------------+--------------------+---------------------+
-| ``sql_variant``           | unsupported      |                    |                     |
+| `sql_variant`           | unsupported      |                    |                     |
 +---------------------------+------------------+--------------------+---------------------+
-| ``sysname``               | ``StringType()`` | ``nvarchar``       | ``nvarchar``        |
+| `sysname`               | `StringType()` | `nvarchar`       | `nvarchar`        |
 +---------------------------+                  |                    |                     |
-| ``uniqueidentifier``      |                  |                    |                     |
+| `uniqueidentifier`      |                  |                    |                     |
 +---------------------------+------------------+--------------------+---------------------+
 ```
 

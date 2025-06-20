@@ -342,7 +342,7 @@ To use this committer, set [following properties](https://github.com/apache/spar
 ```{eval-rst}
 .. warning::
 
-    ``magic`` committer requires S3 implementation to have strong consistency - file upload API return response only
+    `magic` committer requires S3 implementation to have strong consistency - file upload API return response only
     if it was written on enough number of cluster nodes, and any cluster node error does not lead to missing or corrupting files.
 
     Some S3 implementations does have strong consistency
@@ -354,8 +354,8 @@ To use this committer, set [following properties](https://github.com/apache/spar
 ```{eval-rst}
 .. warning::
 
-    ``magic`` committer does not support ``if_exists="replace_overlapping_partitions"``.
-    Either use another ``if_exists`` value, or use ``partitioned`` committer.
+    `magic` committer does not support `if_exists="replace_overlapping_partitions"`.
+    Either use another `if_exists` value, or use `partitioned` committer.
 ```
 
 ### See also

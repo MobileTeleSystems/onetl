@@ -289,15 +289,15 @@ changes accompanying the relevant code changes.
 #### Examples for adding changelog entries to your Pull Requests
 
 ```rst
-Added a ``:github:user:`` role to Sphinx config -- by :github:user:`someuser`
+Added a `:github:user:` role to Sphinx config -- by :github:user:`someuser`
 ```
 
 ```rst
-Fixed behavior of ``WebDAV`` connector -- by :github:user:`someuser`
+Fixed behavior of `WebDAV` connector -- by :github:user:`someuser`
 ```
 
 ```rst
-Added support of ``timeout`` in ``S3`` connector
+Added support of `timeout` in `S3` connector
 -- by :github:user:`someuser`, :github:user:`anotheruser` and :github:user:`otheruser`
 ```
 

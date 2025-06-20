@@ -274,8 +274,8 @@ spark = (
     both driver and all executors.
 
     Usually this is used only with either:
-        * ``spark.master=local`` (driver and executors are running on the same host),
-        * ``spark.master=k8s://...`` (``.jar`` files are added to image or to volume mounted to all pods).
+        * `spark.master=local` (driver and executors are running on the same host),
+        * `spark.master=k8s://...` (`.jar` files are added to image or to volume mounted to all pods).
 ```
 
 Can be used to embed `.jar` files to a default Spark classpath.
@@ -300,8 +300,8 @@ spark = SparkSession.builder.config("spark.app.name", "onetl").getOrCreate()
     both driver and all executors.
 
     Usually this is used only with either:
-        * ``spark.master=local`` (driver and executors are running on the same host),
-        * ``spark.master=k8s://...`` (``.jar`` files are added to image or to volume mounted to all pods).
+        * `spark.master=local` (driver and executors are running on the same host),
+        * `spark.master=k8s://...` (`.jar` files are added to image or to volume mounted to all pods).
 ```
 
 Can be used to embed `.jar` files to a default Java classpath.
