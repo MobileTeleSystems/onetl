@@ -49,9 +49,9 @@ extra:                                              # Language Selection
       lang: en
 
     # Switch to Russian
-    - name: Русский
-      link: /ru/
-      lang: ru
+    # - name: Русский
+    #   link: /ru/
+    #   lang: ru
 
 plugins:
   - autorefs
