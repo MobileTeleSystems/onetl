@@ -1,6 +1,4 @@
-(file-mover-root)=
-
-# File Mover
+# File Mover { #file-mover-0 }
 
 ```{toctree}
 :caption: File Mover

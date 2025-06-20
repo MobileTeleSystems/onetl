@@ -1,5 +1,3 @@
-(hwm)=
-
 # HWM
 
 Since onETL v0.10.0, the `HWMStore` and `HWM` classes have been moved to a separate library {etl-entities}`etl-entities <>`.

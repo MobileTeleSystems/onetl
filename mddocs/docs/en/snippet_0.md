@@ -7,8 +7,8 @@ Python ETL/ELT library powered by [Apache Spark](https://spark.apache.org/) & ot
 - Provide unified classes to extract data from (**E**) & load data to (**L**) various stores.
 - Provides [Spark DataFrame API](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.html) for performing transformations (**T**) in terms of *ETL*.
 - Provide direct assess to database, allowing to execute SQL queries, as well as DDL, DML, and call functions/procedures. This can be used for building up *ELT* pipelines.
-- Support different [read strategies](../strategy/) for incremental and batch data fetching.
-- Provide [hooks](../hooks/) & [plugins](../plugins) mechanism for altering behavior of internal classes.
+- Support different [read strategies][strategy] for incremental and batch data fetching.
+- Provide [hooks][hooks] & [plugins][plugins] mechanism for altering behavior of internal classes.
 
 ## Non-goals
 
@@ -42,3 +42,5 @@ Python ETL/ELT library powered by [Apache Spark](https://spark.apache.org/) & ot
 | Samba        | [pysmb library](https://pypi.org/project/pysmb/)                                                                      |
 | Files as DataFrame {: rowspan=2} | SparkLocalFS<br/>SparkHDFS | Apache Spark [File Data Source](https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html)           |
 | SparkS3      | [Hadoop AWS](https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html) library                  |
+
+

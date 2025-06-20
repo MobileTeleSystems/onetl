@@ -7,14 +7,14 @@
 
 ### Terms
 
-- `Plugin` - some Python package which implements some extra functionality for onETL, like [hooks](../hooks/)
+- `Plugin` - some Python package which implements some extra functionality for onETL, like [hooks][hooks]
 - `Plugin autoimport` - onETL behavior which allows to automatically import this package if it contains proper metadata (`entry_points`)
 
 ### Features
 
 Plugins mechanism allows to:
 
-- Automatically register [hooks](../hooks/) which can alter onETL behavior
+- Automatically register [hooks][hooks] which can alter onETL behavior
 - Automatically register new classes, like HWM type, HWM stores and so on
 
 ### Limitations
@@ -72,7 +72,7 @@ from some_plugin.module.internals import my_function
 ```
 
 If specific module/class/function uses some registration capabilities of onETL,
-like [hooks](../hooks/), it will be executed during this import.
+like [`@hook` decorator][hook-decorator], it will be executed during this import.
 
 ## How to enable/disable plugins?
 

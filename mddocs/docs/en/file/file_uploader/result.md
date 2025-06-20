@@ -1,6 +1,4 @@
-(file-uploader-result)=
-
-# File Uploader Result
+# File Uploader Result { #file-uploader-result }
 
 ```{eval-rst}
 .. currentmodule:: onetl.file.file_uploader.result

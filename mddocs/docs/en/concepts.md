@@ -191,7 +191,7 @@ mssql = MSSQL(
 where **spark** is the current SparkSession.
 `onETL` uses `Spark` and specific Java connectors under the hood to work with databases.
 
-For a description of other parameters, see the documentation for the [available DBConnections](../connection/file_df_connection/).
+For a description of other parameters, see the documentation for the [available DBConnections][db-connections].
 
 ### FileConnection
 
@@ -209,7 +209,7 @@ sftp = SFTP(
 )
 ```
 
-For a description of other parameters, see the documentation for the {ref}`available FileConnections <file-connections>`.
+For a description of other parameters, see the documentation for the [available FileConnections][file-connections-0].
 
 ### FileDFConnection
 
@@ -230,7 +230,7 @@ spark_hdfs = SparkHDFS(
 where **spark** is the current SparkSession.
 `onETL` uses `Spark` and specific Java connectors under the hood to work with DataFrames.
 
-For a description of other parameters, see the documentation for the {ref}`available FileDFConnections <file-df-connections>`.
+For a description of other parameters, see the documentation for the [available FileDFConnections][file-dataframe-connections].
 
 ### Checking connection availability
 
@@ -264,13 +264,13 @@ As we said above, onETL is used to extract data from and load data into remote s
 
 onETL provides several classes for this:
 
-> * [DBReader](../db_/reader)
-> * [DBWriter](../db_/writer)
-> * [FileDFReader](../file_df/file_df_reader/file_df_reader)
-> * [FileDFWriter](../file_df/file_df_writer/file_df_writer)
-> * [FileDownloader](../file/file_downloader/file_downloader)
-> * [FileUploader](../file/file_uploader/file_uploader)
-> * [FileMover](../file/file_mover/file_mover)
+> * [DBReader][db-reader]
+> * [DBWriter][db-writer]
+> * [FileDFReader][filedf-reader-0]
+> * [FileDFWriter][filedf-writer-0]
+> * [FileDownloader][file-downloader-0]
+> * [FileUploader][file-uploader-0]
+> * [FileMover][file-mover-0]
 
 All of these classes have a method `run()` that starts extracting/loading the data:
 
@@ -301,9 +301,9 @@ To extract data you can use classes:
 
 | | Use case | Connection | `run()` gets | `run()` returns |
 | -- | - | - | - | --- |
-| [`DBReader`](../db_/reader) | Reading data from a database | Any [`DBConnection`](../connection/db_connection) | - | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) |
-| [`FileDFReader`](../file_df/file_df_reader/file_df_reader) | Read data from a file or set of files | Any [`FileDFConnection`](../connection/file_df_connection) | No input, or List[File path on FileSystem] | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) |
-| [`FileDownloader`](../file/file_downloader/file_downloader) | Download files from remote FS to local FS | Any [`FileConnection`](../connection/file_connection) | No input, or List[File path on remote FileSystem] | [`DownloadResult`](../file/file_downloader/result) |
+| [`DBReader`][db-reader] | Reading data from a database | Any [`DBConnection`][db-connections] | - | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) |
+| [`FileDFReader`][filedf-reader-0] | Read data from a file or set of files | Any [`FileDFConnection`][file-dataframe-connections] | No input, or List[File path on FileSystem] | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) |
+| [`FileDownloader`][file-downloader-0] | Download files from remote FS to local FS | Any [`FileConnection`][file-connections-0] | No input, or List[File path on remote FileSystem] | [`DownloadResult`][file-downloader-result] |
 
 ### Load data
 
@@ -311,9 +311,9 @@ To load data you can use classes:
 
 | | Use case | Connection | `run()` gets | `run()` returns |
 | - | -- | - | --- | -- |
-| [`DBWriter`](../db_/writer) | Writing data from a DataFrame to a database | Any [`DBConnection`](../connection/db_connection) | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) | None |
-| [`FileDFWriter`](../file_df/file_df_writer/file_df_writer) | Writing data from a DataFrame to a folder | Any [`FileDFConnection`](../connection/file_df_connection) | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) | None |
-| [`FileUploader`](../file/file_uploader/file_uploader) | Uploading files from a local FS to remote FS | Any [`FileConnection`](../connection/file_connection) | List[File path on local FileSystem] | [`UploadResult`](../file/file_uploader/result) |
+| [`DBWriter`][db-writer] | Writing data from a DataFrame to a database | Any [`DBConnection`][db-connections] | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) | None |
+| [`FileDFWriter`][filedf-writer-0] | Writing data from a DataFrame to a folder | Any [`FileDFConnection`][file-dataframe-connections] | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) | None |
+| [`FileUploader`][file-uploader-0] | Uploading files from a local FS to remote FS | Any [`FileConnection`][file-connections-0] | List[File path on local FileSystem] | [`UploadResult`][file-uploader-result] |
 
 ### Manipulate data
 
@@ -321,7 +321,7 @@ To manipulate data you can use classes:
 
 | | Use case | Connection | `run()` gets | `run()` returns |
 | - | - | -- | -- | - |
-| [`FileMover`](../file/file_mover/file_mover) | Move files between directories in remote FS | Any [`FileConnection`](../connection/file_connection) | List[File path on remote FileSystem] | [`MoveResult`](../file/file_mover/result) |
+| [`FileMover`][file-mover-0] | Move files between directories in remote FS | Any [`FileConnection`][file-connections-0] | List[File path on remote FileSystem] | [`MoveResult`][file-mover-result] |
 
 ### Options
 
@@ -411,17 +411,17 @@ file_df_writer = FileDFWriter(
 )
 ```
 
-More information about `options` could be found on [`DBConnection`](../connection/db_connection) and [`FileDownloader`](../file/file_downloader/file_downloader) / [`FileUploader`](../file/file_uploader/file_uploader) / [`FileMover`](../file/file_mover/file_mover) / [`FileDFReader`](../file_df/file_df_reader/file_df_reader) / [`FileDFWriter`](../file_df/file_df_writer/file_df_writer) documentation.
+More information about `options` could be found on [`DBConnection`][db-connections] and [`FileDownloader`][file-downloader-0] / [`FileUploader`][file-uploader-0] / [`FileMover`][file-mover-0] / [`FileDFReader`][filedf-reader-0] / [`FileDFWriter`][filedf-writer-0] documentation.
 
 
 ### Read Strategies
 
 onETL have several builtin strategies for reading data:
 
-1. [Snapshot strategy](../strategy/snapshot_strategy) (default strategy)
-2. [Incremental strategy](../strategy/incremental_strategy)
-3. [Snapshot batch strategy](../strategy/snapshot_batch_strategy)
-4. [Incremental batch strategy](../strategy/incremental_batch_strategy)
+1. [Snapshot strategy][snapshot-strategy] (default strategy)
+2. [Incremental strategy][incremental-strategy]
+3. [Snapshot batch strategy][snapshot-batch-strategy]
+4. [Incremental batch strategy][incremental-batch-strategy]
 
 For example, an incremental strategy allows you to get only new data from the table:
 
@@ -470,7 +470,7 @@ with IncrementalStrategy():
  files = file_downloader.run()
 ```
 
-Most of strategies are based on [`HWM`](../hwm_store/), Please check each strategy documentation for more details
+Most of strategies are based on [`HWM`][hwm], Please check each strategy documentation for more details
 
 ### Why just not use Connection class for extract/load?
 
@@ -479,7 +479,7 @@ like `mkdir`, `remove_file`, `get_table_schema`, and so on.
 
 High-level operations, like
 
-  * [`strategy`](../strategy/) support
+  * [`strategy`][strategy] support
   * Handling metadata push/pull
   * Handling different options, like `if_exists="replace_file"` in case of file download/upload
 

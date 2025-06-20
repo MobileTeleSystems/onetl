@@ -106,6 +106,7 @@ nav:
   - "Logging": logging
   - "Security": security
   - "Contributing Guide": contributing
+  - "Plugins": plugins
   - changelog:
     - changelog/index.md
     - "0.13.4": changelog/0.13.4

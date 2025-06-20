@@ -1,6 +1,4 @@
-(file-downloader-root)=
-
-# File Downloader
+# File Downloader { #file-downloader-0 }
 
 ```{toctree}
 :caption: File Downloader

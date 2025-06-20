@@ -327,6 +327,28 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../plugins" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plugins
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
       
@@ -396,7 +418,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -413,14 +435,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             changelog
           </label>
@@ -1081,7 +1103,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1098,14 +1120,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             DB
           </label>
@@ -1414,7 +1436,7 @@
 </code></pre></div>
 <p>where <strong>spark</strong> is the current SparkSession.
 <code>onETL</code> uses <code>Spark</code> and specific Java connectors under the hood to work with databases.</p>
-<p>For a description of other parameters, see the documentation for the <a href="../connection/file_df_connection/">available DBConnections</a>.</p>
+<p>For a description of other parameters, see the documentation for the <a class="autorefs autorefs-internal" title="DB Connections" href="../connection/db_connection/#db-connections">available DBConnections</a>.</p>
 <h3 id="fileconnection">FileConnection<a class="headerlink" href="#fileconnection" title="Permanent link">&para;</a></h3>
 <p>Classes inherited from <code>FileConnection</code> could be used to access files stored on the different file systems/file servers</p>
 <p>A <code>FileConnection</code> could be instantiated as follows:</p>
@@ -1426,7 +1448,7 @@
  <span class="n">password</span><span class="o">=</span><span class="s2">&quot;onetl&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
-<p>For a description of other parameters, see the documentation for the {ref}<code>available FileConnections &lt;file-connections&gt;</code>.</p>
+<p>For a description of other parameters, see the documentation for the <a class="autorefs autorefs-internal" title="File Connections" href="../connection/file_connection/#file-connections-0">available FileConnections</a>.</p>
 <h3 id="filedfconnection">FileDFConnection<a class="headerlink" href="#filedfconnection" title="Permanent link">&para;</a></h3>
 <p>Classes inherited from <code>FileDFConnection</code> could be used for accessing files as Spark DataFrames.</p>
 <p>A <code>FileDFConnection</code> could be instantiated as follows:</p>
@@ -1440,7 +1462,7 @@
 </code></pre></div>
 <p>where <strong>spark</strong> is the current SparkSession.
 <code>onETL</code> uses <code>Spark</code> and specific Java connectors under the hood to work with DataFrames.</p>
-<p>For a description of other parameters, see the documentation for the {ref}<code>available FileDFConnections &lt;file-df-connections&gt;</code>.</p>
+<p>For a description of other parameters, see the documentation for the <a class="autorefs autorefs-internal" title="File DataFrame Connections" href="../connection/file_df_connection/#file-dataframe-connections">available FileDFConnections</a>.</p>
 <h3 id="checking-connection-availability">Checking connection availability<a class="headerlink" href="#checking-connection-availability" title="Permanent link">&para;</a></h3>
 <p>Once you have created a connection, you can check the database/filesystem availability using the method <code>check()</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="n">mssql</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
@@ -1463,13 +1485,13 @@
 <p>onETL provides several classes for this:</p>
 <blockquote>
 <ul>
-<li><a href="../db_/reader">DBReader</a></li>
-<li><a href="../db_/writer">DBWriter</a></li>
-<li><a href="../file_df/file_df_reader/file_df_reader">FileDFReader</a></li>
-<li><a href="../file_df/file_df_writer/file_df_writer">FileDFWriter</a></li>
-<li><a href="../file/file_downloader/file_downloader">FileDownloader</a></li>
-<li><a href="../file/file_uploader/file_uploader">FileUploader</a></li>
-<li><a href="../file/file_mover/file_mover">FileMover</a></li>
+<li><a class="autorefs autorefs-internal" title="DB Reader" href="../db_/reader/#db-reader">DBReader</a></li>
+<li><a class="autorefs autorefs-internal" title="DB Writer" href="../db_/writer/#db-writer">DBWriter</a></li>
+<li><a class="autorefs autorefs-internal" title="FileDF Reader" href="../file_df/file_df_reader/#filedf-reader-0">FileDFReader</a></li>
+<li><a class="autorefs autorefs-internal" title="FileDF Writer" href="../file_df/file_df_writer/file_df_writer/#filedf-writer-0">FileDFWriter</a></li>
+<li><a class="autorefs autorefs-internal" title="File Downloader" href="../file/file_downloader/#file-downloader-0">FileDownloader</a></li>
+<li><a class="autorefs autorefs-internal" title="File Uploader" href="../file/file_uploader/file_uploader/#file-uploader-0">FileUploader</a></li>
+<li><a class="autorefs autorefs-internal" title="File Mover" href="../file/file_mover/#file-mover-0">FileMover</a></li>
 </ul>
 </blockquote>
 <p>All of these classes have a method <code>run()</code> that starts extracting/loading the data:</p>
@@ -1506,25 +1528,25 @@
 </thead>
 <tbody>
 <tr>
-<td><a href="../db_/reader"><code>DBReader</code></a></td>
+<td><a class="autorefs autorefs-internal" title="DB Reader" href="../db_/reader/#db-reader"><code>DBReader</code></a></td>
 <td>Reading data from a database</td>
-<td>Any <a href="../connection/db_connection"><code>DBConnection</code></a></td>
+<td>Any <a class="autorefs autorefs-internal" title="DB Connections" href="../connection/db_connection/#db-connections"><code>DBConnection</code></a></td>
 <td>-</td>
 <td><a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe">Spark DataFrame</a></td>
 </tr>
 <tr>
-<td><a href="../file_df/file_df_reader/file_df_reader"><code>FileDFReader</code></a></td>
+<td><a class="autorefs autorefs-internal" title="FileDF Reader" href="../file_df/file_df_reader/#filedf-reader-0"><code>FileDFReader</code></a></td>
 <td>Read data from a file or set of files</td>
-<td>Any <a href="../connection/file_df_connection"><code>FileDFConnection</code></a></td>
+<td>Any <a class="autorefs autorefs-internal" title="File DataFrame Connections" href="../connection/file_df_connection/#file-dataframe-connections"><code>FileDFConnection</code></a></td>
 <td>No input, or List[File path on FileSystem]</td>
 <td><a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe">Spark DataFrame</a></td>
 </tr>
 <tr>
-<td><a href="../file/file_downloader/file_downloader"><code>FileDownloader</code></a></td>
+<td><a class="autorefs autorefs-internal" title="File Downloader" href="../file/file_downloader/#file-downloader-0"><code>FileDownloader</code></a></td>
 <td>Download files from remote FS to local FS</td>
-<td>Any <a href="../connection/file_connection"><code>FileConnection</code></a></td>
+<td>Any <a class="autorefs autorefs-internal" title="File Connections" href="../connection/file_connection/#file-connections-0"><code>FileConnection</code></a></td>
 <td>No input, or List[File path on remote FileSystem]</td>
-<td><a href="../file/file_downloader/result"><code>DownloadResult</code></a></td>
+<td><a class="autorefs autorefs-internal" title="File Downloader Result" href="../file/file_downloader/result/#file-downloader-result"><code>DownloadResult</code></a></td>
 </tr>
 </tbody>
 </table>
@@ -1542,25 +1564,25 @@
 </thead>
 <tbody>
 <tr>
-<td><a href="../db_/writer"><code>DBWriter</code></a></td>
+<td><a class="autorefs autorefs-internal" title="DB Writer" href="../db_/writer/#db-writer"><code>DBWriter</code></a></td>
 <td>Writing data from a DataFrame to a database</td>
-<td>Any <a href="../connection/db_connection"><code>DBConnection</code></a></td>
+<td>Any <a class="autorefs autorefs-internal" title="DB Connections" href="../connection/db_connection/#db-connections"><code>DBConnection</code></a></td>
 <td><a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe">Spark DataFrame</a></td>
 <td>None</td>
 </tr>
 <tr>
-<td><a href="../file_df/file_df_writer/file_df_writer"><code>FileDFWriter</code></a></td>
+<td><a class="autorefs autorefs-internal" title="FileDF Writer" href="../file_df/file_df_writer/file_df_writer/#filedf-writer-0"><code>FileDFWriter</code></a></td>
 <td>Writing data from a DataFrame to a folder</td>
-<td>Any <a href="../connection/file_df_connection"><code>FileDFConnection</code></a></td>
+<td>Any <a class="autorefs autorefs-internal" title="File DataFrame Connections" href="../connection/file_df_connection/#file-dataframe-connections"><code>FileDFConnection</code></a></td>
 <td><a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe">Spark DataFrame</a></td>
 <td>None</td>
 </tr>
 <tr>
-<td><a href="../file/file_uploader/file_uploader"><code>FileUploader</code></a></td>
+<td><a class="autorefs autorefs-internal" title="File Uploader" href="../file/file_uploader/file_uploader/#file-uploader-0"><code>FileUploader</code></a></td>
 <td>Uploading files from a local FS to remote FS</td>
-<td>Any <a href="../connection/file_connection"><code>FileConnection</code></a></td>
+<td>Any <a class="autorefs autorefs-internal" title="File Connections" href="../connection/file_connection/#file-connections-0"><code>FileConnection</code></a></td>
 <td>List[File path on local FileSystem]</td>
-<td><a href="../file/file_uploader/result"><code>UploadResult</code></a></td>
+<td><a class="autorefs autorefs-internal" title="File Uploader Result" href="../file/file_uploader/result/#file-uploader-result"><code>UploadResult</code></a></td>
 </tr>
 </tbody>
 </table>
@@ -1578,11 +1600,11 @@
 </thead>
 <tbody>
 <tr>
-<td><a href="../file/file_mover/file_mover"><code>FileMover</code></a></td>
+<td><a class="autorefs autorefs-internal" title="File Mover" href="../file/file_mover/#file-mover-0"><code>FileMover</code></a></td>
 <td>Move files between directories in remote FS</td>
-<td>Any <a href="../connection/file_connection"><code>FileConnection</code></a></td>
+<td>Any <a class="autorefs autorefs-internal" title="File Connections" href="../connection/file_connection/#file-connections-0"><code>FileConnection</code></a></td>
 <td>List[File path on remote FileSystem]</td>
-<td><a href="../file/file_mover/result"><code>MoveResult</code></a></td>
+<td><a class="autorefs autorefs-internal" title="File Mover Result" href="../file/file_mover/result/#file-mover-result"><code>MoveResult</code></a></td>
 </tr>
 </tbody>
 </table>
@@ -1673,14 +1695,14 @@
  <span class="n">options</span><span class="o">=</span><span class="n">FileDFWriter</span><span class="o">.</span><span class="n">Options</span><span class="p">(</span><span class="n">if_exists</span><span class="o">=</span><span class="s2">&quot;replace_entire_directory&quot;</span><span class="p">),</span>
 <span class="p">)</span>
 </code></pre></div>
-<p>More information about <code>options</code> could be found on <a href="../connection/db_connection"><code>DBConnection</code></a> and <a href="../file/file_downloader/file_downloader"><code>FileDownloader</code></a> / <a href="../file/file_uploader/file_uploader"><code>FileUploader</code></a> / <a href="../file/file_mover/file_mover"><code>FileMover</code></a> / <a href="../file_df/file_df_reader/file_df_reader"><code>FileDFReader</code></a> / <a href="../file_df/file_df_writer/file_df_writer"><code>FileDFWriter</code></a> documentation.</p>
+<p>More information about <code>options</code> could be found on <a class="autorefs autorefs-internal" title="DB Connections" href="../connection/db_connection/#db-connections"><code>DBConnection</code></a> and <a class="autorefs autorefs-internal" title="File Downloader" href="../file/file_downloader/#file-downloader-0"><code>FileDownloader</code></a> / <a class="autorefs autorefs-internal" title="File Uploader" href="../file/file_uploader/file_uploader/#file-uploader-0"><code>FileUploader</code></a> / <a class="autorefs autorefs-internal" title="File Mover" href="../file/file_mover/#file-mover-0"><code>FileMover</code></a> / <a class="autorefs autorefs-internal" title="FileDF Reader" href="../file_df/file_df_reader/#filedf-reader-0"><code>FileDFReader</code></a> / <a class="autorefs autorefs-internal" title="FileDF Writer" href="../file_df/file_df_writer/file_df_writer/#filedf-writer-0"><code>FileDFWriter</code></a> documentation.</p>
 <h3 id="read-strategies">Read Strategies<a class="headerlink" href="#read-strategies" title="Permanent link">&para;</a></h3>
 <p>onETL have several builtin strategies for reading data:</p>
 <ol>
-<li><a href="../strategy/snapshot_strategy">Snapshot strategy</a> (default strategy)</li>
-<li><a href="../strategy/incremental_strategy">Incremental strategy</a></li>
-<li><a href="../strategy/snapshot_batch_strategy">Snapshot batch strategy</a></li>
-<li><a href="../strategy/incremental_batch_strategy">Incremental batch strategy</a></li>
+<li><a class="autorefs autorefs-internal" title="Snapshot Strategy" href="../strategy/snapshot_strategy/#snapshot-strategy">Snapshot strategy</a> (default strategy)</li>
+<li><a class="autorefs autorefs-internal" title="Incremental Strategy" href="../strategy/incremental_strategy/#incremental-strategy">Incremental strategy</a></li>
+<li><a class="autorefs autorefs-internal" title="Snapshot Batch Strategy" href="../strategy/snapshot_batch_strategy/#snapshot-batch-strategy">Snapshot batch strategy</a></li>
+<li><a class="autorefs autorefs-internal" title="Incremental Batch Strategy" href="../strategy/incremental_batch_strategy/#incremental-batch-strategy">Incremental batch strategy</a></li>
 </ol>
 <p>For example, an incremental strategy allows you to get only new data from the table:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.strategy</span><span class="w"> </span><span class="kn">import</span> <span class="n">IncrementalStrategy</span>
@@ -1723,13 +1745,13 @@
  <span class="c1"># only files, that appeared in the source since previous run</span>
  <span class="n">files</span> <span class="o">=</span> <span class="n">file_downloader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </code></pre></div>
-<p>Most of strategies are based on <a href="../hwm_store/"><code>HWM</code></a>, Please check each strategy documentation for more details</p>
+<p>Most of strategies are based on <a class="autorefs autorefs-internal" href="../hwm_store/#hwm"><code>HWM</code></a>, Please check each strategy documentation for more details</p>
 <h3 id="why-just-not-use-connection-class-for-extractload">Why just not use Connection class for extract/load?<a class="headerlink" href="#why-just-not-use-connection-class-for-extractload" title="Permanent link">&para;</a></h3>
 <p>Connections are very simple, they have only a set of some basic operations,
 like <code>mkdir</code>, <code>remove_file</code>, <code>get_table_schema</code>, and so on.</p>
 <p>High-level operations, like</p>
 <ul>
-<li><a href="../strategy/"><code>strategy</code></a> support</li>
+<li><a class="autorefs autorefs-internal" href="../strategy/#strategy"><code>strategy</code></a> support</li>
 <li>Handling metadata push/pull</li>
 <li>Handling different options, like <code>if_exists="replace_file"</code> in case of file download/upload</li>
 </ul>

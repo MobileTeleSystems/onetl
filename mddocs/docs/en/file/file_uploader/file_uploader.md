@@ -1,6 +1,4 @@
-(file-uploader)=
-
-# File Uploader
+# File Uploader { #file-uploader-0 }
 
 ```{eval-rst}
 .. currentmodule:: onetl.file.file_uploader.file_uploader

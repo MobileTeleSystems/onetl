@@ -1,6 +1,4 @@
-(strategy)=
-
-# Read Strategies
+# Read Strategies { #strategy data-toc-label='strategy' }
 
 ```{toctree}
 :caption: Read Strategies

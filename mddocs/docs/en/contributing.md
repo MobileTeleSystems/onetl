@@ -159,7 +159,7 @@ It may also require to add the same path into `LD_LIBRARY_PATH` environment vari
 #### NOTE
 To run Greenplum tests, you should:
 
-* Download [VMware Greenplum connector for Spark](https://onetl.readthedocs.io/en/latest/connection/db_connection/greenplum/prerequisites.html)
+* Download [VMware Greenplum connector for Spark][greenplum-prerequisites]
 * Either move it to `~/.ivy2/jars/`, or pass file path to `CLASSPATH`
 * Set environment variable `ONETL_GP_PACKAGE_VERSION=local`.
 

@@ -1,6 +1,4 @@
-(file-downloader-result)=
-
-# File Downloader Result
+# File Downloader Result { #file-downloader-result }
 
 ```{eval-rst}
 .. currentmodule:: onetl.file.file_downloader.result

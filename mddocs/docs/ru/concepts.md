@@ -191,7 +191,7 @@ mssql = MSSQL(
 
 где **spark** - это текущая сессия Apache Spark (SparkSession). `onETL` "под капотом" использует `Spark` и специальные Java-коннекторы для работы с базами данных.
 
-Описание других параметров см. в документации для {ref}`доступных DBConnections <db-connections>`.
+Описание других параметров см. в документации для [доступных DBConnections][db-connections].
 
 ### Подключения к файловым хранилищам (FileConnection)
 
@@ -209,7 +209,7 @@ sftp = SFTP(
 )
 ```
 
-Описание других параметров см. в документации для {ref}`доступных FileConnections <file-connections>`.
+Описание других параметров см. в документации для [доступных FileConnections][file-connections-0].
 
 ### FileDFConnection
 
@@ -230,7 +230,7 @@ spark_hdfs = SparkHDFS(
 где **spark** - это текущая SparkSession.
 `onETL` использует `Spark` и специальные Java-коннекторы под капотом для работы с DataFrames.
 
-Описание других параметров см. в документации для [доступных FileDFConnections](../connection/file_df_connection/).
+Описание других параметров см. в документации для [доступных FileDFConnections][file-dataframe-connections].
 
 ### Проверка доступности соединения
 
@@ -264,13 +264,13 @@ mssql = MSSQL(
 
 onETL предоставляет несколько классов для этого:
 
-> * [DBReader](../db_/reader)
-> * [DBWriter](../db_/writer)
-> * [FileDFReader](../file_df/file_df_reader/file_df_reader)
-> * [FileDFWriter](../file_df/file_df_writer/file_df_writer)
-> * [FileDownloader](../file/file_downloader/file_downloader)
-> * [FileUploader](../file/file_uploader/file_uploader)
-> * [FileMover](../file/file_mover/file_mover)
+> * [DBReader][db-reader]
+> * [DBWriter][db-writer]
+> * [FileDFReader][filedf-reader-0]
+> * [FileDFWriter][filedf-writer-0]
+> * [FileDownloader][file-downloader-0]
+> * [FileUploader][file-uploader-0]
+> * [FileMover][file-mover-0]
 
 Все эти классы имеют метод `run()`, который запускает извлечение/загрузку данных:
 
@@ -301,9 +301,9 @@ writer.run(df)
 
 | | Вариант использования | Connection | `run()` получает | `run()` возвращает |
 | -- | - | - | - | --- |
-| [`DBReader`](../db_/reader) | Чтение данных из базы данных | Любое [`DBConnection`](../connection/db_connection) | - | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) |
-| [`FileDFReader`](../file_df/file_df_reader/file_df_reader) | Чтение данных из файла или набора файлов | Любое [`FileDFConnection`](../connection/file_df_connection) | Нет входных данных или List[File path on FileSystem] | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) |
-| [`FileDownloader`](../file/file_downloader/file_downloader) | Загрузка файлов из удаленной ФС в локальную ФС | Любое [`FileConnection`](../connection/file_connection) | Нет входных данных или List[File path on remote FileSystem] | [`DownloadResult`](../file/file_downloader/result) |
+| [`DBReader`][db-reader] | Чтение данных из базы данных | Любое [`DBConnection`][db-connections] | - | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) |
+| [`FileDFReader`][filedf-reader-0] | Чтение данных из файла или набора файлов | Любое [`FileDFConnection`][file-dataframe-connections] | Нет входных данных или List[File path on FileSystem] | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) |
+| [`FileDownloader`][file-downloader-0] | Загрузка файлов из удаленной ФС в локальную ФС | Любое [`FileConnection`][file-connections-0] | Нет входных данных или List[File path on remote FileSystem] | [`DownloadResult`][file-downloader-result] |
 
 ### Загрузка данных
 
@@ -311,9 +311,9 @@ writer.run(df)
 
 | | Вариант использования | Connection | `run()` получает | `run()` возвращает |
 | - | -- | - | --- | -- |
-| [`DBWriter`](../db_/writer) | Запись данных из DataFrame в базу данных | Любое [`DBConnection`](../connection/db_connection) | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) | None |
-| [`FileDFWriter`](../file_df/file_df_writer/file_df_writer) | Запись данных из DataFrame в папку | Любое [`FileDFConnection`](../connection/file_df_connection) | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) | None |
-| [`FileUploader`](../file/file_uploader/file_uploader) | Загрузка файлов из локальной ФС в удаленную ФС | Любое [`FileConnection`](../connection/file_connection) | List[File path on local FileSystem] | [`UploadResult`](../file/file_uploader/result) |
+| [`DBWriter`][db-writer] | Запись данных из DataFrame в базу данных | Любое [`DBConnection`][db-connections] | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) | None |
+| [`FileDFWriter`][filedf-writer-0] | Запись данных из DataFrame в папку | Любое [`FileDFConnection`][file-dataframe-connections] | [Spark DataFrame](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe) | None |
+| [`FileUploader`][file-uploader-0] | Загрузка файлов из локальной ФС в удаленную ФС | Любое [`FileConnection`][file-connections-0] | List[File path on local FileSystem] | [`UploadResult`][file-uploader-result] |
 
 ### Манипулирование данными
 
@@ -321,7 +321,7 @@ writer.run(df)
 
 | | Вариант использования | Connection | `run()` получает | `run()` возвращает |
 | - | - | -- | -- | - |
-| [`FileMover`](../file/file_mover/file_mover) | Перемещение файлов между каталогами в удаленной ФС | Любое [`FileConnection`](../connection/file_connection) | List[File path on remote FileSystem] | [`MoveResult`](../file/file_mover/result) |
+| [`FileMover`][file-mover-0] | Перемещение файлов между каталогами в удаленной ФС | Любое [`FileConnection`][file-connections-0] | List[File path on remote FileSystem] | [`MoveResult`][file-mover-result] |
 
 ### Опции
 
@@ -411,16 +411,16 @@ file_df_writer = FileDFWriter(
 )
 ```
 
-Более подробную информацию об `options` можно найти в документации к основным классам: [`DBConnection`](../connection/db_connection) и [`FileDownloader`](../file/file_downloader/file_downloader) / [`FileUploader`](../file/file_uploader/file_uploader) / [`FileMover`](../file/file_mover/file_mover) / [`FileDFReader`](../file_df/file_df_reader/file_df_reader) / [`FileDFWriter`](../file_df/file_df_writer/file_df_writer)
+Более подробную информацию об `options` можно найти в документации к основным классам: [`DBConnection`][db-connections] и [`FileDownloader`][file-downloader-0] / [`FileUploader`][file-uploader-0] / [`FileMover`][file-mover-0] / [`FileDFReader`][filedf-reader-0] / [`FileDFWriter`][filedf-writer-0]
 
 ### Стратегии чтения
 
 onETL имеет несколько встроенных стратегий для чтения данных:
 
-1. [Стратегия моментального снимка](../strategy/snapshot_strategy) (стратегия по умолчанию)
-2. [Инкрементная стратегия](../strategy/incremental_strategy)
-3. [Пакетная стратегия моментального снимка](../strategy/snapshot_batch_strategy)
-4. [Инкрементная пакетная стратегия](../strategy/incremental_batch_strategy)
+1. [Стратегия моментального снимка][snapshot-strategy] (стратегия по умолчанию)
+2. [Инкрементная стратегия][incremental-strategy]
+3. [Пакетная стратегия моментального снимка][snapshot-batch-strategy]
+4. [Инкрементная пакетная стратегия][incremental-batch-strategy]
 
 Например, инкрементная стратегия позволяет получать только новые данные из таблицы:
 
@@ -469,7 +469,7 @@ with IncrementalStrategy():
     files = file_downloader.run()
 ```
 
-Большинство стратегий основаны на [`HWM`](../hwm_store/), пожалуйста, ознакомьтесь с документацией по каждой стратегии для получения более подробной информации.
+Большинство стратегий основаны на [`HWM`][hwm], пожалуйста, ознакомьтесь с документацией по каждой стратегии для получения более подробной информации.
 
 ### Почему просто не использовать класс Connection для извлечения/загрузки?
 
@@ -477,7 +477,7 @@ with IncrementalStrategy():
 
 Высокоуровневые операции, такие как
 
-  - Поддержка [`strategy`](../strategy/)
+  - Поддержка [`strategy`][strategy]
   - Обработка отправки/получения метаданных
   - Обработка различных опций, таких как `if_exists="replace_file"` в случае загрузки/выгрузки файлов
 

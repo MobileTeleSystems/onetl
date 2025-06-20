@@ -4,7 +4,7 @@ Logging is quite important to understand what's going on under the hood of onETL
 
 Default logging level for Python interpreters is `WARNING`, but most of onETL logs are in `INFO` level, so users usually don't see much.
 
-To change logging level, there is a function [setup_logging](../logging/#onetl.log.setup_logging) which should be called at the top of the script:
+To change logging level, there is a function [setup_logging][onetl.log.setup_logging] which should be called at the top of the script:
 
 ```python
 from onetl.log import setup_logging

@@ -1,6 +1,4 @@
-(greenplum-prerequisites)=
-
-# Prerequisites
+# Prerequisites { #greenplum-prerequisites }
 
 ## Version Compatibility
 

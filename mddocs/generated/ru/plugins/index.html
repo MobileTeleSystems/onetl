@@ -16,7 +16,7 @@
     
     
       
-        <title>Плагины - Документация onETL</title>
+        <title>Плагины { #plugins } - Документация onETL</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#plugins" class="md-skip">
           Перейти к содержанию
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Плагины
+              Плагины { #plugins }
             
           </span>
         </div>
@@ -1105,7 +1105,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       Что такое плагины?
     </span>
@@ -1115,7 +1115,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       Термины
     </span>
@@ -1124,7 +1124,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       Функциональность
     </span>
@@ -1133,7 +1133,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       Ограничения
     </span>
@@ -1147,7 +1147,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_5" class="md-nav__link">
     <span class="md-ellipsis">
       Как реализовать плагин?
     </span>
@@ -1156,7 +1156,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
+  <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       Как импортируются плагины?
     </span>
@@ -1165,7 +1165,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       Как включить/отключить плагины?
     </span>
@@ -1175,7 +1175,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       Отключить/включить все плагины
     </span>
@@ -1184,7 +1184,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_10" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       Отключить конкретный плагин (черный список)
     </span>
@@ -1193,7 +1193,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_11" class="md-nav__link">
+  <a href="#_10" class="md-nav__link">
     <span class="md-ellipsis">
       Отключить все плагины, кроме конкретного (белый список)
     </span>
@@ -1207,7 +1207,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_12" class="md-nav__link">
+  <a href="#_11" class="md-nav__link">
     <span class="md-ellipsis">
       Как увидеть логи механизма плагинов?
     </span>
@@ -1231,24 +1231,24 @@
 
 
 
-<h1 id="_1">Плагины<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<h1 id="plugins">Плагины<a class="headerlink" href="#plugins" title="Permanent link">&para;</a></h1>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M7.75 14A1.75 1.75 0 0 1 6 12.25v-8.5C6 2.784 6.784 2 7.75 2h6.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 14Zm-.25-1.75c0 .138.112.25.25.25h6.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25h-6.5a.25.25 0 0 0-.25.25ZM4.9 3.508a.75.75 0 0 1-.274 1.025.25.25 0 0 0-.126.217v6.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.75 1.75 0 0 1 3 11.25v-6.5c0-.649.353-1.214.874-1.516a.75.75 0 0 1 1.025.274ZM1.625 5.533za.25.25 0 0 0-.126.217v4.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.75 1.75 0 0 1 0 10.25v-4.5a1.75 1.75 0 0 1 .873-1.516.75.75 0 1 1 .752 1.299"/></svg></span> <strong>добавлено в версии 0.6.0</strong></p>
-<h2 id="_2">Что такое плагины?<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<h3 id="_3">Термины<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<h2 id="_1">Что такое плагины?<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h3 id="_2">Термины<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>Plugin</code> - Python пакет, который реализует дополнительную функциональность для onETL, например <a href="../hooks/">hooks</a></li>
+<li><code>Plugin</code> - Python пакет, который реализует дополнительную функциональность для onETL, например [hooks][]</li>
 <li><code>Plugin autoimport</code> - поведение onETL, которое позволяет автоматически импортировать этот пакет, если он содержит правильные метаданные (<code>entry_points</code>)</li>
 </ul>
-<h3 id="_4">Функциональность<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<h3 id="_3">Функциональность<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <p>Механизм плагинов позволяет:</p>
 <ul>
-<li>Автоматически регистрировать <a href="../hooks/">hooks</a>, которые могут изменять поведение onETL</li>
+<li>Автоматически регистрировать [hooks][], которые могут изменять поведение onETL</li>
 <li>Автоматически регистрировать новые классы, такие как тип HWM, хранилища HWM и т.д.</li>
 </ul>
-<h3 id="_5">Ограничения<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<h3 id="_4">Ограничения<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <p>В отличие от других проектов (таких как <em>Airflow 1.x</em>), плагины не внедряют импортированные классы или функции в пространство имен <code>onetl.*</code>.
 Пользователи должны импортировать классы из пакета плагина <strong>явно</strong>, чтобы избежать конфликтов имен.</p>
-<h2 id="_6">Как реализовать плагин?<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_5">Как реализовать плагин?<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
 <p>Создайте Python пакет <code>some-plugin</code> с файлом <code>some_plugin/setup.py</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># some_plugin/setup.py</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">setuptools</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup</span>
@@ -1267,7 +1267,7 @@
 <span class="p">)</span>
 </code></pre></div>
 <p>См. <a href="https://setuptools.pypa.io/en/latest/userguide/entry_point.html">документацию setuptools для entry_points</a></p>
-<h2 id="_7">Как импортируются плагины?<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_6">Как импортируются плагины?<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Пользователь должен установить пакет, реализующий плагин:</li>
 </ul>
@@ -1288,22 +1288,22 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">some_plugin.module.internals</span><span class="w"> </span><span class="kn">import</span> <span class="n">MyClass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">some_plugin.module.internals</span><span class="w"> </span><span class="kn">import</span> <span class="n">my_function</span>
 </code></pre></div>
-<p>Если конкретный модуль/класс/функция использует некоторые возможности регистрации onETL, например <a href="../hooks/hook.html#hook-decorator"><code>hook-decorator</code></a>, он будет выполнен во время этого импорта.</p>
-<h2 id="_8">Как включить/отключить плагины?<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<p>Если конкретный модуль/класс/функция использует некоторые возможности регистрации onETL, например [декоратор <code>@hook</code>][hook-decorator], он будет выполнен во время этого импорта.</p>
+<h2 id="_7">Как включить/отключить плагины?<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M7.75 14A1.75 1.75 0 0 1 6 12.25v-8.5C6 2.784 6.784 2 7.75 2h6.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 14Zm-.25-1.75c0 .138.112.25.25.25h6.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25h-6.5a.25.25 0 0 0-.25.25ZM4.9 3.508a.75.75 0 0 1-.274 1.025.25.25 0 0 0-.126.217v6.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.75 1.75 0 0 1 3 11.25v-6.5c0-.649.353-1.214.874-1.516a.75.75 0 0 1 1.025.274ZM1.625 5.533za.25.25 0 0 0-.126.217v4.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.75 1.75 0 0 1 0 10.25v-4.5a1.75 1.75 0 0 1 .873-1.516.75.75 0 1 1 .752 1.299"/></svg></span> <strong>добавлено в версии  0.7.0</strong></p>
-<h3 id="_9">Отключить/включить все плагины<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<h3 id="_8">Отключить/включить все плагины<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
 <p>По умолчанию плагины включены.</p>
 <p>Чтобы отключить их, вы можете установить переменную окружения <code>ONETL_PLUGINS_ENABLED</code> в <code>false</code> ДО импорта onETL. Это отключит весь автоимпорт плагинов.</p>
 <p>Но пользователь по-прежнему сможет явно импортировать <code>some_plugin.module</code>, выполняя все декораторы и возможности регистрации onETL.</p>
-<h3 id="_10">Отключить конкретный плагин (черный список)<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<h3 id="_9">Отключить конкретный плагин (черный список)<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
 <p>Если какой-то плагин не работает во время импорта, вы можете отключить его, установив переменную окружения <code>ONETL_PLUGINS_BLACKLIST=some-failing-plugin</code>. Несколько имен плагинов можно передать используя <code>,</code> в качестве разделителя.</p>
 <p>Опять же, эту переменную окружения следует установить ДО импорта onETL.</p>
-<h3 id="_11">Отключить все плагины, кроме конкретного (белый список)<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<h3 id="_10">Отключить все плагины, кроме конкретного (белый список)<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
 <p>Вы также можете отключить все плагины, кроме конкретного, установив переменную окружения
 <code>ONETL_PLUGINS_WHITELIST=some-not-failing-plugin</code>. Несколько имен плагинов можно передать через <code>,</code> в качестве разделителя.</p>
 <p>Опять же, эту переменную окружения следует установить ДО импорта onETL.</p>
 <p>Если установлены обе переменные окружения, белый и черный списки, черный список имеет более высокий приоритет.</p>
-<h2 id="_12">Как увидеть логи механизма плагинов?<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h2 id="_11">Как увидеть логи механизма плагинов?<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
 <p>Регистрация плагинов выдает логи с уровнем <code>INFO</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 

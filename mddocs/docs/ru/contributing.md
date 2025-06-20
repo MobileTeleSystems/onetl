@@ -159,7 +159,7 @@ docker-compose --profile all down -v
 
     Для запуска тестов Greenplum необходимо:
 
-    * Скачать [VMware Greenplum connector for Spark](https://onetl.readthedocs.io/en/latest/connection/db_connection/greenplum/prerequisites.html)
+    * Скачать [VMware Greenplum connector for Spark][greenplum-prerequisites]
     * Либо переместить его в `~/.ivy2/jars/`, либо передать путь к файлу в `CLASSPATH`
     * Установить переменную окружения `ONETL_GP_PACKAGE_VERSION=local`.
 

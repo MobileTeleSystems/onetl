@@ -1325,7 +1325,7 @@
 <span class="p">)</span>
 </code></pre></div>
 <p>где <strong>spark</strong> - это текущая сессия Apache Spark (SparkSession). <code>onETL</code> "под капотом" использует <code>Spark</code> и специальные Java-коннекторы для работы с базами данных.</p>
-<p>Описание других параметров см. в документации для {ref}<code>доступных DBConnections &lt;db-connections&gt;</code>.</p>
+<p>Описание других параметров см. в документации для <a class="autorefs autorefs-internal" title="DB Connections" href="../connection/db_connection/#db-connections">доступных DBConnections</a>.</p>
 <h3 id="fileconnection">Подключения к файловым хранилищам (FileConnection)<a class="headerlink" href="#fileconnection" title="Permanent link">&para;</a></h3>
 <p>Классы, унаследованные от <code>FileConnection</code>, можно использовать для доступа к файлам, хранящимся в различных файловых системах/файловых серверах.</p>
 <p><code>FileConnection</code> можно создать следующим образом:</p>
@@ -1337,7 +1337,7 @@
     <span class="n">password</span><span class="o">=</span><span class="s2">&quot;onetl&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
-<p>Описание других параметров см. в документации для {ref}<code>доступных FileConnections &lt;file-connections&gt;</code>.</p>
+<p>Описание других параметров см. в документации для [доступных FileConnections][file-connections-0].</p>
 <h3 id="filedfconnection">FileDFConnection<a class="headerlink" href="#filedfconnection" title="Permanent link">&para;</a></h3>
 <p>Классы, унаследованные от <code>FileDFConnection</code>, можно использовать для доступа к файлам в виде Spark DataFrames.</p>
 <p><code>FileDFConnection</code> можно создать следующим образом:</p>
@@ -1351,7 +1351,7 @@
 </code></pre></div>
 <p>где <strong>spark</strong> - это текущая SparkSession.
 <code>onETL</code> использует <code>Spark</code> и специальные Java-коннекторы под капотом для работы с DataFrames.</p>
-<p>Описание других параметров см. в документации для <a href="../connection/file_df_connection/">доступных FileDFConnections</a>.</p>
+<p>Описание других параметров см. в документации для [доступных FileDFConnections][file-dataframe-connections].</p>
 <h3 id="_4">Проверка доступности соединения<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <p>После создания соединения вы можете проверить доступность базы данных/файловой системы с помощью метода <code>check()</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="n">mssql</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
@@ -1374,13 +1374,13 @@
 <p>onETL предоставляет несколько классов для этого:</p>
 <blockquote>
 <ul>
-<li><a href="../db_/reader">DBReader</a></li>
-<li><a href="../db_/writer">DBWriter</a></li>
-<li><a href="../file_df/file_df_reader/file_df_reader">FileDFReader</a></li>
-<li><a href="../file_df/file_df_writer/file_df_writer">FileDFWriter</a></li>
-<li><a href="../file/file_downloader/file_downloader">FileDownloader</a></li>
-<li><a href="../file/file_uploader/file_uploader">FileUploader</a></li>
-<li><a href="../file/file_mover/file_mover">FileMover</a></li>
+<li><a class="autorefs autorefs-internal" title="DB Reader" href="../db_/reader/#db-reader">DBReader</a></li>
+<li><a class="autorefs autorefs-internal" title="DB Writer" href="../db_/writer/#db-writer">DBWriter</a></li>
+<li>[FileDFReader][filedf-reader-0]</li>
+<li>[FileDFWriter][filedf-writer-0]</li>
+<li>[FileDownloader][file-downloader-0]</li>
+<li>[FileUploader][file-uploader-0]</li>
+<li>[FileMover][file-mover-0]</li>
 </ul>
 </blockquote>
 <p>Все эти классы имеют метод <code>run()</code>, который запускает извлечение/загрузку данных:</p>
@@ -1417,25 +1417,25 @@
 </thead>
 <tbody>
 <tr>
-<td><a href="../db_/reader"><code>DBReader</code></a></td>
+<td><a class="autorefs autorefs-internal" title="DB Reader" href="../db_/reader/#db-reader"><code>DBReader</code></a></td>
 <td>Чтение данных из базы данных</td>
-<td>Любое <a href="../connection/db_connection"><code>DBConnection</code></a></td>
+<td>Любое <a class="autorefs autorefs-internal" title="DB Connections" href="../connection/db_connection/#db-connections"><code>DBConnection</code></a></td>
 <td>-</td>
 <td><a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe">Spark DataFrame</a></td>
 </tr>
 <tr>
-<td><a href="../file_df/file_df_reader/file_df_reader"><code>FileDFReader</code></a></td>
+<td>[<code>FileDFReader</code>][filedf-reader-0]</td>
 <td>Чтение данных из файла или набора файлов</td>
-<td>Любое <a href="../connection/file_df_connection"><code>FileDFConnection</code></a></td>
+<td>Любое [<code>FileDFConnection</code>][file-dataframe-connections]</td>
 <td>Нет входных данных или List[File path on FileSystem]</td>
 <td><a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe">Spark DataFrame</a></td>
 </tr>
 <tr>
-<td><a href="../file/file_downloader/file_downloader"><code>FileDownloader</code></a></td>
+<td>[<code>FileDownloader</code>][file-downloader-0]</td>
 <td>Загрузка файлов из удаленной ФС в локальную ФС</td>
-<td>Любое <a href="../connection/file_connection"><code>FileConnection</code></a></td>
+<td>Любое [<code>FileConnection</code>][file-connections-0]</td>
 <td>Нет входных данных или List[File path on remote FileSystem]</td>
-<td><a href="../file/file_downloader/result"><code>DownloadResult</code></a></td>
+<td>[<code>DownloadResult</code>][file-downloader-result]</td>
 </tr>
 </tbody>
 </table>
@@ -1453,25 +1453,25 @@
 </thead>
 <tbody>
 <tr>
-<td><a href="../db_/writer"><code>DBWriter</code></a></td>
+<td><a class="autorefs autorefs-internal" title="DB Writer" href="../db_/writer/#db-writer"><code>DBWriter</code></a></td>
 <td>Запись данных из DataFrame в базу данных</td>
-<td>Любое <a href="../connection/db_connection"><code>DBConnection</code></a></td>
+<td>Любое <a class="autorefs autorefs-internal" title="DB Connections" href="../connection/db_connection/#db-connections"><code>DBConnection</code></a></td>
 <td><a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe">Spark DataFrame</a></td>
 <td>None</td>
 </tr>
 <tr>
-<td><a href="../file_df/file_df_writer/file_df_writer"><code>FileDFWriter</code></a></td>
+<td>[<code>FileDFWriter</code>][filedf-writer-0]</td>
 <td>Запись данных из DataFrame в папку</td>
-<td>Любое <a href="../connection/file_df_connection"><code>FileDFConnection</code></a></td>
+<td>Любое [<code>FileDFConnection</code>][file-dataframe-connections]</td>
 <td><a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html#dataframe">Spark DataFrame</a></td>
 <td>None</td>
 </tr>
 <tr>
-<td><a href="../file/file_uploader/file_uploader"><code>FileUploader</code></a></td>
+<td>[<code>FileUploader</code>][file-uploader-0]</td>
 <td>Загрузка файлов из локальной ФС в удаленную ФС</td>
-<td>Любое <a href="../connection/file_connection"><code>FileConnection</code></a></td>
+<td>Любое [<code>FileConnection</code>][file-connections-0]</td>
 <td>List[File path on local FileSystem]</td>
-<td><a href="../file/file_uploader/result"><code>UploadResult</code></a></td>
+<td>[<code>UploadResult</code>][file-uploader-result]</td>
 </tr>
 </tbody>
 </table>
@@ -1489,11 +1489,11 @@
 </thead>
 <tbody>
 <tr>
-<td><a href="../file/file_mover/file_mover"><code>FileMover</code></a></td>
+<td>[<code>FileMover</code>][file-mover-0]</td>
 <td>Перемещение файлов между каталогами в удаленной ФС</td>
-<td>Любое <a href="../connection/file_connection"><code>FileConnection</code></a></td>
+<td>Любое [<code>FileConnection</code>][file-connections-0]</td>
 <td>List[File path on remote FileSystem]</td>
-<td><a href="../file/file_mover/result"><code>MoveResult</code></a></td>
+<td>[<code>MoveResult</code>][file-mover-result]</td>
 </tr>
 </tbody>
 </table>
@@ -1584,14 +1584,14 @@
     <span class="n">options</span><span class="o">=</span><span class="n">FileDFWriter</span><span class="o">.</span><span class="n">Options</span><span class="p">(</span><span class="n">if_exists</span><span class="o">=</span><span class="s2">&quot;replace_entire_directory&quot;</span><span class="p">),</span>
 <span class="p">)</span>
 </code></pre></div>
-<p>Более подробную информацию об <code>options</code> можно найти в документации к основным классам: <a href="../connection/db_connection"><code>DBConnection</code></a> и <a href="../file/file_downloader/file_downloader"><code>FileDownloader</code></a> / <a href="../file/file_uploader/file_uploader"><code>FileUploader</code></a> / <a href="../file/file_mover/file_mover"><code>FileMover</code></a> / <a href="../file_df/file_df_reader/file_df_reader"><code>FileDFReader</code></a> / <a href="../file_df/file_df_writer/file_df_writer"><code>FileDFWriter</code></a></p>
+<p>Более подробную информацию об <code>options</code> можно найти в документации к основным классам: <a class="autorefs autorefs-internal" title="DB Connections" href="../connection/db_connection/#db-connections"><code>DBConnection</code></a> и [<code>FileDownloader</code>][file-downloader-0] / [<code>FileUploader</code>][file-uploader-0] / [<code>FileMover</code>][file-mover-0] / [<code>FileDFReader</code>][filedf-reader-0] / [<code>FileDFWriter</code>][filedf-writer-0]</p>
 <h3 id="_11">Стратегии чтения<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
 <p>onETL имеет несколько встроенных стратегий для чтения данных:</p>
 <ol>
-<li><a href="../strategy/snapshot_strategy">Стратегия моментального снимка</a> (стратегия по умолчанию)</li>
-<li><a href="../strategy/incremental_strategy">Инкрементная стратегия</a></li>
-<li><a href="../strategy/snapshot_batch_strategy">Пакетная стратегия моментального снимка</a></li>
-<li><a href="../strategy/incremental_batch_strategy">Инкрементная пакетная стратегия</a></li>
+<li>[Стратегия моментального снимка][snapshot-strategy] (стратегия по умолчанию)</li>
+<li>[Инкрементная стратегия][incremental-strategy]</li>
+<li>[Пакетная стратегия моментального снимка][snapshot-batch-strategy]</li>
+<li>[Инкрементная пакетная стратегия][incremental-batch-strategy]</li>
 </ol>
 <p>Например, инкрементная стратегия позволяет получать только новые данные из таблицы:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.strategy</span><span class="w"> </span><span class="kn">import</span> <span class="n">IncrementalStrategy</span>
@@ -1634,12 +1634,12 @@
     <span class="c1"># только файлы, которые появились в источнике с момента предыдущего запуска</span>
     <span class="n">files</span> <span class="o">=</span> <span class="n">file_downloader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </code></pre></div>
-<p>Большинство стратегий основаны на <a href="../hwm_store/"><code>HWM</code></a>, пожалуйста, ознакомьтесь с документацией по каждой стратегии для получения более подробной информации.</p>
+<p>Большинство стратегий основаны на [<code>HWM</code>][hwm], пожалуйста, ознакомьтесь с документацией по каждой стратегии для получения более подробной информации.</p>
 <h3 id="connection_1">Почему просто не использовать класс Connection для извлечения/загрузки?<a class="headerlink" href="#connection_1" title="Permanent link">&para;</a></h3>
 <p>Соединения очень просты, у них есть только набор некоторых основных операций, например, <code>mkdir</code>, <code>remove_file</code>, <code>get_table_schema</code> и так далее.</p>
 <p>Высокоуровневые операции, такие как</p>
 <ul>
-<li>Поддержка <a href="../strategy/"><code>strategy</code></a></li>
+<li>Поддержка [<code>strategy</code>][]</li>
 <li>Обработка отправки/получения метаданных</li>
 <li>Обработка различных опций, таких как <code>if_exists="replace_file"</code> в случае загрузки/выгрузки файлов</li>
 </ul>

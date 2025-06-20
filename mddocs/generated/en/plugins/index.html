@@ -327,6 +327,28 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plugins
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
       
@@ -396,7 +418,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -413,14 +435,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             changelog
           </label>
@@ -1081,7 +1103,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1098,14 +1120,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             DB
           </label>
@@ -1324,13 +1346,13 @@
 <h2 id="what-are-plugins">What are plugins?<a class="headerlink" href="#what-are-plugins" title="Permanent link">&para;</a></h2>
 <h3 id="terms">Terms<a class="headerlink" href="#terms" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>Plugin</code> - some Python package which implements some extra functionality for onETL, like <a href="../hooks/">hooks</a></li>
+<li><code>Plugin</code> - some Python package which implements some extra functionality for onETL, like <a class="autorefs autorefs-internal" title="Hooks" href="../hooks/#hooks">hooks</a></li>
 <li><code>Plugin autoimport</code> - onETL behavior which allows to automatically import this package if it contains proper metadata (<code>entry_points</code>)</li>
 </ul>
 <h3 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h3>
 <p>Plugins mechanism allows to:</p>
 <ul>
-<li>Automatically register <a href="../hooks/">hooks</a> which can alter onETL behavior</li>
+<li>Automatically register <a class="autorefs autorefs-internal" title="Hooks" href="../hooks/#hooks">hooks</a> which can alter onETL behavior</li>
 <li>Automatically register new classes, like HWM type, HWM stores and so on</li>
 </ul>
 <h3 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h3>
@@ -1377,7 +1399,7 @@ Users should import classes from the plugin package <strong>explicitly</strong> 
 <span class="kn">from</span><span class="w"> </span><span class="nn">some_plugin.module.internals</span><span class="w"> </span><span class="kn">import</span> <span class="n">my_function</span>
 </code></pre></div>
 <p>If specific module/class/function uses some registration capabilities of onETL,
-like <a href="../hooks/">hooks</a>, it will be executed during this import.</p>
+like <a class="autorefs autorefs-internal" title="@hook decorator" href="../hooks/hook/#hook-decorator"><code>@hook</code> decorator</a>, it will be executed during this import.</p>
 <h2 id="how-to-enabledisable-plugins">How to enable/disable plugins?<a class="headerlink" href="#how-to-enabledisable-plugins" title="Permanent link">&para;</a></h2>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M7.75 14A1.75 1.75 0 0 1 6 12.25v-8.5C6 2.784 6.784 2 7.75 2h6.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 14Zm-.25-1.75c0 .138.112.25.25.25h6.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25h-6.5a.25.25 0 0 0-.25.25ZM4.9 3.508a.75.75 0 0 1-.274 1.025.25.25 0 0 0-.126.217v6.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.75 1.75 0 0 1 3 11.25v-6.5c0-.649.353-1.214.874-1.516a.75.75 0 0 1 1.025.274ZM1.625 5.533za.25.25 0 0 0-.126.217v4.5c0 .09.048.173.126.217a.75.75 0 0 1-.752 1.298A1.75 1.75 0 0 1 0 10.25v-4.5a1.75 1.75 0 0 1 .873-1.516.75.75 0 1 1 .752 1.299"/></svg></span> <strong>version added 0.7.0</strong></p>
 <h3 id="disableenable-all-plugins">Disable/enable all plugins<a class="headerlink" href="#disableenable-all-plugins" title="Permanent link">&para;</a></h3>

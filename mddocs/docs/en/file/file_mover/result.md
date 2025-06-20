@@ -1,6 +1,4 @@
-(file-mover-result)=
-
-# File Mover Result
+# File Mover Result { #file-mover-result }
 
 ```{eval-rst}
 .. currentmodule:: onetl.file.file_mover.result
