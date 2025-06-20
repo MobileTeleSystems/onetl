@@ -148,13 +148,13 @@ As we said above, onETL is used to extract data from and load data into remote s
 
 onETL provides several classes for this:
 
-> * [DBReader][db-reader]
-> * [DBWriter][db-writer]
-> * [FileDFReader][filedf-reader-0]
-> * [FileDFWriter][filedf-writer-0]
-> * [FileDownloader][file-downloader-0]
-> * [FileUploader][file-uploader-0]
-> * [FileMover][file-mover-0]
+* [DBReader][db-reader]
+* [DBWriter][db-writer]
+* [FileDFReader][filedf-reader-0]
+* [FileDFWriter][filedf-writer-0]
+* [FileDownloader][file-downloader-0]
+* [FileUploader][file-uploader-0]
+* [FileMover][file-mover-0]
 
 All of these classes have a method `run()` that starts extracting/loading the data:
 
