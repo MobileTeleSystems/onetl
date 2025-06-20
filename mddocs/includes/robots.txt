@@ -1,5 +1,0 @@
-User-agent: *
-Allow: /*/stable/
-Allow: /en/stable/   # Fallback for bots that don't understand wildcards
-Disallow: /
-Sitemap: https://onel.readthedocs.io/sitemap.xml
