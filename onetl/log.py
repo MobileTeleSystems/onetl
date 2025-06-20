@@ -83,7 +83,7 @@ def setup_logging(level: int | str = logging.INFO, enable_clients: bool = False)
         or scripts (ETL pipelines).
 
     !!! info "version changed 0.5.0"
-    
+
         Renamed ``setup_notebook_logging`` → ``setup_logging``
 
     Parameters:
@@ -192,14 +192,14 @@ def log_with_indent(
     Example:
 
         ```python
-            log_with_indent(logger, "message")
-            log_with_indent(
-                logger,
-                "message with additional %s",
-                "indent",
-                indent=4,
-                level=logging.DEBUG,
-            )
+        log_with_indent(logger, "message")
+        log_with_indent(
+            logger,
+            "message with additional %s",
+            "indent",
+            indent=4,
+            level=logging.DEBUG,
+        )
         ```
         ```text
 
@@ -227,8 +227,8 @@ def log_lines(
     Examples:
 
     ```python
-        log_lines(logger, "line1\nline2")
-        log_lines(logger, "  line1\n      line2\n  line3", level=logging.DEBUG)
+    log_lines(logger, "line1\nline2")
+    log_lines(logger, "  line1\n      line2\n  line3", level=logging.DEBUG)
     ```
 
     ```text
@@ -266,10 +266,9 @@ def log_json(
     Examples:
 
     ```python
+    log_json(logger, ["item1", {"item2": "value2"}, None])
 
-        log_json(logger, ["item1", {"item2": "value2"}, None])
-
-        log_json(logger, {"item2": "value2"}, name="myvar", level=logging.DEBUG)
+    log_json(logger, {"item2": "value2"}, name="myvar", level=logging.DEBUG)
     ```
 
     ```text
@@ -305,19 +304,18 @@ def log_collection(
     Examples:
 
     ```python
-
-        log_collection(logger, "myvar", [])
-        log_collection(logger, "myvar", ["item1", {"item2": "value2"}, None])
-        log_collection(logger, "myvar", {"item1", "item2", None})
-        log_collection(logger, "myvar", {"key1": "value1", "key2": None})
-        log_collection(logger, "myvar", ["item1", "item2", "item3"], max_items=1)
-        log_collection(
-            logger,
-            "myvar",
-            ["item1", "item2", "item3"],
-            max_items=1,
-            level=logging.DEBUG,
-        )
+    log_collection(logger, "myvar", [])
+    log_collection(logger, "myvar", ["item1", {"item2": "value2"}, None])
+    log_collection(logger, "myvar", {"item1", "item2", None})
+    log_collection(logger, "myvar", {"key1": "value1", "key2": None})
+    log_collection(logger, "myvar", ["item1", "item2", "item3"], max_items=1)
+    log_collection(
+        logger,
+        "myvar",
+        ["item1", "item2", "item3"],
+        max_items=1,
+        level=logging.DEBUG,
+    )
     ```
 
     ```text
@@ -408,9 +406,8 @@ def entity_boundary_log(logger: logging.Logger, msg: str, char: str = "=", stack
     Examples:
 
     ```python
-
-        entity_boundary_log(logger, "Begin")
-        entity_boundary_log(logger, "End", "-")
+    entity_boundary_log(logger, "Begin")
+    entity_boundary_log(logger, "End", "-")
     ```
 
     ```text
@@ -436,14 +433,13 @@ def log_options(
     Examples:
 
     ```python
-
-        log_options(
-            logger,
-            Options(some="value", abc=1, bcd=None, cde=True, feg=SomeEnum.VALUE).dict(
-                by_alias=True
-            ),
-        )
-        log_options(logger, None)
+    log_options(
+        logger,
+        Options(some="value", abc=1, bcd=None, cde=True, feg=SomeEnum.VALUE).dict(
+            by_alias=True
+        ),
+    )
+    log_options(logger, None)
     ```
 
     ```text
@@ -485,8 +481,7 @@ def log_dataframe_schema(logger: logging.Logger, df: DataFrame, indent: int = 0,
     Examples:
 
     ```python
-
-        log_dataframe_schema(logger, df)
+    log_dataframe_schema(logger, df)
     ```
 
     ```text
@@ -516,9 +511,8 @@ def log_hwm(logger: logging.Logger, hwm: HWM, indent: int = 0, stacklevel: int =
     Examples:
 
     ```python
-
-        hwm = ColumnIntHWM(name="my_unique_name", source="my_source", value=123)
-        log_hwm(logger, hwm)
+    hwm = ColumnIntHWM(name="my_unique_name", source="my_source", value=123)
+    log_hwm(logger, hwm)
     ```
 
     ```text
