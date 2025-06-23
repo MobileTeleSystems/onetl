@@ -114,7 +114,7 @@ repos:
           - black==25.1.0
 
   - repo: https://github.com/pycqa/bandit
-    rev: 1.8.4
+    rev: 1.8.5
     hooks:
       - id: bandit
         args:
