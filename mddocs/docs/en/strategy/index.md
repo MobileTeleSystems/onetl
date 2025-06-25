@@ -1,19 +1,8 @@
-# Read Strategies { #strategy data-toc-label='strategy' }
-
-```{toctree}
-:caption: Read Strategies
-:hidden: true
-:maxdepth: 3
-
-snapshot_strategy
-incremental_strategy
-snapshot_batch_strategy
-incremental_batch_strategy
-```
+# Read Strategies { #strategy }
 
 onETL have several builtin strategies for reading data:
 
-1. {doc}`snapshot_strategy`
-2. {doc}`incremental_strategy`
-3. {doc}`snapshot_batch_strategy`
-4. {doc}`incremental_batch_strategy`
+1. [Snapshot Strategy][snapshot-strategy]
+2. [Incremental Strategy][incremental-strategy]
+3. [Snapshot Batch Strategy][snapshot-batch-strategy]
+4. [Incremental Batch Strategy][incremental-batch-strategy]

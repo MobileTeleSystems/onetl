@@ -1,24 +1,18 @@
-(oracle-write)=
+# Writing to Oracle using `DBWriter` { #oracle-write }
 
-# Writing to Oracle using `DBWriter`
+For writing data to Oracle, use [DBWriter][db-writer].
 
-For writing data to Oracle, use {obj}`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
+!!! warning
 
-```{eval-rst}
-.. warning::
+    Please take into account [Oracle types][oracle-types]
 
-    Please take into account :ref:`oracle-types`
-```
+!!! warning
 
-```{eval-rst}
-.. warning::
-
-    It is always recommended to create table explicitly using :ref:`Oracle.execute <oracle-execute>`
+    It is always recommended to create table explicitly using [Oracle.execute][oracle-execute]
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,
     causing precision loss or other issues.
-```
 
 ## Examples
 
@@ -41,8 +35,9 @@ writer.run(df)
 
 ## Options
 
-Method above accepts {obj}`OracleWriteOptions <onetl.connection.db_connection.oracle.options.OracleWriteOptions>`
+Method above accepts [OracleWriteOptions][onetl.connection.db_connection.oracle.options.OracleWriteOptions]
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.oracle.options
 ```
@@ -54,3 +49,10 @@ Method above accepts {obj}`OracleWriteOptions <onetl.connection.db_connection.or
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.oracle.options.OracleWriteOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

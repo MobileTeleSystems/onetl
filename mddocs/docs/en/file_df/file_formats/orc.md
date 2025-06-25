@@ -1,7 +1,6 @@
-(orc-file-format)=
+# ORC { #orc-file-format }
 
-# ORC
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.file.format.orc
 ```
@@ -11,3 +10,11 @@
     :members: __init__, mergeSchema,compression
     :member-order: bysource
 ```
+ -->
+
+::: onetl.file.format.orc.ORC
+    options:
+        members:
+            - __init__
+            - mergeSchema
+            - compression

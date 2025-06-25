@@ -87,7 +87,7 @@ Incremental strategy, `value` is JSON string:
 ```{eval-rst}
 .. note::
 
-    Currently Kafka connector does support only HWMs based on ``offset`` field. Other fields, like ``timestamp``, are not yet supported.
+    Currently Kafka connector does support only HWMs based on `offset` field. Other fields, like `timestamp`, are not yet supported.
 ```
 
 ```python

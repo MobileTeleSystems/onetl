@@ -1,7 +1,6 @@
-(slot-decorator)=
+# `@slot` decorator { #slot-decorator }
 
-# `@slot` decorator
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.hooks.slot
 ```
@@ -24,3 +23,8 @@
 ```{eval-rst}
 .. autoprotocol:: Slot
 ```
+ -->
+
+::: onetl.hooks.slot.slot
+
+::: onetl.hooks.slot.Slot

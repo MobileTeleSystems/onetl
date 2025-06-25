@@ -1,11 +1,9 @@
-(clickhouse-prerequisites)=
-
-# Prerequisites
+# Prerequisites { #clickhouse-prerequisites }
 
 ## Version Compatibility
 
 - Clickhouse server versions:
-  : - Officially declared: 22.8 or higher
+    - Officially declared: 22.8 or higher
     - Actually tested: 21.1, 25.1
 - Spark versions: 2.3.x - 3.5.x
 - Java versions: 8 - 20
@@ -17,7 +15,7 @@ See [official documentation](https://clickhouse.com/docs/en/integrations/java#jd
 To use Clickhouse connector you should have PySpark installed (or injected to `sys.path`)
 BEFORE creating the connector instance.
 
-See {ref}`install-spark` installation instruction for more details.
+See [installation instruction][install-spark] for more details.
 
 ## Connecting to Clickhouse
 
@@ -53,21 +51,24 @@ See [official documentation](https://clickhouse.com/docs/en/integrations/java#co
 Ask your Clickhouse cluster administrator to set following grants for a user,
 used for creating a connection:
 
-```{eval-rst}
-.. tabs::
 
-    .. code-tab:: sql Read + Write
+=== "Read + Write"
+
+    ```sql 
 
         -- allow creating tables in the target schema
         GRANT CREATE TABLE ON myschema.* TO username;
 
         -- allow read & write access to specific table
         GRANT SELECT, INSERT ON myschema.mytable TO username;
+    ```
 
-    .. code-tab:: sql Read only
+=== "Read only"
+
+    ```sql
 
         -- allow read access to specific table
         GRANT SELECT ON myschema.mytable TO username;
-```
+    ```
 
 More details can be found in [official documentation](https://clickhouse.com/docs/en/sql-reference/statements/grant).

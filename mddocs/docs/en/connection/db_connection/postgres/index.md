@@ -1,28 +1,17 @@
-(postgres)=
-
 # Postgres
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+## Connection
 
-prerequisites
-connection
-```
+* [Prerequisites][postgres-prerequisites]
+* [Postgres connection][postgres-connection]
 
-```{toctree}
-:caption: Operations
-:maxdepth: 1
+## Operations
 
-read
-sql
-write
-execute
-```
+* [Reading from Postgres using `DBReader`][postgres-read]
+* [Reading from Postgres using `Postgres.sql`][postgres-sql]
+* [Writing to Postgres using `DBWriter`][postgres-write]
+* [Executing statements in Postgres][postgres-execute]
 
-```{toctree}
-:caption: Troubleshooting
-:maxdepth: 1
+## Troubleshooting
 
-types
-```
+* [Postgres <-> Spark type mapping][postgres-types]

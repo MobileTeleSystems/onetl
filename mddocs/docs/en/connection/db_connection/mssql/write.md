@@ -1,24 +1,18 @@
-(mssql-write)=
+# Writing to MSSQL using `DBWriter` { #mssql-write }
 
-# Writing to MSSQL using `DBWriter`
+For writing data to MSSQL, use [DBWriter][db-writer].
 
-For writing data to MSSQL, use {obj}`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
+!!! warning
 
-```{eval-rst}
-.. warning::
+    Please take into account [MSSQL types][mssql-types]
 
-    Please take into account :ref:`mssql-types`
-```
+!!! warning
 
-```{eval-rst}
-.. warning::
-
-    It is always recommended to create table explicitly using :ref:`MSSQL.execute <mssql-execute>`
+    It is always recommended to create table explicitly using [MSSQL.execute][mssql-execute]
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,
     causing precision loss or other issues.
-```
 
 ## Examples
 
@@ -41,8 +35,9 @@ writer.run(df)
 
 ## Options
 
-Method above accepts {obj}`MSSQL.WriteOptions <onetl.connection.db_connection.mssql.options.MSSQLWriteOptions>`
+Method above accepts [MSSQL.WriteOptions][onetl.connection.db_connection.mssql.options.MSSQLWriteOptions]
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.mssql.options
 ```
@@ -54,3 +49,10 @@ Method above accepts {obj}`MSSQL.WriteOptions <onetl.connection.db_connection.ms
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.mssql.options.MSSQLWriteOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

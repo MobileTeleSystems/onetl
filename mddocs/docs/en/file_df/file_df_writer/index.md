@@ -1,11 +1,4 @@
-(file-df-writer-root)=
-
 # FileDF Writer
 
-```{toctree}
-:caption: FileDF Writer
-:maxdepth: 1
-
-file_df_writer
-options
-```
+* [FileDF Writer][filedf-writer-0]
+* [Options][filedf-writer-options]

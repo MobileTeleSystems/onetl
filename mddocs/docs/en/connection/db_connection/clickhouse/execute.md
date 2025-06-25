@@ -1,14 +1,11 @@
-(clickhouse-execute)=
+# Executing statements in Clickhouse { #clickhouse-execute }
 
-# Executing statements in Clickhouse
-
-```{eval-rst}
-.. warning::
+!!! warning
 
     Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
 
-    Do **NOT** use them to read large amounts of data. Use :ref:`DBReader <clickhouse-read>` or :ref:`Clickhouse.sql <clickhouse-sql>` instead.
-```
+    Do **NOT** use them to read large amounts of data. Use [DBReader][clickhouse-read] or [Clickhouse.sql][clickhouse-sql] instead.
+
 
 ## How to
 
@@ -19,15 +16,14 @@ There are 2 ways to execute some statement in Clickhouse
 Use this method to perform some `SELECT` query which returns **small number or rows**, like reading
 Clickhouse config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts {obj}`Clickhouse.FetchOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseFetchOptions>`.
+Method accepts [Clickhouse.FetchOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseFetchOptions].
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Please take into account :ref:`clickhouse-types`.
-```
+    Please take into account [Clickhouse types][clickhouse-types].
+
 
 #### Syntax support
 
@@ -58,7 +54,7 @@ value = df.collect()[0][0]  # get value from first row and first column
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts {obj}`Clickhouse.ExecuteOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseExecuteOptions>`.
+Method accepts [Clickhouse.ExecuteOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseExecuteOptions].
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
@@ -99,10 +95,11 @@ clickhouse.execute(
 
 These methods **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
 
-So it should **NOT** be used to read large amounts of data. Use {ref}`DBReader <clickhouse-read>` or {ref}`Clickhouse.sql <clickhouse-sql>` instead.
+So it should **NOT** be used to read large amounts of data. Use [DBReader][clickhouse-read] or [Clickhouse.sql][clickhouse-sql] instead.
 
-## Options
+## Options { #clickhouse-execute-options }
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.clickhouse.options
 ```
@@ -123,3 +120,16 @@ So it should **NOT** be used to read large amounts of data. Use {ref}`DBReader <
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.clickhouse.options.ClickhouseFetchOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true
+
+::: onetl.connection.db_connection.clickhouse.options.ClickhouseExecuteOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

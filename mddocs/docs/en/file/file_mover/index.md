@@ -1,10 +1,5 @@
-# File Mover { #file-mover-0 }
+# File Mover
 
-```{toctree}
-:caption: File Mover
-:maxdepth: 1
-
-file_mover
-options
-result
-```
+* [File Mover][file-mover-0]
+* [File Mover Options][file-mover-options]
+* [File Mover Result][file-mover-result]

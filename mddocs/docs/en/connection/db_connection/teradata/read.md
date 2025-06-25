@@ -1,8 +1,6 @@
-(teradata-read)=
+# Reading from Teradata using `DBReader` { #teradata-read }
 
-# Reading from Teradata using `DBReader`
-
-{obj}`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports {ref}`strategy` for incremental data reading,
+[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
 but does not support custom queries, like `JOIN`.
 
 ## Supported DBReader features
@@ -10,13 +8,13 @@ but does not support custom queries, like `JOIN`.
 - ✅︎ `columns`
 - ✅︎ `where`
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ {ref}`snapshot-strategy`
-- - ✅︎ {ref}`incremental-strategy`
-- - ✅︎ {ref}`snapshot-batch-strategy`
-- - ✅︎ {ref}`incremental-batch-strategy`
+- - ✅︎ [Snapshot strategy][snapshot-strategy]
+- - ✅︎ [Incremental strategy][incremental-strategy]
+- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
+- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
 - ❌ `hint` (is not supported by Teradata)
 - ❌ `df_schema`
-- ✅︎ `options` (see {obj}`Teradata.ReadOptions <onetl.connection.db_connection.teradata.options.TeradataReadOptions>`)
+- ✅︎ `options` (see [Teradata.ReadOptions][onetl.connection.db_connection.teradata.options.TeradataReadOptions])
 
 ## Examples
 
@@ -104,8 +102,9 @@ This leads to sending all the data to just one Spark worker, which is slow and t
 
 Prefer using `partitioning_mode="hash"` from example above.
 
-## Options
+## Options { #teradata-read-options }
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.teradata.options
 ```
@@ -115,3 +114,10 @@ Prefer using `partitioning_mode="hash"` from example above.
     :inherited-members: GenericOptions
     :member-order: bysource
 ```
+ -->
+
+::: onetl.connection.db_connection.teradata.options.TeradataReadOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

@@ -1,5 +1,3 @@
-(mongodb-connection)=
-
 # MongoDB Connection
 
 ```{eval-rst}

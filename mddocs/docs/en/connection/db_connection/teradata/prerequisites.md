@@ -1,11 +1,9 @@
-(teradata-prerequisites)=
-
-# Prerequisites
+# Prerequisites { #teradata-prerequisites }
 
 ## Version Compatibility
 
 - Teradata server versions:
-  : - Officially declared: 16.10 - 20.0
+    - Officially declared: 16.10 - 20.0
     - Actually tested: 16.10
 - Spark versions: 2.3.x - 3.5.x
 - Java versions: 8 - 20
@@ -17,7 +15,7 @@ See [official documentation](https://teradata-docs.s3.amazonaws.com/doc/connecti
 To use Teradata connector you should have PySpark installed (or injected to `sys.path`)
 BEFORE creating the connector instance.
 
-See {ref}`install-spark` installation instruction for more details.
+See [installation instruction][install-spark] for more details.
 
 ## Connecting to Teradata
 
@@ -35,23 +33,25 @@ Please ask your Teradata administrator to provide required information.
 Ask your Teradata cluster administrator to set following grants for a user,
 used for creating a connection:
 
-```{eval-rst}
-.. tabs::
+=== "Read + Write"
 
-    .. code-tab:: sql Read + Write
+    ```sql 
 
         -- allow creating tables in the target schema
         GRANT CREATE TABLE ON database TO username;
 
         -- allow read & write access to specific table
         GRANT SELECT, INSERT ON database.mytable TO username;
+    ```
 
-    .. code-tab:: sql Read only
+=== "Read only"
+
+    ```sql Read only
 
         -- allow read access to specific table
         GRANT SELECT ON database.mytable TO username;
-```
+    ```
 
 See:
-: - [Teradata access rights](https://www.dwhpro.com/teradata-access-rights/)
+  - [Teradata access rights](https://www.dwhpro.com/teradata-access-rights/)
   - [GRANT documentation](https://teradata.github.io/presto/docs/0.167-t/sql/grant.html)

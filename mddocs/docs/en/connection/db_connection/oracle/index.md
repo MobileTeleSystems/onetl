@@ -1,28 +1,17 @@
-(oracle)=
-
 # Oracle
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+## Connection
 
-prerequisites
-connection
-```
+* [Prerequisites][oracle-prerequisites]
+* [Oracle connection][oracle-connection]
 
-```{toctree}
-:caption: Operations
-:maxdepth: 1
+## Operations
 
-read
-sql
-write
-execute
-```
+* [Reading from Oracle using `DBReader`][oracle-read]
+* [Reading from Oracle using `Oracle.sql`][oracle-sql]
+* [Writing to Oracle using `DBWriter`][oracle-write]
+* [Executing statements in Oracle][oracle-execute]
 
-```{toctree}
-:caption: Troubleshooting
-:maxdepth: 1
+## Troubleshooting
 
-types
-```
+* [Oracle <-> Spark type mapping][oracle-types]

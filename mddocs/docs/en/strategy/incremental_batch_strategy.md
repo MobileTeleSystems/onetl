@@ -1,7 +1,6 @@
-(incremental-batch-strategy)=
+# Incremental Batch Strategy { #incremental-batch-strategy }
 
-# Incremental Batch Strategy
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.strategy.incremental_strategy
 ```
@@ -10,3 +9,9 @@
 .. autoclass:: IncrementalBatchStrategy
     :members: __init__
 ```
+ -->
+
+::: onetl.strategy.incremental_strategy.IncrementalBatchStrategy
+    options:
+        members:
+            - __init__

@@ -33,7 +33,7 @@ and then pass it to Spark session.
 .. warning::
 
     There are issues with using package of version 2.3.0/2.3.1 with Greenplum 6.x - connector can
-    open transaction with ``SELECT * FROM table LIMIT 0`` query, but does not close it, which leads to deadlocks
+    open transaction with `SELECT * FROM table LIMIT 0` query, but does not close it, which leads to deadlocks
     during write.
 ```
 
@@ -42,8 +42,8 @@ There are several ways to do that. See {ref}`java-packages` for details.
 ```{eval-rst}
 .. note::
 
-    If you're uploading package to private package repo, use ``groupId=io.pivotal`` and ``artifactoryId=greenplum-spark_2.12``
-    (``2.12`` is Scala version) to give uploaded package a proper name.
+    If you're uploading package to private package repo, use `groupId=io.pivotal` and `artifactoryId=greenplum-spark_2.12``
+    (`2.12` is Scala version) to give uploaded package a proper name.
 ```
 
 ## Connecting to Greenplum
@@ -68,7 +68,7 @@ More details can be found in [official documentation](https://docs.vmware.com/en
 
     If you don't limit number of connections, you can exceed the `max_connections <https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/admin_guide-client_auth.html#limiting-concurrent-connections#limiting-concurrent-connections-2>`_
     limit set on the Greenplum side. It's usually not so high, e.g. 500-1000 connections max,
-    depending on your Greenplum instance settings and using connection balancers like ``pgbouncer``.
+    depending on your Greenplum instance settings and using connection balancers like `pgbouncer`.
 
     Consuming all available connections means **nobody** (even admin users) can connect to Greenplum.
 ```
@@ -370,7 +370,7 @@ used for creating a connection:
         -- allow creating external tables in the same schema as source table
         GRANT USAGE ON SCHEMA schema_to_read TO username;
         GRANT CREATE ON SCHEMA schema_to_read TO username;
-        -- yes, ``writable`` for reading from GP, because data is written from Greenplum to Spark executor.
+        -- yes, `writable` for reading from GP, because data is written from Greenplum to Spark executor.
         ALTER USER username CREATEEXTTABLE(type = 'writable', protocol = 'gpfdist');
 
         -- allow read access to specific table

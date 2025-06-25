@@ -1,28 +1,24 @@
-(postgres-read)=
+# Reading from Postgres using `DBReader` { #postgres-read }
 
-# Reading from Postgres using `DBReader`
-
-{obj}`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports {ref}`strategy` for incremental data reading,
+[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
 but does not support custom queries, like `JOIN`.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Please take into account :ref:`postgres-types`
-```
+    Please take into account [Postgres types][postgres-types]
 
 ## Supported DBReader features
 
 - ✅︎ `columns`
 - ✅︎ `where`
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ {ref}`snapshot-strategy`
-- - ✅︎ {ref}`incremental-strategy`
-- - ✅︎ {ref}`snapshot-batch-strategy`
-- - ✅︎ {ref}`incremental-batch-strategy`
+- - ✅︎ [Snapshot strategy][snapshot-strategy]
+- - ✅︎ [Incremental strategy][incremental-strategy]
+- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
+- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
 - ❌ `hint` (is not supported by Postgres)
 - ❌ `df_schema`
-- ✅︎ `options` (see {obj}`Postgres.ReadOptions <onetl.connection.db_connection.postgres.options.PostgresReadOptions>`)
+- ✅︎ `options` (see [Postgres.ReadOptions][onetl.connection.db_connection.postgres.options.PostgresReadOptions])
 
 ## Examples
 
@@ -78,8 +74,9 @@ Instead of filtering data on Spark side using `df.filter(df.column == 'value')` 
 This both reduces the amount of data send from Postgres to Spark, and may also improve performance of the query.
 Especially if there are indexes or partitions for columns used in `where` clause.
 
-## Options
+## Options { #postgres-read-options }
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.postgres.options
 ```
@@ -89,3 +86,10 @@ Especially if there are indexes or partitions for columns used in `where` clause
     :inherited-members: GenericOptions
     :member-order: bysource
 ```
+ -->
+
+::: onetl.connection.db_connection.postgres.options.PostgresReadOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

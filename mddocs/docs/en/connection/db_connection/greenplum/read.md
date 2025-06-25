@@ -15,7 +15,7 @@ It also supports {ref}`strategy` for incremental data reading.
 .. note::
 
     Unlike JDBC connectors, *Greenplum connector for Spark* does not support
-    executing **custom** SQL queries using ``.sql`` method. Connector can be used to only read data from a table or view.
+    executing **custom** SQL queries using `.sql` method. Connector can be used to only read data from a table or view.
 ```
 
 ## Supported DBReader features
@@ -34,10 +34,10 @@ It also supports {ref}`strategy` for incremental data reading.
 ```{eval-rst}
 .. warning::
 
-    In case of Greenplum connector, ``DBReader`` does not generate raw ``SELECT`` query. Instead it relies on Spark SQL syntax
+    In case of Greenplum connector, `DBReader` does not generate raw `SELECT` query. Instead it relies on Spark SQL syntax
     which in some cases (using column projection and predicate pushdown) can be converted to Greenplum SQL.
 
-    So ``columns``, ``where`` and ``hwm.expression`` should be specified in `Spark SQL <https://spark.apache.org/docs/latest/sql-ref-syntax.html>`_ syntax,
+    So `columns`, `where` and `hwm.expression` should be specified in `Spark SQL <https://spark.apache.org/docs/latest/sql-ref-syntax.html>`_ syntax,
     not Greenplum SQL.
 
     This is OK:
@@ -356,7 +356,7 @@ and then read this table using `DBReader`:
 
         joined_df = df1.join(df2, on="col")
 
-    This will lead to sending all the data from both ``table1`` and ``table2`` to Spark executor memory, and then ``JOIN``
+    This will lead to sending all the data from both `table1` and `table2` to Spark executor memory, and then `JOIN``
     will be performed on Spark side, not inside Greenplum. This is **VERY** inefficient.
 ```
 

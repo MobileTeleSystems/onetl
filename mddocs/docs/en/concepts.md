@@ -16,131 +16,15 @@ To create a connection to a specific storage type, you must use a class that mat
 from onetl.connection import SFTP
 
 sftp = SFTP(
- host="sftp.test.com",
- user="onetl",
- password="onetl",
+    host="sftp.test.com",
+    user="onetl",
+    password="onetl",
 )
 ```
 
 All connection types are inherited from the parent class `BaseConnection`.
 
 ### Class diagram
-
-```plantuml
-
- @startuml
- left to right direction
- skinparam classFontSize 20
- skinparam class {
- BackgroundColor<<DBConnection>> LightGreen
- BackgroundColor<<FileConnection>> Khaki
- BackgroundColor<<FileDFConnection>> LightBlue
- StereotypeFontColor<<FileDFConnection>> Transparent
- StereotypeFontColor<<DBConnection>> Transparent
- StereotypeFontColor<<FileConnection>> Transparent
- }
-
- class BaseConnection {
- }
-
- class DBConnection <<DBConnection>>{
- }
- DBConnection --|> BaseConnection
-
- class Hive <<DBConnection>>{
- }
- Hive --|> DBConnection
-
- class Greenplum <<DBConnection>>{
- }
- Greenplum --|> DBConnection
-
- class MongoDB <<DBConnection>>{
- }
- MongoDB --|> DBConnection
-
- class Kafka <<DBConnection>>{
- }
- Kafka --|> DBConnection
-
- class JDBCConnection <<DBConnection>>{
- }
- JDBCConnection --|> DBConnection
-
- class Clickhouse <<DBConnection>>{
- }
- Clickhouse --|> JDBCConnection
-
- class MSSQL <<DBConnection>>{
- }
- MSSQL --|> JDBCConnection
-
- class MySQL <<DBConnection>>{
- }
- MySQL --|> JDBCConnection
-
- class Postgres <<DBConnection>>{
- }
- Postgres --|> JDBCConnection
-
- class Oracle <<DBConnection>>{
- }
- Oracle --|> JDBCConnection
-
- class Teradata <<DBConnection>>{
- }
- Teradata --|> JDBCConnection
-
- class FileConnection <<FileConnection>>{
- }
- FileConnection --|> BaseConnection
-
- class FTP <<FileConnection>>{
- }
- FTP --|> FileConnection
-
- class FTPS <<FileConnection>>{
- }
- FTPS --|> FileConnection
-
- class HDFS <<FileConnection>>{
- }
- HDFS --|> FileConnection
-
- class WebDAV <<FileConnection>>{
- }
- WebDAV --|> FileConnection
-
- class Samba <<FileConnection>>{
- }
- Samba --|> FileConnection
-
- class SFTP <<FileConnection>>{
- }
- SFTP --|> FileConnection
-
- class S3 <<FileConnection>>{
- }
- S3 --|> FileConnection
-
- class FileDFConnection <<FileDFConnection>>{
- }
- FileDFConnection --|> BaseConnection
-
- class SparkHDFS <<FileDFConnection>>{
- }
- SparkHDFS --|> FileDFConnection
-
- class SparkLocalFS <<FileDFConnection>>{
- }
- SparkLocalFS --|> FileDFConnection
-
- class SparkS3 <<FileDFConnection>>{
- }
- SparkS3 --|> FileDFConnection
-
- @enduml
-```
 
 ```mermaid
 classDiagram
@@ -180,11 +64,11 @@ A `DBConnection` could be instantiated as follows:
 from onetl.connection import MSSQL
 
 mssql = MSSQL(
- host="mssqldb.demo.com",
- user="onetl",
- password="onetl",
- database="Telecom",
- spark=spark,
+    host="mssqldb.demo.com",
+    user="onetl",
+    password="onetl",
+    database="Telecom",
+    spark=spark,
 )
 ```
 
@@ -203,9 +87,9 @@ A `FileConnection` could be instantiated as follows:
 from onetl.connection import SFTP
 
 sftp = SFTP(
- host="sftp.test.com",
- user="onetl",
- password="onetl",
+    host="sftp.test.com",
+    user="onetl",
+    password="onetl",
 )
 ```
 
@@ -221,9 +105,9 @@ A `FileDFConnection` could be instantiated as follows:
 from onetl.connection import SparkHDFS
 
 spark_hdfs = SparkHDFS(
- host="namenode1.domain.com",
- cluster="mycluster",
- spark=spark,
+    host="namenode1.domain.com",
+    cluster="mycluster",
+    spark=spark,
 )
 ```
 
@@ -264,13 +148,13 @@ As we said above, onETL is used to extract data from and load data into remote s
 
 onETL provides several classes for this:
 
-> * [DBReader][db-reader]
-> * [DBWriter][db-writer]
-> * [FileDFReader][filedf-reader-0]
-> * [FileDFWriter][filedf-writer-0]
-> * [FileDownloader][file-downloader-0]
-> * [FileUploader][file-uploader-0]
-> * [FileMover][file-mover-0]
+* [DBReader][db-reader]
+* [DBWriter][db-writer]
+* [FileDFReader][filedf-reader-0]
+* [FileDFWriter][filedf-writer-0]
+* [FileDownloader][file-downloader-0]
+* [FileUploader][file-uploader-0]
+* [FileMover][file-mover-0]
 
 All of these classes have a method `run()` that starts extracting/loading the data:
 
@@ -278,17 +162,17 @@ All of these classes have a method `run()` that starts extracting/loading the da
 from onetl.db import DBReader, DBWriter
 
 reader = DBReader(
- connection=mssql,
- source="dbo.demo_table",
- columns=["column_1", "column_2"],
+    connection=mssql,
+    source="dbo.demo_table",
+    columns=["column_1", "column_2"],
 )
 
 # Read data as Spark DataFrame
 df = reader.run()
 
 db_writer = DBWriter(
- connection=hive,
- target="dl_sb.demo_table",
+    connection=hive,
+    target="dl_sb.demo_table",
 )
 
 # Save Spark DataFrame to Hive table
@@ -332,82 +216,82 @@ Extract and load classes have a `options` parameter, which has a special meaning
 
 ```python
 db_reader = DBReader(
- # WHAT do we read:
- connection=mssql,
- source="dbo.demo_table", # some table from MSSQL
- columns=["column_1", "column_2"], # but only specific set of columns
- where="column_2 > 1000", # only rows matching the clause
- # HOW do we read:
- options=MSSQL.ReadOptions(
- numPartitions=10, # read in 10 parallel jobs
- partitionColumn="id", # balance data read by assigning each job a part of data using `hash(id) mod N` expression
- partitioningMode="hash",
- fetchsize=1000, # each job will fetch block of 1000 rows each on every read attempt
- ),
+    # WHAT do we read:
+    connection=mssql,
+    source="dbo.demo_table",  # some table from MSSQL
+    columns=["column_1", "column_2"],  # but only specific set of columns
+    where="column_2 > 1000",  # only rows matching the clause
+    # HOW do we read:
+    options=MSSQL.ReadOptions(
+        numPartitions=10,  # read in 10 parallel jobs
+        partitionColumn="id",  # balance data read by assigning each job a part of data using `hash(id) mod N` expression
+        partitioningMode="hash",
+        fetchsize=1000,  # each job will fetch block of 1000 rows each on every read attempt
+    ),
 )
 
 db_writer = DBWriter(
- # WHERE do we write to - to some table in Hive
- connection=hive,
- target="dl_sb.demo_table",
- # HOW do we write - overwrite all the data in the existing table
- options=Hive.WriteOptions(if_exists="replace_entire_table"),
+    # WHERE do we write to - to some table in Hive
+    connection=hive,
+    target="dl_sb.demo_table",
+    # HOW do we write - overwrite all the data in the existing table
+    options=Hive.WriteOptions(if_exists="replace_entire_table"),
 )
 
 file_downloader = FileDownloader(
- # WHAT do we download - files from some dir in SFTP
- connection=sftp,
- source_path="/source",
- filters=[Glob("*.csv")], # only CSV files
- limits=[MaxFilesCount(1000)], # 1000 files max
- # WHERE do we download to - a specific dir on local FS
- local_path="/some",
- # HOW do we download:
- options=FileDownloader.Options(
- delete_source=True, # after downloading each file remove it from source_path
- if_exists="replace_file", # replace existing files in the local_path
- ),
+    # WHAT do we download - files from some dir in SFTP
+    connection=sftp,
+    source_path="/source",
+    filters=[Glob("*.csv")],  # only CSV files
+    limits=[MaxFilesCount(1000)],  # 1000 files max
+    # WHERE do we download to - a specific dir on local FS
+    local_path="/some",
+    # HOW do we download:
+    options=FileDownloader.Options(
+        delete_source=True,  # after downloading each file remove it from source_path
+        if_exists="replace_file",  # replace existing files in the local_path
+    ),
 )
 
 file_uploader = FileUploader(
- # WHAT do we upload - files from some local dir
- local_path="/source",
- # WHERE do we upload to- specific remote dir in HDFS
- connection=hdfs,
- target_path="/some",
- # HOW do we upload:
- options=FileUploader.Options(
- delete_local=True, # after uploading each file remove it from local_path
- if_exists="replace_file", # replace existing files in the target_path
- ),
+    # WHAT do we upload - files from some local dir
+    local_path="/source",
+    # WHERE do we upload to- specific remote dir in HDFS
+    connection=hdfs,
+    target_path="/some",
+    # HOW do we upload:
+    options=FileUploader.Options(
+        delete_local=True,  # after uploading each file remove it from local_path
+        if_exists="replace_file",  # replace existing files in the target_path
+    ),
 )
 
 file_mover = FileMover(
- # WHAT do we move - files in some remote dir in HDFS
- source_path="/source",
- connection=hdfs,
- # WHERE do we move files to
- target_path="/some", # a specific remote dir within the same HDFS connection
- # HOW do we load - replace existing files in the target_path
- options=FileMover.Options(if_exists="replace_file"),
+    # WHAT do we move - files in some remote dir in HDFS
+    source_path="/source",
+    connection=hdfs,
+    # WHERE do we move files to
+    target_path="/some",  # a specific remote dir within the same HDFS connection
+    # HOW do we load - replace existing files in the target_path
+    options=FileMover.Options(if_exists="replace_file"),
 )
 
 file_df_reader = FileDFReader(
- # WHAT do we read - *.csv files from some dir in S3
- connection=s3,
- source_path="/source",
- file_format=CSV(),
- # HOW do we read - load files from /source/*.csv, not from /source/nested/*.csv
- options=FileDFReader.Options(recursive=False),
+    # WHAT do we read - *.csv files from some dir in S3
+    connection=s3,
+    source_path="/source",
+    file_format=CSV(),
+    # HOW do we read - load files from /source/*.csv, not from /source/nested/*.csv
+    options=FileDFReader.Options(recursive=False),
 )
 
 file_df_writer = FileDFWriter(
- # WHERE do we write to - as .csv files in some dir in S3
- connection=s3,
- target_path="/target",
- file_format=CSV(),
- # HOW do we write - replace all existing files in /target, if exists
- options=FileDFWriter.Options(if_exists="replace_entire_directory"),
+    # WHERE do we write to - as .csv files in some dir in S3
+    connection=s3,
+    target_path="/target",
+    file_format=CSV(),
+    # HOW do we write - replace all existing files in /target, if exists
+    options=FileDFWriter.Options(if_exists="replace_entire_directory"),
 )
 ```
 
@@ -429,21 +313,21 @@ For example, an incremental strategy allows you to get only new data from the ta
 from onetl.strategy import IncrementalStrategy
 
 reader = DBReader(
- connection=mssql,
- source="dbo.demo_table",
- hwm_column="id", # detect new data based on value of "id" column
+    connection=mssql,
+    source="dbo.demo_table",
+    hwm_column="id",  # detect new data based on value of "id" column
 )
 
 # first run
 with IncrementalStrategy():
- df = reader.run()
+    df = reader.run()
 
 sleep(3600)
 
 # second run
 with IncrementalStrategy():
- # only rows, that appeared in the source since previous run
- df = reader.run()
+    # only rows, that appeared in the source since previous run
+    df = reader.run()
 ```
 
 or get only files which were not downloaded before:
@@ -452,22 +336,22 @@ or get only files which were not downloaded before:
 from onetl.strategy import IncrementalStrategy
 
 file_downloader = FileDownloader(
- connection=sftp,
- source_path="/remote",
- local_path="/local",
- hwm_type="file_list", # save all downloaded files to a list, and exclude files already present in this list
+    connection=sftp,
+    source_path="/remote",
+    local_path="/local",
+    hwm_type="file_list",  # save all downloaded files to a list, and exclude files already present in this list
 )
 
 # first run
 with IncrementalStrategy():
- files = file_downloader.run()
+    files = file_downloader.run()
 
 sleep(3600)
 
 # second run
 with IncrementalStrategy():
- # only files, that appeared in the source since previous run
- files = file_downloader.run()
+    # only files, that appeared in the source since previous run
+    files = file_downloader.run()
 ```
 
 Most of strategies are based on [`HWM`][hwm], Please check each strategy documentation for more details

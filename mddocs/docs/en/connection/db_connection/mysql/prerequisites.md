@@ -1,11 +1,9 @@
-(mysql-prerequisites)=
-
-# Prerequisites
+# Prerequisites { #mysql-prerequisites }
 
 ## Version Compatibility
 
 - MySQL server versions:
-  : - Officially declared: 8.0 - 9.2
+    - Officially declared: 8.0 - 9.2
     - Actually tested: 5.7.13, 9.2.0
 - Spark versions: 2.3.x - 3.5.x
 - Java versions: 8 - 20
@@ -17,7 +15,7 @@ See [official documentation](https://dev.mysql.com/doc/connector-j/en/connector-
 To use MySQL connector you should have PySpark installed (or injected to `sys.path`)
 BEFORE creating the connector instance.
 
-See {ref}`install-spark` installation instruction for more details.
+See [installation instruction][install-spark] for more details.
 
 ## Connecting to MySQL
 
@@ -38,22 +36,24 @@ Please ask your MySQL administrator to provide required information.
 Ask your MySQL cluster administrator to set following grants for a user,
 used for creating a connection:
 
-```{eval-rst}
-.. tabs::
+=== "Read + Write"
 
-    .. code-tab:: sql Read + Write
+    ```sql 
 
         -- allow creating tables in the target schema
         GRANT CREATE ON myschema.* TO username@'192.168.1.%';
 
         -- allow read & write access to specific table
         GRANT SELECT, INSERT ON myschema.mytable TO username@'192.168.1.%';
+    ```
 
-    .. code-tab:: sql Read only
+=== "Read only"
+
+    ```sql Read only
 
         -- allow read access to specific table
         GRANT SELECT ON myschema.mytable TO username@'192.168.1.%';
-```
+    ```
 
 In example above `'192.168.1.%''` is a network subnet `192.168.1.0 - 192.168.1.255`
 where Spark driver and executors are running. To allow connecting user from any IP, use `'%'` (not secure!).

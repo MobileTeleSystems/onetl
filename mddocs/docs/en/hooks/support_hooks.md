@@ -1,7 +1,6 @@
-(support-hooks-decorator)=
+# `@support_hooks` decorator { #support-hooks }
 
-# `@support_hooks` decorator
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.hooks.support_hooks
 ```
@@ -29,4 +28,13 @@
 
 ```{eval-rst}
 .. autofunction:: resume_hooks
-```
+``` 
+-->
+
+::: onetl.hooks.support_hooks.support_hooks
+
+::: onetl.hooks.support_hooks.skip_hooks
+
+::: onetl.hooks.support_hooks.suspend_hooks
+
+::: onetl.hooks.support_hooks.resume_hooks

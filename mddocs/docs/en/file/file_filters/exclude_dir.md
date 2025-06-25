@@ -1,7 +1,6 @@
-(exclude-dir-filter)=
+# ExcludeDir { #exclude-dir-filter }
 
-# ExcludeDir
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.file.filter.exclude_dir
 ```
@@ -9,4 +8,10 @@
 ```{eval-rst}
 .. autoclass:: ExcludeDir
     :members: match
-```
+``` 
+-->
+
+::: onetl.file.filter.exclude_dir.ExcludeDir
+    options:
+        members:
+            - match

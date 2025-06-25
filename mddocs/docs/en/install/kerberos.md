@@ -1,6 +1,4 @@
-(install-kerberos)=
-
-# Kerberos support
+# Kerberos support { #install-kerberos }
 
 ```{eval-rst}
 .. include:: ../../README.rst

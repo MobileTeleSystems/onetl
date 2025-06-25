@@ -1,5 +1,3 @@
-(hive)=
-
 # Hive
 
 ```{toctree}

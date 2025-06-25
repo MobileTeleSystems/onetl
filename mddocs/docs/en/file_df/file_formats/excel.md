@@ -1,7 +1,6 @@
-(excel-file-format)=
+# Excel { #excel-file-format }
 
-# Excel
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.file.format.excel
 ```
@@ -11,3 +10,21 @@
     :members: get_packages,header,dataAddress,treatEmptyValuesAsNulls,setErrorCellsToFallbackValues,usePlainNumberFormat,inferSchema,timestampFormat,maxRowsInMemory,maxByteArraySize,tempFileThreshold,excerptSize,workbookPassword
     :member-order: bysource
 ```
+ -->
+
+::: onetl.file.format.excel.Excel
+    options:
+        members:
+            - get_packages
+            - header
+            - dataAddress
+            - treatEmptyValuesAsNulls
+            - setErrorCellsToFallbackValues
+            - usePlainNumberFormat
+            - inferSchema
+            - timestampFormat
+            - maxRowsInMemory
+            - maxByteArraySize
+            - tempFileThreshold
+            - excerptSize
+            - workbookPassword

@@ -1,7 +1,6 @@
-(file-uploader-options)=
+# File Uploader Options { #file-uploader-options }
 
-# File Uploader Options
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.file.file_uploader.options
 ```
@@ -11,4 +10,11 @@
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
-```
+``` 
+-->
+
+::: onetl.file.file_uploader.options.FileUploaderOptions
+    options:
+        members:
+            - source_dir
+            - target_dir

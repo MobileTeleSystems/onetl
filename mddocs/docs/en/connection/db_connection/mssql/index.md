@@ -1,28 +1,17 @@
-(mssql)=
-
 # MSSQL
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+# Connection
 
-prerequisites
-connection
-```
+* [Prerequisites][mssql-prerequisites]
+* [MSSQL connection][mssql-connection]
 
-```{toctree}
-:caption: Operations
-:maxdepth: 1
+# Operations
 
-read
-sql
-write
-execute
-```
+* [Reading from MSSQL using `DBReader`][mssql-ead]
+* [Reading from MSSQL using `MSSQL.sql`][mssql-sql]
+* [Writing to MSSQL using `DBWriter`][mssql-write]
+* [Executing statements in MSSQL][mssql-execute]
 
-```{toctree}
-:caption: Troubleshooting
-:maxdepth: 1
+# Troubleshooting
 
-types
-```
+* [MSSQL <-> Spark type mapping][mssql-types]

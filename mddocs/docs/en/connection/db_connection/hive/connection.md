@@ -1,6 +1,4 @@
-(hive-connection)=
-
-# Hive Connection
+# Hive Connection { #hive-connection }
 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.hive.connection

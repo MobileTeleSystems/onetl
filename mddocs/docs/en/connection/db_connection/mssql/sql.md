@@ -1,21 +1,15 @@
-(mssql-sql)=
-
-# Reading from MSSQL using `MSSQL.sql`
+# Reading from MSSQL using `MSSQL.sql` { #mssql-sql }
 
 `MSSQL.sql` allows passing custom SQL query, but does not support incremental strategies.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Please take into account :ref:`mssql-types`
-```
+    Please take into account [MSSQL types][mssql-types]
 
-```{eval-rst}
-.. warning::
+!!! warning
 
     Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside,
     they can change data in your database.
-```
 
 ## Syntax support
 
@@ -67,6 +61,7 @@ Especially if there are indexes or partitions for columns used in `where` clause
 
 ## Options
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.mssql.options
 ```
@@ -78,3 +73,10 @@ Especially if there are indexes or partitions for columns used in `where` clause
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.mssql.options.MSSQLSQLOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

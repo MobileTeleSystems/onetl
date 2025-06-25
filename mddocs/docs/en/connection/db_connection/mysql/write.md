@@ -1,24 +1,18 @@
-(mysql-write)=
+# Writing to MySQL using `DBWriter` { #mysql-write }
 
-# Writing to MySQL using `DBWriter`
+For writing data to MySQL, use [DBWriter][db-writer].
 
-For writing data to MySQL, use {obj}`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
+!!! warning::
 
-```{eval-rst}
-.. warning::
+    Please take into account [MySQL types][mysql-types]
 
-    Please take into account :ref:`mysql-types`
-```
+!!! warning
 
-```{eval-rst}
-.. warning::
-
-    It is always recommended to create table explicitly using :ref:`MySQL.execute <mysql-execute>`
+    It is always recommended to create table explicitly using [MySQL.execute][mysql-execute]
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,
     causing precision loss or other issues.
-```
 
 ## Examples
 
@@ -45,8 +39,9 @@ writer.run(df)
 
 ## Options
 
-Method above accepts {obj}`MySQL.WriteOptions <onetl.connection.db_connection.mysql.options.MySQLWriteOptions>`
+Method above accepts [MySQL.WriteOptions][onetl.connection.db_connection.mysql.options.MySQLWriteOptions]
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.mysql.options
 ```
@@ -58,3 +53,10 @@ Method above accepts {obj}`MySQL.WriteOptions <onetl.connection.db_connection.my
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.mysql.options.MySQLWriteOptions
+    options:
+        members: true
+        heading_level: 3
+        show_root_heading: true

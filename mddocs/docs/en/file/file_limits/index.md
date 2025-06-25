@@ -1,28 +1,15 @@
-(file-limits)=
+# File limits
 
-# File Limits
+* [MaxFilesCount][max-files-count]
+* [TotalFilesSize][total-files-size]
 
-```{toctree}
-:caption: File limits
-:maxdepth: 1
+# Legacy
 
-max_files_count
-total_files_size
-```
+* [File Limit [legacy]][file-limit]
 
-```{toctree}
-:caption: Legacy
-:maxdepth: 1
+# For developers
 
-file_limit
-```
-
-```{toctree}
-:caption: For developers
-:maxdepth: 1
-
-base
-limits_stop_at
-limits_reached
-reset_limits
-```
+* [Base interface][file-limits-base]
+* [limits_stop_at][limits-stop-at]
+* [limits_reached][limits-reached]
+* [reset_limits][reset-limits]

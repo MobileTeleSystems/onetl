@@ -1,6 +1,4 @@
-(install-files)=
-
-# File connections
+# File connections { #install-files }
 
 ```{eval-rst}
 .. include:: ../../README.rst

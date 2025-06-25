@@ -1,28 +1,24 @@
-(oracle-read)=
+# Reading from Oracle using `DBReader` { #oracle-read }
 
-# Reading from Oracle using `DBReader`
-
-{obj}`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports {ref}`strategy` for incremental data reading,
+[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
 but does not support custom queries, like `JOIN`.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Please take into account :ref:`oracle-types`
-```
+    Please take into account [Oracle types][oracle-types]
 
 ## Supported DBReader features
 
 - ✅︎ `columns`
 - ✅︎ `where`
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ {ref}`snapshot-strategy`
-- - ✅︎ {ref}`incremental-strategy`
-- - ✅︎ {ref}`snapshot-batch-strategy`
-- - ✅︎ {ref}`incremental-batch-strategy`
+- - ✅︎ [Snapshot strategy][snapshot-strategy]
+- - ✅︎ [Incremental strategy][incremental-strategy]
+- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
+- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
 - ✅︎ `hint` (see [official documentation](https://docs.oracle.com/cd/B10500_01/server.920/a96533/hintsref.htm))
 - ❌ `df_schema`
-- ✅︎ `options` (see {obj}`Oracle.ReadOptions <onetl.connection.db_connection.oracle.options.OracleReadOptions>`)
+- ✅︎ `options` (see [Oracle.ReadOptions][onetl.connection.db_connection.oracle.options.OracleReadOptions])
 
 ## Examples
 
@@ -82,6 +78,7 @@ Especially if there are indexes or partitions for columns used in `where` clause
 
 ## Options
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.oracle.options
 ```
@@ -91,3 +88,10 @@ Especially if there are indexes or partitions for columns used in `where` clause
     :inherited-members: GenericOptions
     :member-order: bysource
 ```
+ -->
+
+::: onetl.connection.db_connection.oracle.options.OracleReadOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

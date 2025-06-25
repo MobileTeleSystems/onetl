@@ -1,7 +1,6 @@
-(base-file-filter)=
+# Base interface { #base-file-filter }
 
-# Base interface
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.base.base_file_filter
 ```
@@ -16,4 +15,10 @@
 ```{eval-rst}
 .. autoclass:: BaseFileFilter
     :members: match
-```
+``` 
+-->
+
+::: onetl.base.base_file_filter.BaseFileFilter
+    options:
+        members:
+            - match

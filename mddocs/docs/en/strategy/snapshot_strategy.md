@@ -1,7 +1,6 @@
-(snapshot-strategy)=
+# Snapshot Strategy { #snapshot-strategy }
 
-# Snapshot Strategy
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.strategy.snapshot_strategy
 ```
@@ -10,3 +9,9 @@
 .. autoclass:: SnapshotStrategy
     :members: __init__
 ```
+ -->
+
+::: onetl.strategy.snapshot_strategy.SnapshotStrategy
+    options:
+        members:
+            - __init__

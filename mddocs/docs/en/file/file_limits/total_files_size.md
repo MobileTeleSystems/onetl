@@ -1,7 +1,6 @@
-(total-files-size-limit)=
+# TotalFilesSize { #total-files-size }
 
-# TotalFilesSize
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.file.limit.total_files_size
 ```
@@ -10,3 +9,11 @@
 .. autoclass:: TotalFilesSize
     :members: reset, stops_at, is_reached
 ```
+ -->
+
+::: onetl.file.limit.total_files_size.TotalFilesSize
+    options:
+        members:
+            - reset
+            - stops_at
+            - is_reached

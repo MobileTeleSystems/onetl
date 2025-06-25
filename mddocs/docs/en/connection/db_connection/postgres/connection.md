@@ -1,7 +1,7 @@
-(postgres-connection)=
-
 # Postgres connection
 
+
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.postgres.connection
 ```
@@ -10,3 +10,10 @@
 .. autoclass:: Postgres
     :members: get_packages, check
 ```
+ -->
+
+::: onetl.connection.db_connection.postgres.connection.Postgres
+    options:
+        members:
+            - get_packages
+            - check

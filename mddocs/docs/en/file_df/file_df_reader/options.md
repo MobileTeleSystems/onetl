@@ -1,7 +1,6 @@
-(file-df-reader-options)=
+# Options { #filedf-reader-options }
 
-# Options
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.file.file_df_reader.options
 ```
@@ -11,3 +10,6 @@
     :members: recursive
     :member-order: bysource
 ```
+ -->
+
+::: onetl.file.file_df_reader.options.FileDFReaderOptions

@@ -1,19 +1,12 @@
-(db-connections)=
-
 # DB Connections
 
-```{toctree}
-:caption: DB Connections
-:maxdepth: 1
-
-Clickhouse <clickhouse/index>
-Greenplum <greenplum/index>
-Kafka <kafka/index>
-Hive <hive/index>
-MongoDB <mongodb/index>
-MSSQL <mssql/index>
-MySQL <mysql/index>
-Oracle <oracle/index>
-Postgres <postgres/index>
-Teradata <teradata/index>
-```
+* [Clickhouse][clickhouse]
+* [Greenplum][greenplum]
+* [Kafka][kafka]
+* [Hive][hive]
+* [MongoDB][mongodb]
+* [MSSQL][mssql]
+* [MySQL][mysql]
+* [Oracle][oracle]
+* [Postgres][postgres]
+* [Teradata][teradata]

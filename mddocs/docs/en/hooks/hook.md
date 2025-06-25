@@ -1,7 +1,6 @@
-(hook-decorator)=
+# `@hook` decorator { #hook-decorator }
 
-# `@hook` decorator
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.hooks.hook
 ```
@@ -31,4 +30,21 @@
 .. autoclass:: Hook
     :members: enable, disable, skip
     :member-order: bysource
-```
+``` 
+-->
+
+::: onetl.hooks.hook.hook
+
+::: onetl.hooks.hook.HookPriority
+    options:
+        members:
+            - FIRST
+            - NORMAL
+            - LAST
+
+::: onetl.hooks.hook.Hook
+    options:
+        members:
+            - enable
+            - disable
+            - skip

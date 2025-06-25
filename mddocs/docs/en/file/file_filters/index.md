@@ -1,29 +1,16 @@
-(file-filters)=
-
 # File Filters
 
-```{toctree}
-:caption: File filters
-:maxdepth: 1
+* [Glob](glob.md)
+* [Regexp](regexp.md)
+* [ExcludeDir](exclude_dir.md)
+* [FileSizeRange](file_size_filter.md)
+* [FileModifiedTime](file_mtime_filter.md)
 
-glob
-regexp
-exclude_dir
-file_size_filter
-file_mtime_filter
-```
+# Legacy
 
-```{toctree}
-:caption: Legacy
-:maxdepth: 1
+* [File Filter (legacy)](file_filter.md)
 
-file_filter
-```
+# For developers
 
-```{toctree}
-:caption: For developers
-:maxdepth: 1
-
-base
-match_all_filters
-```
+* [Base interface](base.md)
+* [match_all_filters](match_all_filters.md)

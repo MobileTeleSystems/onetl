@@ -1,12 +1,8 @@
-(oracle-types)=
+# Oracle <-> Spark type mapping { #oracle-types }
 
-# Oracle \<-> Spark type mapping
-
-```{eval-rst}
-.. note::
+!!! note
 
     The results below are valid for Spark 3.5.5, and may differ on other Spark versions.
-```
 
 ## Type detection & casting
 
@@ -24,27 +20,24 @@ This is how Oracle connector performs this:
 
 This is how Oracle connector performs this:
 
-- Get names of columns in DataFrame. [^footnote-1]
+- Get names of columns in DataFrame. [^1]
 - Perform `SELECT * FROM table LIMIT 0` query.
 - Take only columns present in DataFrame (by name, case insensitive). For each found column get Clickhouse type.
-- **Find corresponding** `Oracle type (read)` → `Spark type` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [^footnote-2]
+- **Find corresponding** `Oracle type (read)` → `Spark type` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [^2]
 - Find corresponding `Spark type` → `Oracle type (write)` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 - If `Oracle type (write)` match `Oracle type (read)`, no additional casts will be performed, DataFrame column will be written to Oracle as is.
 - If `Oracle type (write)` does not match `Oracle type (read)`, DataFrame column will be casted to target column type **on Oracle side**.
   For example, you can write column with text data to `int` column, if column contains valid integer values within supported value range and precision.
 
-[^footnote-1]: This allows to write data to tables with `DEFAULT` and `GENERATED` columns - if DataFrame has no such column,
-    it will be populated by Oracle.
+[^1]: This allows to write data to tables with `DEFAULT` and `GENERATED` columns - if DataFrame has no such column, it will be populated by Oracle.
 
-[^footnote-2]: Yes, this is weird.
+[^2]: Yes, this is weird.
 
 ### Create new table using Spark
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    ABSOLUTELY NOT RECOMMENDED!
-```
+    ABSOLUTELY NOT RECOMMENDED!S
 
 This is how Oracle connector performs this:
 
@@ -55,10 +48,9 @@ This is how Oracle connector performs this:
 But Oracle connector support only limited number of types and almost no custom clauses (like `PARTITION BY`, `INDEX`, etc).
 So instead of relying on Spark to create tables:
 
-```{eval-rst}
-.. dropdown:: See example
+??? note "See example"
 
-    .. code:: python
+    ```python
 
         writer = DBWriter(
             connection=oracle,
@@ -66,14 +58,13 @@ So instead of relying on Spark to create tables:
             options=Oracle.WriteOptions(if_exists="append"),
         )
         writer.run(df)
-```
+    ```
 
 Always prefer creating table with desired DDL **BEFORE WRITING DATA**:
 
-```{eval-rst}
-.. dropdown:: See example
+??? note "See example"
 
-    .. code:: python
+    ```python
 
         oracle.execute(
             """
@@ -91,7 +82,7 @@ Always prefer creating table with desired DDL **BEFORE WRITING DATA**:
             options=Oracle.WriteOptions(if_exists="append"),
         )
         writer.run(df)
-```
+    ```
 
 See Oracle [CREATE TABLE](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html) documentation.
 
@@ -108,193 +99,76 @@ Here you can find source code with type conversions:
 
 ### Numeric types
 
-```{eval-rst}
-+----------------------------------+-----------------------------------+-------------------------------+---------------------------+
 | Oracle type (read)               | Spark type                        | Oracle type (write)           | Oracle type (create)      |
-+==================================+===================================+===============================+===========================+
-| ``NUMBER``                       | ``DecimalType(P=38, S=10)``       | ``NUMBER(P=38, S=10)``        | ``NUMBER(P=38, S=10)``    |
-+----------------------------------+-----------------------------------+-------------------------------+---------------------------+
-| ``NUMBER(P=0..38)``              | ``DecimalType(P=0..38, S=0)``     | ``NUMBER(P=0..38, S=0)``      | ``NUMBER(P=38, S=0)``     |
-+----------------------------------+-----------------------------------+-------------------------------+---------------------------+
-| ``NUMBER(P=0..38, S=0..38)``     | ``DecimalType(P=0..38, S=0..38)`` | ``NUMBER(P=0..38, S=0..38)``  | ``NUMBER(P=38, S=0..38)`` |
-+----------------------------------+-----------------------------------+-------------------------------+---------------------------+
-| ``NUMBER(P=..., S=-127..-1)``    | unsupported [3]_                  |                               |                           |
-+----------------------------------+-----------------------------------+-------------------------------+---------------------------+
-| ``FLOAT``                        | ``DecimalType(P=38, S=10)``       | ``NUMBER(P=38, S=10)``        | ``NUMBER(P=38, S=10)``    |
-+----------------------------------+                                   |                               |                           |
-| ``FLOAT(N)``                     |                                   |                               |                           |
-+----------------------------------+                                   |                               |                           |
-| ``REAL``                         |                                   |                               |                           |
-+----------------------------------+                                   |                               |                           |
-| ``DOUBLE PRECISION``             |                                   |                               |                           |
-+----------------------------------+-----------------------------------+-------------------------------+---------------------------+
-| ``BINARY_FLOAT``                 | ``FloatType()``                   | ``NUMBER(P=19, S=4)``         | ``NUMBER(P=19, S=4)``     |
-+----------------------------------+-----------------------------------+                               |                           |
-| ``BINARY_DOUBLE``                | ``DoubleType()``                  |                               |                           |
-+----------------------------------+-----------------------------------+-------------------------------+---------------------------+
-| ``SMALLINT``                     | ``DecimalType(P=38, S=0)``        | ``NUMBER(P=38, S=0)``         | ``NUMBER(P=38, S=0)``     |
-+----------------------------------+                                   |                               |                           |
-| ``INTEGER``                      |                                   |                               |                           |
-+----------------------------------+-----------------------------------+-------------------------------+---------------------------+
-| ``LONG``                         | ``StringType()``                  | ``CLOB``                      | ``CLOB``                  |
-+----------------------------------+-----------------------------------+-------------------------------+---------------------------+
-```
+|----------------------------------|-----------------------------------|-------------------------------|---------------------------|
+| `NUMBER`                       | `DecimalType(P=38, S=10)`       | `NUMBER(P=38, S=10)`        | `NUMBER(P=38, S=10)`    |
+| `NUMBER(P=0..38)`              | `DecimalType(P=0..38, S=0)`     | `NUMBER(P=0..38, S=0)`      | `NUMBER(P=38, S=0)`     |
+| `NUMBER(P=0..38, S=0..38)`     | `DecimalType(P=0..38, S=0..38)` | `NUMBER(P=0..38, S=0..38)`  | `NUMBER(P=38, S=0..38)` |
+| `NUMBER(P=..., S=-127..-1)`    | unsupported [^3]                  |                               |                           |
+| `FLOAT`<br/>`FLOAT(N)`<br/>`REAL`<br/>`DOUBLE PRECISION` | <br/>`DecimalType(P=38, S=10)`       | <br/>`NUMBER(P=38, S=10)`        | <br/>`NUMBER(P=38, S=10)`    |
+| `BINARY_FLOAT`<br/>`BINARY_DOUBLE`                 | `FloatType()`<br/>`DoubleType()`                   | `NUMBER(P=19, S=4)`         | `NUMBER(P=19, S=4)`     |
+| `SMALLINT`<br/>`INTEGER`       | `DecimalType(P=38, S=0)`        | `NUMBER(P=38, S=0)`         | `NUMBER(P=38, S=0)`     |
+| `LONG`                         | `StringType()`                  | `CLOB`                      | `CLOB`                  |
 
-[^footnote-3]: Oracle support decimal types with negative scale, like `NUMBER(38, -10)`. Spark doesn't.
+[^3]: Oracle support decimal types with negative scale, like `NUMBER(38, -10)`. Spark doesn't.
 
 ### Temporal types
 
-```{eval-rst}
-+--------------------------------------------+------------------------------------+---------------------------------+---------------------------------+
 | Oracle type (read)                         | Spark type                         | Oracle type (write)             | Oracle type (create)            |
-+============================================+====================================+=================================+=================================+
-| ``DATE``, days                             | ``TimestampType()``, microseconds  | ``TIMESTAMP(6)``, microseconds  | ``TIMESTAMP(6)``, microseconds  |
-+--------------------------------------------+------------------------------------+---------------------------------+---------------------------------+
-| ``TIMESTAMP``, microseconds                | ``TimestampType()``, microseconds  | ``TIMESTAMP(6)``, microseconds  | ``TIMESTAMP(6)``, microseconds  |
-+--------------------------------------------+                                    |                                 |                                 |
-| ``TIMESTAMP(0)``, seconds                  |                                    |                                 |                                 |
-+--------------------------------------------+                                    |                                 |                                 |
-| ``TIMESTAMP(3)``, milliseconds             |                                    |                                 |                                 |
-+--------------------------------------------+                                    |                                 |                                 |
-| ``TIMESTAMP(6)``, microseconds             |                                    |                                 |                                 |
-+--------------------------------------------+------------------------------------+---------------------------------+---------------------------------+
-| ``TIMESTAMP(9)``, nanoseconds              | ``TimestampType()``, microseconds, | ``TIMESTAMP(6)``, microseconds, | ``TIMESTAMP(6)``, microseconds, |
-|                                            | **precision loss** [4]_            | **precision loss**              | **precision loss**              |
-+--------------------------------------------+------------------------------------+---------------------------------+---------------------------------+
-| ``TIMESTAMP WITH TIME ZONE``               | unsupported                        |                                 |                                 |
-+--------------------------------------------+                                    |                                 |                                 |
-| ``TIMESTAMP(N) WITH TIME ZONE``            |                                    |                                 |                                 |
-+--------------------------------------------+                                    |                                 |                                 |
-| ``TIMESTAMP WITH LOCAL TIME ZONE``         |                                    |                                 |                                 |
-+--------------------------------------------+                                    |                                 |                                 |
-| ``TIMESTAMP(N) WITH LOCAL TIME ZONE``      |                                    |                                 |                                 |
-+--------------------------------------------+                                    |                                 |                                 |
-| ``INTERVAL YEAR TO MONTH``                 |                                    |                                 |                                 |
-+--------------------------------------------+                                    |                                 |                                 |
-| ``INTERVAL DAY TO SECOND``                 |                                    |                                 |                                 |
-+--------------------------------------------+------------------------------------+---------------------------------+---------------------------------+
-```
+|--------------------------------------------|------------------------------------|---------------------------------|---------------------------------|
+| `DATE`, days                             | `TimestampType()`, microseconds  | `TIMESTAMP(6)`, microseconds  | `TIMESTAMP(6)`, microseconds  |
+| `TIMESTAMP`, microseconds<br/>`TIMESTAMP(0)`, seconds<br/>`TIMESTAMP(3)`, milliseconds<br/>`TIMESTAMP(6)`, microseconds               | <br/><br/>`TimestampType()`, microseconds  | <br/><br/>`TIMESTAMP(6)`, microseconds  | <br/><br/>`TIMESTAMP(6)`, microseconds **precision loss** |
+| `TIMESTAMP(9)`, nanoseconds              | `TimestampType()`, microseconds, **precision loss** [^4] | `TIMESTAMP(6)`, microseconds, **precision loss** | `TIMESTAMP(6)`, microseconds, |
+| `TIMESTAMP WITH TIME ZONE`<br/>`TIMESTAMP(N) WITH TIME ZONE`<br/>`TIMESTAMP WITH LOCAL TIME ZONE`<br/>`TIMESTAMP(N) WITH LOCAL TIME ZONE`<br/>`INTERVAL YEAR TO MONTH`<br/>`INTERVAL DAY TO SECOND`               | <br/><br/><br/>unsupported                        |                                 |                                 |
 
-```{eval-rst}
-.. warning::
+!!! warning
 
     Note that types in Oracle and Spark have different value ranges:
 
-    +---------------+------------------------------------+-----------------------------------+---------------------+--------------------------------+--------------------------------+
     | Oracle type   | Min value                          | Max value                         | Spark type          | Min value                      | Max value                      |
-    +===============+====================================+===================================+=====================+================================+================================+
-    | ``date``      | ``-4712-01-01``                    | ``9999-01-01``                    | ``DateType()``      | ``0001-01-01``                 | ``9999-12-31``                 |
-    +---------------+------------------------------------+-----------------------------------+---------------------+--------------------------------+--------------------------------+
-    | ``timestamp`` | ``-4712-01-01 00:00:00.000000000`` | ``9999-12-31 23:59:59.999999999`` | ``TimestampType()`` | ``0001-01-01 00:00:00.000000`` | ``9999-12-31 23:59:59.999999`` |
-    +---------------+------------------------------------+-----------------------------------+---------------------+--------------------------------+--------------------------------+
+    |---------------|------------------------------------|-----------------------------------|---------------------|--------------------------------|--------------------------------|
+    | `date`      | `-4712-01-01`                    | `9999-01-01`                    | `DateType()`      | `0001-01-01`                 | `9999-12-31`                 |
+    | `timestamp` | `-4712-01-01 00:00:00.000000000` | `9999-12-31 23:59:59.999999999` | `TimestampType()` | `0001-01-01 00:00:00.000000` | `9999-12-31 23:59:59.999999` |
 
     So not all of values can be read from Oracle to Spark.
 
     References:
-        * `Oracle date, timestamp and intervals documentation <https://oracle-base.com/articles/misc/oracle-dates-timestamps-and-intervals#DATE>`_
-        * `Spark DateType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html>`_
-        * `Spark TimestampType documentation <https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html>`_
-```
 
-[^footnote-4]: Oracle support timestamp up to nanoseconds precision (`23:59:59.999999999`),
+    * [Oracle date, timestamp and intervals documentation](https://oracle-base.com/articles/misc/oracle-dates-timestamps-and-intervals#DATE)
+    * [Spark DateType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
+    * [Spark TimestampType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
+
+[^4]: Oracle support timestamp up to nanoseconds precision (`23:59:59.999999999`),
     but Spark `TimestampType()` supports datetime up to microseconds precision (`23:59:59.999999`).
     Nanoseconds will be lost during read or write operations.
 
 ### String types
 
-```{eval-rst}
-+-----------------------------+------------------+---------------------+----------------------+
 | Oracle type (read)          | Spark type       | Oracle type (write) | Oracle type (create) |
-+=============================+==================+=====================+======================+
-| ``CHAR``                    | ``StringType()`` | ``CLOB``            | ``CLOB``             |
-+-----------------------------+                  |                     |                      |
-| ``CHAR(N CHAR)``            |                  |                     |                      |
-+-----------------------------+                  |                     |                      |
-| ``CHAR(N BYTE)``            |                  |                     |                      |
-+-----------------------------+                  |                     |                      |
-| ``NCHAR``                   |                  |                     |                      |
-+-----------------------------+                  |                     |                      |
-| ``NCHAR(N)``                |                  |                     |                      |
-+-----------------------------+                  |                     |                      |
-| ``VARCHAR(N)``              |                  |                     |                      |
-+-----------------------------+                  |                     |                      |
-| ``LONG VARCHAR``            |                  |                     |                      |
-+-----------------------------+                  |                     |                      |
-| ``VARCHAR2(N CHAR)``        |                  |                     |                      |
-+-----------------------------+                  |                     |                      |
-| ``VARCHAR2(N BYTE)``        |                  |                     |                      |
-+-----------------------------+                  |                     |                      |
-| ``NVARCHAR2(N)``            |                  |                     |                      |
-+-----------------------------+                  |                     |                      |
-| ``CLOB``                    |                  |                     |                      |
-+-----------------------------+                  |                     |                      |
-| ``NCLOB``                   |                  |                     |                      |
-+-----------------------------+------------------+---------------------+----------------------+
-```
+|-----------------------------|------------------|---------------------|----------------------|
+| `CHAR`<br/>`CHAR(N CHAR)`<br/>`CHAR(N BYTE)`<br/>`NCHAR`<br/>`NCHAR(N)`<br/>`VARCHAR(N)`<br/>`LONG VARCHAR`<br/>`VARCHAR2(N CHAR)`<br/>`VARCHAR2(N BYTE)`<br/>`NVARCHAR2(N)`<br/>`CLOB`<br/>`NCLOB`                    | <br/><br/><br/><br/><br/>`StringType()` | <br/><br/><br/><br/><br/>`CLOB`            | <br/><br/><br/><br/><br/>`CLOB`             |
 
 ### Binary types
 
-```{eval-rst}
-+--------------------------+------------------+---------------------+----------------------+
 | Oracle type (read)       | Spark type       | Oracle type (write) | Oracle type (create) |
-+==========================+==================+=====================+======================+
-| ``RAW(N)``               | ``BinaryType()`` | ``BLOB``            | ``BLOB``             |
-+--------------------------+                  |                     |                      |
-| ``LONG RAW``             |                  |                     |                      |
-+--------------------------+                  |                     |                      |
-| ``BLOB``                 |                  |                     |                      |
-+--------------------------+------------------+---------------------+----------------------+
-| ``BFILE``                | unsupported      |                     |                      |
-+--------------------------+------------------+---------------------+----------------------+
-```
+|--------------------------|------------------|---------------------|----------------------|
+| `RAW(N)`<br/>`LONG RAW`<br/>`BLOB`               | <br/>`BinaryType()` | <br/>`BLOB`            | <br/>`BLOB`             |
+| `BFILE`                | unsupported      |                     |                      |
 
 ### Struct types
 
-```{eval-rst}
-+-------------------------------------+------------------+---------------------+----------------------+
 | Oracle type (read)                  | Spark type       | Oracle type (write) | Oracle type (create) |
-+=====================================+==================+=====================+======================+
-| ``XMLType``                         | ``StringType()`` | ``CLOB``            | ``CLOB``             |
-+-------------------------------------+                  |                     |                      |
-| ``URIType``                         |                  |                     |                      |
-+-------------------------------------+                  |                     |                      |
-| ``DBURIType``                       |                  |                     |                      |
-+-------------------------------------+                  |                     |                      |
-| ``XDBURIType``                      |                  |                     |                      |
-+-------------------------------------+                  |                     |                      |
-| ``HTTPURIType``                     |                  |                     |                      |
-+-------------------------------------+                  |                     |                      |
-| ``CREATE TYPE ... AS OBJECT (...)`` |                  |                     |                      |
-+-------------------------------------+------------------+---------------------+----------------------+
-| ``JSON``                            | unsupported      |                     |                      |
-+-------------------------------------+                  |                     |                      |
-| ``CREATE TYPE ... AS VARRAY ...``   |                  |                     |                      |
-+-------------------------------------+                  |                     |                      |
-| ``CREATE TYPE ... AS TABLE OF ...`` |                  |                     |                      |
-+-------------------------------------+------------------+---------------------+----------------------+
-```
+|-------------------------------------|------------------|---------------------|----------------------|
+| `XMLType`<br/>`URIType`<br/>`DBURIType`<br/>`XDBURIType`<br/>`HTTPURIType`<br/>`CREATE TYPE ... AS OBJECT (...)`                         | `StringType()` | `CLOB`            | `CLOB`             |
+| `JSON`<br/>`CREATE TYPE ... AS VARRAY ...`<br/>`CREATE TYPE ... AS TABLE OF ...`                            | <br/>unsupported      |                     |                      |
 
 ### Special types
 
-```{eval-rst}
-+--------------------+-------------------+---------------------+----------------------+
 | Oracle type (read) | Spark type        | Oracle type (write) | Oracle type (create) |
-+====================+===================+=====================+======================+
-| ``BOOLEAN``        | ``BooleanType()`` | ``BOOLEAN``         | ``NUMBER(P=1, S=0)`` |
-+--------------------+-------------------+---------------------+----------------------+
-| ``ROWID``          | ``StringType()``  | ``CLOB``            | ``CLOB``             |
-+--------------------+                   |                     |                      |
-| ``UROWID``         |                   |                     |                      |
-+--------------------+                   |                     |                      |
-| ``UROWID(N)``      |                   |                     |                      |
-+--------------------+-------------------+---------------------+----------------------+
-| ``ANYTYPE``        | unsupported       |                     |                      |
-+--------------------+                   |                     |                      |
-| ``ANYDATA``        |                   |                     |                      |
-+--------------------+                   |                     |                      |
-| ``ANYDATASET``     |                   |                     |                      |
-+--------------------+-------------------+---------------------+----------------------+
-```
+|--------------------|-------------------|---------------------|----------------------|
+| `BOOLEAN`        | `BooleanType()` | `BOOLEAN`         | `NUMBER(P=1, S=0)` |
+| `ROWID`<br/>`UROWID`<br/>`UROWID(N)`          | <br/>`StringType()`  | <br/>`CLOB`            | <br/>`CLOB`             |
+| `ANYTYPE`<br/>`ANYDATA`<br/>`ANYDATASET`        | <br/>unsupported       |                     |                      |
 
 ## Explicit type cast
 
@@ -306,7 +180,7 @@ For example, you can use `CAST(column AS CLOB)` to convert data to string repres
 
 It is also possible to use [JSON_ARRAY](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/JSON_ARRAY.html)
 or [JSON_OBJECT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/JSON_OBJECT.html) Oracle functions
-to convert column of any type to string representation. Then this JSON string can then be effectively parsed using the {obj}`JSON.parse_column <onetl.file.format.json.JSON.parse_column>` method.
+to convert column of any type to string representation. Then this JSON string can then be effectively parsed using the [JSON.parse_column][onetl.file.format.json.JSON.parse_column] method.
 
 ```python
 from onetl.file.format import JSON
@@ -343,7 +217,7 @@ df = df.select(
 
 It is always possible to convert data on Spark side to string, and then write it to text column in Oracle table.
 
-To serialize and write JSON data to a `text` or `json` column in an Oracle table use the {obj}`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method.
+To serialize and write JSON data to a `text` or `json` column in an Oracle table use the [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column] method.
 
 ```python
 from onetl.connection import Oracle

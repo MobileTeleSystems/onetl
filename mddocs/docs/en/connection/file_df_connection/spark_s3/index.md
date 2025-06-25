@@ -1,12 +1,5 @@
-(spark-s3)=
-
 # Spark S3
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
-
-prerequisites
-Connection <connection>
-Troubleshooting <troubleshooting>
-```
+* [Prerequisites][spark-s3-prerequisites]
+* [Connection][spark-s3-connection]
+* [Troubleshooting][spark-s3-troubleshooting]

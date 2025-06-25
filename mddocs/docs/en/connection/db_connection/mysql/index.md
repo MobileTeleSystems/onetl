@@ -1,28 +1,17 @@
-(mysql)=
-
 # MySQL
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+# Connection
 
-prerequisites
-connection
-```
+* [Prerequisites][mysql-prerequisites]
+* [MySQL connection][mysql-connection]
 
-```{toctree}
-:caption: Operations
-:maxdepth: 1
+# Operations
 
-read
-sql
-write
-execute
-```
+* [Reading from MySQL using `DBReader`][mysql-read]
+* [Reading from MySQL using `MySQL.sql`][mysql-sql]
+* [Writing to MySQL using `DBWriter`][mysql-write]
+* [Executing statements in MySQL][mysql-execute]
 
-```{toctree}
-:caption: Troubleshooting
-:maxdepth: 1
+# Troubleshooting
 
-types
-```
+* [MySQL <-> Spark type mapping][mysql-types]

@@ -1,24 +1,14 @@
-(file-formats)=
+# File formats
 
-# File Formats
+* [Avro][avro-file-format]
+* [CSV][csv-file-format]
+* [Excel][excel-file-format]
+* [JSON][json-file-format]
+* [JSONLine][jsonline-file-format]
+* [ORC][orc-file-format]
+* [Parquet][parquet-file-format]
+* [XML][xml-file-format]
 
-```{toctree}
-:caption: File formats
-:maxdepth: 1
+# For developers
 
-avro
-csv
-excel
-json
-jsonline
-orc
-parquet
-xml
-```
-
-```{toctree}
-:caption: For developers
-:maxdepth: 1
-
-base
-```
+* [Base interface][base-file-format]

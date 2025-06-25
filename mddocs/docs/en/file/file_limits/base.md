@@ -1,7 +1,6 @@
-(base-limit)=
+# Base interface { #file-limits-base }
 
-# Base interface
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.base.base_file_limit
 ```
@@ -18,4 +17,12 @@
 ```{eval-rst}
 .. autoclass:: BaseFileLimit
     :members: reset, stops_at, is_reached
-```
+``` 
+-->
+
+::: onetl.base.base_file_limit.BaseFileLimit
+    options:
+        members:
+            - reset
+            - stops_at
+            - is_reached

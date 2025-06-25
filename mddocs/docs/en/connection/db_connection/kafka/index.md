@@ -1,5 +1,3 @@
-(kafka)=
-
 # Kafka
 
 ```{toctree}

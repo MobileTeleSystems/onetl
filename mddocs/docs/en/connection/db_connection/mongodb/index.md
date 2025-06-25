@@ -1,5 +1,3 @@
-(mongodb)=
-
 # MongoDB
 
 ```{toctree}

@@ -1,7 +1,6 @@
-(oracle-connection)=
+# Oracle connection { #oracle-connection }
 
-# Oracle connection
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.oracle.connection
 ```
@@ -10,3 +9,10 @@
 .. autoclass:: Oracle
     :members: get_packages, check
 ```
+ -->
+
+::: onetl.connection.db_connection.oracle.connection.Oracle
+    options:
+        members:
+            - get_packages
+            - check

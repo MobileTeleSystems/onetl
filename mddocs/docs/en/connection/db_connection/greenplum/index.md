@@ -1,5 +1,3 @@
-(greenplum)=
-
 # Greenplum
 
 ```{toctree}

@@ -1,7 +1,6 @@
-(file-downloader)=
+# File Downloader { #file-downloader-0 }
 
-# File Downloader
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.file.file_downloader.file_downloader
 ```
@@ -18,4 +17,11 @@
 .. autoclass:: FileDownloader
     :members: run, view_files
     :member-order: bysource
-```
+``` 
+-->
+
+::: onetl.file.file_downloader.file_downloader.FileDownloader
+    options:
+        members:
+            - run
+            - view_files

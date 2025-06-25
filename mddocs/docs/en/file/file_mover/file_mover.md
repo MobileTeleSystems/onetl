@@ -1,7 +1,6 @@
-(file-mover)=
+# File Mover { #file-mover-0 }
 
-# File Mover
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.file.file_mover.file_mover
 ```
@@ -19,3 +18,10 @@
     :members: run, view_files
     :member-order: bysource
 ```
+ -->
+
+::: onetl.file.file_mover.file_mover.FileMover
+    options:
+        members:
+            - run
+            - view_files

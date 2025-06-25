@@ -1,7 +1,6 @@
-(hooks-global-state)=
+# Hooks global state { #global-state }
 
-# Hooks global state
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.hooks.hooks_state
 ```
@@ -25,3 +24,10 @@
 ```{eval-rst}
 .. autofunction:: resume_all_hooks
 ```
+ -->
+
+::: onetl.hooks.hooks_state.skip_all_hooks
+
+::: onetl.hooks.hooks_state.stop_all_hooks
+
+::: onetl.hooks.hooks_state.resume_all_hooks

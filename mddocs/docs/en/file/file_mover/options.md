@@ -1,7 +1,6 @@
-(file-mover-options)=
+# File Mover Options { #file-mover-options }
 
-# File Mover Options
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.file.file_mover.options
 ```
@@ -12,3 +11,6 @@
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.file.file_mover.options.FileMoverOptions

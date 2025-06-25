@@ -1,6 +1,4 @@
-(hooks-design)=
-
-# High level design
+# High level design { #hooks-design }
 
 ## What are hooks?
 
@@ -154,7 +152,7 @@ def callback(obj, *args, method_name: str, **kwargs):
 ```{eval-rst}
 .. note::
 
-    ``method_name`` should always be a keyword argument, **NOT** positional.
+    `method_name` should always be a keyword argument, **NOT** positional.
 ```
 
 ```{eval-rst}
@@ -398,7 +396,7 @@ Hooks with the same priority and inheritance will be executed in the same order 
 ```{eval-rst}
 .. note::
 
-    Calls of ``super()`` inside inherited class methods does not trigger hooks call.
+    Calls of `super()` inside inherited class methods does not trigger hooks call.
     Hooks are triggered only if method is called explicitly.
 
     This allow to wrap with a hook the entire slot call without influencing its internal logic.
@@ -650,8 +648,8 @@ More details in the documentation above.
 
     All of these levels are independent.
 
-    Calling ``stop`` on the level 1 has higher priority than level 2, and so on.
-    But calling ``resume`` on the level 1 does not automatically resume hooks stopped in the level 2,
+    Calling `stop` on the level 1 has higher priority than level 2, and so on.
+    But calling `resume` on the level 1 does not automatically resume hooks stopped in the level 2,
     they should be resumed explicitly.
 
 ```

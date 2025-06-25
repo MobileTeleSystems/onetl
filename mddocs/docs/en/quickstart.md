@@ -49,7 +49,7 @@ pip install onetl
 
     This method does NOT include any connections.
 
-    This method is recommended for use in third-party libraries which require for ``onetl`` to be installed,
+    This method is recommended for use in third-party libraries which require for `onetl` to be installed,
     but do not use its connection classes.
 
 

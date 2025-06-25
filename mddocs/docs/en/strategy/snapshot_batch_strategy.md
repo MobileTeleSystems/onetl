@@ -1,7 +1,6 @@
-(snapshot-batch-strategy)=
+# Snapshot Batch Strategy { #snapshot-batch-strategy }
 
-# Snapshot Batch Strategy
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.strategy.snapshot_strategy
 ```
@@ -10,3 +9,9 @@
 .. autoclass:: SnapshotBatchStrategy
     :members: __init__
 ```
+ -->
+
+::: onetl.strategy.snapshot_strategy.SnapshotBatchStrategy
+    options:
+        members:
+            - __init__

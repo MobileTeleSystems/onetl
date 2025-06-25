@@ -21,7 +21,7 @@ but does not support custom queries, like `JOIN`.
 ```{eval-rst}
 .. warning::
 
-    Actually, ``columns``, ``where`` and  ``hwm.expression`` should be written using `SparkSQL <https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements>`_ syntax,
+    Actually, `columns`, `where` and  `hwm.expression` should be written using `SparkSQL <https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements>`_ syntax,
     not HiveQL.
 ```
 

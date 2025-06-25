@@ -1,28 +1,17 @@
-(clickhouse)=
-
 # Clickhouse
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+## Connection
 
-prerequisites
-connection
-```
+* [Prerequisites][clickhouse-prerequisites]
+* [Clickhouse connection][clickhouse-connection]
 
-```{toctree}
-:caption: Operations
-:maxdepth: 1
+## Operations
 
-read
-sql
-write
-execute
-```
+* [Reading from Clickhouse using `DBReader`][clickhouse-read]
+* [Reading from Clickhouse using `Clickhouse.sql`][clickhouse-sql]
+* [Writing to Clickhouse using `DBWriter`][clickhouse-write]
+* [Executing statements in Clickhouse][clickhouse-execute]
 
-```{toctree}
-:caption: Troubleshooting
-:maxdepth: 1
+## Troubleshooting
 
-types
-```
+* [Clickhouse <-> Spark type mapping][clickhouse-types]

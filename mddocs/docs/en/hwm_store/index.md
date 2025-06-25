@@ -6,9 +6,5 @@ The only class was left intact is {ref}`yaml-hwm-store`, **which is default** in
 
 Other known implementation is [HorizonHWMStore](https://horizon-hwm-store.readthedocs.io/).
 
-```{toctree}
-:hidden: true
-:maxdepth: 2
+* [YAML HWM Store][yaml-hwm-store]
 
-yaml_hwm_store
-```

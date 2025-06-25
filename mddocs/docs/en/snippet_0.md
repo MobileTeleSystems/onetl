@@ -42,5 +42,3 @@ Python ETL/ELT library powered by [Apache Spark](https://spark.apache.org/) & ot
 | Samba        | [pysmb library](https://pypi.org/project/pysmb/)                                                                      |
 | Files as DataFrame {: rowspan=2} | SparkLocalFS<br/>SparkHDFS | Apache Spark [File Data Source](https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html)           |
 | SparkS3      | [Hadoop AWS](https://hadoop.apache.org/docs/current3/hadoop-aws/tools/hadoop-aws/index.html) library                  |
-
-

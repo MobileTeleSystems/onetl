@@ -1,12 +1,7 @@
-(file-root)=
+# File classes
 
-```{toctree}
-:caption: File classes
-:maxdepth: 1
-
-file_downloader/index
-file_uploader/index
-file_mover/index
-file_filters/index
-file_limits/index
-```
+* [File Downloader][file-downloader]
+* [File Uploader][file-uploader]
+* [File Mover][file-mover]
+* [File Filters][file-filters]
+* [File Limits][file-limits]

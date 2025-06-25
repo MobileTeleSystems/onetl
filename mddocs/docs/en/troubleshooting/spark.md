@@ -1,6 +1,4 @@
-(troubleshooting-spark)=
-
-# Spark Troubleshooting
+# Spark Troubleshooting { #troubleshooting-spark }
 
 ## Restarting Spark session
 

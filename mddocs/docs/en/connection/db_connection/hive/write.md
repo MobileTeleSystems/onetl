@@ -53,7 +53,7 @@ Prefer these write formats:
 
 ```{eval-rst}
 .. warning::
-    When using ``DBWriter``, the default spark data format configured in ``spark.sql.sources.default`` is ignored, as  ``Hive.WriteOptions(format=...)`` default value is explicitly set to ``orc``.
+    When using `DBWriter`, the default spark data format configured in `spark.sql.sources.default` is ignored, as  `Hive.WriteOptions(format=...)` default value is explicitly set to `orc`.
 ```
 
 For column-based write formats, each file contains separated sections where column data is stored. The file footer contains
