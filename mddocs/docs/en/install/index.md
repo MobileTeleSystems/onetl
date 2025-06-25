@@ -1,10 +1,8 @@
 # How to install { #install }
 
-```{eval-rst}
-.. include:: ../../README.rst
-    :start-after: .. _minimal-install:
-    :end-before: With DB and FileDF connections
-```
+----8<----
+../mddocs/docs/en/minimal_install.md
+----8<----
 
 ## Installation in details
 

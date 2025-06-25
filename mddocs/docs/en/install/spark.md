@@ -1,30 +1,73 @@
 # Spark { #install-spark }
 
+<!-- 
 ```{eval-rst}
 .. include:: ../../README.rst
     :start-after: .. _spark-install:
     :end-before: .. _java-install:
 ```
+ -->
+
+
+All DB connection classes (`Clickhouse`, `Greenplum`, `Hive` and others)
+and all FileDF connection classes (`SparkHDFS`, `SparkLocalFS`, `SparkS3`)
+require Spark to be installed.
 
 ## Installing Java
 
+<!-- 
 ```{eval-rst}
 .. include:: ../../README.rst
     :start-after: .. _java-install:
     :end-before: .. _pyspark-install:
 ```
+ -->
+
+Firstly, you should install JDK. The exact installation instruction depends on your OS, here are some examples:
+
+```bash
+yum install java-1.8.0-openjdk-devel  # CentOS 7 + Spark 2
+dnf install java-11-openjdk-devel  # CentOS 8 + Spark 3
+apt-get install openjdk-11-jdk  # Debian-based + Spark 3
+```
+
+### Compatibility matrix { #spark-compatibility-matrix }
+
+| Spark                                                     | Python     | Java       |   Scala |
+|-----------------------------------------------------------|------------|------------|---------|
+| [2.3.x](https://spark.apache.org/docs/2.3.1/#downloading) | 3.7 only   | 8 only     |    2.11 |
+| [2.4.x](https://spark.apache.org/docs/2.4.8/#downloading) | 3.7 only   | 8 only     |    2.11 |
+| [3.2.x](https://spark.apache.org/docs/3.2.4/#downloading) | 3.7 - 3.10 | 8u201 - 11 |    2.12 |
+| [3.3.x](https://spark.apache.org/docs/3.3.4/#downloading) | 3.7 - 3.12 | 8u201 - 17 |    2.12 |
+| [3.4.x](https://spark.apache.org/docs/3.4.4/#downloading) | 3.7 - 3.12 | 8u362 - 20 |    2.12 |
+| [3.5.x](https://spark.apache.org/docs/3.5.5/#downloading) | 3.8 - 3.13 | 8u371 - 20 |    2.12 |
 
 ## Installing PySpark
 
+<!-- 
 ```{eval-rst}
 .. include:: ../../README.rst
     :start-after: .. _pyspark-install:
     :end-before: With File connections
 ```
+ -->
 
-(java-packages)=
+Then you should install PySpark via passing `spark` to `extras`:
 
-## Injecting Java packages
+```bash
+pip install onetl[spark]  # install latest PySpark
+```
+
+or install PySpark explicitly:
+
+```bash
+pip install onetl pyspark==3.5.5  # install a specific PySpark version
+```
+
+or inject PySpark to `sys.path` in some other way BEFORE creating a class instance.
+**Otherwise connection object cannot be created.**
+
+## Injecting Java packages { #java-packages }
 
 Some DB and FileDF connection classes require specific packages to be inserted to `CLASSPATH` of Spark session,
 like JDBC drivers.
@@ -66,10 +109,9 @@ The most simple solution, but this requires to store raw `.jar` files somewhere 
 - (For `spark.submit.deployMode=cluster`) place downloaded files to HDFS or deploy to any HTTP web server serving static files. See [official documentation](https://spark.apache.org/docs/latest/submitting-applications.html#advanced-dependency-management) for more details.
 - Create Spark session with passing `.jar` absolute file path to `spark.jars` Spark config option:
 
-```{eval-rst}
-.. tabs::
+=== "for spark.submit.deployMode=client (default)"
 
-    .. code-tab:: py for spark.submit.deployMode=client (default)
+    ```python 
 
         jar_files = ["/path/to/package.jar"]
 
@@ -79,8 +121,11 @@ The most simple solution, but this requires to store raw `.jar` files somewhere 
             .config("spark.jars", ",".join(jar_files))
             .getOrCreate()
         )
+    ```
 
-    .. code-tab:: py for spark.submit.deployMode=cluster
+=== "for spark.submit.deployMode=cluster"
+
+    ```python 
 
         # you can also pass URLs like http://domain.com/path/to/downloadable/package.jar
         jar_files = ["hdfs:///path/to/package.jar"]
@@ -91,16 +136,14 @@ The most simple solution, but this requires to store raw `.jar` files somewhere 
             .config("spark.jars", ",".join(jar_files))
             .getOrCreate()
         )
-```
+    ```
 
 ### Using `spark.jars.repositories`
 
-```{eval-rst}
-.. note::
+!!! note
 
     In this case Spark still will try to fetch packages from the internet, so if you don't have internet access,
     Spark session will be created with significant delay because of all attempts to fetch packages.
-```
 
 Can be used if you have access both to public repos (like Maven) and a private Artifactory/Nexus repo.
 
@@ -137,11 +180,9 @@ Same as above, but can be used even if there is no network access to public repo
 - Pass `ivysettings.xml` absolute path to `spark.jars.ivySettings` Spark config option.
 - Create Spark session with passing package name to `spark.jars.packages` Spark config option:
 
-```{eval-rst}
-.. tabs::
+=== "ivysettings-all-packages-uploaded-to-nexus.xml"
 
-    .. code-tab:: xml ivysettings-all-packages-uploaded-to-nexus.xml
-
+    ```xml 
         <ivysettings>
             <settings defaultResolver="main"/>
             <resolvers>
@@ -155,9 +196,11 @@ Same as above, but can be used even if there is no network access to public repo
                 </chain>
             </resolvers>
         </ivysettings>
+    ```
 
-    .. code-tab:: xml ivysettings-private-packages-in-nexus-public-in-maven.xml
+=== "ivysettings-private-packages-in-nexus-public-in-maven.xml"
 
+    ```xml 
         <ivysettings>
             <settings defaultResolver="main"/>
             <resolvers>
@@ -175,9 +218,11 @@ Same as above, but can be used even if there is no network access to public repo
                 </chain>
             </resolvers>
         </ivysettings>
+    ```
 
-    .. code-tab:: xml ivysettings-private-packages-in-nexus-public-fetched-using-proxy-repo.xml
+=== "ivysettings-private-packages-in-nexus-public-fetched-using-proxy-repo.xml"
 
+    ```xml 
         <ivysettings>
             <settings defaultResolver="main"/>
             <resolvers>
@@ -195,9 +240,11 @@ Same as above, but can be used even if there is no network access to public repo
                 </chain>
             </resolvers>
         </ivysettings>
+    ```
 
-    .. code-tab:: xml ivysettings-nexus-with-auth-required.xml
+=== "ivysettings-nexus-with-auth-required.xml"
 
+    ```xml 
         <ivysettings>
             <settings defaultResolver="main"/>
             <properties environment="env"/>
@@ -222,10 +269,9 @@ Same as above, but can be used even if there is no network access to public repo
             </resolvers>
         </ivysettings>
 
-```
+    ```
 
-```{code-block} python
-:caption: script.py
+```python "script.py"
 
 maven_packages = (
     Greenplum.get_packages(spark_version="3.2")
@@ -265,8 +311,7 @@ spark = (
 
 ### Place `.jar` file to Spark jars folder
 
-```{eval-rst}
-.. note::
+!!! note
 
     Package file should be placed on all hosts/containers Spark is running,
     both driver and all executors.
@@ -274,7 +319,6 @@ spark = (
     Usually this is used only with either:
         * `spark.master=local` (driver and executors are running on the same host),
         * `spark.master=k8s://...` (`.jar` files are added to image or to volume mounted to all pods).
-```
 
 Can be used to embed `.jar` files to a default Spark classpath.
 
@@ -291,8 +335,7 @@ spark = SparkSession.builder.config("spark.app.name", "onetl").getOrCreate()
 
 ### Manually adding `.jar` files to `CLASSPATH`
 
-```{eval-rst}
-.. note::
+!!! note
 
     Package file should be placed on all hosts/containers Spark is running,
     both driver and all executors.
@@ -300,7 +343,6 @@ spark = SparkSession.builder.config("spark.app.name", "onetl").getOrCreate()
     Usually this is used only with either:
         * `spark.master=local` (driver and executors are running on the same host),
         * `spark.master=k8s://...` (`.jar` files are added to image or to volume mounted to all pods).
-```
 
 Can be used to embed `.jar` files to a default Java classpath.
 
