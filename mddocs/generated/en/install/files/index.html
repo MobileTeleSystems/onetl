@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -6752,10 +6756,22 @@
 
 
 <h1 id="install-files">File connections<a class="headerlink" href="#install-files" title="Permanent link">&para;</a></h1>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. include:: ../../README.rst
     :start-after: .. _files-install:
     :end-before: With Kerberos support
 </code></pre></div>
+ -->
+
+<p>All File (but not <em>FileDF</em>) connection classes (<code>FTP</code>,  <code>SFTP</code>, <code>HDFS</code> and so on) requires specific Python clients to be installed.</p>
+<p>Each client can be installed explicitly by passing connector name (in lowercase) to <code>extras</code>:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>ftp<span class="o">]</span><span class="w">  </span><span class="c1"># specific connector</span>
+pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>ftp,ftps,sftp,hdfs,s3,webdav,samba<span class="o">]</span><span class="w">  </span><span class="c1"># multiple connectors</span>
+</code></pre></div>
+<p>To install all file connectors at once you can pass <code>files</code> to <code>extras</code>:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>files<span class="o">]</span>
+</code></pre></div>
+<p><strong>Otherwise class import will fail.</strong></p>
 
 
 
@@ -6810,6 +6826,12 @@
     
     
       <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

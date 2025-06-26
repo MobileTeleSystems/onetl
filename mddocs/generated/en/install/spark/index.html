@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -5737,6 +5741,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Installing Java">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spark-compatibility-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Compatibility matrix
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -5749,7 +5768,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#injecting-java-packages" class="md-nav__link">
+  <a href="#java-packages" class="md-nav__link">
     <span class="md-ellipsis">
       Injecting Java packages
     </span>
@@ -6860,6 +6879,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Installing Java">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spark-compatibility-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Compatibility matrix
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -6872,7 +6906,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#injecting-java-packages" class="md-nav__link">
+  <a href="#java-packages" class="md-nav__link">
     <span class="md-ellipsis">
       Injecting Java packages
     </span>
@@ -6948,22 +6982,95 @@
 
 
 <h1 id="install-spark">Spark<a class="headerlink" href="#install-spark" title="Permanent link">&para;</a></h1>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. include:: ../../README.rst
     :start-after: .. _spark-install:
     :end-before: .. _java-install:
 </code></pre></div>
+ -->
+
+<p>All DB connection classes (<code>Clickhouse</code>, <code>Greenplum</code>, <code>Hive</code> and others)
+and all FileDF connection classes (<code>SparkHDFS</code>, <code>SparkLocalFS</code>, <code>SparkS3</code>)
+require Spark to be installed.</p>
 <h2 id="installing-java">Installing Java<a class="headerlink" href="#installing-java" title="Permanent link">&para;</a></h2>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. include:: ../../README.rst
     :start-after: .. _java-install:
     :end-before: .. _pyspark-install:
 </code></pre></div>
+ -->
+
+<p>Firstly, you should install JDK. The exact installation instruction depends on your OS, here are some examples:</p>
+<div class="highlight"><pre><span></span><code>yum<span class="w"> </span>install<span class="w"> </span>java-1.8.0-openjdk-devel<span class="w">  </span><span class="c1"># CentOS 7 + Spark 2</span>
+dnf<span class="w"> </span>install<span class="w"> </span>java-11-openjdk-devel<span class="w">  </span><span class="c1"># CentOS 8 + Spark 3</span>
+apt-get<span class="w"> </span>install<span class="w"> </span>openjdk-11-jdk<span class="w">  </span><span class="c1"># Debian-based + Spark 3</span>
+</code></pre></div>
+<h3 id="spark-compatibility-matrix">Compatibility matrix<a class="headerlink" href="#spark-compatibility-matrix" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Spark</th>
+<th>Python</th>
+<th>Java</th>
+<th>Scala</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://spark.apache.org/docs/2.3.1/#downloading">2.3.x</a></td>
+<td>3.7 only</td>
+<td>8 only</td>
+<td>2.11</td>
+</tr>
+<tr>
+<td><a href="https://spark.apache.org/docs/2.4.8/#downloading">2.4.x</a></td>
+<td>3.7 only</td>
+<td>8 only</td>
+<td>2.11</td>
+</tr>
+<tr>
+<td><a href="https://spark.apache.org/docs/3.2.4/#downloading">3.2.x</a></td>
+<td>3.7 - 3.10</td>
+<td>8u201 - 11</td>
+<td>2.12</td>
+</tr>
+<tr>
+<td><a href="https://spark.apache.org/docs/3.3.4/#downloading">3.3.x</a></td>
+<td>3.7 - 3.12</td>
+<td>8u201 - 17</td>
+<td>2.12</td>
+</tr>
+<tr>
+<td><a href="https://spark.apache.org/docs/3.4.4/#downloading">3.4.x</a></td>
+<td>3.7 - 3.12</td>
+<td>8u362 - 20</td>
+<td>2.12</td>
+</tr>
+<tr>
+<td><a href="https://spark.apache.org/docs/3.5.5/#downloading">3.5.x</a></td>
+<td>3.8 - 3.13</td>
+<td>8u371 - 20</td>
+<td>2.12</td>
+</tr>
+</tbody>
+</table>
 <h2 id="installing-pyspark">Installing PySpark<a class="headerlink" href="#installing-pyspark" title="Permanent link">&para;</a></h2>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. include:: ../../README.rst
     :start-after: .. _pyspark-install:
     :end-before: With File connections
 </code></pre></div>
-<p>(java-packages)=</p>
-<h2 id="injecting-java-packages">Injecting Java packages<a class="headerlink" href="#injecting-java-packages" title="Permanent link">&para;</a></h2>
+ -->
+
+<p>Then you should install PySpark via passing <code>spark</code> to <code>extras</code>:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>spark<span class="o">]</span><span class="w">  </span><span class="c1"># install latest PySpark</span>
+</code></pre></div>
+<p>or install PySpark explicitly:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="w"> </span><span class="nv">pyspark</span><span class="o">==</span><span class="m">3</span>.5.5<span class="w">  </span><span class="c1"># install a specific PySpark version</span>
+</code></pre></div>
+<p>or inject PySpark to <code>sys.path</code> in some other way BEFORE creating a class instance.
+<strong>Otherwise connection object cannot be created.</strong></p>
+<h2 id="java-packages">Injecting Java packages<a class="headerlink" href="#java-packages" title="Permanent link">&para;</a></h2>
 <p>Some DB and FileDF connection classes require specific packages to be inserted to <code>CLASSPATH</code> of Spark session,
 like JDBC drivers.</p>
 <p>This is usually done by setting up <code>spark.jars.packages</code> option while creating Spark session:</p>
@@ -6996,37 +7103,39 @@ like JDBC drivers.</p>
 <li>(For <code>spark.submit.deployMode=cluster</code>) place downloaded files to HDFS or deploy to any HTTP web server serving static files. See <a href="https://spark.apache.org/docs/latest/submitting-applications.html#advanced-dependency-management">official documentation</a> for more details.</li>
 <li>Create Spark session with passing <code>.jar</code> absolute file path to <code>spark.jars</code> Spark config option:</li>
 </ul>
-<div class="highlight"><pre><span></span><code>.. tabs::
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">for spark.submit.deployMode=client (default)</label><label for="__tabbed_1_2">for spark.submit.deployMode=cluster</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>    <span class="n">jar_files</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;/path/to/package.jar&quot;</span><span class="p">]</span>
 
-    .. code-tab:: py for spark.submit.deployMode=client (default)
-
-        jar_files = [&quot;/path/to/package.jar&quot;]
-
-        # do not pass spark.jars.packages
-        spark = (
-            SparkSession.builder.config(&quot;spark.app.name&quot;, &quot;onetl&quot;)
-            .config(&quot;spark.jars&quot;, &quot;,&quot;.join(jar_files))
-            .getOrCreate()
-        )
-
-    .. code-tab:: py for spark.submit.deployMode=cluster
-
-        # you can also pass URLs like http://domain.com/path/to/downloadable/package.jar
-        jar_files = [&quot;hdfs:///path/to/package.jar&quot;]
-
-        # do not pass spark.jars.packages
-        spark = (
-            SparkSession.builder.config(&quot;spark.app.name&quot;, &quot;onetl&quot;)
-            .config(&quot;spark.jars&quot;, &quot;,&quot;.join(jar_files))
-            .getOrCreate()
-        )
+    <span class="c1"># do not pass spark.jars.packages</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.app.name&quot;</span><span class="p">,</span> <span class="s2">&quot;onetl&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.jars&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">jar_files</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+    <span class="p">)</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>    <span class="c1"># you can also pass URLs like http://domain.com/path/to/downloadable/package.jar</span>
+    <span class="n">jar_files</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;hdfs:///path/to/package.jar&quot;</span><span class="p">]</span>
+
+    <span class="c1"># do not pass spark.jars.packages</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.app.name&quot;</span><span class="p">,</span> <span class="s2">&quot;onetl&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.jars&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">jar_files</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+    <span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h3 id="using-sparkjarsrepositories">Using <code>spark.jars.repositories</code><a class="headerlink" href="#using-sparkjarsrepositories" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>.. note::
-
-    In this case Spark still will try to fetch packages from the internet, so if you don&#39;t have internet access,
-    Spark session will be created with significant delay because of all attempts to fetch packages.
-</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this case Spark still will try to fetch packages from the internet, so if you don't have internet access,
+Spark session will be created with significant delay because of all attempts to fetch packages.</p>
+</div>
 <p>Can be used if you have access both to public repos (like Maven) and a private Artifactory/Nexus repo.</p>
 <ul>
 <li>Setup private Maven repository in <a href="https://jfrog.com/artifactory/">JFrog Artifactory</a> or <a href="https://www.sonatype.com/products/sonatype-nexus-repository">Sonatype Nexus</a>.</li>
@@ -7059,92 +7168,93 @@ like JDBC drivers.</p>
 <li>Pass <code>ivysettings.xml</code> absolute path to <code>spark.jars.ivySettings</code> Spark config option.</li>
 <li>Create Spark session with passing package name to <code>spark.jars.packages</code> Spark config option:</li>
 </ul>
-<div class="highlight"><pre><span></span><code>.. tabs::
-
-    .. code-tab:: xml ivysettings-all-packages-uploaded-to-nexus.xml
-
-        &lt;ivysettings&gt;
-            &lt;settings defaultResolver=&quot;main&quot;/&gt;
-            &lt;resolvers&gt;
-                &lt;chain name=&quot;main&quot; returnFirst=&quot;true&quot;&gt;
-                    &lt;!-- Use Maven cache --&gt;
-                    &lt;ibiblio name=&quot;local-maven-cache&quot; m2compatible=&quot;true&quot; root=&quot;file://${user.home}/.m2/repository&quot;/&gt;
-                    &lt;!-- Use -/.ivy2/jars/*.jar files --&gt;
-                    &lt;ibiblio name=&quot;local-ivy2-cache&quot; m2compatible=&quot;false&quot; root=&quot;file://${user.home}/.ivy2/jars&quot;/&gt;
-                    &lt;!-- Download all packages from own Nexus instance --&gt;
-                    &lt;ibiblio name=&quot;nexus-private&quot; m2compatible=&quot;true&quot; root=&quot;http://nexus.mydomain.com/private-repo/&quot; /&gt;
-                &lt;/chain&gt;
-            &lt;/resolvers&gt;
-        &lt;/ivysettings&gt;
-
-    .. code-tab:: xml ivysettings-private-packages-in-nexus-public-in-maven.xml
-
-        &lt;ivysettings&gt;
-            &lt;settings defaultResolver=&quot;main&quot;/&gt;
-            &lt;resolvers&gt;
-                &lt;chain name=&quot;main&quot; returnFirst=&quot;true&quot;&gt;
-                    &lt;!-- Use Maven cache --&gt;
-                    &lt;ibiblio name=&quot;local-maven-cache&quot; m2compatible=&quot;true&quot; root=&quot;file://${user.home}/.m2/repository&quot;/&gt;
-                    &lt;!-- Use -/.ivy2/jars/*.jar files --&gt;
-                    &lt;ibiblio name=&quot;local-ivy2-cache&quot; m2compatible=&quot;false&quot; root=&quot;file://${user.home}/.ivy2/jars&quot;/&gt;
-                    &lt;!-- Download private packages from own Nexus instance --&gt;
-                    &lt;ibiblio name=&quot;nexus-private&quot; m2compatible=&quot;true&quot; root=&quot;http://nexus.mydomain.com/private-repo/&quot; /&gt;
-                    &lt;!-- Download other packages from Maven --&gt;
-                    &lt;ibiblio name=&quot;central&quot; m2compatible=&quot;true&quot; /&gt;
-                    &lt;!-- Download other packages from SparkPackages --&gt;
-                    &lt;ibiblio name=&quot;spark-packages&quot; m2compatible=&quot;true&quot; root=&quot;https://repos.spark-packages.org/&quot; /&gt;
-                &lt;/chain&gt;
-            &lt;/resolvers&gt;
-        &lt;/ivysettings&gt;
-
-    .. code-tab:: xml ivysettings-private-packages-in-nexus-public-fetched-using-proxy-repo.xml
-
-        &lt;ivysettings&gt;
-            &lt;settings defaultResolver=&quot;main&quot;/&gt;
-            &lt;resolvers&gt;
-                &lt;chain name=&quot;main&quot; returnFirst=&quot;true&quot;&gt;
-                    &lt;!-- Use Maven cache --&gt;
-                    &lt;ibiblio name=&quot;local-maven-cache&quot; m2compatible=&quot;true&quot; root=&quot;file://${user.home}/.m2/repository&quot;/&gt;
-                    &lt;!-- Use -/.ivy2/jars/*.jar files --&gt;
-                    &lt;ibiblio name=&quot;local-ivy2-cache&quot; m2compatible=&quot;false&quot; root=&quot;file://${user.home}/.ivy2/jars&quot;/&gt;
-                    &lt;!-- Download private packages from own Nexus instance --&gt;
-                    &lt;ibiblio name=&quot;nexus-private&quot; m2compatible=&quot;true&quot; root=&quot;http://nexus.mydomain.com/private-repo/&quot; /&gt;
-                    &lt;!-- Download public packages from same Nexus instance using Proxy Repo
-                    See https://help.sonatype.com/repomanager3/nexus-repository-administration/repository-management#RepositoryManagement-ProxyRepository
-                    --&gt;
-                    &lt;ibiblio name=&quot;nexus-proxy&quot; m2compatible=&quot;true&quot; root=&quot;http://nexus.mydomain.com/proxy-repo/&quot; /&gt;
-                &lt;/chain&gt;
-            &lt;/resolvers&gt;
-        &lt;/ivysettings&gt;
-
-    .. code-tab:: xml ivysettings-nexus-with-auth-required.xml
-
-        &lt;ivysettings&gt;
-            &lt;settings defaultResolver=&quot;main&quot;/&gt;
-            &lt;properties environment=&quot;env&quot;/&gt;
-            &lt;!-- use environment variables NEXUS_USER and NEXUS_PASSWORD as credentials to auth in Nexus --&gt;
-            &lt;property name=&quot;repo.username&quot; value=&quot;${env.NEXUS_USER}&quot;/&gt;
-            &lt;property name=&quot;repo.pass&quot; value=&quot;${env.NEXUS_PASSWORD}&quot;/&gt;
-            &lt;!-- realm value is described
-            - here https://stackoverflow.com/a/38019000
-            - here https://github.com/sonatype/nexus-book-examples/blob/master/ant-ivy/simple-project/ivysettings.xml
-            - here https://support.sonatype.com/hc/en-us/articles/213465388-How-do-I-configure-my-Ivy-build-to-deploy-artifacts-to-Nexus-Repository-2-
-            --&gt;
-            &lt;credentials host=&quot;nexus.mydomain.com&quot; username=&quot;${repo.username}&quot; passwd=&quot;${repo.pass}&quot; realm=&quot;Sonatype Nexus Repository Manager&quot; /&gt;
-            &lt;resolvers&gt;
-                &lt;chain name=&quot;main&quot; returnFirst=&quot;true&quot;&gt;
-                    &lt;!-- Use Maven cache --&gt;
-                    &lt;ibiblio name=&quot;local-maven-cache&quot; m2compatible=&quot;true&quot; root=&quot;file://${user.home}/.m2/repository&quot;/&gt;
-                    &lt;!-- Use -/.ivy2/jars/*.jar files --&gt;
-                    &lt;ibiblio name=&quot;local-ivy2-cache&quot; m2compatible=&quot;false&quot; root=&quot;file://${user.home}/.ivy2/jars&quot;/&gt;
-                    &lt;!-- Download all packages from own Nexus instance, using credentials for domain above --&gt;
-                    &lt;ibiblio name=&quot;nexus-private&quot; m2compatible=&quot;true&quot; root=&quot;http://nexus.mydomain.com/private-repo/&quot; /&gt;
-                &lt;/chain&gt;
-            &lt;/resolvers&gt;
-        &lt;/ivysettings&gt;
+<div class="tabbed-set tabbed-alternate" data-tabs="2:4"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><input id="__tabbed_2_4" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">ivysettings-all-packages-uploaded-to-nexus.xml</label><label for="__tabbed_2_2">ivysettings-private-packages-in-nexus-public-in-maven.xml</label><label for="__tabbed_2_3">ivysettings-private-packages-in-nexus-public-fetched-using-proxy-repo.xml</label><label for="__tabbed_2_4">ivysettings-nexus-with-auth-required.xml</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">&lt;ivysettings&gt;</span>
+<span class="w">        </span><span class="nt">&lt;settings</span><span class="w"> </span><span class="na">defaultResolver=</span><span class="s">&quot;main&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;resolvers&gt;</span>
+<span class="w">            </span><span class="nt">&lt;chain</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;main&quot;</span><span class="w"> </span><span class="na">returnFirst=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Use Maven cache --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;local-maven-cache&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;file://${user.home}/.m2/repository&quot;</span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Use -/.ivy2/jars/*.jar files --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;local-ivy2-cache&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;false&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;file://${user.home}/.ivy2/jars&quot;</span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Download all packages from own Nexus instance --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;nexus-private&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;http://nexus.mydomain.com/private-repo/&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">            </span><span class="nt">&lt;/chain&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/resolvers&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/ivysettings&gt;</span>
 </code></pre></div>
-<p>```{code-block} python
-:caption: script.py</p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">&lt;ivysettings&gt;</span>
+<span class="w">        </span><span class="nt">&lt;settings</span><span class="w"> </span><span class="na">defaultResolver=</span><span class="s">&quot;main&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;resolvers&gt;</span>
+<span class="w">            </span><span class="nt">&lt;chain</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;main&quot;</span><span class="w"> </span><span class="na">returnFirst=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Use Maven cache --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;local-maven-cache&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;file://${user.home}/.m2/repository&quot;</span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Use -/.ivy2/jars/*.jar files --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;local-ivy2-cache&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;false&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;file://${user.home}/.ivy2/jars&quot;</span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Download private packages from own Nexus instance --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;nexus-private&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;http://nexus.mydomain.com/private-repo/&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Download other packages from Maven --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;central&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Download other packages from SparkPackages --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;spark-packages&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;https://repos.spark-packages.org/&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">            </span><span class="nt">&lt;/chain&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/resolvers&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/ivysettings&gt;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">&lt;ivysettings&gt;</span>
+<span class="w">        </span><span class="nt">&lt;settings</span><span class="w"> </span><span class="na">defaultResolver=</span><span class="s">&quot;main&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;resolvers&gt;</span>
+<span class="w">            </span><span class="nt">&lt;chain</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;main&quot;</span><span class="w"> </span><span class="na">returnFirst=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Use Maven cache --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;local-maven-cache&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;file://${user.home}/.m2/repository&quot;</span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Use -/.ivy2/jars/*.jar files --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;local-ivy2-cache&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;false&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;file://${user.home}/.ivy2/jars&quot;</span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Download private packages from own Nexus instance --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;nexus-private&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;http://nexus.mydomain.com/private-repo/&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Download public packages from same Nexus instance using Proxy Repo</span>
+<span class="cm">                See https://help.sonatype.com/repomanager3/nexus-repository-administration/repository-management#RepositoryManagement-ProxyRepository</span>
+<span class="cm">                --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;nexus-proxy&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;http://nexus.mydomain.com/proxy-repo/&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">            </span><span class="nt">&lt;/chain&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/resolvers&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/ivysettings&gt;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">&lt;ivysettings&gt;</span>
+<span class="w">        </span><span class="nt">&lt;settings</span><span class="w"> </span><span class="na">defaultResolver=</span><span class="s">&quot;main&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;properties</span><span class="w"> </span><span class="na">environment=</span><span class="s">&quot;env&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="cm">&lt;!-- use environment variables NEXUS_USER and NEXUS_PASSWORD as credentials to auth in Nexus --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;property</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;repo.username&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;${env.NEXUS_USER}&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;property</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;repo.pass&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;${env.NEXUS_PASSWORD}&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="cm">&lt;!-- realm value is described</span>
+<span class="cm">        - here https://stackoverflow.com/a/38019000</span>
+<span class="cm">        - here https://github.com/sonatype/nexus-book-examples/blob/master/ant-ivy/simple-project/ivysettings.xml</span>
+<span class="cm">        - here https://support.sonatype.com/hc/en-us/articles/213465388-How-do-I-configure-my-Ivy-build-to-deploy-artifacts-to-Nexus-Repository-2-</span>
+<span class="cm">        --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;credentials</span><span class="w"> </span><span class="na">host=</span><span class="s">&quot;nexus.mydomain.com&quot;</span><span class="w"> </span><span class="na">username=</span><span class="s">&quot;${repo.username}&quot;</span><span class="w"> </span><span class="na">passwd=</span><span class="s">&quot;${repo.pass}&quot;</span><span class="w"> </span><span class="na">realm=</span><span class="s">&quot;Sonatype Nexus Repository Manager&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;resolvers&gt;</span>
+<span class="w">            </span><span class="nt">&lt;chain</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;main&quot;</span><span class="w"> </span><span class="na">returnFirst=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Use Maven cache --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;local-maven-cache&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;file://${user.home}/.m2/repository&quot;</span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Use -/.ivy2/jars/*.jar files --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;local-ivy2-cache&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;false&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;file://${user.home}/.ivy2/jars&quot;</span><span class="nt">/&gt;</span>
+<span class="w">                </span><span class="cm">&lt;!-- Download all packages from own Nexus instance, using credentials for domain above --&gt;</span>
+<span class="w">                </span><span class="nt">&lt;ibiblio</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;nexus-private&quot;</span><span class="w"> </span><span class="na">m2compatible=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">root=</span><span class="s">&quot;http://nexus.mydomain.com/private-repo/&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">            </span><span class="nt">&lt;/chain&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/resolvers&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/ivysettings&gt;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>```python "script.py"</p>
 <p>maven_packages = (
     Greenplum.get_packages(spark_version="3.2")
     + MySQL.get_packages()
@@ -7178,15 +7288,14 @@ spark = (
 )
 </code></pre></div></p>
 <h3 id="place-jar-file-to-spark-jars-folder">Place <code>.jar</code> file to Spark jars folder<a class="headerlink" href="#place-jar-file-to-spark-jars-folder" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>.. note::
-
-    Package file should be placed on all hosts/containers Spark is running,
-    both driver and all executors.
-
-    Usually this is used only with either:
-        * `spark.master=local` (driver and executors are running on the same host),
-        * `spark.master=k8s://...` (`.jar` files are added to image or to volume mounted to all pods).
-</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Package file should be placed on all hosts/containers Spark is running,
+both driver and all executors.</p>
+<p>Usually this is used only with either:
+    * <code>spark.master=local</code> (driver and executors are running on the same host),
+    * <code>spark.master=k8s://...</code> (<code>.jar</code> files are added to image or to volume mounted to all pods).</p>
+</div>
 <p>Can be used to embed <code>.jar</code> files to a default Spark classpath.</p>
 <ul>
 <li>Download <code>package.jar</code> file (it's usually something like <code>some-package_1.0.0.jar</code>). Local file name does not matter, but it should be unique.</li>
@@ -7199,15 +7308,14 @@ spark = (
 <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.app.name&quot;</span><span class="p">,</span> <span class="s2">&quot;onetl&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
 </code></pre></div>
 <h3 id="manually-adding-jar-files-to-classpath">Manually adding <code>.jar</code> files to <code>CLASSPATH</code><a class="headerlink" href="#manually-adding-jar-files-to-classpath" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>.. note::
-
-    Package file should be placed on all hosts/containers Spark is running,
-    both driver and all executors.
-
-    Usually this is used only with either:
-        * `spark.master=local` (driver and executors are running on the same host),
-        * `spark.master=k8s://...` (`.jar` files are added to image or to volume mounted to all pods).
-</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Package file should be placed on all hosts/containers Spark is running,
+both driver and all executors.</p>
+<p>Usually this is used only with either:
+    * <code>spark.master=local</code> (driver and executors are running on the same host),
+    * <code>spark.master=k8s://...</code> (<code>.jar</code> files are added to image or to volume mounted to all pods).</p>
+</div>
 <p>Can be used to embed <code>.jar</code> files to a default Java classpath.</p>
 <ul>
 <li>Download <code>package.jar</code> file (it's usually something like <code>some-package_1.0.0.jar</code>). Local file name does not matter.</li>
@@ -7283,6 +7391,12 @@ spark = (
     
     
       <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

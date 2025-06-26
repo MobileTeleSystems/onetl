@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -76,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#writing-to-mongodb-using-dbwriter" class="md-skip">
+        <a href="#mongodb-write" class="md-skip">
           Skip to content
         </a>
       
@@ -1755,6 +1759,45 @@
       Write options
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Write options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      MongoDBWriteOptions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MongoDBWriteOptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions.if_exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      if_exists
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -6813,6 +6856,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Write options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      MongoDBWriteOptions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MongoDBWriteOptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions.if_exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      if_exists
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -6831,13 +6913,12 @@
 
 
 
-<p>(mongodb-write)=</p>
-<h1 id="writing-to-mongodb-using-dbwriter">Writing to MongoDB using <code>DBWriter</code><a class="headerlink" href="#writing-to-mongodb-using-dbwriter" title="Permanent link">&para;</a></h1>
-<p>For writing data to MongoDB, use {obj}<code>DBWriter &lt;onetl.db.db_writer.db_writer.DBWriter&gt;</code>.</p>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    Please take into account :ref:`mongodb-types`
-</code></pre></div>
+<h1 id="mongodb-write">Writing to MongoDB using <code>DBWriter</code><a class="headerlink" href="#mongodb-write" title="Permanent link">&para;</a></h1>
+<p>For writing data to MongoDB, use <a class="autorefs autorefs-internal" title="DB Writer" href="../../../../db_/writer/#db-writer">DBWriter</a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please take into account <a class="autorefs autorefs-internal" title="MongoDB <-> Spark type mapping" href="../types/#mongodb-types">MongoDB types</a></p>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">MongoDB</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBWriter</span>
@@ -6857,14 +6938,170 @@
 <span class="n">writer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="write-options">Write options<a class="headerlink" href="#write-options" title="Permanent link">&para;</a></h2>
-<p>Method above accepts {obj}<code>MongoDB.WriteOptions &lt;onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions&gt;</code></p>
+<p>Method above accepts <a class="autorefs autorefs-internal" title="onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions" href="#onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions">MongoDB.WriteOptions</a></p>
+<!-- 
+
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.mongodb.options
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autopydantic_model:: MongoDBWriteOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
 </code></pre></div>
+
+ -->
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions" class="doc doc-heading">
+            <code>onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions</code>
+
+
+<a href="#onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="onetl.impl.GenericOptions">GenericOptions</span></code></p>
+
+
+        <p>Writing options for MongoDB connector.</p>
+<p>.. warning::</p>
+<pre><code>Options ``uri``, ``database``, ``collection`` are populated from connection attributes,
+and cannot be overridden by the user in ``WriteOptions`` to avoid issues.
+</code></pre>
+<p>.. versionadded:: 0.7.0</p>
+<h5 id="onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions--examples" title="Permanent link">&para;</a></h5>
+<p>.. note ::</p>
+<pre><code>You can pass any value
+`supported by connector &lt;https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-write-config/&gt;`_,
+even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+The set of supported options depends on connector version.
+</code></pre>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import MongoDB
+
+options = MongoDB.WriteOptions(
+    if_exists="append",
+    sampleSize=500,
+    localThreshold=20,
+)
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions.if_exists" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">if_exists</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">MongoDBCollectionExistBehavior</span><span class="o">.</span><span class="n">APPEND</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="n">avoid_alias</span><span class="p">(</span><span class="s1">&#39;mode&#39;</span><span class="p">))</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions.if_exists" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Behavior of writing data into existing collection.</p>
+
+
+<details class="possible-values" open>
+  <summary>Possible values</summary>
+  <ul>
+<li>
+<p><code>append</code> (default)
+    Adds new objects into existing collection.</p>
+<p>.. dropdown:: Behavior in details</p>
+<pre><code>* Collection does not exist
+    Collection is created using options provided by user
+    (``shardkey`` and others).
+
+* Collection exists
+    Data is appended to a collection.
+
+    .. warning::
+
+        This mode does not check whether collection already contains
+        objects from dataframe, so duplicated objects can be created.
+</code></pre>
+</li>
+<li>
+<p><code>replace_entire_collection</code>
+    <strong>Collection is deleted and then created</strong>.</p>
+<p>.. dropdown:: Behavior in details</p>
+<pre><code>* Collection does not exist
+    Collection is created using options provided by user
+    (``shardkey`` and others).
+
+* Collection exists
+    Collection content is replaced with dataframe content.
+</code></pre>
+</li>
+<li>
+<p><code>ignore</code>
+    Ignores the write operation if the collection already exists.</p>
+<p>.. dropdown:: Behavior in details</p>
+<pre><code>* Collection does not exist
+    Collection is created using options provided by user
+
+* Collection exists
+    The write operation is ignored, and no data is written to the collection.
+</code></pre>
+</li>
+<li>
+<p><code>error</code>
+    Raises an error if the collection already exists.</p>
+<p>.. dropdown:: Behavior in details</p>
+<pre><code>* Collection does not exist
+    Collection is created using options provided by user
+
+* Collection exists
+    An error is raised, and no data is written to the collection.
+</code></pre>
+</li>
+</ul>
+</details>        <p>.. versionchanged:: 0.9.0
+    Renamed <code>mode</code> → <code>if_exists</code></p>
+
+    </div>
+
+</div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 
@@ -6919,6 +7156,12 @@
     
     
       <script src="../../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

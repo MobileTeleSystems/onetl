@@ -1,6 +1,4 @@
-(greenplum-types)=
-
-# Greenplum \<-> Spark type mapping
+# Greenplum <-> Spark type mapping { #greenplum-types }
 
 ```{eval-rst}
 .. note::

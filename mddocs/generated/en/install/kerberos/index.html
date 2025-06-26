@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -6752,9 +6756,35 @@
 
 
 <h1 id="install-kerberos">Kerberos support<a class="headerlink" href="#install-kerberos" title="Permanent link">&para;</a></h1>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. include:: ../../README.rst
     :start-after: .. _kerberos-install:
     :end-before: Full bundle
+</code></pre></div>
+ -->
+
+<p>Most of Hadoop instances set up with Kerberos support,
+so some connections require additional setup to work properly.</p>
+<ul>
+<li><code>HDFS</code>
+  Uses <a href="https://pypi.org/project/requests-kerberos/">requests-kerberos</a> and
+  <a href="https://pypi.org/project/gssapi/">GSSApi</a> for authentication.
+  It also uses <code>kinit</code> executable to generate Kerberos ticket.</li>
+<li><code>Hive</code> and <code>SparkHDFS</code>
+  require Kerberos ticket to exist before creating Spark session.</li>
+</ul>
+<p>So you need to install OS packages with:</p>
+<ul>
+<li><code>krb5</code> libs</li>
+<li>Headers for <code>krb5</code></li>
+<li><code>gcc</code> or other compiler for C sources</li>
+</ul>
+<p>The exact installation instruction depends on your OS, here are some examples:</p>
+<div class="highlight"><pre><span></span><code>apt<span class="w"> </span>install<span class="w"> </span>libkrb5-dev<span class="w"> </span>krb5-user<span class="w"> </span>gcc<span class="w">  </span><span class="c1"># Debian-based</span>
+dnf<span class="w"> </span>install<span class="w"> </span>krb5-devel<span class="w"> </span>krb5-libs<span class="w"> </span>krb5-workstation<span class="w"> </span>gcc<span class="w">  </span><span class="c1"># CentOS, OracleLinux</span>
+</code></pre></div>
+<p>Also you should pass <code>kerberos</code> to <code>extras</code> to install required Python packages:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>kerberos<span class="o">]</span>
 </code></pre></div>
 
 
@@ -6810,6 +6840,12 @@
     
     
       <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

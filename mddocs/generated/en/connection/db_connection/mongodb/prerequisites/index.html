@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -76,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#prerequisites" class="md-skip">
+        <a href="#mongodb-prerequisites" class="md-skip">
           Skip to content
         </a>
       
@@ -6915,12 +6919,11 @@
 
 
 
-<p>(mongodb-prerequisites)=</p>
-<h1 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h1>
+<h1 id="mongodb-prerequisites">Prerequisites<a class="headerlink" href="#mongodb-prerequisites" title="Permanent link">&para;</a></h1>
 <h2 id="version-compatibility">Version Compatibility<a class="headerlink" href="#version-compatibility" title="Permanent link">&para;</a></h2>
 <ul>
-<li>MongoDB server versions:
-  : - Officially declared: 4.0 or higher<ul>
+<li>MongoDB server versions:<ul>
+<li>Officially declared: 4.0 or higher</li>
 <li>Actually tested: 4.0.0, 8.0.4</li>
 </ul>
 </li>
@@ -6931,7 +6934,7 @@
 <h2 id="installing-pyspark">Installing PySpark<a class="headerlink" href="#installing-pyspark" title="Permanent link">&para;</a></h2>
 <p>To use MongoDB connector you should have PySpark installed (or injected to <code>sys.path</code>)
 BEFORE creating the connector instance.</p>
-<p>See {ref}<code>install-spark</code> installation instruction for more details.</p>
+<p>See <a class="autorefs autorefs-internal" title="Spark" href="../../../../install/spark/#install-spark">installation instruction</a> for more details.</p>
 <h2 id="connecting-to-mongodb">Connecting to MongoDB<a class="headerlink" href="#connecting-to-mongodb" title="Permanent link">&para;</a></h2>
 <h3 id="connection-host">Connection host<a class="headerlink" href="#connection-host" title="Permanent link">&para;</a></h3>
 <p>It is possible to connect to MongoDB host by using either DNS name of host or it's IP address.</p>
@@ -6955,20 +6958,22 @@ Please ask your MongoDB administrator to provide required information.</p>
 <h3 id="required-grants">Required grants<a class="headerlink" href="#required-grants" title="Permanent link">&para;</a></h3>
 <p>Ask your MongoDB cluster administrator to set following grants for a user,
 used for creating a connection:</p>
-<div class="highlight"><pre><span></span><code>.. tabs::
-
-    .. code-tab:: js Read + Write
-
-        // allow writing data to specific database
-        db.grantRolesToUser(&quot;username&quot;, [{db: &quot;somedb&quot;, role: &quot;readWrite&quot;}])
-
-    .. code-tab:: js Read only
-
-        // allow reading data from specific database
-        db.grantRolesToUser(&quot;username&quot;, [{db: &quot;somedb&quot;, role: &quot;read&quot;}])
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Read + Write</label><label for="__tabbed_1_2">Read only</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="c1">// allow writing data to specific database</span>
+<span class="nx">db</span><span class="p">.</span><span class="nx">grantRolesToUser</span><span class="p">(</span><span class="s2">&quot;username&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">[{</span><span class="nx">db</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;somedb&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;readWrite&quot;</span><span class="p">}])</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="c1">// allow reading data from specific database</span>
+<span class="nx">db</span><span class="p">.</span><span class="nx">grantRolesToUser</span><span class="p">(</span><span class="s2">&quot;username&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">[{</span><span class="nx">db</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;somedb&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;read&quot;</span><span class="p">}])</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>See:
-: - <a href="https://www.mongodb.com/docs/manual/reference/method/db.grantRolesToUser">db.grantRolesToUser documentation</a>
+  - <a href="https://www.mongodb.com/docs/manual/reference/method/db.grantRolesToUser">db.grantRolesToUser documentation</a>
   - <a href="https://www.mongodb.com/docs/manual/reference/built-in-roles">MongoDB builtin roles</a></p>
 
 
@@ -7024,6 +7029,12 @@ used for creating a connection:</p>
     
     
       <script src="../../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

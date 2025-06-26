@@ -1,25 +1,16 @@
 # Greenplum
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+# Connection
 
-prerequisites
-connection
-```
+* [Prerequisites][greenplum-prerequisites]
+* [Greenplum connection][greenplum-connection]
 
-```{toctree}
-:caption: Operations
-:maxdepth: 1
+# Operations
 
-read
-write
-execute
-```
+* [Reading from Greenplum using `DBReader`][greenplum-read]
+* [Writing to Greenplum using `DBWriter`][greenplum-write]
+* [Executing statements in Greenplum][greenplum-execute]
 
-```{toctree}
-:caption: Troubleshooting
-:maxdepth: 1
+# Troubleshooting
 
-types
-```
+* [Greenplum <-> Spark type mapping][greenplum-types]

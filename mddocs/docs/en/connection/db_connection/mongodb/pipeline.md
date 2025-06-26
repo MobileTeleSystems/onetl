@@ -1,15 +1,11 @@
-(mongodb-sql)=
+# Reading from MongoDB using `MongoDB.pipeline` { #mongodb-pipeline }
 
-# Reading from MongoDB using `MongoDB.pipeline`
-
-{obj}`MongoDB.sql <onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline>` allows passing custom pipeline,
+[MongoDB.sql][onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline] allows passing custom pipeline,
 but does not support incremental strategies.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Please take into account :ref:`mongodb-types`
-```
+    Please take into account [Mongodb types][mongodb-types]
 
 ## Recommendations
 
@@ -21,6 +17,7 @@ Especially if there are indexes for columns used in `pipeline` value.
 
 ## References
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.mongodb.connection
 ```
@@ -39,3 +36,16 @@ Especially if there are indexes for columns used in `pipeline` value.
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline
+    options:
+        heading_level: 3
+        show_root_heading: true
+
+
+::: onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions
+    options:
+        heading_level: 3
+        show_root_heading: true
+

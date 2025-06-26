@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -5644,6 +5648,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Full
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -5655,6 +5672,34 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#warning" class="md-nav__link">
+    <span class="md-ellipsis">
+      WARNING
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -6737,6 +6782,23 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#warning" class="md-nav__link">
+    <span class="md-ellipsis">
+      WARNING
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -6752,10 +6814,21 @@
 
 
 <h1 id="install-full">Full bundle<a class="headerlink" href="#install-full" title="Permanent link">&para;</a></h1>
-<p>.. include:: ../../README.rst
+<!-- 
+.. include:: ../../README.rst
     :start-after: .. _full-bundle:
     :end-before: .. _quick-start:
-```</p>
+
+ -->
+
+<p>To install all connectors and dependencies, you can pass <code>all</code> into <code>extras</code>:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>all<span class="o">]</span>
+
+<span class="c1"># this is just the same as</span>
+pip<span class="w"> </span>install<span class="w"> </span>onetl<span class="o">[</span>spark,files,kerberos<span class="o">]</span>
+</code></pre></div>
+<h4 id="warning">WARNING<a class="headerlink" href="#warning" title="Permanent link">&para;</a></h4>
+<p>This method consumes a lot of disk space, and requires for Java &amp; Kerberos libraries to be installed into your OS.</p>
 
 
 
@@ -6810,6 +6883,12 @@
     
     
       <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

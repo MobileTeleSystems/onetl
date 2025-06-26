@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -76,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#reading-from-mongodb-using-mongodbpipeline" class="md-skip">
+        <a href="#mongodb-pipeline" class="md-skip">
           Skip to content
         </a>
       
@@ -1793,6 +1797,69 @@
       References
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="References">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      pipeline
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      MongoDBPipelineOptions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MongoDBPipelineOptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -6843,6 +6910,69 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="References">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      pipeline
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      MongoDBPipelineOptions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MongoDBPipelineOptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -6861,31 +6991,210 @@
 
 
 
-<p>(mongodb-sql)=</p>
-<h1 id="reading-from-mongodb-using-mongodbpipeline">Reading from MongoDB using <code>MongoDB.pipeline</code><a class="headerlink" href="#reading-from-mongodb-using-mongodbpipeline" title="Permanent link">&para;</a></h1>
-<p>{obj}<code>MongoDB.sql &lt;onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline&gt;</code> allows passing custom pipeline,
+<h1 id="mongodb-pipeline">Reading from MongoDB using <code>MongoDB.pipeline</code><a class="headerlink" href="#mongodb-pipeline" title="Permanent link">&para;</a></h1>
+<p><a class="autorefs autorefs-internal" title="onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline(collection, pipeline=None, df_schema=None, options=None)" href="#onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline">MongoDB.sql</a> allows passing custom pipeline,
 but does not support incremental strategies.</p>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    Please take into account :ref:`mongodb-types`
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please take into account <a class="autorefs autorefs-internal" title="MongoDB <-> Spark type mapping" href="../types/#mongodb-types">Mongodb types</a></p>
+</div>
 <h2 id="recommendations">Recommendations<a class="headerlink" href="#recommendations" title="Permanent link">&para;</a></h2>
 <h3 id="pay-attention-to-pipeline-value">Pay attention to <code>pipeline</code> value<a class="headerlink" href="#pay-attention-to-pipeline-value" title="Permanent link">&para;</a></h3>
 <p>Instead of filtering data on Spark side using <code>df.filter(df.column == 'value')</code> pass proper <code>mongodb.pipeline(..., pipeline={"$match": {"column": {"$eq": "value"}}})</code> value.
 This both reduces the amount of data send from MongoDB to Spark, and may also improve performance of the query.
 Especially if there are indexes for columns used in <code>pipeline</code> value.</p>
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.mongodb.connection
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. automethod:: MongoDB.pipeline
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.mongodb.options
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autopydantic_model:: MongoDBPipelineOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">onetl</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">db_connection</span><span class="o">.</span><span class="n">mongodb</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">MongoDB</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">pipeline</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">df_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents first">
+
+        <p>Execute a pipeline for a specific collection, and return DataFrame. |support_hooks|</p>
+<p>Almost like <code>Aggregation pipeline syntax &lt;https://www.mongodb.com/docs/manual/core/aggregation-pipeline/&gt;</code>_
+in MongoDB:</p>
+<p>.. code:: js</p>
+<pre><code>db.collection_name.aggregate([{"$match": ...}, {"$group": ...}])
+</code></pre>
+<p>but pipeline is executed on Spark executors, in a distributed way.</p>
+<p>.. note::</p>
+<pre><code>This method does not support :ref:`strategy`,
+use :obj:`DBReader &lt;onetl.db.db_reader.db_reader.DBReader&gt;` instead
+</code></pre>
+<p>.. versionadded:: 0.7.0</p>
+<h5 id="onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline--parameters">Parameters<a class="headerlink" href="#onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline--parameters" title="Permanent link">&para;</a></h5>
+
+
+<details class="collection-" open>
+  <summary>str</summary>
+  <p>Collection name.</p>
+</details>
+
+<details class="pipeline-" open>
+  <summary>dict | list[dict], optional</summary>
+  <p>Pipeline containing a database query.
+See <code>Aggregation pipeline syntax &lt;https://www.mongodb.com/docs/manual/core/aggregation-pipeline/&gt;</code>_.</p>
+</details>
+
+<details class="df_schema-" open>
+  <summary>StructType, optional</summary>
+  <p>Schema describing the resulting DataFrame.</p>
+</details>
+
+<details class="options-" open>
+  <summary>PipelineOptions | dict, optional</summary>
+  <p>Additional pipeline options, see :obj:<code>MongoDB.PipelineOptions &lt;onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions&gt;</code>.</p>
+</details>        <h5 id="onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline--examples" title="Permanent link">&para;</a></h5>
+<p>Get document with a specific <code>field</code> value:</p>
+<p>.. code:: python</p>
+<pre><code>df = connection.pipeline(
+    collection="collection_name",
+    pipeline={"$match": {"field": {"$eq": 1}}},
+)
+</code></pre>
+<p>Calculate aggregation and get result:</p>
+<p>.. code:: python</p>
+<pre><code>df = connection.pipeline(
+    collection="collection_name",
+    pipeline={
+        "$group": {
+            "_id": 1,
+            "min": {"$min": "$column_int"},
+            "max": {"$max": "$column_int"},
+        }
+    },
+)
+</code></pre>
+<p>Explicitly pass DataFrame schema:</p>
+<p>.. code:: python</p>
+<pre><code>from pyspark.sql.types import (
+    DoubleType,
+    IntegerType,
+    StringType,
+    StructField,
+    StructType,
+    TimestampType,
+)
+
+df_schema = StructType(
+    [
+        StructField("_id", StringType()),
+        StructField("some_string", StringType()),
+        StructField("some_int", IntegerType()),
+        StructField("some_datetime", TimestampType()),
+        StructField("some_float", DoubleType()),
+    ],
+)
+
+df = connection.pipeline(
+    collection="collection_name",
+    df_schema=df_schema,
+    pipeline={"$match": {"some_int": {"$gt": 999}}},
+)
+</code></pre>
+<p>Pass additional options to pipeline execution:</p>
+<p>.. code:: python</p>
+<pre><code>df = connection.pipeline(
+    collection="collection_name",
+    pipeline={"$match": {"field": {"$eq": 1}}},
+    options=MongoDB.PipelineOptions(hint={"field": 1}),
+)
+</code></pre>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions" class="doc doc-heading">
+            <code>onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions</code>
+
+
+<a href="#onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="onetl.impl.GenericOptions">GenericOptions</span></code></p>
+
+
+        <p>Aggregation pipeline options for MongoDB connector.</p>
+<p>The only difference from :obj:<code>MongoDB.ReadOptions &lt;MongoDBReadOptions&gt;</code> that latter does not allow to pass the <code>hint</code> parameter.</p>
+<p>.. warning::</p>
+<pre><code>Options ``uri``, ``database``, ``collection``, ``pipeline`` are populated from connection attributes,
+and cannot be overridden by the user in ``PipelineOptions`` to avoid issues.
+</code></pre>
+<p>.. versionadded:: 0.7.0</p>
+<h5 id="onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions--examples" title="Permanent link">&para;</a></h5>
+<p>.. note ::</p>
+<pre><code>You can pass any value
+`supported by connector &lt;https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-read-config/&gt;`_,
+even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+The set of supported options depends on connector version.
+</code></pre>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import MongoDB
+
+options = MongoDB.PipelineOptions(
+    hint={"some_field": 1},
+)
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 
@@ -6940,6 +7249,12 @@ Especially if there are indexes for columns used in <code>pipeline</code> value.
     
     
       <script src="../../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

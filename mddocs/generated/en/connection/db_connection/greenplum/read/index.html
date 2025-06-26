@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -76,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#reading-from-greenplum-using-dbreader" class="md-skip">
+        <a href="#greenplum-read" class="md-skip">
           Skip to content
         </a>
       
@@ -1039,6 +1043,69 @@
       Options
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      GreenplumReadOptions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GreenplumReadOptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.num_partitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      num_partitions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column" class="md-nav__link">
+    <span class="md-ellipsis">
+      partition_column
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="partition_column">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -7047,6 +7114,69 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      GreenplumReadOptions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GreenplumReadOptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.num_partitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      num_partitions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column" class="md-nav__link">
+    <span class="md-ellipsis">
+      partition_column
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="partition_column">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -7065,19 +7195,18 @@
 
 
 
-<p>(greenplum-read)=</p>
-<h1 id="reading-from-greenplum-using-dbreader">Reading from Greenplum using <code>DBReader</code><a class="headerlink" href="#reading-from-greenplum-using-dbreader" title="Permanent link">&para;</a></h1>
-<p>Data can be read from Greenplum to Spark using {obj}<code>DBReader &lt;onetl.db.db_reader.db_reader.DBReader&gt;</code>.
-It also supports {ref}<code>strategy</code> for incremental data reading.</p>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    Please take into account :ref:`greenplum-types`.
-</code></pre></div>
-<div class="highlight"><pre><span></span><code>.. note::
-
-    Unlike JDBC connectors, *Greenplum connector for Spark* does not support
-    executing **custom** SQL queries using `.sql` method. Connector can be used to only read data from a table or view.
-</code></pre></div>
+<h1 id="greenplum-read">Reading from Greenplum using <code>DBReader</code><a class="headerlink" href="#greenplum-read" title="Permanent link">&para;</a></h1>
+<p>Data can be read from Greenplum to Spark using <a class="autorefs autorefs-internal" title="DB Reader" href="../../../../db_/reader/#db-reader">DBReader</a>.
+It also supports <a class="autorefs autorefs-internal" title="Read Strategies" href="../../../../strategy/#strategy">strategy</a> for incremental data reading.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please take into account  <a class="autorefs autorefs-internal" title="Greenplum <-> Spark type mapping" href="../types/#greenplum-types">Greenplum types</a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Unlike JDBC connectors, <em>Greenplum connector for Spark</em> does not support
+executing <strong>custom</strong> SQL queries using <code>.sql</code> method. Connector can be used to only read data from a table or view.</p>
+</div>
 <h2 id="supported-dbreader-features">Supported DBReader features<a class="headerlink" href="#supported-dbreader-features" title="Permanent link">&para;</a></h2>
 <ul>
 <li>✅︎ <code>columns</code> (see note below)</li>
@@ -7085,64 +7214,57 @@ It also supports {ref}<code>strategy</code> for incremental data reading.</p>
 <li>✅︎ <code>hwm</code> (see note below), supported strategies:</li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>snapshot-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Snapshot Strategy" href="../../../../strategy/snapshot_strategy/#snapshot-strategy">Snapshot strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>incremental-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Incremental Strategy" href="../../../../strategy/incremental_strategy/#incremental-strategy">Incremental strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>snapshot-batch-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Snapshot Batch Strategy" href="../../../../strategy/snapshot_batch_strategy/#snapshot-batch-strategy">Snapshot batch strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>incremental-batch-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Incremental Batch Strategy" href="../../../../strategy/incremental_batch_strategy/#incremental-batch-strategy">Incremental batch strategy</a></li>
 </ul>
 </li>
 <li>❌ <code>hint</code> (is not supported by Greenplum)</li>
 <li>❌ <code>df_schema</code></li>
-<li>✅︎ <code>options</code> (see {obj}<code>Greenplum.ReadOptions &lt;onetl.connection.db_connection.greenplum.options.GreenplumReadOptions&gt;</code>)</li>
+<li>✅︎ <code>options</code> (see <a class="autorefs autorefs-internal" title="onetl.connection.db_connection.greenplum.options.GreenplumReadOptions" href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions">Greenplum.ReadOptions</a>)</li>
 </ul>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    In case of Greenplum connector, `DBReader` does not generate raw `SELECT` query. Instead it relies on Spark SQL syntax
-    which in some cases (using column projection and predicate pushdown) can be converted to Greenplum SQL.
-
-    So `columns`, `where` and `hwm.expression` should be specified in `Spark SQL &lt;https://spark.apache.org/docs/latest/sql-ref-syntax.html&gt;`_ syntax,
-    not Greenplum SQL.
-
-    This is OK:
-
-    .. code-block:: python
-
-        DBReader(
-            columns=[
-                &quot;some_column&quot;,
-                # this cast is executed on Spark side
-                &quot;CAST(another_column AS STRING)&quot;,
-            ],
-            # this predicate is parsed by Spark, and can be pushed down to Greenplum
-            where=&quot;some_column LIKE &#39;val1%&#39;&quot;,
-        )
-
-    This is will fail:
-
-    .. code-block:: python
-
-        DBReader(
-            columns=[
-                &quot;some_column&quot;,
-                # Spark does not have `text` type
-                &quot;CAST(another_column AS text)&quot;,
-            ],
-            # Spark does not support ~ syntax for regexp matching
-            where=&quot;some_column ~ &#39;val1.*&#39;&quot;,
-        )
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>In case of Greenplum connector, <code>DBReader</code> does not generate raw <code>SELECT</code> query. Instead it relies on Spark SQL syntax
+which in some cases (using column projection and predicate pushdown) can be converted to Greenplum SQL.</p>
+<p>So <code>columns</code>, <code>where</code> and <code>hwm.expression</code> should be specified in <a href="https://spark.apache.org/docs/latest/sql-ref-syntax.html">Spark SQL</a> syntax,
+not Greenplum SQL.</p>
+<p>This is OK:</p>
+<div class="highlight"><pre><span></span><code>    <span class="n">DBReader</span><span class="p">(</span>
+        <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+            <span class="s2">&quot;some_column&quot;</span><span class="p">,</span>
+            <span class="c1"># this cast is executed on Spark side</span>
+            <span class="s2">&quot;CAST(another_column AS STRING)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="c1"># this predicate is parsed by Spark, and can be pushed down to Greenplum</span>
+        <span class="n">where</span><span class="o">=</span><span class="s2">&quot;some_column LIKE &#39;val1%&#39;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
 </code></pre></div>
+<p>This is will fail:</p>
+<div class="highlight"><pre><span></span><code>    <span class="n">DBReader</span><span class="p">(</span>
+        <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+            <span class="s2">&quot;some_column&quot;</span><span class="p">,</span>
+            <span class="c1"># Spark does not have `text` type</span>
+            <span class="s2">&quot;CAST(another_column AS text)&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="c1"># Spark does not support ~ syntax for regexp matching</span>
+        <span class="n">where</span><span class="o">=</span><span class="s2">&quot;some_column ~ &#39;val1.*&#39;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <p>Snapshot strategy:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Greenplum</span>
@@ -7177,79 +7299,11 @@ It also supports {ref}<code>strategy</code> for incremental data reading.</p>
     <span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </code></pre></div>
 <h2 id="interaction-schema">Interaction schema<a class="headerlink" href="#interaction-schema" title="Permanent link">&para;</a></h2>
-<p>High-level schema is described in {ref}<code>greenplum-prerequisites</code>. You can find detailed interaction schema below.</p>
-<div class="highlight"><pre><span></span><code>.. dropdown:: Spark &lt;-&gt; Greenplum interaction during DBReader.run()
-
-    .. plantuml::
-
-        @startuml
-        title Greenplum master &lt;-&gt; Spark driver
-                box &quot;Spark&quot;
-                participant &quot;Spark driver&quot;
-                participant &quot;Spark executor1&quot;
-                participant &quot;Spark executor2&quot;
-                participant &quot;Spark executorN&quot;
-                end box
-
-                box &quot;Greenplum&quot;
-                participant &quot;Greenplum master&quot;
-                participant &quot;Greenplum segment1&quot;
-                participant &quot;Greenplum segment2&quot;
-                participant &quot;Greenplum segmentN&quot;
-                end box
-
-                == Greenplum.check() ==
-
-                activate &quot;Spark driver&quot;
-                &quot;Spark driver&quot; -&gt; &quot;Greenplum master&quot; ++ : CONNECT
-
-                &quot;Spark driver&quot; --&gt; &quot;Greenplum master&quot; : CHECK IF TABLE EXISTS gp_table
-                &quot;Greenplum master&quot; --&gt; &quot;Spark driver&quot; : TABLE EXISTS
-                &quot;Spark driver&quot; -&gt; &quot;Greenplum master&quot; : SHOW SCHEMA FOR gp_table
-                &quot;Greenplum master&quot; --&gt; &quot;Spark driver&quot; : (id bigint, col1 int, col2 text, ...)
-
-                == DBReader.run() ==
-
-                &quot;Spark driver&quot; -&gt; &quot;Spark executor1&quot; ++ : START EXECUTOR FOR df(id bigint, col1 int, col2 text, ...) PARTITION 1
-                &quot;Spark driver&quot; -&gt; &quot;Spark executor2&quot; ++ : START EXECUTOR FOR df(id bigint, col1 int, col2 text, ...) PARTITION 2
-                &quot;Spark driver&quot; -&gt; &quot;Spark executorN&quot; ++ : START EXECUTOR FOR df(id bigint, col1 int, col2 text, ...) PARTITION N
-
-                note right of &quot;Spark driver&quot; : This is done in parallel,\nexecutors are independent\n|\n|\n|\nV
-                &quot;Spark executor1&quot; -&gt; &quot;Greenplum master&quot; ++ : CREATE WRITABLE EXTERNAL TABLE spark_executor1 (id bigint, col1 int, col2 text, ...) USING address=executor1_host:executor1_port;\nINSERT INTO EXTERNAL TABLE spark_executor1 FROM gp_table WHERE gp_segment_id = 1
-                note right of &quot;Greenplum master&quot; : Each white vertical line here is a opened connection to master.\nUsually, **N+1** connections are created from Spark to Greenplum master
-                &quot;Greenplum master&quot; --&gt; &quot;Greenplum segment1&quot; ++ : SELECT DATA FROM gp_table_data_on_segment1 TO spark_executor1
-                note right of &quot;Greenplum segment1&quot; : No direct requests between Greenplum segments &amp; Spark.\nData transfer is always initiated by Greenplum segments.
-
-                &quot;Spark executor2&quot; -&gt; &quot;Greenplum master&quot; ++ : CREATE WRITABLE EXTERNAL TABLE spark_executor2 (id bigint, col1 int, col2 text, ...) USING address=executor2_host:executor2_port;\nINSERT INTO EXTERNAL TABLE spark_executor2 FROM gp_table WHERE gp_segment_id = 2
-                &quot;Greenplum master&quot; --&gt; &quot;Greenplum segment2&quot; ++ : SELECT DATA FROM gp_table_data_on_segment2 TO spark_executor2
-
-                &quot;Spark executorN&quot; -&gt; &quot;Greenplum master&quot; ++ : CREATE WRITABLE EXTERNAL TABLE spark_executorN (id bigint, col1 int, col2 text, ...) USING address=executorN_host:executorN_port;\nINSERT INTO EXTERNAL TABLE spark_executorN FROM gp_table WHERE gp_segment_id = N
-                &quot;Greenplum master&quot; --&gt; &quot;Greenplum segmentN&quot; ++ : SELECT DATA FROM gp_table_data_on_segmentN TO spark_executorN
-
-                &quot;Greenplum segment1&quot; -&gt;o &quot;Spark executor1&quot; -- : INITIALIZE CONNECTION TO Spark executor1\nPUSH DATA TO Spark executor1
-                note left of &quot;Spark executor1&quot; : Circle is an open GPFDIST port,\nlistened by executor
-
-                &quot;Greenplum segment2&quot; -&gt;o &quot;Spark executor2&quot; -- : INITIALIZE CONNECTION TO Spark executor2\nPUSH DATA TO Spark executor2
-                &quot;Greenplum segmentN&quot; -&gt;o &quot;Spark executorN&quot; -- : INITIALIZE CONNECTION TO Spark executorN\nPUSH DATA TO Spark executorN
-
-                == Spark.stop() ==
-
-                &quot;Spark executor1&quot; --&gt; &quot;Greenplum master&quot; : DROP TABLE spark_executor1
-                deactivate &quot;Greenplum master&quot;
-                &quot;Spark executor2&quot; --&gt; &quot;Greenplum master&quot; : DROP TABLE spark_executor2
-                deactivate &quot;Greenplum master&quot;
-                &quot;Spark executorN&quot; --&gt; &quot;Greenplum master&quot; : DROP TABLE spark_executorN
-                deactivate &quot;Greenplum master&quot;
-
-                &quot;Spark executor1&quot; --&gt; &quot;Spark driver&quot; -- : DONE
-                &quot;Spark executor2&quot; --&gt; &quot;Spark driver&quot; -- : DONE
-                &quot;Spark executorN&quot; --&gt; &quot;Spark driver&quot; -- : DONE
-
-                &quot;Spark driver&quot; --&gt; &quot;Greenplum master&quot; : CLOSE CONNECTION
-                deactivate &quot;Greenplum master&quot;
-                deactivate &quot;Spark driver&quot;
-        @enduml
-</code></pre></div>
+<p>High-level schema is described in <a class="autorefs autorefs-internal" title="Prerequisites" href="../prerequisites/#greenplum-prerequisites">Greenplum prerequisites</a>. You can find detailed interaction schema below.</p>
+<details class="note">
+<summary>Spark &lt;-&gt; Greenplum interaction during DBReader.run()</summary>
+<p><div class='puml-container'><div class="puml light" style=""><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" data-diagram-type="SEQUENCE" height="1335px" preserveAspectRatio="xMidYMid meet" style="width:2680px;height:1335px;background:#FFFFFF;" version="1.1" viewBox="0 0 2680 1335" width="2680px" zoomAndPan="magnify" class="diagram"><title>Greenplum master &lt;-&gt; Spark driver</title><defs/><g><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="283.9717" x="1194.2329" y="27.9951">Greenplum master &lt;-&gt; Spark driver</text><rect fill="#DDDDDD" height="1285.7031" style="stroke:#181818;stroke-width:0.5;" width="888.5845" x="1" y="43.2969"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="42.4976" x="424.0435" y="55.3638">Spark</text><rect fill="#DDDDDD" height="1285.7031" style="stroke:#181818;stroke-width:0.5;" width="1009.1348" x="1663.3027" y="43.2969"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="80.5327" x="2127.6038" y="55.3638">Greenplum</text><g><title>Spark driver</title><rect fill="#FFFFFF" height="1172.9766" style="stroke:#181818;stroke-width:1;" width="10" x="49.9263" y="103.7266"/></g><g><title>Spark executor1</title><rect fill="#FFFFFF" height="832.5156" style="stroke:#181818;stroke-width:1;" width="10" x="535.3545" y="356.7891"/></g><g><title>Spark executor2</title><rect fill="#FFFFFF" height="832.5156" style="stroke:#181818;stroke-width:1;" width="10" x="674.8203" y="385.9219"/></g><g><title>Spark executorN</title><rect fill="#FFFFFF" height="832.5156" style="stroke:#181818;stroke-width:1;" width="10" x="815.0688" y="415.0547"/></g><g><title>Greenplum master</title><rect fill="#FFFFFF" height="1108.7109" style="stroke:#181818;stroke-width:1;" width="10" x="1735.208" y="167.9922"/></g><g><title>Greenplum master</title><rect fill="#FFFFFF" height="590.0547" style="stroke:#181818;stroke-width:1;" width="10" x="1740.208" y="570.1172"/></g><g><title>Greenplum master</title><rect fill="#FFFFFF" height="386.9922" style="stroke:#181818;stroke-width:1;" width="10" x="1745.208" y="744.0469"/></g><g><title>Greenplum master</title><rect fill="#FFFFFF" height="284.4609" style="stroke:#181818;stroke-width:1;" width="10" x="1750.208" y="817.4453"/></g><g><title>Greenplum segment1</title><rect fill="#FFFFFF" height="241.3281" style="stroke:#181818;stroke-width:1;" width="10" x="2224.9824" y="649.5156"/></g><g><title>Greenplum segment2</title><rect fill="#FFFFFF" height="212.1953" style="stroke:#181818;stroke-width:1;" width="10" x="2401.7383" y="773.1797"/></g><g><title>Greenplum segmentN</title><rect fill="#FFFFFF" height="183.0625" style="stroke:#181818;stroke-width:1;" width="10" x="2579.2769" y="846.5781"/></g><g><title>Spark driver</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="50.9263" y="93.7266"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5,5;" x1="54" x2="54" y1="93.7266" y2="1294.7031"/></g><g><title>Spark executor1</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="536.3545" y="93.7266"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5,5;" x1="539.6216" x2="539.6216" y1="93.7266" y2="1294.7031"/></g><g><title>Spark executor2</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="675.8203" y="93.7266"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5,5;" x1="679.0874" x2="679.0874" y1="93.7266" y2="1294.7031"/></g><g><title>Spark executorN</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="816.0688" y="93.7266"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5,5;" x1="819.5532" x2="819.5532" y1="93.7266" y2="1294.7031"/></g><g><title>Greenplum master</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="1736.208" y="93.7266"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5,5;" x1="1739.3027" x2="1739.3027" y1="93.7266" y2="1294.7031"/></g><g><title>Greenplum segment1</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="2225.9824" y="93.7266"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5,5;" x1="2229.6045" x2="2229.6045" y1="93.7266" y2="1294.7031"/></g><g><title>Greenplum segment2</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="2402.7383" y="93.7266"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5,5;" x1="2406.3604" x2="2406.3604" y1="93.7266" y2="1294.7031"/></g><g><title>Greenplum segmentN</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="2580.2769" y="93.7266"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5,5;" x1="2584.1162" x2="2584.1162" y1="93.7266" y2="1294.7031"/></g><g class="participant participant-head" data-participant="Spark driver"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="99.8525" x="5" y="62.4297"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="85.8525" x="12" y="82.4248">Spark driver</text></g><g class="participant participant-tail" data-participant="Spark driver"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="99.8525" x="5" y="1293.7031"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="85.8525" x="12" y="1313.6982">Spark driver</text></g><g class="participant participant-head" data-participant="Spark executor1"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="129.4658" x="475.6216" y="62.4297"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115.4658" x="482.6216" y="82.4248">Spark executor1</text></g><g class="participant participant-tail" data-participant="Spark executor1"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="129.4658" x="475.6216" y="1293.7031"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115.4658" x="482.6216" y="1313.6982">Spark executor1</text></g><g class="participant participant-head" data-participant="Spark executor2"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="129.4658" x="615.0874" y="62.4297"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115.4658" x="622.0874" y="82.4248">Spark executor2</text></g><g class="participant participant-tail" data-participant="Spark executor2"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="129.4658" x="615.0874" y="1293.7031"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115.4658" x="622.0874" y="1313.6982">Spark executor2</text></g><g class="participant participant-head" data-participant="Spark executorN"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="131.0313" x="754.5532" y="62.4297"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="117.0313" x="761.5532" y="82.4248">Spark executorN</text></g><g class="participant participant-tail" data-participant="Spark executorN"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="131.0313" x="754.5532" y="1293.7031"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="117.0313" x="761.5532" y="1313.6982">Spark executorN</text></g><g class="participant participant-head" data-participant="Greenplum master"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="145.8105" x="1667.3027" y="62.4297"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="131.8105" x="1674.3027" y="82.4248">Greenplum master</text></g><g class="participant participant-tail" data-participant="Greenplum master"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="145.8105" x="1667.3027" y="1293.7031"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="131.8105" x="1674.3027" y="1313.6982">Greenplum master</text></g><g class="participant participant-head" data-participant="Greenplum segment1"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="166.7559" x="2146.6045" y="62.4297"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="152.7559" x="2153.6045" y="82.4248">Greenplum segment1</text></g><g class="participant participant-tail" data-participant="Greenplum segment1"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="166.7559" x="2146.6045" y="1293.7031"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="152.7559" x="2153.6045" y="1313.6982">Greenplum segment1</text></g><g class="participant participant-head" data-participant="Greenplum segment2"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="166.7559" x="2323.3604" y="62.4297"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="152.7559" x="2330.3604" y="82.4248">Greenplum segment2</text></g><g class="participant participant-tail" data-participant="Greenplum segment2"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="166.7559" x="2323.3604" y="1293.7031"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="152.7559" x="2330.3604" y="1313.6982">Greenplum segment2</text></g><g class="participant participant-head" data-participant="Greenplum segmentN"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="168.3213" x="2500.1162" y="62.4297"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="154.3213" x="2507.1162" y="82.4248">Greenplum segmentN</text></g><g class="participant participant-tail" data-participant="Greenplum segmentN"><rect fill="#E2E2F0" height="30.2969" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="168.3213" x="2500.1162" y="1293.7031"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="154.3213" x="2507.1162" y="1313.6982">Greenplum segmentN</text></g><g><title>Spark driver</title><rect fill="#FFFFFF" height="1172.9766" style="stroke:#181818;stroke-width:1;" width="10" x="49.9263" y="103.7266"/></g><g><title>Spark executor1</title><rect fill="#FFFFFF" height="832.5156" style="stroke:#181818;stroke-width:1;" width="10" x="535.3545" y="356.7891"/></g><g><title>Spark executor2</title><rect fill="#FFFFFF" height="832.5156" style="stroke:#181818;stroke-width:1;" width="10" x="674.8203" y="385.9219"/></g><g><title>Spark executorN</title><rect fill="#FFFFFF" height="832.5156" style="stroke:#181818;stroke-width:1;" width="10" x="815.0688" y="415.0547"/></g><g><title>Greenplum master</title><rect fill="#FFFFFF" height="1108.7109" style="stroke:#181818;stroke-width:1;" width="10" x="1735.208" y="167.9922"/></g><g><title>Greenplum master</title><rect fill="#FFFFFF" height="590.0547" style="stroke:#181818;stroke-width:1;" width="10" x="1740.208" y="570.1172"/></g><g><title>Greenplum master</title><rect fill="#FFFFFF" height="386.9922" style="stroke:#181818;stroke-width:1;" width="10" x="1745.208" y="744.0469"/></g><g><title>Greenplum master</title><rect fill="#FFFFFF" height="284.4609" style="stroke:#181818;stroke-width:1;" width="10" x="1750.208" y="817.4453"/></g><g><title>Greenplum segment1</title><rect fill="#FFFFFF" height="241.3281" style="stroke:#181818;stroke-width:1;" width="10" x="2224.9824" y="649.5156"/></g><g><title>Greenplum segment2</title><rect fill="#FFFFFF" height="212.1953" style="stroke:#181818;stroke-width:1;" width="10" x="2401.7383" y="773.1797"/></g><g><title>Greenplum segmentN</title><rect fill="#FFFFFF" height="183.0625" style="stroke:#181818;stroke-width:1;" width="10" x="2579.2769" y="846.5781"/></g><rect fill="#EEEEEE" height="3" style="stroke:#EEEEEE;stroke-width:1;" width="2673.4375" x="0" y="124.293"/><line style="stroke:#000000;stroke-width:1;" x1="0" x2="2673.4375" y1="124.293" y2="124.293"/><line style="stroke:#000000;stroke-width:1;" x1="0" x2="2673.4375" y1="127.293" y2="127.293"/><rect fill="#EEEEEE" height="23.1328" style="stroke:#000000;stroke-width:2;" width="158.0093" x="1257.7141" y="113.7266"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="139.4834" x="1263.7141" y="129.7935">Greenplum.check()</text><g class="message" data-participant-1="Spark driver" data-participant-2="Greenplum master"><polygon fill="#181818" points="1723.208,163.9922,1733.208,167.9922,1723.208,171.9922,1727.208,167.9922" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="59.9263" x2="1729.208" y1="167.9922" y2="167.9922"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63.9907" x="66.9263" y="162.9263">CONNECT</text></g><g class="message" data-participant-1="Spark driver" data-participant-2="Greenplum master"><polygon fill="#181818" points="1723.208,193.125,1733.208,197.125,1723.208,201.125,1727.208,197.125" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="59.9263" x2="1729.208" y1="197.125" y2="197.125"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="215.0459" x="66.9263" y="192.0591">CHECK IF TABLE EXISTS gp_table</text></g><g class="message" data-participant-1="Greenplum master" data-participant-2="Spark driver"><polygon fill="#181818" points="70.9263,222.2578,60.9263,226.2578,70.9263,230.2578,66.9263,226.2578" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="64.9263" x2="1734.208" y1="226.2578" y2="226.2578"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="90.7397" x="76.9263" y="221.1919">TABLE EXISTS</text></g><g class="message" data-participant-1="Spark driver" data-participant-2="Greenplum master"><polygon fill="#181818" points="1723.208,251.3906,1733.208,255.3906,1723.208,259.3906,1727.208,255.3906" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="59.9263" x2="1729.208" y1="255.3906" y2="255.3906"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="191.6104" x="66.9263" y="250.3247">SHOW SCHEMA FOR gp_table</text></g><g class="message" data-participant-1="Greenplum master" data-participant-2="Spark driver"><polygon fill="#181818" points="70.9263,280.5234,60.9263,284.5234,70.9263,288.5234,66.9263,284.5234" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="64.9263" x2="1734.208" y1="284.5234" y2="284.5234"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="205.4609" x="76.9263" y="279.4575">(id bigint, col1 int, col2 text, ...)</text></g><rect fill="#EEEEEE" height="3" style="stroke:#EEEEEE;stroke-width:1;" width="2673.4375" x="0" y="313.0898"/><line style="stroke:#000000;stroke-width:1;" x1="0" x2="2673.4375" y1="313.0898" y2="313.0898"/><line style="stroke:#000000;stroke-width:1;" x1="0" x2="2673.4375" y1="316.0898" y2="316.0898"/><rect fill="#EEEEEE" height="23.1328" style="stroke:#000000;stroke-width:2;" width="133.1011" x="1270.1682" y="302.5234"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="114.5752" x="1276.1682" y="318.5903">DBReader.run()</text><g class="message" data-participant-1="Spark driver" data-participant-2="Spark executor1"><polygon fill="#181818" points="523.3545,352.7891,533.3545,356.7891,523.3545,360.7891,527.3545,356.7891" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="59.9263" x2="529.3545" y1="356.7891" y2="356.7891"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="456.4282" x="66.9263" y="351.7231">START EXECUTOR FOR df(id bigint, col1 int, col2 text, ...) PARTITION 1</text></g><g class="message" data-participant-1="Spark driver" data-participant-2="Spark executor2"><polygon fill="#181818" points="662.8203,381.9219,672.8203,385.9219,662.8203,389.9219,666.8203,385.9219" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="59.9263" x2="668.8203" y1="385.9219" y2="385.9219"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="456.4282" x="66.9263" y="380.856">START EXECUTOR FOR df(id bigint, col1 int, col2 text, ...) PARTITION 2</text></g><g class="message" data-participant-1="Spark driver" data-participant-2="Spark executorN"><polygon fill="#181818" points="803.0688,411.0547,813.0688,415.0547,803.0688,419.0547,807.0688,415.0547" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="59.9263" x2="809.0688" y1="415.0547" y2="415.0547"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="457.8818" x="66.9263" y="409.9888">START EXECUTOR FOR df(id bigint, col1 int, col2 text, ...) PARTITION N</text></g><path d="M64,428.0547 L64,528.0547 L260,528.0547 L260,438.0547 L250,428.0547 L64,428.0547" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M250,428.0547 L250,438.0547 L260,438.0547 L250,428.0547" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="150.2681" x="70" y="445.1216">This is done in parallel,</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="175.9951" x="70" y="460.2544">executors are independent</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4.3799" x="70" y="475.3872">|</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4.3799" x="70" y="490.52">|</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4.3799" x="70" y="505.6528">|</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="8.8931" x="70" y="520.7856">V</text><g class="message" data-participant-1="Spark executor1" data-participant-2="Greenplum master"><polygon fill="#181818" points="1728.208,566.1172,1738.208,570.1172,1728.208,574.1172,1732.208,570.1172" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="545.3545" x2="1734.208" y1="570.1172" y2="570.1172"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="881.7783" x="552.3545" y="549.9185">CREATE WRITABLE EXTERNAL TABLE spark_executor1 (id bigint, col1 int, col2 text, ...) USING address=executor1_host:executor1_port;</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="597.0669" x="552.3545" y="565.0513">INSERT INTO EXTERNAL TABLE spark_executor1 FROM gp_table WHERE gp_segment_id = 1</text></g><path d="M1755,583.1172 L1755,623.1172 L2244,623.1172 L2244,593.1172 L2234,583.1172 L1755,583.1172" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M2234,583.1172 L2234,593.1172 L2244,593.1172 L2234,583.1172" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="411.6772" x="1761" y="600.1841">Each white vertical line here is a opened connection to master.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="51.543" x="1761" y="615.3169">Usually,</text><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="30.8179" x="1816.6753" y="615.3169">N+1</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="377.6348" x="1851.6255" y="615.3169">connections are created from Spark to Greenplum master</text><g class="message" data-participant-1="Greenplum master" data-participant-2="Greenplum segment1"><polygon fill="#181818" points="2212.9824,645.5156,2222.9824,649.5156,2212.9824,653.5156,2216.9824,649.5156" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="1750.208" x2="2218.9824" y1="649.5156" y2="649.5156"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="455.7744" x="1757.208" y="644.4497">SELECT DATA FROM gp_table_data_on_segment1 TO spark_executor1</text></g><path d="M2239,662.5156 L2239,702.5156 L2644,702.5156 L2644,672.5156 L2634,662.5156 L2239,662.5156" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M2634,662.5156 L2634,672.5156 L2644,672.5156 L2634,662.5156" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="384.5728" x="2245" y="679.5825">No direct requests between Greenplum segments &amp; Spark.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="376.1113" x="2245" y="694.7153">Data transfer is always initiated by Greenplum segments.</text><g class="message" data-participant-1="Spark executor2" data-participant-2="Greenplum master"><polygon fill="#181818" points="1733.208,740.0469,1743.208,744.0469,1733.208,748.0469,1737.208,744.0469" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="684.8203" x2="1739.208" y1="744.0469" y2="744.0469"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="881.7783" x="691.8203" y="723.8481">CREATE WRITABLE EXTERNAL TABLE spark_executor2 (id bigint, col1 int, col2 text, ...) USING address=executor2_host:executor2_port;</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="597.0669" x="691.8203" y="738.981">INSERT INTO EXTERNAL TABLE spark_executor2 FROM gp_table WHERE gp_segment_id = 2</text></g><g class="message" data-participant-1="Greenplum master" data-participant-2="Greenplum segment2"><polygon fill="#181818" points="2389.7383,769.1797,2399.7383,773.1797,2389.7383,777.1797,2393.7383,773.1797" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="1755.208" x2="2395.7383" y1="773.1797" y2="773.1797"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="455.7744" x="1762.208" y="768.1138">SELECT DATA FROM gp_table_data_on_segment2 TO spark_executor2</text></g><g class="message" data-participant-1="Spark executorN" data-participant-2="Greenplum master"><polygon fill="#181818" points="1738.208,813.4453,1748.208,817.4453,1738.208,821.4453,1742.208,817.4453" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="825.0688" x2="1744.208" y1="817.4453" y2="817.4453"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="886.1392" x="832.0688" y="797.2466">CREATE WRITABLE EXTERNAL TABLE spark_executorN (id bigint, col1 int, col2 text, ...) USING address=executorN_host:executorN_port;</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="599.9741" x="832.0688" y="812.3794">INSERT INTO EXTERNAL TABLE spark_executorN FROM gp_table WHERE gp_segment_id = N</text></g><g class="message" data-participant-1="Greenplum master" data-participant-2="Greenplum segmentN"><polygon fill="#181818" points="2567.2769,842.5781,2577.2769,846.5781,2567.2769,850.5781,2571.2769,846.5781" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="1760.208" x2="2573.2769" y1="846.5781" y2="846.5781"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="458.6816" x="1767.208" y="841.5122">SELECT DATA FROM gp_table_data_on_segmentN TO spark_executorN</text></g><g class="message" data-participant-1="Greenplum segment1" data-participant-2="Spark executor1"><ellipse cx="544.8545" cy="890.0938" fill="#000000" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="561.8545,886.8438,551.8545,890.8438,561.8545,894.8438,557.8545,890.8438" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="555.8545" x2="2228.9824" y1="890.8438" y2="890.8438"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="291.8271" x="562.3545" y="870.645">INITIALIZE CONNECTION TO Spark executor1</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="208.9077" x="562.3545" y="885.7778">PUSH DATA TO Spark executor1</text></g><path d="M306,903.8438 L306,943.8438 L529,943.8438 L529,913.8438 L519,903.8438 L306,903.8438" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M519,903.8438 L519,913.8438 L529,913.8438 L519,903.8438" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="202.6934" x="312" y="920.9106">Circle is an open GPFDIST port,</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="133.2627" x="312" y="936.0435">listened by executor</text><g class="message" data-participant-1="Greenplum segment2" data-participant-2="Spark executor2"><ellipse cx="684.3203" cy="984.625" fill="#000000" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="701.3203,981.375,691.3203,985.375,701.3203,989.375,697.3203,985.375" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="695.3203" x2="2405.7383" y1="985.375" y2="985.375"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="291.8271" x="701.8203" y="965.1763">INITIALIZE CONNECTION TO Spark executor2</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="208.9077" x="701.8203" y="980.3091">PUSH DATA TO Spark executor2</text></g><g class="message" data-participant-1="Greenplum segmentN" data-participant-2="Spark executorN"><ellipse cx="824.5688" cy="1028.8906" fill="#000000" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="841.5688,1025.6406,831.5688,1029.6406,841.5688,1033.6406,837.5688,1029.6406" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="835.5688" x2="2583.2769" y1="1029.6406" y2="1029.6406"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="293.2808" x="842.0688" y="1009.4419">INITIALIZE CONNECTION TO Spark executorN</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="210.3613" x="842.0688" y="1024.5747">PUSH DATA TO Spark executorN</text></g><rect fill="#EEEEEE" height="3" style="stroke:#EEEEEE;stroke-width:1;" width="2673.4375" x="0" y="1058.207"/><line style="stroke:#000000;stroke-width:1;" x1="0" x2="2673.4375" y1="1058.207" y2="1058.207"/><line style="stroke:#000000;stroke-width:1;" x1="0" x2="2673.4375" y1="1061.207" y2="1061.207"/><rect fill="#EEEEEE" height="23.1328" style="stroke:#000000;stroke-width:2;" width="110.0337" x="1281.7019" y="1047.6406"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="91.5078" x="1287.7019" y="1063.7075">Spark.stop()</text><g class="message" data-participant-1="Spark executor1" data-participant-2="Greenplum master"><polygon fill="#181818" points="1733.208,1097.9063,1743.208,1101.9063,1733.208,1105.9063,1737.208,1101.9063" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="545.3545" x2="1739.208" y1="1101.9063" y2="1101.9063"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="194.6953" x="552.3545" y="1096.8403">DROP TABLE spark_executor1</text></g><g class="message" data-participant-1="Spark executor2" data-participant-2="Greenplum master"><polygon fill="#181818" points="1728.208,1127.0391,1738.208,1131.0391,1728.208,1135.0391,1732.208,1131.0391" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="684.8203" x2="1734.208" y1="1131.0391" y2="1131.0391"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="194.6953" x="691.8203" y="1125.9731">DROP TABLE spark_executor2</text></g><g class="message" data-participant-1="Spark executorN" data-participant-2="Greenplum master"><polygon fill="#181818" points="1723.208,1156.1719,1733.208,1160.1719,1723.208,1164.1719,1727.208,1160.1719" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="825.0688" x2="1729.208" y1="1160.1719" y2="1160.1719"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="196.1489" x="832.0688" y="1155.106">DROP TABLE spark_executorN</text></g><g class="message" data-participant-1="Spark executor1" data-participant-2="Spark driver"><polygon fill="#181818" points="70.9263,1185.3047,60.9263,1189.3047,70.9263,1193.3047,66.9263,1189.3047" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="64.9263" x2="539.3545" y1="1189.3047" y2="1189.3047"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="38.1812" x="76.9263" y="1184.2388">DONE</text></g><g class="message" data-participant-1="Spark executor2" data-participant-2="Spark driver"><polygon fill="#181818" points="70.9263,1214.4375,60.9263,1218.4375,70.9263,1222.4375,66.9263,1218.4375" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="64.9263" x2="678.8203" y1="1218.4375" y2="1218.4375"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="38.1812" x="76.9263" y="1213.3716">DONE</text></g><g class="message" data-participant-1="Spark executorN" data-participant-2="Spark driver"><polygon fill="#181818" points="70.9263,1243.5703,60.9263,1247.5703,70.9263,1251.5703,66.9263,1247.5703" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="64.9263" x2="819.0688" y1="1247.5703" y2="1247.5703"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="38.1812" x="76.9263" y="1242.5044">DONE</text></g><g class="message" data-participant-1="Spark driver" data-participant-2="Greenplum master"><polygon fill="#181818" points="1728.208,1272.7031,1738.208,1276.7031,1728.208,1280.7031,1732.208,1276.7031" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;stroke-dasharray:2,2;" x1="54.9263" x2="1734.208" y1="1276.7031" y2="1276.7031"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="134.9321" x="61.9263" y="1271.6372">CLOSE CONNECTION</text></g></g></svg></div><div class="puml dark" style=""><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" data-diagram-type="SEQUENCE" height="1335px" preserveAspectRatio="xMidYMid meet" style="width:2680px;height:1335px;background:#1B1B1B;" version="1.1" viewBox="0 0 2680 1335" width="2680px" zoomAndPan="magnify" class="diagram"><title>Greenplum master &lt;-&gt; Spark driver</title><defs/><g><rect fill="#1B1B1B" height="1335" style="stroke:none;stroke-width:1;" width="2680" x="0" y="0"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="283.9717" x="1194.2329" y="27.9951">Greenplum master &lt;-&gt; Spark driver</text><rect fill="#222222" height="1285.7031" style="stroke:#E7E7E7;stroke-width:0.5;" width="888.5845" x="1" y="43.2969"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="42.4976" x="424.0435" y="55.3638">Spark</text><rect fill="#222222" height="1285.7031" style="stroke:#E7E7E7;stroke-width:0.5;" width="1009.1348" x="1663.3027" y="43.2969"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="80.5327" x="2127.6038" y="55.3638">Greenplum</text><g><title>Spark driver</title><rect fill="#000000" height="1172.9766" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="49.9263" y="103.7266"/></g><g><title>Spark executor1</title><rect fill="#000000" height="832.5156" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="535.3545" y="356.7891"/></g><g><title>Spark executor2</title><rect fill="#000000" height="832.5156" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="674.8203" y="385.9219"/></g><g><title>Spark executorN</title><rect fill="#000000" height="832.5156" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="815.0688" y="415.0547"/></g><g><title>Greenplum master</title><rect fill="#000000" height="1108.7109" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="1735.208" y="167.9922"/></g><g><title>Greenplum master</title><rect fill="#000000" height="590.0547" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="1740.208" y="570.1172"/></g><g><title>Greenplum master</title><rect fill="#000000" height="386.9922" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="1745.208" y="744.0469"/></g><g><title>Greenplum master</title><rect fill="#000000" height="284.4609" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="1750.208" y="817.4453"/></g><g><title>Greenplum segment1</title><rect fill="#000000" height="241.3281" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="2224.9824" y="649.5156"/></g><g><title>Greenplum segment2</title><rect fill="#000000" height="212.1953" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="2401.7383" y="773.1797"/></g><g><title>Greenplum segmentN</title><rect fill="#000000" height="183.0625" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="2579.2769" y="846.5781"/></g><g><title>Spark driver</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="50.9263" y="93.7266"/><line style="stroke:#E7E7E7;stroke-width:0.5;stroke-dasharray:5,5;" x1="54" x2="54" y1="93.7266" y2="1294.7031"/></g><g><title>Spark executor1</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="536.3545" y="93.7266"/><line style="stroke:#E7E7E7;stroke-width:0.5;stroke-dasharray:5,5;" x1="539.6216" x2="539.6216" y1="93.7266" y2="1294.7031"/></g><g><title>Spark executor2</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="675.8203" y="93.7266"/><line style="stroke:#E7E7E7;stroke-width:0.5;stroke-dasharray:5,5;" x1="679.0874" x2="679.0874" y1="93.7266" y2="1294.7031"/></g><g><title>Spark executorN</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="816.0688" y="93.7266"/><line style="stroke:#E7E7E7;stroke-width:0.5;stroke-dasharray:5,5;" x1="819.5532" x2="819.5532" y1="93.7266" y2="1294.7031"/></g><g><title>Greenplum master</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="1736.208" y="93.7266"/><line style="stroke:#E7E7E7;stroke-width:0.5;stroke-dasharray:5,5;" x1="1739.3027" x2="1739.3027" y1="93.7266" y2="1294.7031"/></g><g><title>Greenplum segment1</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="2225.9824" y="93.7266"/><line style="stroke:#E7E7E7;stroke-width:0.5;stroke-dasharray:5,5;" x1="2229.6045" x2="2229.6045" y1="93.7266" y2="1294.7031"/></g><g><title>Greenplum segment2</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="2402.7383" y="93.7266"/><line style="stroke:#E7E7E7;stroke-width:0.5;stroke-dasharray:5,5;" x1="2406.3604" x2="2406.3604" y1="93.7266" y2="1294.7031"/></g><g><title>Greenplum segmentN</title><rect fill="#000000" fill-opacity="0.00000" height="1200.9766" width="8" x="2580.2769" y="93.7266"/><line style="stroke:#E7E7E7;stroke-width:0.5;stroke-dasharray:5,5;" x1="2584.1162" x2="2584.1162" y1="93.7266" y2="1294.7031"/></g><g class="participant participant-head" data-participant="Spark driver"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="99.8525" x="5" y="62.4297"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="85.8525" x="12" y="82.4248">Spark driver</text></g><g class="participant participant-tail" data-participant="Spark driver"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="99.8525" x="5" y="1293.7031"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="85.8525" x="12" y="1313.6982">Spark driver</text></g><g class="participant participant-head" data-participant="Spark executor1"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="129.4658" x="475.6216" y="62.4297"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115.4658" x="482.6216" y="82.4248">Spark executor1</text></g><g class="participant participant-tail" data-participant="Spark executor1"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="129.4658" x="475.6216" y="1293.7031"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115.4658" x="482.6216" y="1313.6982">Spark executor1</text></g><g class="participant participant-head" data-participant="Spark executor2"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="129.4658" x="615.0874" y="62.4297"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115.4658" x="622.0874" y="82.4248">Spark executor2</text></g><g class="participant participant-tail" data-participant="Spark executor2"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="129.4658" x="615.0874" y="1293.7031"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115.4658" x="622.0874" y="1313.6982">Spark executor2</text></g><g class="participant participant-head" data-participant="Spark executorN"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="131.0313" x="754.5532" y="62.4297"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="117.0313" x="761.5532" y="82.4248">Spark executorN</text></g><g class="participant participant-tail" data-participant="Spark executorN"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="131.0313" x="754.5532" y="1293.7031"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="117.0313" x="761.5532" y="1313.6982">Spark executorN</text></g><g class="participant participant-head" data-participant="Greenplum master"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="145.8105" x="1667.3027" y="62.4297"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="131.8105" x="1674.3027" y="82.4248">Greenplum master</text></g><g class="participant participant-tail" data-participant="Greenplum master"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="145.8105" x="1667.3027" y="1293.7031"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="131.8105" x="1674.3027" y="1313.6982">Greenplum master</text></g><g class="participant participant-head" data-participant="Greenplum segment1"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="166.7559" x="2146.6045" y="62.4297"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="152.7559" x="2153.6045" y="82.4248">Greenplum segment1</text></g><g class="participant participant-tail" data-participant="Greenplum segment1"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="166.7559" x="2146.6045" y="1293.7031"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="152.7559" x="2153.6045" y="1313.6982">Greenplum segment1</text></g><g class="participant participant-head" data-participant="Greenplum segment2"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="166.7559" x="2323.3604" y="62.4297"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="152.7559" x="2330.3604" y="82.4248">Greenplum segment2</text></g><g class="participant participant-tail" data-participant="Greenplum segment2"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="166.7559" x="2323.3604" y="1293.7031"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="152.7559" x="2330.3604" y="1313.6982">Greenplum segment2</text></g><g class="participant participant-head" data-participant="Greenplum segmentN"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="168.3213" x="2500.1162" y="62.4297"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="154.3213" x="2507.1162" y="82.4248">Greenplum segmentN</text></g><g class="participant participant-tail" data-participant="Greenplum segmentN"><rect fill="#222222" height="30.2969" rx="2.5" ry="2.5" style="stroke:#E7E7E7;stroke-width:0.5;" width="168.3213" x="2500.1162" y="1293.7031"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="154.3213" x="2507.1162" y="1313.6982">Greenplum segmentN</text></g><g><title>Spark driver</title><rect fill="#000000" height="1172.9766" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="49.9263" y="103.7266"/></g><g><title>Spark executor1</title><rect fill="#000000" height="832.5156" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="535.3545" y="356.7891"/></g><g><title>Spark executor2</title><rect fill="#000000" height="832.5156" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="674.8203" y="385.9219"/></g><g><title>Spark executorN</title><rect fill="#000000" height="832.5156" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="815.0688" y="415.0547"/></g><g><title>Greenplum master</title><rect fill="#000000" height="1108.7109" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="1735.208" y="167.9922"/></g><g><title>Greenplum master</title><rect fill="#000000" height="590.0547" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="1740.208" y="570.1172"/></g><g><title>Greenplum master</title><rect fill="#000000" height="386.9922" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="1745.208" y="744.0469"/></g><g><title>Greenplum master</title><rect fill="#000000" height="284.4609" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="1750.208" y="817.4453"/></g><g><title>Greenplum segment1</title><rect fill="#000000" height="241.3281" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="2224.9824" y="649.5156"/></g><g><title>Greenplum segment2</title><rect fill="#000000" height="212.1953" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="2401.7383" y="773.1797"/></g><g><title>Greenplum segmentN</title><rect fill="#000000" height="183.0625" style="stroke:#E7E7E7;stroke-width:1;" width="10" x="2579.2769" y="846.5781"/></g><rect fill="#111111" height="3" style="stroke:#111111;stroke-width:1;" width="2673.4375" x="0" y="124.293"/><line style="stroke:#FFFFFF;stroke-width:1;" x1="0" x2="2673.4375" y1="124.293" y2="124.293"/><line style="stroke:#FFFFFF;stroke-width:1;" x1="0" x2="2673.4375" y1="127.293" y2="127.293"/><rect fill="#111111" height="23.1328" style="stroke:#FFFFFF;stroke-width:2;" width="158.0093" x="1257.7141" y="113.7266"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="139.4834" x="1263.7141" y="129.7935">Greenplum.check()</text><g class="message" data-participant-1="Spark driver" data-participant-2="Greenplum master"><polygon fill="#E7E7E7" points="1723.208,163.9922,1733.208,167.9922,1723.208,171.9922,1727.208,167.9922" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="59.9263" x2="1729.208" y1="167.9922" y2="167.9922"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63.9907" x="66.9263" y="162.9263">CONNECT</text></g><g class="message" data-participant-1="Spark driver" data-participant-2="Greenplum master"><polygon fill="#E7E7E7" points="1723.208,193.125,1733.208,197.125,1723.208,201.125,1727.208,197.125" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="59.9263" x2="1729.208" y1="197.125" y2="197.125"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="215.0459" x="66.9263" y="192.0591">CHECK IF TABLE EXISTS gp_table</text></g><g class="message" data-participant-1="Greenplum master" data-participant-2="Spark driver"><polygon fill="#E7E7E7" points="70.9263,222.2578,60.9263,226.2578,70.9263,230.2578,66.9263,226.2578" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="64.9263" x2="1734.208" y1="226.2578" y2="226.2578"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="90.7397" x="76.9263" y="221.1919">TABLE EXISTS</text></g><g class="message" data-participant-1="Spark driver" data-participant-2="Greenplum master"><polygon fill="#E7E7E7" points="1723.208,251.3906,1733.208,255.3906,1723.208,259.3906,1727.208,255.3906" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="59.9263" x2="1729.208" y1="255.3906" y2="255.3906"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="191.6104" x="66.9263" y="250.3247">SHOW SCHEMA FOR gp_table</text></g><g class="message" data-participant-1="Greenplum master" data-participant-2="Spark driver"><polygon fill="#E7E7E7" points="70.9263,280.5234,60.9263,284.5234,70.9263,288.5234,66.9263,284.5234" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="64.9263" x2="1734.208" y1="284.5234" y2="284.5234"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="205.4609" x="76.9263" y="279.4575">(id bigint, col1 int, col2 text, ...)</text></g><rect fill="#111111" height="3" style="stroke:#111111;stroke-width:1;" width="2673.4375" x="0" y="313.0898"/><line style="stroke:#FFFFFF;stroke-width:1;" x1="0" x2="2673.4375" y1="313.0898" y2="313.0898"/><line style="stroke:#FFFFFF;stroke-width:1;" x1="0" x2="2673.4375" y1="316.0898" y2="316.0898"/><rect fill="#111111" height="23.1328" style="stroke:#FFFFFF;stroke-width:2;" width="133.1011" x="1270.1682" y="302.5234"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="114.5752" x="1276.1682" y="318.5903">DBReader.run()</text><g class="message" data-participant-1="Spark driver" data-participant-2="Spark executor1"><polygon fill="#E7E7E7" points="523.3545,352.7891,533.3545,356.7891,523.3545,360.7891,527.3545,356.7891" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="59.9263" x2="529.3545" y1="356.7891" y2="356.7891"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="456.4282" x="66.9263" y="351.7231">START EXECUTOR FOR df(id bigint, col1 int, col2 text, ...) PARTITION 1</text></g><g class="message" data-participant-1="Spark driver" data-participant-2="Spark executor2"><polygon fill="#E7E7E7" points="662.8203,381.9219,672.8203,385.9219,662.8203,389.9219,666.8203,385.9219" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="59.9263" x2="668.8203" y1="385.9219" y2="385.9219"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="456.4282" x="66.9263" y="380.856">START EXECUTOR FOR df(id bigint, col1 int, col2 text, ...) PARTITION 2</text></g><g class="message" data-participant-1="Spark driver" data-participant-2="Spark executorN"><polygon fill="#E7E7E7" points="803.0688,411.0547,813.0688,415.0547,803.0688,419.0547,807.0688,415.0547" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="59.9263" x2="809.0688" y1="415.0547" y2="415.0547"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="457.8818" x="66.9263" y="409.9888">START EXECUTOR FOR df(id bigint, col1 int, col2 text, ...) PARTITION N</text></g><path d="M64,428.0547 L64,528.0547 L260,528.0547 L260,438.0547 L250,428.0547 L64,428.0547" fill="#714137" style="stroke:#E7E7E7;stroke-width:0.5;"/><path d="M250,428.0547 L250,438.0547 L260,438.0547 L250,428.0547" fill="#714137" style="stroke:#E7E7E7;stroke-width:0.5;"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="150.2681" x="70" y="445.1216">This is done in parallel,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="175.9951" x="70" y="460.2544">executors are independent</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4.3799" x="70" y="475.3872">|</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4.3799" x="70" y="490.52">|</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4.3799" x="70" y="505.6528">|</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="8.8931" x="70" y="520.7856">V</text><g class="message" data-participant-1="Spark executor1" data-participant-2="Greenplum master"><polygon fill="#E7E7E7" points="1728.208,566.1172,1738.208,570.1172,1728.208,574.1172,1732.208,570.1172" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="545.3545" x2="1734.208" y1="570.1172" y2="570.1172"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="881.7783" x="552.3545" y="549.9185">CREATE WRITABLE EXTERNAL TABLE spark_executor1 (id bigint, col1 int, col2 text, ...) USING address=executor1_host:executor1_port;</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="597.0669" x="552.3545" y="565.0513">INSERT INTO EXTERNAL TABLE spark_executor1 FROM gp_table WHERE gp_segment_id = 1</text></g><path d="M1755,583.1172 L1755,623.1172 L2244,623.1172 L2244,593.1172 L2234,583.1172 L1755,583.1172" fill="#714137" style="stroke:#E7E7E7;stroke-width:0.5;"/><path d="M2234,583.1172 L2234,593.1172 L2244,593.1172 L2234,583.1172" fill="#714137" style="stroke:#E7E7E7;stroke-width:0.5;"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="411.6772" x="1761" y="600.1841">Each white vertical line here is a opened connection to master.</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="51.543" x="1761" y="615.3169">Usually,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="30.8179" x="1816.6753" y="615.3169">N+1</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="377.6348" x="1851.6255" y="615.3169">connections are created from Spark to Greenplum master</text><g class="message" data-participant-1="Greenplum master" data-participant-2="Greenplum segment1"><polygon fill="#E7E7E7" points="2212.9824,645.5156,2222.9824,649.5156,2212.9824,653.5156,2216.9824,649.5156" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="1750.208" x2="2218.9824" y1="649.5156" y2="649.5156"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="455.7744" x="1757.208" y="644.4497">SELECT DATA FROM gp_table_data_on_segment1 TO spark_executor1</text></g><path d="M2239,662.5156 L2239,702.5156 L2644,702.5156 L2644,672.5156 L2634,662.5156 L2239,662.5156" fill="#714137" style="stroke:#E7E7E7;stroke-width:0.5;"/><path d="M2634,662.5156 L2634,672.5156 L2644,672.5156 L2634,662.5156" fill="#714137" style="stroke:#E7E7E7;stroke-width:0.5;"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="384.5728" x="2245" y="679.5825">No direct requests between Greenplum segments &amp; Spark.</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="376.1113" x="2245" y="694.7153">Data transfer is always initiated by Greenplum segments.</text><g class="message" data-participant-1="Spark executor2" data-participant-2="Greenplum master"><polygon fill="#E7E7E7" points="1733.208,740.0469,1743.208,744.0469,1733.208,748.0469,1737.208,744.0469" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="684.8203" x2="1739.208" y1="744.0469" y2="744.0469"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="881.7783" x="691.8203" y="723.8481">CREATE WRITABLE EXTERNAL TABLE spark_executor2 (id bigint, col1 int, col2 text, ...) USING address=executor2_host:executor2_port;</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="597.0669" x="691.8203" y="738.981">INSERT INTO EXTERNAL TABLE spark_executor2 FROM gp_table WHERE gp_segment_id = 2</text></g><g class="message" data-participant-1="Greenplum master" data-participant-2="Greenplum segment2"><polygon fill="#E7E7E7" points="2389.7383,769.1797,2399.7383,773.1797,2389.7383,777.1797,2393.7383,773.1797" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="1755.208" x2="2395.7383" y1="773.1797" y2="773.1797"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="455.7744" x="1762.208" y="768.1138">SELECT DATA FROM gp_table_data_on_segment2 TO spark_executor2</text></g><g class="message" data-participant-1="Spark executorN" data-participant-2="Greenplum master"><polygon fill="#E7E7E7" points="1738.208,813.4453,1748.208,817.4453,1738.208,821.4453,1742.208,817.4453" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="825.0688" x2="1744.208" y1="817.4453" y2="817.4453"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="886.1392" x="832.0688" y="797.2466">CREATE WRITABLE EXTERNAL TABLE spark_executorN (id bigint, col1 int, col2 text, ...) USING address=executorN_host:executorN_port;</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="599.9741" x="832.0688" y="812.3794">INSERT INTO EXTERNAL TABLE spark_executorN FROM gp_table WHERE gp_segment_id = N</text></g><g class="message" data-participant-1="Greenplum master" data-participant-2="Greenplum segmentN"><polygon fill="#E7E7E7" points="2567.2769,842.5781,2577.2769,846.5781,2567.2769,850.5781,2571.2769,846.5781" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="1760.208" x2="2573.2769" y1="846.5781" y2="846.5781"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="458.6816" x="1767.208" y="841.5122">SELECT DATA FROM gp_table_data_on_segmentN TO spark_executorN</text></g><g class="message" data-participant-1="Greenplum segment1" data-participant-2="Spark executor1"><ellipse cx="544.8545" cy="890.0938" fill="#000000" rx="4" ry="4" style="stroke:#E7E7E7;stroke-width:1.5;"/><polygon fill="#E7E7E7" points="561.8545,886.8438,551.8545,890.8438,561.8545,894.8438,557.8545,890.8438" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="555.8545" x2="2228.9824" y1="890.8438" y2="890.8438"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="291.8271" x="562.3545" y="870.645">INITIALIZE CONNECTION TO Spark executor1</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="208.9077" x="562.3545" y="885.7778">PUSH DATA TO Spark executor1</text></g><path d="M306,903.8438 L306,943.8438 L529,943.8438 L529,913.8438 L519,903.8438 L306,903.8438" fill="#714137" style="stroke:#E7E7E7;stroke-width:0.5;"/><path d="M519,903.8438 L519,913.8438 L529,913.8438 L519,903.8438" fill="#714137" style="stroke:#E7E7E7;stroke-width:0.5;"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="202.6934" x="312" y="920.9106">Circle is an open GPFDIST port,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="133.2627" x="312" y="936.0435">listened by executor</text><g class="message" data-participant-1="Greenplum segment2" data-participant-2="Spark executor2"><ellipse cx="684.3203" cy="984.625" fill="#000000" rx="4" ry="4" style="stroke:#E7E7E7;stroke-width:1.5;"/><polygon fill="#E7E7E7" points="701.3203,981.375,691.3203,985.375,701.3203,989.375,697.3203,985.375" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="695.3203" x2="2405.7383" y1="985.375" y2="985.375"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="291.8271" x="701.8203" y="965.1763">INITIALIZE CONNECTION TO Spark executor2</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="208.9077" x="701.8203" y="980.3091">PUSH DATA TO Spark executor2</text></g><g class="message" data-participant-1="Greenplum segmentN" data-participant-2="Spark executorN"><ellipse cx="824.5688" cy="1028.8906" fill="#000000" rx="4" ry="4" style="stroke:#E7E7E7;stroke-width:1.5;"/><polygon fill="#E7E7E7" points="841.5688,1025.6406,831.5688,1029.6406,841.5688,1033.6406,837.5688,1029.6406" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;" x1="835.5688" x2="2583.2769" y1="1029.6406" y2="1029.6406"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="293.2808" x="842.0688" y="1009.4419">INITIALIZE CONNECTION TO Spark executorN</text><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="210.3613" x="842.0688" y="1024.5747">PUSH DATA TO Spark executorN</text></g><rect fill="#111111" height="3" style="stroke:#111111;stroke-width:1;" width="2673.4375" x="0" y="1058.207"/><line style="stroke:#FFFFFF;stroke-width:1;" x1="0" x2="2673.4375" y1="1058.207" y2="1058.207"/><line style="stroke:#FFFFFF;stroke-width:1;" x1="0" x2="2673.4375" y1="1061.207" y2="1061.207"/><rect fill="#111111" height="23.1328" style="stroke:#FFFFFF;stroke-width:2;" width="110.0337" x="1281.7019" y="1047.6406"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="91.5078" x="1287.7019" y="1063.7075">Spark.stop()</text><g class="message" data-participant-1="Spark executor1" data-participant-2="Greenplum master"><polygon fill="#E7E7E7" points="1733.208,1097.9063,1743.208,1101.9063,1733.208,1105.9063,1737.208,1101.9063" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="545.3545" x2="1739.208" y1="1101.9063" y2="1101.9063"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="194.6953" x="552.3545" y="1096.8403">DROP TABLE spark_executor1</text></g><g class="message" data-participant-1="Spark executor2" data-participant-2="Greenplum master"><polygon fill="#E7E7E7" points="1728.208,1127.0391,1738.208,1131.0391,1728.208,1135.0391,1732.208,1131.0391" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="684.8203" x2="1734.208" y1="1131.0391" y2="1131.0391"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="194.6953" x="691.8203" y="1125.9731">DROP TABLE spark_executor2</text></g><g class="message" data-participant-1="Spark executorN" data-participant-2="Greenplum master"><polygon fill="#E7E7E7" points="1723.208,1156.1719,1733.208,1160.1719,1723.208,1164.1719,1727.208,1160.1719" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="825.0688" x2="1729.208" y1="1160.1719" y2="1160.1719"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="196.1489" x="832.0688" y="1155.106">DROP TABLE spark_executorN</text></g><g class="message" data-participant-1="Spark executor1" data-participant-2="Spark driver"><polygon fill="#E7E7E7" points="70.9263,1185.3047,60.9263,1189.3047,70.9263,1193.3047,66.9263,1189.3047" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="64.9263" x2="539.3545" y1="1189.3047" y2="1189.3047"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="38.1812" x="76.9263" y="1184.2388">DONE</text></g><g class="message" data-participant-1="Spark executor2" data-participant-2="Spark driver"><polygon fill="#E7E7E7" points="70.9263,1214.4375,60.9263,1218.4375,70.9263,1222.4375,66.9263,1218.4375" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="64.9263" x2="678.8203" y1="1218.4375" y2="1218.4375"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="38.1812" x="76.9263" y="1213.3716">DONE</text></g><g class="message" data-participant-1="Spark executorN" data-participant-2="Spark driver"><polygon fill="#E7E7E7" points="70.9263,1243.5703,60.9263,1247.5703,70.9263,1251.5703,66.9263,1247.5703" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="64.9263" x2="819.0688" y1="1247.5703" y2="1247.5703"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="38.1812" x="76.9263" y="1242.5044">DONE</text></g><g class="message" data-participant-1="Spark driver" data-participant-2="Greenplum master"><polygon fill="#E7E7E7" points="1728.208,1272.7031,1738.208,1276.7031,1728.208,1280.7031,1732.208,1276.7031" style="stroke:#E7E7E7;stroke-width:1;"/><line style="stroke:#E7E7E7;stroke-width:1;stroke-dasharray:2,2;" x1="54.9263" x2="1734.208" y1="1276.7031" y2="1276.7031"/><text fill="#FFFFFF" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="134.9321" x="61.9263" y="1271.6372">CLOSE CONNECTION</text></g></g></svg></div></div></p>
+</details>
 <h2 id="recommendations">Recommendations<a class="headerlink" href="#recommendations" title="Permanent link">&para;</a></h2>
 <h3 id="select-only-required-columns">Select only required columns<a class="headerlink" href="#select-only-required-columns" title="Permanent link">&para;</a></h3>
 <p>Instead of passing <code>"*"</code> in <code>DBReader(columns=[...])</code> prefer passing exact column names. This reduces the amount of data passed from Greenplum to Spark.</p>
@@ -7267,69 +7321,67 @@ avoiding moving large amounts of data between segments, which improves reading p
 column for parallel data reading. Each DataFrame partition will contain data of a specific Greenplum segment.</p>
 <p>This allows each Spark executor read only data from specific Greenplum segment, avoiding moving large amounts of data between segments.</p>
 <p>If view is used, it is recommended to include <code>gp_segment_id</code> column to this view:</p>
-<div class="highlight"><pre><span></span><code>.. dropdown:: Reading from view with gp_segment_id column
+<details class="note">
+<summary>Reading from view with gp_segment_id column</summary>
+<div class="highlight"><pre><span></span><code>    <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Greenplum</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBReader</span>
 
-    .. code-block:: python
+    <span class="n">greenplum</span> <span class="o">=</span> <span class="n">Greenplum</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 
-        from onetl.connection import Greenplum
-        from onetl.db import DBReader
+    <span class="n">greenplum</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        CREATE VIEW schema.view_with_gp_segment_id AS</span>
+<span class="sd">        SELECT</span>
+<span class="sd">            id,</span>
+<span class="sd">            some_column,</span>
+<span class="sd">            another_column,</span>
+<span class="sd">            gp_segment_id  -- IMPORTANT</span>
+<span class="sd">        FROM schema.some_table</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
 
-        greenplum = Greenplum(...)
-
-        greenplum.execute(
-            &quot;&quot;&quot;
-            CREATE VIEW schema.view_with_gp_segment_id AS
-            SELECT
-                id,
-                some_column,
-                another_column,
-                gp_segment_id  -- IMPORTANT
-            FROM schema.some_table
-            &quot;&quot;&quot;,
-        )
-
-        reader = DBReader(
-            connection=greenplum,
-            source=&quot;schema.view_with_gp_segment_id&quot;,
-        )
-        df = reader.run()
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+        <span class="n">connection</span><span class="o">=</span><span class="n">greenplum</span><span class="p">,</span>
+        <span class="n">source</span><span class="o">=</span><span class="s2">&quot;schema.view_with_gp_segment_id&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </code></pre></div>
+</details>
 <h4 id="using-custom-partition_column">Using custom <code>partition_column</code><a class="headerlink" href="#using-custom-partition_column" title="Permanent link">&para;</a></h4>
 <p>Sometimes table or view is lack of <code>gp_segment_id</code> column, but there is some column
 with value range correlated with Greenplum segment distribution.</p>
 <p>In this case, custom column can be used instead:</p>
-<div class="highlight"><pre><span></span><code>.. dropdown:: Reading from view with custom partition_column
+<details class="note">
+<summary>Reading from view with custom partition_column</summary>
+<div class="highlight"><pre><span></span><code>    <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Greenplum</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBReader</span>
 
-    .. code-block:: python
+    <span class="n">greenplum</span> <span class="o">=</span> <span class="n">Greenplum</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 
-        from onetl.connection import Greenplum
-        from onetl.db import DBReader
+    <span class="n">greenplum</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        CREATE VIEW schema.view_with_partition_column AS</span>
+<span class="sd">        SELECT</span>
+<span class="sd">            id,</span>
+<span class="sd">            some_column,</span>
+<span class="sd">            part_column  -- correlated to greenplum segment ID</span>
+<span class="sd">        FROM schema.some_table</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
 
-        greenplum = Greenplum(...)
-
-        greenplum.execute(
-            &quot;&quot;&quot;
-            CREATE VIEW schema.view_with_partition_column AS
-            SELECT
-                id,
-                some_column,
-                part_column  -- correlated to greenplum segment ID
-            FROM schema.some_table
-            &quot;&quot;&quot;,
-        )
-
-        reader = DBReader(
-            connection=greenplum,
-            source=&quot;schema.view_with_partition_column&quot;,
-            options=Greenplum.ReadOptions(
-                # parallelize data using specified column
-                partitionColumn=&quot;part_column&quot;,
-                # create 10 Spark tasks, each will read only part of table data
-                partitions=10,
-            ),
-        )
-        df = reader.run()
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+        <span class="n">connection</span><span class="o">=</span><span class="n">greenplum</span><span class="p">,</span>
+        <span class="n">source</span><span class="o">=</span><span class="s2">&quot;schema.view_with_partition_column&quot;</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="n">Greenplum</span><span class="o">.</span><span class="n">ReadOptions</span><span class="p">(</span>
+            <span class="c1"># parallelize data using specified column</span>
+            <span class="n">partitionColumn</span><span class="o">=</span><span class="s2">&quot;part_column&quot;</span><span class="p">,</span>
+            <span class="c1"># create 10 Spark tasks, each will read only part of table data</span>
+            <span class="n">partitions</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </code></pre></div>
+</details>
 <h4 id="reading-distributed-replicated-tables">Reading <code>DISTRIBUTED REPLICATED</code> tables<a class="headerlink" href="#reading-distributed-replicated-tables" title="Permanent link">&para;</a></h4>
 <p>Replicated tables do not have <code>gp_segment_id</code> column at all, so you need to set <code>partition_column</code> to some column name
 of type integer/bigint/smallint.</p>
@@ -7339,61 +7391,58 @@ of type integer/bigint/smallint.</p>
 <strong>This should be avoided</strong>.</p>
 <p>Instead is recommended to run <code>JOIN</code> query on Greenplum side, save the result to an intermediate table,
 and then read this table using <code>DBReader</code>:</p>
-<div class="highlight"><pre><span></span><code>.. dropdown:: Reading from view using intermediate table
+<details class="note">
+<summary>Reading from view using intermediate table</summary>
+<div class="highlight"><pre><span></span><code>    <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Greenplum</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBReader</span>
 
-    .. code-block:: python
+    <span class="n">greenplum</span> <span class="o">=</span> <span class="n">Greenplum</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 
-        from onetl.connection import Greenplum
-        from onetl.db import DBReader
+    <span class="n">greenplum</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        CREATE UNLOGGED TABLE schema.intermediate_table AS</span>
+<span class="sd">        SELECT</span>
+<span class="sd">            id,</span>
+<span class="sd">            tbl1.col1,</span>
+<span class="sd">            tbl1.data,</span>
+<span class="sd">            tbl2.another_data</span>
+<span class="sd">        FROM</span>
+<span class="sd">            schema.table1 as tbl1</span>
+<span class="sd">        JOIN</span>
+<span class="sd">            schema.table2 as tbl2</span>
+<span class="sd">        ON</span>
+<span class="sd">            tbl1.col1 = tbl2.col2</span>
+<span class="sd">        WHERE ...</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
 
-        greenplum = Greenplum(...)
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+        <span class="n">connection</span><span class="o">=</span><span class="n">greenplum</span><span class="p">,</span>
+        <span class="n">source</span><span class="o">=</span><span class="s2">&quot;schema.intermediate_table&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-        greenplum.execute(
-            &quot;&quot;&quot;
-            CREATE UNLOGGED TABLE schema.intermediate_table AS
-            SELECT
-                id,
-                tbl1.col1,
-                tbl1.data,
-                tbl2.another_data
-            FROM
-                schema.table1 as tbl1
-            JOIN
-                schema.table2 as tbl2
-            ON
-                tbl1.col1 = tbl2.col2
-            WHERE ...
-            &quot;&quot;&quot;,
-        )
+    <span class="c1"># write dataframe somethere</span>
 
-        reader = DBReader(
-            connection=greenplum,
-            source=&quot;schema.intermediate_table&quot;,
-        )
-        df = reader.run()
-
-        # write dataframe somethere
-
-        greenplum.execute(
-            &quot;&quot;&quot;
-            DROP TABLE schema.intermediate_table
-            &quot;&quot;&quot;,
-        )
+    <span class="n">greenplum</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DROP TABLE schema.intermediate_table</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>.. warning::
+</details>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong>NEVER</strong> do that:</p>
+<div class="highlight"><pre><span></span><code>    <span class="n">df1</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">greenplum</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s2">&quot;public.table1&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    <span class="n">df2</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">greenplum</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s2">&quot;public.table2&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-    **NEVER** do that:
+    <span class="n">joined_df</span> <span class="o">=</span> <span class="n">df1</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df2</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">&quot;col&quot;</span><span class="p">)</span>
 
-    .. code-block:: python
-
-        df1 = DBReader(connection=greenplum, target=&quot;public.table1&quot;, ...).run()
-        df2 = DBReader(connection=greenplum, target=&quot;public.table2&quot;, ...).run()
-
-        joined_df = df1.join(df2, on=&quot;col&quot;)
-
-    This will lead to sending all the data from both `table1` and `table2` to Spark executor memory, and then `JOIN``
-    will be performed on Spark side, not inside Greenplum. This is **VERY** inefficient.
+<span class="n">This</span> <span class="n">will</span> <span class="n">lead</span> <span class="n">to</span> <span class="n">sending</span> <span class="nb">all</span> <span class="n">the</span> <span class="n">data</span> <span class="kn">from</span><span class="w"> </span><span class="nn">both</span> <span class="err">`</span><span class="n">table1</span><span class="err">`</span> <span class="ow">and</span> <span class="err">`</span><span class="n">table2</span><span class="err">`</span> <span class="n">to</span> <span class="n">Spark</span> <span class="n">executor</span> <span class="n">memory</span><span class="p">,</span> <span class="ow">and</span> <span class="n">then</span> <span class="err">`</span><span class="n">JOIN</span><span class="err">``</span>
+<span class="n">will</span> <span class="n">be</span> <span class="n">performed</span> <span class="n">on</span> <span class="n">Spark</span> <span class="n">side</span><span class="p">,</span> <span class="ow">not</span> <span class="n">inside</span> <span class="n">Greenplum</span><span class="o">.</span> <span class="n">This</span> <span class="ow">is</span> <span class="o">**</span><span class="n">VERY</span><span class="o">**</span> <span class="n">inefficient</span><span class="o">.</span>
 </code></pre></div>
+</div>
 <h4 id="temporary-tables-notice"><code>TEMPORARY</code> tables notice<a class="headerlink" href="#temporary-tables-notice" title="Permanent link">&para;</a></h4>
 <p>Someone could think that writing data from view or result of <code>JOIN</code> to <code>TEMPORARY</code> table,
 and then passing it to <code>DBReader</code>, is an efficient way to read data from Greenplum. This is because temp tables are not generating WAL files,
@@ -7403,13 +7452,206 @@ And each connection starts its own transaction which means that every executor w
 <p>You should use <a href="https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-sql_commands-CREATE_TABLE.html">UNLOGGED</a> tables
 to write data to intermediate table without generating WAL logs.</p>
 <h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.greenplum.options
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autopydantic_model:: GreenplumReadOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="onetl.connection.db_connection.greenplum.options.GreenplumReadOptions" class="doc doc-heading">
+            <code>onetl.connection.db_connection.greenplum.options.GreenplumReadOptions</code>
+
+
+<a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="onetl.connection.db_connection.jdbc_mixin.JDBCOptions">JDBCOptions</span></code></p>
+
+
+        <p>VMware's Greenplum Spark connector reading options.</p>
+<p>.. warning::</p>
+<pre><code>Some options, like ``url``, ``dbtable``, ``server.*``, ``pool.*``,
+etc are populated from connection attributes, and cannot be overridden by the user in ``ReadOptions`` to avoid issues.
+</code></pre>
+<h5 id="onetl.connection.db_connection.greenplum.options.GreenplumReadOptions--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions--examples" title="Permanent link">&para;</a></h5>
+<p>.. note ::</p>
+<pre><code>You can pass any value
+`supported by connector &lt;https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/read_from_gpdb.html&gt;`_,
+even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+The set of supported options depends on connector version.
+</code></pre>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import Greenplum
+
+options = Greenplum.ReadOptions(
+    partitionColumn="reg_id",
+    partitions=10,
+)
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.num_partitions" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">num_partitions</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;partitions&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.num_partitions" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Number of jobs created by Spark to read the table content in parallel.</p>
+<p>See documentation for :obj:<code>~partition_column</code> for more details</p>
+<p>.. warning::</p>
+<pre><code>By default connector uses number of segments in the Greenplum cluster.
+You should not change this option, unless you know what you're doing
+</code></pre>
+<p>.. warning::</p>
+<pre><code>Both options :obj:`~partition_column` and :obj:`~num_partitions` should have a value,
+or both should be ``None``
+</code></pre>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">partition_column</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;partitionColumn&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Column used to parallelize reading from a table.</p>
+<p>.. warning::</p>
+<pre><code>You should not change this option, unless you know what you're doing.
+
+It's preferable to use default values to read data parallel by number of segments in Greenplum cluster.
+</code></pre>
+
+
+<details class="possible-values" open>
+  <summary>Possible values</summary>
+  <ul>
+<li>
+<p><code>None</code> (default):
+    Spark generates N jobs (where N == number of segments in Greenplum cluster),
+    each job is reading only data from a specific segment
+    (filtering data by <code>gp_segment_id</code> column).</p>
+<p>This is very effective way to fetch the data from a cluster.</p>
+</li>
+<li>
+<p>table column
+    Allocate each executor a range of values from a specific column.</p>
+<p>Spark generates for each executor an SQL query:</p>
+<p>Executor 1:</p>
+<p>.. code:: sql</p>
+<pre><code>SELECT ... FROM table
+WHERE (partition_column &gt;= lowerBound
+        OR partition_column IS NULL)
+AND partition_column &lt; (lower_bound + stride)
+</code></pre>
+<p>Executor 2:</p>
+<p>.. code:: sql</p>
+<pre><code>SELECT ... FROM table
+WHERE partition_column &gt;= (lower_bound + stride)
+AND partition_column &lt; (lower_bound + 2 * stride)
+</code></pre>
+<p>...</p>
+<p>Executor N:</p>
+<p>.. code:: sql</p>
+<pre><code>SELECT ... FROM table
+WHERE partition_column &gt;= (lower_bound + (N-1) * stride)
+AND partition_column &lt;= upper_bound
+</code></pre>
+<p>Where <code>stride=(upper_bound - lower_bound) / num_partitions</code>,
+<code>lower_bound=MIN(partition_column)</code>, <code>upper_bound=MAX(partition_column)</code>.</p>
+<p>.. note::</p>
+<pre><code>Column type must be numeric. Other types are not supported.
+</code></pre>
+<p>.. note::</p>
+<pre><code>:obj:`~num_partitions` is used just to
+calculate the partition stride, **NOT** for filtering the rows in table.
+So all rows in the table will be returned (unlike *Incremental* :ref:`strategy`).
+</code></pre>
+<p>.. note::</p>
+<pre><code>All queries are executed in parallel. To execute them sequentially, use *Batch* :ref:`strategy`.
+</code></pre>
+</li>
+</ul>
+</details>        <p>.. warning::</p>
+<pre><code>Both options :obj:`~partition_column` and :obj:`~num_partitions` should have a value,
+or both should be ``None``
+</code></pre>
+<h6 id="onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column--examples" title="Permanent link">&para;</a></h6>
+<p>Read data in 10 parallel jobs by range of values in <code>id_column</code> column:</p>
+<p>.. code:: python</p>
+<pre><code>Greenplum.ReadOptions(
+    partitionColumn="id_column",
+    partitions=10,
+)
+</code></pre>
+
+    </div>
+
+</div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 
@@ -7464,6 +7706,12 @@ to write data to intermediate table without generating WAL logs.</p>
     
     
       <script src="../../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

@@ -1,14 +1,10 @@
-(mongodb-write)=
+# Writing to MongoDB using `DBWriter` { #mongodb-write }
 
-# Writing to MongoDB using `DBWriter`
+For writing data to MongoDB, use [DBWriter][db-writer].
 
-For writing data to MongoDB, use {obj}`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
+!!! warning
 
-```{eval-rst}
-.. warning::
-
-    Please take into account :ref:`mongodb-types`
-```
+    Please take into account [MongoDB types][mongodb-types]
 
 ## Examples
 
@@ -33,7 +29,9 @@ writer.run(df)
 
 ## Write options
 
-Method above accepts {obj}`MongoDB.WriteOptions <onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions>`
+Method above accepts [MongoDB.WriteOptions][onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions]
+
+<!-- 
 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.mongodb.options
@@ -45,3 +43,10 @@ Method above accepts {obj}`MongoDB.WriteOptions <onetl.connection.db_connection.
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+
+ -->
+
+::: onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions
+    options:
+        heading_level: 3
+        show_root_heading: true

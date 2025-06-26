@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -7104,8 +7108,8 @@
 <h1 id="greenplum-prerequisites">Prerequisites<a class="headerlink" href="#greenplum-prerequisites" title="Permanent link">&para;</a></h1>
 <h2 id="version-compatibility">Version Compatibility<a class="headerlink" href="#version-compatibility" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Greenplum server versions:
-  : - Officially declared: 5.x, 6.x, and 7.x (which requires <code>Greenplum.get_packages(package_version="2.3.0")</code> or higher)<ul>
+<li>Greenplum server versions:<ul>
+<li>Officially declared: 5.x, 6.x, and 7.x (which requires <code>Greenplum.get_packages(package_version="2.3.0")</code> or higher)</li>
 <li>Actually tested: 6.23, 7.0</li>
 </ul>
 </li>
@@ -7116,27 +7120,27 @@
 <h2 id="installing-pyspark">Installing PySpark<a class="headerlink" href="#installing-pyspark" title="Permanent link">&para;</a></h2>
 <p>To use Greenplum connector you should have PySpark installed (or injected to <code>sys.path</code>)
 BEFORE creating the connector instance.</p>
-<p>See {ref}<code>install-spark</code> installation instruction for more details.</p>
+<p>See <a class="autorefs autorefs-internal" title="Spark" href="../../../../install/spark/#install-spark">installation instruction</a> for more details.</p>
 <h2 id="downloading-vmware-package">Downloading VMware package<a class="headerlink" href="#downloading-vmware-package" title="Permanent link">&para;</a></h2>
 <p>To use Greenplum connector you should download connector <code>.jar</code> file from
 <a href="https://network.tanzu.vmware.com/products/vmware-greenplum#/releases/1413479/file_groups/16966">VMware website</a>
 and then pass it to Spark session.</p>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    Please pay attention to :ref:`Spark &amp; Scala version compatibility &lt;spark-compatibility-matrix&gt;`.
-</code></pre></div>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    There are issues with using package of version 2.3.0/2.3.1 with Greenplum 6.x - connector can
-    open transaction with `SELECT * FROM table LIMIT 0` query, but does not close it, which leads to deadlocks
-    during write.
-</code></pre></div>
-<p>There are several ways to do that. See {ref}<code>java-packages</code> for details.</p>
-<div class="highlight"><pre><span></span><code>.. note::
-
-    If you&#39;re uploading package to private package repo, use `groupId=io.pivotal` and `artifactoryId=greenplum-spark_2.12``
-    (`2.12` is Scala version) to give uploaded package a proper name.
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please pay attention to <a class="autorefs autorefs-internal" title="Compatibility matrix" href="../../../../install/spark/#spark-compatibility-matrix">Spark &amp; Scala version compatibility</a>.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>There are issues with using package of version 2.3.0/2.3.1 with Greenplum 6.x - connector can
+open transaction with <code>SELECT * FROM table LIMIT 0</code> query, but does not close it, which leads to deadlocks
+during write.</p>
+</div>
+<p>There are several ways to do that. See <a class="autorefs autorefs-internal" title="Injecting Java packages" href="../../../../install/spark/#java-packages">install Java packages</a> for details.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you're uploading package to private package repo, use <code>groupId=io.pivotal</code> and <code>artifactoryId=greenplum-spark_2.12</code>
+(<code>2.12</code> is Scala version) to give uploaded package a proper name.</p>
+</div>
 <h2 id="connecting-to-greenplum">Connecting to Greenplum<a class="headerlink" href="#connecting-to-greenplum" title="Permanent link">&para;</a></h2>
 <h3 id="interaction-schema">Interaction schema<a class="headerlink" href="#interaction-schema" title="Permanent link">&para;</a></h3>
 <p>Spark executors open ports to listen incoming requests.
@@ -7146,16 +7150,14 @@ functionality, and send/read data using <a href="https://docs.vmware.com/en/VMwa
 Greenplum master only receives commands to start reading/writing process, and manages all the metadata (external table location, schema and so on).</p>
 <p>More details can be found in <a href="https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/overview.html">official documentation</a>.</p>
 <h3 id="set-number-of-connections">Set number of connections<a class="headerlink" href="#set-number-of-connections" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    This is very important!!!
-
-    If you don&#39;t limit number of connections, you can exceed the `max_connections &lt;https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/admin_guide-client_auth.html#limiting-concurrent-connections#limiting-concurrent-connections-2&gt;`_
-    limit set on the Greenplum side. It&#39;s usually not so high, e.g. 500-1000 connections max,
-    depending on your Greenplum instance settings and using connection balancers like `pgbouncer`.
-
-    Consuming all available connections means **nobody** (even admin users) can connect to Greenplum.
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is very important!!!</p>
+<p>If you don't limit number of connections, you can exceed the <a href="https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/admin_guide-client_auth.html#limiting-concurrent-connections#limiting-concurrent-connections-2">max_connections</a>
+limit set on the Greenplum side. It's usually not so high, e.g. 500-1000 connections max,
+depending on your Greenplum instance settings and using connection balancers like <code>pgbouncer</code>.</p>
+<p>Consuming all available connections means <strong>nobody</strong> (even admin users) can connect to Greenplum.</p>
+</div>
 <p>Each job on the Spark executor makes its own connection to Greenplum master node,
 so you need to limit number of connections to avoid opening too many of them.</p>
 <ul>
@@ -7169,37 +7171,39 @@ so you need to limit number of connections to avoid opening too many of them.</p
 <ul>
 <li>By limiting number of Spark executors and number of cores per-executor. Max number of parallel jobs is <code>executors * cores</code>.</li>
 </ul>
-<div class="highlight"><pre><span></span><code>.. tabs::
-
-    .. code-tab:: py Spark with master=local
-
-        spark = (
-            SparkSession.builder
-            # Spark will run with 5 threads in local mode, allowing up to 5 parallel tasks
-            .config(&quot;spark.master&quot;, &quot;local[5]&quot;)
-            .config(&quot;spark.executor.cores&quot;, 1)
-        ).getOrCreate()
-
-    .. code-tab:: py Spark with master=yarn or master=k8s, dynamic allocation
-
-        spark = (
-            SparkSession.builder
-            .config(&quot;spark.master&quot;, &quot;yarn&quot;)
-            # Spark will start MAX 10 executors with 1 core each (dynamically), so max number of parallel jobs is 10
-            .config(&quot;spark.dynamicAllocation.maxExecutors&quot;, 10)
-            .config(&quot;spark.executor.cores&quot;, 1)
-        ).getOrCreate()
-
-    .. code-tab:: py Spark with master=yarn or master=k8s, static allocation
-
-        spark = (
-            SparkSession.builder
-            .config(&quot;spark.master&quot;, &quot;yarn&quot;)
-            # Spark will start EXACTLY 10 executors with 1 core each, so max number of parallel jobs is 10
-            .config(&quot;spark.executor.instances&quot;, 10)
-            .config(&quot;spark.executor.cores&quot;, 1)
-        ).getOrCreate()
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Spark with master=local</label><label for="__tabbed_1_2">Spark with master=yarn or master=k8s, dynamic allocation</label><label for="__tabbed_1_3">Spark with master=yarn or master=k8s, static allocation</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span>
+        <span class="c1"># Spark will run with 5 threads in local mode, allowing up to 5 parallel tasks</span>
+        <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.master&quot;</span><span class="p">,</span> <span class="s2">&quot;local[5]&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.executor.cores&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span>
+        <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.master&quot;</span><span class="p">,</span> <span class="s2">&quot;yarn&quot;</span><span class="p">)</span>
+        <span class="c1"># Spark will start MAX 10 executors with 1 core each (dynamically), so max number of parallel jobs is 10</span>
+        <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.dynamicAllocation.maxExecutors&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.executor.cores&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span>
+        <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.master&quot;</span><span class="p">,</span> <span class="s2">&quot;yarn&quot;</span><span class="p">)</span>
+        <span class="c1"># Spark will start EXACTLY 10 executors with 1 core each, so max number of parallel jobs is 10</span>
+        <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.executor.instances&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.executor.cores&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <ul>
 <li>By limiting connection pool size user by Spark (<strong>only</strong> for Spark with <code>master=local</code>):</li>
 </ul>
@@ -7217,8 +7221,18 @@ so you need to limit number of connections to avoid opening too many of them.</p
 <p>See <a href="https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/using_the_connector.html#jdbcconnpool">connection pooling</a>
 documentation.</p>
 <ul>
-<li>By setting {obj}<code>num_partitions &lt;onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.num_partitions&gt;</code>
-  and {obj}<code>partition_column &lt;onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column&gt;</code> (not recommended).</li>
+<li>By setting <a class="autorefs autorefs-internal" title="num_partitions = Field(alias='partitions')
+
+  
+      class-attribute
+      instance-attribute
+  " href="../read/#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.num_partitions">num_partitions</a>
+  and <a class="autorefs autorefs-internal" title="partition_column = Field(alias='partitionColumn')
+
+  
+      class-attribute
+      instance-attribute
+  " href="../read/#onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column">partition_column</a> (not recommended).</li>
 </ul>
 <h3 id="allowing-connection-to-greenplum-master">Allowing connection to Greenplum master<a class="headerlink" href="#allowing-connection-to-greenplum-master" title="Permanent link">&para;</a></h3>
 <p>Ask your Greenplum cluster administrator to allow your user to connect to Greenplum master node,
@@ -7330,10 +7344,10 @@ error code = 111 (Connection refused);  (seg3 slice1 12.34.56.78:10003 pid=12345
 <span class="p">)</span>
 </code></pre></div>
 <p>You can get list of network interfaces using this command.</p>
-<div class="highlight"><pre><span></span><code>.. note::
-
-  This command should be executed on Hadoop cluster node, **not** Spark driver host!
-</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This command should be executed on Hadoop cluster node, <strong>not</strong> Spark driver host!</p>
+</div>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>ip<span class="w"> </span>address
 <span class="m">1</span>:<span class="w"> </span>lo:<span class="w"> </span>&lt;LOOPBACK,UP,LOWER_UP&gt;<span class="w"> </span>mtu<span class="w"> </span><span class="m">65536</span><span class="w"> </span>qdisc<span class="w"> </span>noqueue<span class="w"> </span>state<span class="w"> </span>UNKNOWN<span class="w"> </span>group<span class="w"> </span>default<span class="w"> </span>qlen<span class="w"> </span><span class="m">1000</span>
 <span class="w">    </span>inet<span class="w"> </span><span class="m">127</span>.0.0.1/8<span class="w"> </span>scope<span class="w"> </span>host<span class="w"> </span>lo
@@ -7355,54 +7369,56 @@ error code = 111 (Connection refused);  (seg3 slice1 12.34.56.78:10003 pid=12345
 <h3 id="set-required-grants">Set required grants<a class="headerlink" href="#set-required-grants" title="Permanent link">&para;</a></h3>
 <p>Ask your Greenplum cluster administrator to set following grants for a user,
 used for creating a connection:</p>
-<div class="highlight"><pre><span></span><code>.. tabs::
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Read + Write</label><label for="__tabbed_2_2">Read only</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- get access to get tables metadata &amp; cluster information</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">information_schema</span><span class="p">.</span><span class="n">tables</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">pg_attribute</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">pg_class</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">pg_namespace</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">pg_settings</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">pg_stats</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">gp_distributed_xacts</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">gp_segment_configuration</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">-- Greenplum 5.x only</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">gp_distribution_policy</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
 
-    .. code-tab:: sql Read + Write
+<span class="w">    </span><span class="c1">-- allow creating external tables in the same schema as source/target table</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">USAGE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">SCHEMA</span><span class="w"> </span><span class="n">myschema</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">CREATE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">SCHEMA</span><span class="w"> </span><span class="n">myschema</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">ALTER</span><span class="w"> </span><span class="k">USER</span><span class="w"> </span><span class="n">username</span><span class="w"> </span><span class="n">CREATEEXTTABLE</span><span class="p">(</span><span class="k">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;readable&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">protocol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;gpfdist&#39;</span><span class="p">)</span><span class="w"> </span><span class="n">CREATEEXTTABLE</span><span class="p">(</span><span class="k">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;writable&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">protocol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;gpfdist&#39;</span><span class="p">);</span>
 
-        -- get access to get tables metadata &amp; cluster information
-        GRANT SELECT ON information_schema.tables TO username;
-        GRANT SELECT ON pg_attribute TO username;
-        GRANT SELECT ON pg_class TO username;
-        GRANT SELECT ON pg_namespace TO username;
-        GRANT SELECT ON pg_settings TO username;
-        GRANT SELECT ON pg_stats TO username;
-        GRANT SELECT ON gp_distributed_xacts TO username;
-        GRANT SELECT ON gp_segment_configuration TO username;
-        -- Greenplum 5.x only
-        GRANT SELECT ON gp_distribution_policy TO username;
-
-        -- allow creating external tables in the same schema as source/target table
-        GRANT USAGE ON SCHEMA myschema TO username;
-        GRANT CREATE ON SCHEMA myschema TO username;
-        ALTER USER username CREATEEXTTABLE(type = &#39;readable&#39;, protocol = &#39;gpfdist&#39;) CREATEEXTTABLE(type = &#39;writable&#39;, protocol = &#39;gpfdist&#39;);
-
-        -- allow read access to specific table (to get column types)
-        -- allow write access to specific table
-        GRANT SELECT, INSERT ON myschema.mytable TO username;
-
-    .. code-tab:: sql Read only
-
-        -- get access to get tables metadata &amp; cluster information
-        GRANT SELECT ON information_schema.tables TO username;
-        GRANT SELECT ON pg_attribute TO username;
-        GRANT SELECT ON pg_class TO username;
-        GRANT SELECT ON pg_namespace TO username;
-        GRANT SELECT ON pg_settings TO username;
-        GRANT SELECT ON pg_stats TO username;
-        GRANT SELECT ON gp_distributed_xacts TO username;
-        GRANT SELECT ON gp_segment_configuration TO username;
-        -- Greenplum 5.x only
-        GRANT SELECT ON gp_distribution_policy TO username;
-
-        -- allow creating external tables in the same schema as source table
-        GRANT USAGE ON SCHEMA schema_to_read TO username;
-        GRANT CREATE ON SCHEMA schema_to_read TO username;
-        -- yes, `writable` for reading from GP, because data is written from Greenplum to Spark executor.
-        ALTER USER username CREATEEXTTABLE(type = &#39;writable&#39;, protocol = &#39;gpfdist&#39;);
-
-        -- allow read access to specific table
-        GRANT SELECT ON schema_to_read.table_to_read TO username;
+<span class="w">    </span><span class="c1">-- allow read access to specific table (to get column types)</span>
+<span class="w">    </span><span class="c1">-- allow write access to specific table</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="p">,</span><span class="w"> </span><span class="k">INSERT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">myschema</span><span class="p">.</span><span class="n">mytable</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- get access to get tables metadata &amp; cluster information</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">information_schema</span><span class="p">.</span><span class="n">tables</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">pg_attribute</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">pg_class</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">pg_namespace</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">pg_settings</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">pg_stats</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">gp_distributed_xacts</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">gp_segment_configuration</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">-- Greenplum 5.x only</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">gp_distribution_policy</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">-- allow creating external tables in the same schema as source table</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">USAGE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">SCHEMA</span><span class="w"> </span><span class="n">schema_to_read</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">CREATE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">SCHEMA</span><span class="w"> </span><span class="n">schema_to_read</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">-- yes, `writable` for reading from GP, because data is written from Greenplum to Spark executor.</span>
+<span class="w">    </span><span class="k">ALTER</span><span class="w"> </span><span class="k">USER</span><span class="w"> </span><span class="n">username</span><span class="w"> </span><span class="n">CREATEEXTTABLE</span><span class="p">(</span><span class="k">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;writable&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">protocol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;gpfdist&#39;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">-- allow read access to specific table</span>
+<span class="w">    </span><span class="k">GRANT</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">schema_to_read</span><span class="p">.</span><span class="n">table_to_read</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="n">username</span><span class="p">;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>More details can be found in <a href="https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/install_cfg.html#role-privileges">official documentation</a>.</p>
 
 
@@ -7458,6 +7474,12 @@ used for creating a connection:</p>
     
     
       <script src="../../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

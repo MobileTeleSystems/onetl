@@ -1,14 +1,10 @@
-(greenplum-execute)=
+# Executing statements in Greenplum { #greenplum-execute }
 
-# Executing statements in Greenplum
-
-```{eval-rst}
-.. warning::
+!!! warning
 
     Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
 
-    Do **NOT** use them to read large amounts of data. Use :ref:`DBReader <greenplum-read>` instead.
-```
+    Do **NOT** use them to read large amounts of data. Use [DBReader][greenplum-read] instead.
 
 ## How to
 
@@ -19,16 +15,14 @@ There are 2 ways to execute some statement in Greenplum
 Use this method to perform some `SELECT` query which returns **small number or rows**, like reading
 Greenplum config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts {obj}`Greenplum.FetchOptions <onetl.connection.db_connection.greenplum.options.GreenplumFetchOptions>`.
+Method accepts [Greenplum.FetchOptions][onetl.connection.db_connection.greenplum.options.GreenplumFetchOptions].
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
     `Greenplum.fetch` is implemented using Postgres JDBC connection,
-    so types are handled a bit differently than in `DBReader`. See :ref:`postgres-types`.
-```
+    so types are handled a bit differently than in `DBReader`. See [Postgres types][postgres-types].
 
 #### Syntax support
 
@@ -58,7 +52,7 @@ value = df.collect()[0][0]  # get value from first row and first column
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts {obj}`Greenplum.ExecuteOptions <onetl.connection.db_connection.greenplum.options.GreenplumExecuteOptions>`.
+Method accepts [Greenplum.ExecuteOptions][onetl.connection.db_connection.greenplum.options.GreenplumExecuteOptions].
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
@@ -103,14 +97,13 @@ without any interaction between Greenplum segments and Spark executors. More tha
 
 The only port used while interacting with Greenplum in this case is `5432` (Greenplum master port).
 
-```{eval-rst}
-.. dropdown:: Spark <-> Greenplum interaction during Greenplum.execute()/Greenplum.fetch()
+??? note "Spark <-> Greenplum interaction during Greenplum.execute()/Greenplum.fetch()"
 
-    .. plantuml::
+    ```plantuml
 
         @startuml
         title Greenplum master <-> Spark driver
-                box "Spark"
+                box Spark
                 participant "Spark driver"
                 end box
 
@@ -133,10 +126,41 @@ The only port used while interacting with Greenplum in this case is `5432` (Gree
                 deactivate "Greenplum master"
                 deactivate "Spark driver"
         @enduml
-```
+    ```
+
+    ```mermaid
+        ---
+        title: Greenplum master <-> Spark driver
+        ---
+        sequenceDiagram
+            box Spark
+            participant as "Spark driver"
+            end box
+
+            box Greenplum
+            participant as "Greenplum master"
+            end box
+
+            == Greenplum.check() ==
+
+            activate "Spark driver"
+            "Spark driver" -> "Greenplum master" ++ : CONNECT
+
+            == Greenplum.execute(statement) ==
+            "Spark driver" --> "Greenplum master" : EXECUTE statement
+            "Greenplum master" -> "Spark driver" : RETURN result
+
+            == Greenplum.close() ==
+            "Spark driver" --> "Greenplum master" : CLOSE CONNECTION
+
+            deactivate "Greenplum master"
+            deactivate "Spark driver"
+    ```
+
 
 ## Options
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.greenplum.options
 ```
@@ -157,3 +181,16 @@ The only port used while interacting with Greenplum in this case is `5432` (Gree
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.greenplum.options.GreenplumFetchOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true
+
+::: onetl.connection.db_connection.greenplum.options.GreenplumExecuteOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

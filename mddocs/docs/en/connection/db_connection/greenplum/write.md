@@ -1,24 +1,17 @@
-(greenplum-write)=
+# Writing to Greenplum using `DBWriter` { #greenplum-write }
 
-# Writing to Greenplum using `DBWriter`
+For writing data to Greenplum, use [DBWriter][db-writer] with [GreenplumWriteOptions][onetl.connection.db_connection.greenplum.options.GreenplumWriteOptions].
 
-For writing data to Greenplum, use {obj}`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`
-with {obj}`GreenplumWriteOptions <onetl.connection.db_connection.greenplum.options.GreenplumWriteOptions>`.
+!!! warning
 
-```{eval-rst}
-.. warning::
+    Please take into account [Greenplum types][greenplum-types].
 
-    Please take into account :ref:`greenplum-types`.
-```
+!!! warning
 
-```{eval-rst}
-.. warning::
-
-    It is always recommended to create table explicitly using :ref:`Greenplum.execute <greenplum-execute>`
+    It is always recommended to create table explicitly using [Greenplum.execute][greenplum-execute]
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different types than it is expected.
-```
 
 ## Examples
 
@@ -46,12 +39,11 @@ writer.run(df)
 
 ## Interaction schema
 
-High-level schema is described in {ref}`greenplum-prerequisites`. You can find detailed interaction schema below.
+High-level schema is described in [Greenplum prerequisites][greenplum-prerequisites]. You can find detailed interaction schema below.
 
-```{eval-rst}
-.. dropdown:: Spark <-> Greenplum interaction during DBWriter.run()
+??? note "Spark <-> Greenplum interaction during DBWriter.run()"
 
-    .. plantuml::
+    ```plantuml
 
         @startuml
         title Greenplum master <-> Spark driver
@@ -124,10 +116,11 @@ High-level schema is described in {ref}`greenplum-prerequisites`. You can find d
                 deactivate "Greenplum master"
                 deactivate "Spark driver"
         @enduml
-```
+    ```
 
 ## Options
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.greenplum.options
 ```
@@ -138,3 +131,9 @@ High-level schema is described in {ref}`greenplum-prerequisites`. You can find d
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.greenplum.options.GreenplumWriteOptions
+    options:
+        show_root_heading: true
+        heading_level: 3

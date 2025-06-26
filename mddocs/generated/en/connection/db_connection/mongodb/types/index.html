@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -76,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mongodb-spark-type-mapping" class="md-skip">
+        <a href="#mongodb-types" class="md-skip">
           Skip to content
         </a>
       
@@ -7065,64 +7069,62 @@
 
 
 
-<p>(mongodb-types)=</p>
-<h1 id="mongodb-spark-type-mapping">MongoDB \&lt;-&gt; Spark type mapping<a class="headerlink" href="#mongodb-spark-type-mapping" title="Permanent link">&para;</a></h1>
-<div class="highlight"><pre><span></span><code>.. note::
-
-    The results below are valid for Spark 3.5.5, and may differ on other Spark versions.
-</code></pre></div>
+<h1 id="mongodb-types">MongoDB &lt;-&gt; Spark type mapping<a class="headerlink" href="#mongodb-types" title="Permanent link">&para;</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The results below are valid for Spark 3.5.5, and may differ on other Spark versions.</p>
+</div>
 <h2 id="type-detection-casting">Type detection &amp; casting<a class="headerlink" href="#type-detection-casting" title="Permanent link">&para;</a></h2>
 <p>Spark's DataFrames always have a <code>schema</code> which is a list of fields with corresponding Spark types. All operations on a field are performed using field type.</p>
 <p>MongoDB is, by design, __schemaless__. So there are 2 ways how this can be handled:</p>
 <ul>
 <li>User provides DataFrame schema explicitly:</li>
 </ul>
-<div class="highlight"><pre><span></span><code>.. dropdown:: See example
+<details class="note">
+<summary>See example</summary>
+<div class="highlight"><pre><span></span><code>    <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">MongoDB</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBReader</span>
 
-  .. code-block:: python
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pyspark.sql.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">StructType</span><span class="p">,</span>
+        <span class="n">StructField</span><span class="p">,</span>
+        <span class="n">IntegerType</span><span class="p">,</span>
+        <span class="n">StringType</span><span class="p">,</span>
+        <span class="n">TimestampType</span><span class="p">,</span>
+    <span class="p">)</span>
 
-      from onetl.connection import MongoDB
-      from onetl.db import DBReader
+    <span class="n">mongodb</span> <span class="o">=</span> <span class="n">MongoDB</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 
-      from pyspark.sql.types import (
-          StructType,
-          StructField,
-          IntegerType,
-          StringType,
-          TimestampType,
-      )
+    <span class="n">df_schema</span> <span class="o">=</span> <span class="n">StructType</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;_id&quot;</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+            <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;some&quot;</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+            <span class="n">StructField</span><span class="p">(</span>
+                <span class="s2">&quot;field&quot;</span><span class="p">,</span>
+                <span class="n">StructType</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;nested&quot;</span><span class="p">,</span> <span class="n">IntegerType</span><span class="p">()),</span>
+                    <span class="p">]</span>
+                <span class="p">),</span>
+            <span class="p">),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
 
-      mongodb = MongoDB(...)
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
+        <span class="n">connection</span><span class="o">=</span><span class="n">mongodb</span><span class="p">,</span>
+        <span class="n">source</span><span class="o">=</span><span class="s2">&quot;some_collection&quot;</span><span class="p">,</span>
+        <span class="n">df_schema</span><span class="o">=</span><span class="n">df_schema</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-      df_schema = StructType(
-          [
-              StructField(&quot;_id&quot;, StringType()),
-              StructField(&quot;some&quot;, StringType()),
-              StructField(
-                  &quot;field&quot;,
-                  StructType(
-                      [
-                          StructField(&quot;nested&quot;, IntegerType()),
-                      ]
-                  ),
-              ),
-          ]
-      )
+    <span class="c1"># or</span>
 
-      reader = DBReader(
-          connection=mongodb,
-          source=&quot;some_collection&quot;,
-          df_schema=df_schema,
-      )
-      df = reader.run()
-
-      # or
-
-      df = mongodb.pipeline(
-          collection=&quot;some_collection&quot;,
-          df_schema=df_schema,
-      )
+    <span class="n">df</span> <span class="o">=</span> <span class="n">mongodb</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span>
+        <span class="n">collection</span><span class="o">=</span><span class="s2">&quot;some_collection&quot;</span><span class="p">,</span>
+        <span class="n">df_schema</span><span class="o">=</span><span class="n">df_schema</span><span class="p">,</span>
+    <span class="p">)</span>
 </code></pre></div>
+</details>
 <ul>
 <li>Rely on MongoDB connector schema infer:</li>
 </ul>
@@ -7139,72 +7141,121 @@
 <h2 id="supported-types">Supported types<a class="headerlink" href="#supported-types" title="Permanent link">&para;</a></h2>
 <p>See <a href="https://www.mongodb.com/docs/manual/reference/bson-types/">official documentation</a></p>
 <h3 id="numeric-types">Numeric types<a class="headerlink" href="#numeric-types" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>+---------------------+-----------------------------+----------------------+
-| MongoDB type (read) | Spark type                  | MongoDB type (write) |
-+=====================+=============================+======================+
-| `Decimal128`      | `DecimalType(P=34, S=32)` | `Decimal128`       |
-+---------------------+-----------------------------+----------------------+
-| `-``               | `FloatType()`             | `Double`           |
-+---------------------+-----------------------------+                      |
-| `Double`          | `DoubleType()`            |                      |
-+---------------------+-----------------------------+----------------------+
-| `-``               | `ByteType()`              | `Int32`            |
-+---------------------+-----------------------------+                      |
-| `-``               | `ShortType()`             |                      |
-+---------------------+-----------------------------+                      |
-| `Int32`           | `IntegerType()`           |                      |
-+---------------------+-----------------------------+----------------------+
-| `Int64`           | `LongType()`              | `Int64`            |
-+---------------------+-----------------------------+----------------------+
-</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>MongoDB type (read)</th>
+<th>Spark type</th>
+<th>MongoDB type (write)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Decimal128</code></td>
+<td><code>DecimalType(P=34, S=32)</code></td>
+<td><code>Decimal128</code></td>
+</tr>
+<tr>
+<td><code>-</code><br/><code>Double</code></td>
+<td><code>FloatType()</code><br/><code>DoubleType()</code></td>
+<td><code>Double</code></td>
+</tr>
+<tr>
+<td><code>-</code><br/><code>-</code><br/><code>Int32</code></td>
+<td><code>ByteType()</code><br/><code>ShortType()</code><br/><code>IntegerType()</code></td>
+<td><code>Int32</code></td>
+</tr>
+<tr>
+<td><code>Int64</code></td>
+<td><code>LongType()</code></td>
+<td><code>Int64</code></td>
+</tr>
+</tbody>
+</table>
 <h3 id="temporal-types">Temporal types<a class="headerlink" href="#temporal-types" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>+------------------------+-----------------------------------+-------------------------+
-| MongoDB type (read)    | Spark type                        | MongoDB type (write)    |
-+========================+===================================+=========================+
-| `-``                  | `DateType()`, days              | `Date`, milliseconds  |
-+------------------------+-----------------------------------+-------------------------+
-| `Date`, milliseconds | `TimestampType()`, microseconds | `Date`, milliseconds, |
-|                        |                                   | **precision loss** [2]_ |
-+------------------------+-----------------------------------+-------------------------+
-| `Timestamp`, seconds | `TimestampType()`, microseconds | `Date`, milliseconds  |
-+------------------------+-----------------------------------+-------------------------+
-| `-``                  | `TimestampNTZType()`            | unsupported             |
-+------------------------+-----------------------------------+                         |
-| `-``                  | `DayTimeIntervalType()`         |                         |
-+------------------------+-----------------------------------+-------------------------+
-</code></pre></div>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    Note that types in MongoDB and Spark have different value ranges:
-
-    +---------------+--------------------------------+--------------------------------+---------------------+--------------------------------+--------------------------------+
-    | MongoDB type  | Min value                      | Max value                      | Spark type          | Min value                      | Max value                      |
-    +===============+================================+================================+=====================+================================+================================+
-    | `Date`      | -290 million years             | 290 million years              | `TimestampType()` | `0001-01-01 00:00:00.000000` | `9999-12-31 23:59:59.999999` |
-    +---------------+--------------------------------+--------------------------------+                     |                                |                                |
-    | `Timestamp` | `1970-01-01 00:00:00`        | `2106-02-07 09:28:16`        |                     |                                |                                |
-    +---------------+--------------------------------+--------------------------------+---------------------+--------------------------------+--------------------------------+
-
-    So not all values can be read from MongoDB to Spark, and can written from Spark DataFrame to MongoDB.
-
-    References:
-        * `MongoDB Date type documentation &lt;https://www.mongodb.com/docs/manual/reference/bson-types/#date&gt;`_
-        * `MongoDB Timestamp documentation &lt;https://www.mongodb.com/docs/manual/reference/bson-types/#timestamps&gt;`_
-        * `Spark DateType documentation &lt;https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html&gt;`_
-        * `Spark TimestampType documentation &lt;https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html&gt;`_
-</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>MongoDB type (read)</th>
+<th>Spark type</th>
+<th>MongoDB type (write)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-``                  |</code>DateType()<code>, days              |</code>Date`, milliseconds</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>Date</code>, milliseconds</td>
+<td><code>TimestampType()</code>, microseconds</td>
+<td><code>Date</code>, milliseconds, <strong>precision loss</strong> <sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></td>
+</tr>
+<tr>
+<td><code>Timestamp</code>, seconds</td>
+<td><code>TimestampType()</code>, microseconds</td>
+<td><code>Date</code>, milliseconds</td>
+</tr>
+<tr>
+<td><code>-</code><br/><code>-</code></td>
+<td><code>TimestampNTZType()</code><br/><code>DayTimeIntervalType()</code></td>
+<td>unsupported</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Note that types in MongoDB and Spark have different value ranges:</p>
+<table>
+<thead>
+<tr>
+<th>MongoDB type</th>
+<th>Min value</th>
+<th>Max value</th>
+<th>Spark type</th>
+<th>Min value</th>
+<th>Max value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Date</code><br/><code>Timestamp</code></td>
+<td>-290 million years<br/><code>1970-01-01 00:00:00</code></td>
+<td>290 million years<br/><code>2106-02-07 09:28:16</code></td>
+<td><code>TimestampType()</code></td>
+<td><code>0001-01-01 00:00:00.000000</code></td>
+<td><code>9999-12-31 23:59:59.999999</code></td>
+</tr>
+</tbody>
+</table>
+<p>So not all values can be read from MongoDB to Spark, and can written from Spark DataFrame to MongoDB.</p>
+<p>References:</p>
+<ul>
+<li><a href="https://www.mongodb.com/docs/manual/reference/bson-types/#date">MongoDB Date type documentation</a></li>
+<li><a href="https://www.mongodb.com/docs/manual/reference/bson-types/#timestamps">MongoDB Timestamp documentation</a></li>
+<li><a href="https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html">Spark DateType documentation</a></li>
+<li><a href="https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html">Spark TimestampType documentation</a></li>
+</ul>
+</div>
 <h3 id="string-types">String types<a class="headerlink" href="#string-types" title="Permanent link">&para;</a></h3>
 <p>Note: fields of deprecated MongoDB type <code>Symbol</code> are excluded during read.</p>
-<div class="highlight"><pre><span></span><code>+---------------------+------------------+----------------------+
-| MongoDB type (read) | Spark type       | MongoDB type (write) |
-+=====================+==================+======================+
-| `String`          | `StringType()` | `String`           |
-+---------------------+                  |                      |
-| `Code`            |                  |                      |
-+---------------------+                  |                      |
-| `RegExp`          |                  |                      |
-+---------------------+------------------+----------------------+
-</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>MongoDB type (read)</th>
+<th>Spark type</th>
+<th>MongoDB type (write)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code><br/><code>Code</code><br/><code>RegExp</code></td>
+<td><code>StringType()</code></td>
+<td><code>String</code></td>
+</tr>
+</tbody>
+</table>
 <h3 id="binary-types">Binary types<a class="headerlink" href="#binary-types" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -7228,33 +7279,54 @@
 </tbody>
 </table>
 <h3 id="struct-types">Struct types<a class="headerlink" href="#struct-types" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>+---------------------+-----------------------+----------------------+
-| MongoDB type (read) | Spark type            | MongoDB type (write) |
-+=====================+=======================+======================+
-| `Array[T]`        | `ArrayType(T)`      | `Array[T]`         |
-+---------------------+-----------------------+----------------------+
-| `Object[...]`     | `StructType([...])` | `Object[...]`      |
-+---------------------+-----------------------+                      |
-| `-``               | `MapType(...)`      |                      |
-+---------------------+-----------------------+----------------------+
-</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>MongoDB type (read)</th>
+<th>Spark type</th>
+<th>MongoDB type (write)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Array[T]</code></td>
+<td><code>ArrayType(T)</code></td>
+<td><code>Array[T]</code></td>
+</tr>
+<tr>
+<td><code>Object[...]</code><br/><code>-</code></td>
+<td><code>StructType([...])</code><br/><code>MapType(...)</code></td>
+<td><br/><code>Object[...]</code></td>
+</tr>
+</tbody>
+</table>
 <h3 id="special-types">Special types<a class="headerlink" href="#special-types" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>+---------------------+---------------------------------------------------------+---------------------------------------+
-| MongoDB type (read) | Spark type                                              | MongoDB type (write)                  |
-+=====================+=========================================================+=======================================+
-| `ObjectId`        | `StringType()`                                        | `String`                            |
-+---------------------+                                                         |                                       |
-| `MaxKey`          |                                                         |                                       |
-+---------------------+                                                         |                                       |
-| `MinKey`          |                                                         |                                       |
-+---------------------+---------------------------------------------------------+---------------------------------------+
-| `Null`            | `NullType()`                                          | `Null`                              |
-+---------------------+                                                         |                                       |
-| `Undefined`       |                                                         |                                       |
-+---------------------+---------------------------------------------------------+---------------------------------------+
-| `DBRef`           | `StructType([$ref: StringType(), $id: StringType()])` | `Object[$ref: String, $id: String]` |
-+---------------------+---------------------------------------------------------+---------------------------------------+
-</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>MongoDB type (read)</th>
+<th>Spark type</th>
+<th>MongoDB type (write)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ObjectId</code><br/><code>MaxKey</code><br/><code>MinKey</code></td>
+<td><br/><br/><code>StringType()</code></td>
+<td><br/><br/><code>String</code></td>
+</tr>
+<tr>
+<td><code>Null</code><br/><code>Undefined</code></td>
+<td><code>NullType()</code></td>
+<td><code>Null</code></td>
+</tr>
+<tr>
+<td><code>DBRef</code></td>
+<td><code>StructType([$ref: StringType(), $id: StringType()])</code></td>
+<td><code>Object[$ref: String, $id: String]</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="explicit-type-cast">Explicit type cast<a class="headerlink" href="#explicit-type-cast" title="Permanent link">&para;</a></h2>
 <h3 id="dbreader"><code>DBReader</code><a class="headerlink" href="#dbreader" title="Permanent link">&para;</a></h3>
 <p>Currently it is not possible to cast field types using <code>DBReader</code>. But this can be done using <code>MongoDB.pipeline</code>.</p>
@@ -7306,10 +7378,10 @@
 <div class="footnote">
 <hr />
 <ol>
-<li id="fn:footnote-1">
+<li id="fn:1">
 <p>MongoDB <code>Date</code> type has precision up to milliseconds (<code>23:59:59.999</code>).
 Inserting data with microsecond precision (<code>23:59:59.999999</code>)
-will lead to <strong>throwing away microseconds</strong>.&#160;<a class="footnote-backref" href="#fnref:footnote-1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+will lead to <strong>throwing away microseconds</strong>.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
@@ -7367,6 +7439,12 @@ will lead to <strong>throwing away microseconds</strong>.&#160;<a class="footnot
     
     
       <script src="../../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

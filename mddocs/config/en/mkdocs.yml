@@ -70,9 +70,9 @@ plugins:
             # - griffe_sphinx
             # - griffe_pydantic: {schema: false}
   - macros
-  # - plantuml:
-  #     puml_url: https://www.plantuml.com/plantuml/
-  #     puml_keyword: plantuml
+  - plantuml:
+      puml_url: https://www.plantuml.com/plantuml/
+      puml_keyword: plantuml
   # - i18n:
   #     docs_structure: folder
   #     languages:

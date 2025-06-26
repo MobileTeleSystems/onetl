@@ -50,6 +50,10 @@
     
       <link rel="stylesheet" href="../../../../assets/stylesheets/autodoc_pydantic.css">
     
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/puml.css">
+    
+      <link rel="stylesheet" href="../../../../assets/mkdocs_puml/interaction.css">
+    
     <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -76,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#reading-from-mongodb-using-dbreader" class="md-skip">
+        <a href="#mongodb-read" class="md-skip">
           Skip to content
         </a>
       
@@ -1765,6 +1769,36 @@
       Read options
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Read options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBReadOptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      MongoDBReadOptions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MongoDBReadOptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBReadOptions--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -6879,6 +6913,36 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Read options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBReadOptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      MongoDBReadOptions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MongoDBReadOptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.mongodb.options.MongoDBReadOptions--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -6897,14 +6961,13 @@
 
 
 
-<p>(mongodb-read)=</p>
-<h1 id="reading-from-mongodb-using-dbreader">Reading from MongoDB using <code>DBReader</code><a class="headerlink" href="#reading-from-mongodb-using-dbreader" title="Permanent link">&para;</a></h1>
-<p>{obj}<code>DBReader &lt;onetl.db.db_reader.db_reader.DBReader&gt;</code> supports {ref}<code>strategy</code> for incremental data reading,
+<h1 id="mongodb-read">Reading from MongoDB using <code>DBReader</code><a class="headerlink" href="#mongodb-read" title="Permanent link">&para;</a></h1>
+<p><a class="autorefs autorefs-internal" title="DB Reader" href="../../../../db_/reader/#db-reader">DBReader</a> supports <a class="autorefs autorefs-internal" title="Read Strategies" href="../../../../strategy/#strategy">strategy</a> for incremental data reading,
 but does not support custom pipelines, e.g. aggregation.</p>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    Please take into account :ref:`mongodb-types`
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please take into account <a class="autorefs autorefs-internal" title="MongoDB <-> Spark type mapping" href="../types/#mongodb-types">MongoDB types</a></p>
+</div>
 <h2 id="supported-dbreader-features">Supported DBReader features<a class="headerlink" href="#supported-dbreader-features" title="Permanent link">&para;</a></h2>
 <ul>
 <li>❌ <code>columns</code> (for now, all document fields are read)</li>
@@ -6912,22 +6975,22 @@ but does not support custom pipelines, e.g. aggregation.</p>
 <li>✅︎ <code>hwm</code>, supported strategies:</li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>snapshot-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Snapshot Strategy" href="../../../../strategy/snapshot_strategy/#snapshot-strategy">Snapshot strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>incremental-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Incremental Strategy" href="../../../../strategy/incremental_strategy/#incremental-strategy">Incremental strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>snapshot-batch-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Snapshot Batch Strategy" href="../../../../strategy/snapshot_batch_strategy/#snapshot-batch-strategy">Snapshot batch strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>incremental-batch-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Incremental Batch Strategy" href="../../../../strategy/incremental_batch_strategy/#incremental-batch-strategy">Incremental batch strategy</a></li>
 </ul>
 </li>
 <li>
@@ -6937,7 +7000,7 @@ but does not support custom pipelines, e.g. aggregation.</p>
 </li>
 <li>✅︎ <code>hint</code> (see <a href="https://www.mongodb.com/docs/v5.0/reference/operator/meta/hint/">official documentation</a>)</li>
 <li>✅︎ <code>df_schema</code> (mandatory)</li>
-<li>✅︎ <code>options</code> (see {obj}<code>MongoDB.ReadOptions &lt;onetl.connection.db_connection.mongodb.options.MongoDBReadOptions&gt;</code>)</li>
+<li>✅︎ <code>options</code> (see <a class="autorefs autorefs-internal" title="onetl.connection.db_connection.mongodb.options.MongoDBReadOptions" href="#onetl.connection.db_connection.mongodb.options.MongoDBReadOptions">MongoDB.ReadOptions</a>)</li>
 </ul>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <p>Snapshot strategy:</p>
@@ -7032,13 +7095,84 @@ but does not support custom pipelines, e.g. aggregation.</p>
 This both reduces the amount of data send from MongoDB to Spark, and may also improve performance of the query.
 Especially if there are indexes for columns used in <code>where</code> clause.</p>
 <h2 id="read-options">Read options<a class="headerlink" href="#read-options" title="Permanent link">&para;</a></h2>
+<!-- 
+
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.mongodb.options
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autopydantic_model:: MongoDBReadOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="onetl.connection.db_connection.mongodb.options.MongoDBReadOptions" class="doc doc-heading">
+            <code>onetl.connection.db_connection.mongodb.options.MongoDBReadOptions</code>
+
+
+<a href="#onetl.connection.db_connection.mongodb.options.MongoDBReadOptions" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="onetl.impl.GenericOptions">GenericOptions</span></code></p>
+
+
+        <p>Reading options for MongoDB connector.</p>
+<p>.. warning::</p>
+<pre><code>Options ``uri``, ``database``, ``collection``, ``pipeline``, ``hint`` are populated from connection
+attributes, and cannot be overridden by the user in ``ReadOptions`` to avoid issues.
+</code></pre>
+<p>.. versionadded:: 0.7.0</p>
+<h5 id="onetl.connection.db_connection.mongodb.options.MongoDBReadOptions--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.mongodb.options.MongoDBReadOptions--examples" title="Permanent link">&para;</a></h5>
+<p>.. note ::</p>
+<pre><code>You can pass any value
+`supported by connector &lt;https://www.mongodb.com/docs/spark-connector/current/batch-mode/batch-read-config/&gt;`_,
+even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+The set of supported options depends on connector version.
+</code></pre>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import MongoDB
+
+options = MongoDB.ReadOptions(
+    sampleSize=100,
+)
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 
@@ -7093,6 +7227,12 @@ Especially if there are indexes for columns used in <code>where</code> clause.</
     
     
       <script src="../../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/puml.js"></script>
+      
+        <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+      
+        <script src="../../../../assets/mkdocs_puml/interaction.js"></script>
       
     
   </body>

@@ -1,29 +1,25 @@
-(mongodb-read)=
+# Reading from MongoDB using `DBReader` { #mongodb-read }
 
-# Reading from MongoDB using `DBReader`
-
-{obj}`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports {ref}`strategy` for incremental data reading,
+[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
 but does not support custom pipelines, e.g. aggregation.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Please take into account :ref:`mongodb-types`
-```
+    Please take into account [MongoDB types][mongodb-types]
 
 ## Supported DBReader features
 
 - ❌ `columns` (for now, all document fields are read)
 - ✅︎ `where` (passed to `{"$match": ...}` aggregation pipeline)
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ {ref}`snapshot-strategy`
-- - ✅︎ {ref}`incremental-strategy`
-- - ✅︎ {ref}`snapshot-batch-strategy`
-- - ✅︎ {ref}`incremental-batch-strategy`
+- - ✅︎ [Snapshot strategy][snapshot-strategy]
+- - ✅︎ [Incremental strategy][incremental-strategy]
+- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
+- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
 - - Note that `expression` field of HWM can only be a field name, not a custom expression
 - ✅︎ `hint` (see [official documentation](https://www.mongodb.com/docs/v5.0/reference/operator/meta/hint/))
 - ✅︎ `df_schema` (mandatory)
-- ✅︎ `options` (see {obj}`MongoDB.ReadOptions <onetl.connection.db_connection.mongodb.options.MongoDBReadOptions>`)
+- ✅︎ `options` (see [MongoDB.ReadOptions][onetl.connection.db_connection.mongodb.options.MongoDBReadOptions])
 
 ## Examples
 
@@ -129,6 +125,8 @@ Especially if there are indexes for columns used in `where` clause.
 
 ## Read options
 
+<!-- 
+
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.mongodb.options
 ```
@@ -139,3 +137,9 @@ Especially if there are indexes for columns used in `where` clause.
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.mongodb.options.MongoDBReadOptions
+    options:
+        heading_level: 3
+        show_root_heading: true
