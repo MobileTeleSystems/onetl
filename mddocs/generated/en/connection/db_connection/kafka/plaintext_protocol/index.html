@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#kafka-plaintextprotocol" class="md-skip">
+        <a href="#kafka-plaintext-protocol" class="md-skip">
           Skip to content
         </a>
       
@@ -1470,6 +1470,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Plaintext protocol
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1481,6 +1494,67 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      KafkaPlaintextProtocol
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KafkaPlaintextProtocol">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol.get_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_options
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol.cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      cleanup
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -6745,6 +6819,56 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      KafkaPlaintextProtocol
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KafkaPlaintextProtocol">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol.get_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_options
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol.cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      cleanup
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -6759,15 +6883,106 @@
 
 
 
-<p>(kafka-plaintext-protocol)=</p>
-<h1 id="kafka-plaintextprotocol">Kafka PlaintextProtocol<a class="headerlink" href="#kafka-plaintextprotocol" title="Permanent link">&para;</a></h1>
+<h1 id="kafka-plaintext-protocol">Kafka PlaintextProtocol<a class="headerlink" href="#kafka-plaintext-protocol" title="Permanent link">&para;</a></h1>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.kafka.kafka_plaintext_protocol
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autopydantic_model:: KafkaPlaintextProtocol
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
 </code></pre></div>
+-->
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol" class="doc doc-heading">
+            <code>onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol</code>
+
+
+<a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol">KafkaProtocol</span></code>, <code><span title="onetl.impl.frozen_model.FrozenModel">FrozenModel</span></code></p>
+
+
+        <p>Connect to Kafka using <code>PLAINTEXT</code> or <code>SASL_PLAINTEXT</code> security protocols.</p>
+<p>.. warning::</p>
+<pre><code>Not recommended to use on production environments.
+Prefer :obj:`SSLProtocol &lt;onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol&gt;`.
+</code></pre>
+<p>.. versionadded:: 0.9.0</p>
+<h5 id="onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol--examples" title="Permanent link">&para;</a></h5>
+<p>.. code:: python</p>
+<pre><code># No options
+protocol = Kafka.PlaintextProtocol()
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol.get_options" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_options</span><span class="p">(</span><span class="n">kafka</span><span class="p">)</span></code>
+
+<a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol.get_options" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol.cleanup" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">cleanup</span><span class="p">(</span><span class="n">kafka</span><span class="p">)</span></code>
+
+<a href="#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol.cleanup" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 

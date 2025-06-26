@@ -1,26 +1,17 @@
 # Hive
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+# Connection
 
-prerequisites
-connection
-```
+* [Prerequisites][hive-prerequisites]
+* [Hive Connection][hive-connection]
 
-```{toctree}
-:caption: Operations
-:maxdepth: 1
+# Operations
 
-read
-sql
-write
-execute
-```
+* [Reading from Hive using `DBReader`][hive-read]
+* [Reading from Hive using `Hive.sql`][hive-sql]
+* [Writing to Hive using `DBWriter`][hive-write]
+* [Executing statements in Hive][hive-execute]
 
-```{toctree}
-:caption: For developers
-:maxdepth: 1
+# For developers
 
-slots
-```
+* [Hive Slots][hive-slots]

@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#kafka-kerberosauth" class="md-skip">
+        <a href="#kafka-kerberos-auth" class="md-skip">
           Skip to content
         </a>
       
@@ -1401,6 +1401,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Kerberos Auth
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1412,6 +1425,67 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth" class="md-nav__link">
+    <span class="md-ellipsis">
+      KafkaKerberosAuth
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KafkaKerberosAuth">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.get_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_options
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      cleanup
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -6745,6 +6819,56 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth" class="md-nav__link">
+    <span class="md-ellipsis">
+      KafkaKerberosAuth
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KafkaKerberosAuth">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.get_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_options
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      cleanup
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -6759,15 +6883,149 @@
 
 
 
-<p>(kafka-kerberos-auth)=</p>
-<h1 id="kafka-kerberosauth">Kafka KerberosAuth<a class="headerlink" href="#kafka-kerberosauth" title="Permanent link">&para;</a></h1>
+<h1 id="kafka-kerberos-auth">Kafka KerberosAuth<a class="headerlink" href="#kafka-kerberos-auth" title="Permanent link">&para;</a></h1>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.kafka.kafka_kerberos_auth
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autopydantic_model:: KafkaKerberosAuth
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth" class="doc doc-heading">
+            <code>onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth</code>
+
+
+<a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="onetl.connection.db_connection.kafka.kafka_auth.KafkaAuth">KafkaAuth</span></code>, <code><span title="onetl.impl.GenericOptions">GenericOptions</span></code></p>
+
+
+        <p>Connect to Kafka using <code>sasl.mechanism="GSSAPI"</code>.</p>
+<p>For more details see:</p>
+<ul>
+<li><code>Kafka Documentation &lt;https://kafka.apache.org/documentation/#security_sasl_kerberos_clientconfig&gt;</code>_</li>
+<li><code>Krb5LoginModule documentation &lt;https://docs.oracle.com/javase/8/docs/jre/api/security/jaas/spec/com/sun/security/auth/module/Krb5LoginModule.html&gt;</code>_</li>
+</ul>
+<p>.. versionadded:: 0.9.0</p>
+<h5 id="onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth--examples" title="Permanent link">&para;</a></h5>
+<p>Auth in Kafka with keytab, automatically deploy keytab files to all Spark hosts (driver and executors):</p>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import Kafka
+
+auth = Kafka.KerberosAuth(
+    principal="user",
+    keytab="/path/to/keytab",
+    deploy_keytab=True,
+)
+</code></pre>
+<p>Auth in Kafka with keytab, keytab is <strong>already deployed</strong> on all Spark hosts (driver and executors):</p>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import Kafka
+
+auth = Kafka.KerberosAuth(
+    principal="user",
+    keytab="/path/to/keytab",
+    deploy_keytab=False,
+)
+</code></pre>
+<p>Auth in Kafka with existing Kerberos ticket (only Spark session created with <code>master=local</code>):</p>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import Kafka
+
+auth = Kafka.KerberosAuth(
+    principal="user",
+    use_keytab=False,
+    use_ticket_cache=True,
+)
+</code></pre>
+<p>Pass custom options for JAAS config and Kafka SASL:</p>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import Kafka
+
+auth = Kafka.KerberosAuth.parse(
+    {
+        "principal": "user",
+        "keytab": "/path/to/keytab",
+        # options without sasl.kerberos. prefix are passed to JAAS config
+        # names are in camel case!
+        "isInitiator": True,
+        # options with `sasl.kerberos.` prefix are passed to Kafka client config as-is
+        "sasl.kerberos.kinit.cmd": "/usr/bin/kinit",
+    }
+)
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.get_options" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_options</span><span class="p">(</span><span class="n">kafka</span><span class="p">)</span></code>
+
+<a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.get_options" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.cleanup" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">cleanup</span><span class="p">(</span><span class="n">kafka</span><span class="p">)</span></code>
+
+<a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.cleanup" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 

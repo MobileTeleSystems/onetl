@@ -1,6 +1,4 @@
-(hive-sql)=
-
-# Reading from Hive using `Hive.sql`
+# Reading from Hive using `Hive.sql` { #hive-sql }
 
 `Hive.sql` allows passing custom SQL query, but does not support incremental strategies.
 
@@ -12,11 +10,9 @@ Only queries with the following syntax are supported:
 - ✅︎ `WITH alias AS (...) SELECT ...`
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Actually, query should be written using `SparkSQL <https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements>`_ syntax, not HiveQL.
-```
+    Actually, query should be written using [SparkSQL](https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements) syntax, not HiveQL.
 
 ## Examples
 
@@ -70,6 +66,8 @@ Supported operators are: `=`, `>`, `<` and `BETWEEN`, and only against some **st
 
 ## Details
 
+
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.hive.connection
 ```
@@ -77,3 +75,9 @@ Supported operators are: `=`, `>`, `<` and `BETWEEN`, and only against some **st
 ```{eval-rst}
 .. automethod:: Hive.sql
 ```
+ -->
+
+::: onetl.connection.db_connection.hive.connection.Hive.sql
+    options:
+        members:
+            - sql

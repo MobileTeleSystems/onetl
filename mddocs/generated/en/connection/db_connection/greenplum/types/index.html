@@ -7088,16 +7088,16 @@
 
 
 <h1 id="greenplum-types">Greenplum &lt;-&gt; Spark type mapping<a class="headerlink" href="#greenplum-types" title="Permanent link">&para;</a></h1>
-<div class="highlight"><pre><span></span><code>.. note::
-
-    The results below are valid for Spark 3.2.4, and may differ on other Spark versions.
-</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The results below are valid for Spark 3.2.4, and may differ on other Spark versions.</p>
+</div>
 <h2 id="type-detection-casting">Type detection &amp; casting<a class="headerlink" href="#type-detection-casting" title="Permanent link">&para;</a></h2>
 <p>Spark's DataFrames always have a <code>schema</code> which is a list of columns with corresponding Spark types. All operations on a column are performed using column type.</p>
 <h3 id="reading-from-greenplum">Reading from Greenplum<a class="headerlink" href="#reading-from-greenplum" title="Permanent link">&para;</a></h3>
 <p>This is how Greenplum connector performs this:</p>
 <ul>
-<li>Execute query <code>SELECT * FROM table LIMIT 0</code> <sup id="fnref:footnote-1"><a class="footnote-ref" href="#fn:footnote-1">1</a></sup>.</li>
+<li>Execute query <code>SELECT * FROM table LIMIT 0</code> <sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>.</li>
 <li>For each column in query result get column name and Greenplum type.</li>
 <li>Find corresponding <code>Greenplum type (read)</code> → <code>Spark type</code> combination (see below) for each DataFrame column. If no combination is found, raise exception.</li>
 <li>Use Spark column projection and predicate pushdown features to build a final query.</li>
@@ -7117,10 +7117,10 @@
 <li>If <code>Greenplumtype (write)</code> does not match <code>Greenplum type (read)</code>, DataFrame column will be casted to target column type <strong>on Greenplum side</strong>. For example, you can write column with text data to <code>json</code> column which Greenplum connector currently does not support.</li>
 </ul>
 <h3 id="create-new-table-using-spark">Create new table using Spark<a class="headerlink" href="#create-new-table-using-spark" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    ABSOLUTELY NOT RECOMMENDED!
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>ABSOLUTELY NOT RECOMMENDED!</p>
+</div>
 <p>This is how Greenplum connector performs this:</p>
 <ul>
 <li>Find corresponding <code>Spark type</code> → <code>Greenplum type (create)</code> combination (see below) for each DataFrame column. If no combination is found, raise exception.</li>
@@ -7130,211 +7130,311 @@
 <p>More details <a href="https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/write_to_gpdb.html">can be found here</a>.</p>
 <p>But Greenplum connector support only limited number of types and almost no custom clauses (like <code>PARTITION BY</code>).
 So instead of relying on Spark to create tables:</p>
-<div class="highlight"><pre><span></span><code>.. dropdown:: See example
-
-    .. code:: python
-
-        writer = DBWriter(
-            connection=greenplum,
-            target=&quot;public.table&quot;,
-            options=Greenplum.WriteOptions(
-                if_exists=&quot;append&quot;,
-                # by default distribution is random
-                distributedBy=&quot;id&quot;,
-                # partitionBy is not supported
-            ),
-        )
-        writer.run(df)
+<details class="note">
+<summary>See example</summary>
+<div class="highlight"><pre><span></span><code>    <span class="n">writer</span> <span class="o">=</span> <span class="n">DBWriter</span><span class="p">(</span>
+        <span class="n">connection</span><span class="o">=</span><span class="n">greenplum</span><span class="p">,</span>
+        <span class="n">target</span><span class="o">=</span><span class="s2">&quot;public.table&quot;</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="n">Greenplum</span><span class="o">.</span><span class="n">WriteOptions</span><span class="p">(</span>
+            <span class="n">if_exists</span><span class="o">=</span><span class="s2">&quot;append&quot;</span><span class="p">,</span>
+            <span class="c1"># by default distribution is random</span>
+            <span class="n">distributedBy</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">,</span>
+            <span class="c1"># partitionBy is not supported</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
 </code></pre></div>
+</details>
 <p>Always prefer creating table with desired DDL <strong>BEFORE WRITING DATA</strong>:</p>
-<div class="highlight"><pre><span></span><code>.. dropdown:: See example
+<details class="note">
+<summary>See example</summary>
+<div class="highlight"><pre><span></span><code>    <span class="n">greenplum</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        CREATE TABLE public.table (</span>
+<span class="sd">            id int32,</span>
+<span class="sd">            business_dt timestamp(6),</span>
+<span class="sd">            value json</span>
+<span class="sd">        )</span>
+<span class="sd">        PARTITION BY RANGE (business_dt)</span>
+<span class="sd">        DISTRIBUTED BY id</span>
+<span class="sd">        &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
 
-    .. code:: python
-
-        greenplum.execute(
-            &quot;&quot;&quot;
-            CREATE TABLE public.table (
-                id int32,
-                business_dt timestamp(6),
-                value json
-            )
-            PARTITION BY RANGE (business_dt)
-            DISTRIBUTED BY id
-            &quot;&quot;&quot;,
-        )
-
-        writer = DBWriter(
-            connection=greenplum,
-            target=&quot;public.table&quot;,
-            options=Greenplum.WriteOptions(if_exists=&quot;append&quot;),
-        )
-        writer.run(df)
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">DBWriter</span><span class="p">(</span>
+        <span class="n">connection</span><span class="o">=</span><span class="n">greenplum</span><span class="p">,</span>
+        <span class="n">target</span><span class="o">=</span><span class="s2">&quot;public.table&quot;</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="n">Greenplum</span><span class="o">.</span><span class="n">WriteOptions</span><span class="p">(</span><span class="n">if_exists</span><span class="o">=</span><span class="s2">&quot;append&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
 </code></pre></div>
+</details>
 <p>See Greenplum <a href="https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-sql_commands-CREATE_TABLE.html">CREATE TABLE</a> documentation.</p>
 <h2 id="supported-types">Supported types<a class="headerlink" href="#supported-types" title="Permanent link">&para;</a></h2>
 <p>See:
-: - <a href="https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/reference-datatype_mapping.html">official connector documentation</a>
+  - <a href="https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/reference-datatype_mapping.html">official connector documentation</a>
   - <a href="https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-data_types.html">list of Greenplum types</a></p>
 <h3 id="numeric-types">Numeric types<a class="headerlink" href="#numeric-types" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>+----------------------------------+-----------------------------------+-------------------------------+-------------------------+
-| Greenplum type (read)            | Spark type                        | Greenplumtype (write)         | Greenplum type (create) |
-+==================================+===================================+===============================+=========================+
-| `decimal`                      | `DecimalType(P=38, S=18)`       | `decimal(P=38, S=18)`       | `decimal` (unbounded) |
-+----------------------------------+-----------------------------------+-------------------------------+                         |
-| `decimal(P=0..38)`             | `DecimalType(P=0..38, S=0)`     | `decimal(P=0..38, S=0)`     |                         |
-+----------------------------------+-----------------------------------+-------------------------------+                         |
-| `decimal(P=0..38, S=0..38)`    | `DecimalType(P=0..38, S=0..38)` | `decimal(P=0..38, S=0..38)` |                         |
-+----------------------------------+-----------------------------------+-------------------------------+-------------------------+
-| `decimal(P=39.., S=0..)`       | unsupported [2]_                  |                               |                         |
-+----------------------------------+-----------------------------------+-------------------------------+-------------------------+
-| `real`                         | `FloatType()`                   | `real`                      | `real`                |
-+----------------------------------+-----------------------------------+-------------------------------+-------------------------+
-| `double precision`             | `DoubleType()`                  | `double precision`          | `double precision`    |
-+----------------------------------+-----------------------------------+-------------------------------+-------------------------+
-| `-``                            | `ByteType()`                    | unsupported                   | unsupported             |
-+----------------------------------+-----------------------------------+-------------------------------+-------------------------+
-| `smallint`                     | `ShortType()`                   | `smallint`                  | `smallint`            |
-+----------------------------------+-----------------------------------+-------------------------------+-------------------------+
-| `integer`                      | `IntegerType()`                 | `integer`                   | `integer`             |
-+----------------------------------+-----------------------------------+-------------------------------+-------------------------+
-| `bigint`                       | `LongType()`                    | `bigint`                    | `bigint`              |
-+----------------------------------+-----------------------------------+-------------------------------+-------------------------+
-| `money`                        | unsupported                       |                               |                         |
-+----------------------------------+                                   |                               |                         |
-| `int4range`                    |                                   |                               |                         |
-+----------------------------------+                                   |                               |                         |
-| `int8range`                    |                                   |                               |                         |
-+----------------------------------+                                   |                               |                         |
-| `numrange`                     |                                   |                               |                         |
-+----------------------------------+                                   |                               |                         |
-| `int2vector`                   |                                   |                               |                         |
-+----------------------------------+-----------------------------------+-------------------------------+-------------------------+
-</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Greenplum type (read)</th>
+<th>Spark type</th>
+<th>Greenplumtype (write)</th>
+<th>Greenplum type (create)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>decimal</code><br/><code>decimal(P=0..38)</code><br/><code>decimal(P=0..38, S=0..38)</code></td>
+<td><code>DecimalType(P=38, S=18)</code><br/><code>DecimalType(P=0..38, S=0)</code><br/><code>DecimalType(P=0..38, S=0..38)</code></td>
+<td><code>decimal(P=38, S=18)</code><br/><code>decimal(P=0..38, S=0)</code><br/><code>decimal(P=0..38, S=0..38)</code></td>
+<td><br/><code>decimal</code> (unbounded)</td>
+</tr>
+<tr>
+<td><code>decimal(P=39.., S=0..)</code></td>
+<td>unsupported <sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>real</code></td>
+<td><code>FloatType()</code></td>
+<td><code>real</code></td>
+<td><code>real</code></td>
+</tr>
+<tr>
+<td><code>double precision</code></td>
+<td><code>DoubleType()</code></td>
+<td><code>double precision</code></td>
+<td><code>double precision</code></td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td><code>ByteType()</code></td>
+<td>unsupported</td>
+<td>unsupported</td>
+</tr>
+<tr>
+<td><code>smallint</code></td>
+<td><code>ShortType()</code></td>
+<td><code>smallint</code></td>
+<td><code>smallint</code></td>
+</tr>
+<tr>
+<td><code>integer</code></td>
+<td><code>IntegerType()</code></td>
+<td><code>integer</code></td>
+<td><code>integer</code></td>
+</tr>
+<tr>
+<td><code>bigint</code></td>
+<td><code>LongType()</code></td>
+<td><code>bigint</code></td>
+<td><code>bigint</code></td>
+</tr>
+<tr>
+<td><code>money</code><br/><code>int4range</code><br/><code>int8range</code><br/><code>numrange</code><br/><code>int2vector</code></td>
+<td><br/><br/><br/>unsupported</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <h3 id="temporal-types">Temporal types<a class="headerlink" href="#temporal-types" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>+------------------------------------+-------------------------+-----------------------+-------------------------+
-| Greenplum type (read)              | Spark type              | Greenplumtype (write) | Greenplum type (create) |
-+====================================+=========================+=======================+=========================+
-| `date`                           | `DateType()`          | `date`              | `date`                |
-+------------------------------------+-------------------------+-----------------------+-------------------------+
-| `time`                           | `TimestampType()`,    | `timestamp`         | `timestamp`           |
-+------------------------------------+ time format quirks [3]_ |                       |                         |
-| `time(0..6)`                     |                         |                       |                         |
-+------------------------------------+                         |                       |                         |
-| `time with time zone`            |                         |                       |                         |
-+------------------------------------+                         |                       |                         |
-| `time(0..6) with time zone`      |                         |                       |                         |
-+------------------------------------+-------------------------+-----------------------+-------------------------+
-| `timestamp`                      | `TimestampType()`     | `timestamp`         | `timestamp`           |
-+------------------------------------+                         |                       |                         |
-| `timestamp(0..6)`                |                         |                       |                         |
-+------------------------------------+                         |                       |                         |
-| `timestamp with time zone`       |                         |                       |                         |
-+------------------------------------+                         |                       |                         |
-| `timestamp(0..6) with time zone` |                         |                       |                         |
-+------------------------------------+-------------------------+-----------------------+-------------------------+
-| `interval` or any precision      | unsupported             |                       |                         |
-+------------------------------------+                         |                       |                         |
-| `daterange`                      |                         |                       |                         |
-+------------------------------------+                         |                       |                         |
-| `tsrange`                        |                         |                       |                         |
-+------------------------------------+                         |                       |                         |
-| `tstzrange`                      |                         |                       |                         |
-+------------------------------------+-------------------------+-----------------------+-------------------------+
-</code></pre></div>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    Note that types in Greenplum and Spark have different value ranges:
-
-    +----------------+---------------------------------+----------------------------------+---------------------+--------------------------------+--------------------------------+
-    | Greenplum type | Min value                       | Max value                        | Spark type          | Min value                      | Max value                      |
-    +================+=================================+==================================+=====================+================================+================================+
-    | `date`       | `-4713-01-01`                 | `5874897-01-01`                | `DateType()`      | `0001-01-01`                 | `9999-12-31`                 |
-    +----------------+---------------------------------+----------------------------------+---------------------+--------------------------------+--------------------------------+
-    | `timestamp`  | `-4713-01-01 00:00:00.000000` | `294276-12-31 23:59:59.999999` | `TimestampType()` | `0001-01-01 00:00:00.000000` | `9999-12-31 23:59:59.999999` |
-    +----------------+---------------------------------+----------------------------------+                     |                                |                                |
-    | `time`       | `00:00:00.000000`             | `24:00:00.000000`              |                     |                                |                                |
-    +----------------+---------------------------------+----------------------------------+---------------------+--------------------------------+--------------------------------+
-
-    So not all of values can be read from Greenplum to Spark.
-
-    References:
-        * `Greenplum types documentation &lt;https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-data_types.html&gt;`_
-        * `Spark DateType documentation &lt;https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html&gt;`_
-        * `Spark TimestampType documentation &lt;https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html&gt;`_
-</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Greenplum type (read)</th>
+<th>Spark type</th>
+<th>Greenplumtype (write)</th>
+<th>Greenplum type (create)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>date</code></td>
+<td><code>DateType()</code></td>
+<td><code>date</code></td>
+<td><code>date</code></td>
+</tr>
+<tr>
+<td><code>time</code><br/><code>time(0..6)</code><br/><code>time with time zone</code><br/><code>time(0..6) with time zone</code></td>
+<td><br/><br/><code>TimestampType()</code>, time format quirks <sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup></td>
+<td><br/><br/><code>timestamp</code></td>
+<td><br/><br/><code>timestamp</code></td>
+</tr>
+<tr>
+<td><code>timestamp</code><br/><code>timestamp(0..6)</code><br/><code>timestamp with time zone</code><br/><code>timestamp(0..6) with time zone</code></td>
+<td><br/><br/><code>TimestampType()</code></td>
+<td><br/><br/><code>timestamp</code></td>
+<td><br/><br/><code>timestamp</code></td>
+</tr>
+<tr>
+<td><code>interval</code> or any precision<br/><code>daterange</code><br/><code>tsrange</code><br/><code>tstzrange</code></td>
+<td><br/><br/>unsupported</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Note that types in Greenplum and Spark have different value ranges:</p>
+<table>
+<thead>
+<tr>
+<th>Greenplum type</th>
+<th>Min value</th>
+<th>Max value</th>
+<th>Spark type</th>
+<th>Min value</th>
+<th>Max value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>date</code></td>
+<td><code>-4713-01-01</code></td>
+<td><code>5874897-01-01</code></td>
+<td><code>DateType()</code></td>
+<td><code>0001-01-01</code></td>
+<td><code>9999-12-31</code></td>
+</tr>
+<tr>
+<td><code>timestamp</code><br/><code>time</code></td>
+<td><code>-4713-01-01 00:00:00.000000</code><br/><code>00:00:00.000000</code></td>
+<td><code>294276-12-31 23:59:59.999999</code><br/><code>24:00:00.000000</code></td>
+<td><code>TimestampType()</code></td>
+<td><code>0001-01-01 00:00:00.000000</code></td>
+<td><code>9999-12-31 23:59:59.999999</code></td>
+</tr>
+</tbody>
+</table>
+<p>So not all of values can be read from Greenplum to Spark.</p>
+<p>References:</p>
+<ul>
+<li><a href="https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-data_types.html">Greenplum types documentation</a></li>
+<li><a href="https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html">Spark DateType documentation</a></li>
+<li><a href="https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html">Spark TimestampType documentation</a></li>
+</ul>
+</div>
 <h3 id="string-types">String types<a class="headerlink" href="#string-types" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>+-----------------------------+------------------+-----------------------+-------------------------+
-| Greenplum type (read)       | Spark type       | Greenplumtype (write) | Greenplum type (create) |
-+=============================+==================+=======================+=========================+
-| `character`               | `StringType()` | `text`              | `text`                |
-+-----------------------------+                  |                       |                         |
-| `character(N)`            |                  |                       |                         |
-+-----------------------------+                  |                       |                         |
-| `character varying`       |                  |                       |                         |
-+-----------------------------+                  |                       |                         |
-| `character varying(N)`    |                  |                       |                         |
-+-----------------------------+                  |                       |                         |
-| `text`                    |                  |                       |                         |
-+-----------------------------+                  |                       |                         |
-| `xml`                     |                  |                       |                         |
-+-----------------------------+                  |                       |                         |
-| `CREATE TYPE ... AS ENUM` |                  |                       |                         |
-+-----------------------------+------------------+-----------------------+-------------------------+
-| `json`                    | unsupported      |                       |                         |
-+-----------------------------+                  |                       |                         |
-| `jsonb`                   |                  |                       |                         |
-+-----------------------------+------------------+-----------------------+-------------------------+
-</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Greenplum type (read)</th>
+<th>Spark type</th>
+<th>Greenplumtype (write)</th>
+<th>Greenplum type (create)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>character</code><br/><code>character(N)</code><br/><code>character varying</code><br/><code>character varying(N)</code><br/><code>text</code><br/><code>xml</code><br/><code>CREATE TYPE ... AS ENUM</code></td>
+<td><br/><br/><br/><br/><code>StringType()</code></td>
+<td><br/><br/><br/><br/><code>text</code></td>
+<td><br/><br/><br/><br/><code>text</code></td>
+</tr>
+<tr>
+<td><code>json</code><br/><code>jsonb</code></td>
+<td><br/>unsupported</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <h3 id="binary-types">Binary types<a class="headerlink" href="#binary-types" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>+--------------------------+-------------------+-----------------------+-------------------------+
-| Greenplum type (read)    | Spark type        | Greenplumtype (write) | Greenplum type (create) |
-+==========================+===================+=======================+=========================+
-| `boolean`              | `BooleanType()` | `boolean`           | `boolean`             |
-+--------------------------+-------------------+-----------------------+-------------------------+
-| `bit`                  | unsupported       |                       |                         |
-+--------------------------+                   |                       |                         |
-| `bit(N)`               |                   |                       |                         |
-+--------------------------+                   |                       |                         |
-| `bit varying`          |                   |                       |                         |
-+--------------------------+                   |                       |                         |
-| `bit varying(N)`       |                   |                       |                         |
-+--------------------------+-------------------+-----------------------+-------------------------+
-| `bytea`                | unsupported [4]_  |                       |                         |
-+--------------------------+-------------------+-----------------------+-------------------------+
-| `-``                    | `BinaryType()`  | `bytea`             | `bytea`               |
-+--------------------------+-------------------+-----------------------+-------------------------+
-</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Greenplum type (read)</th>
+<th>Spark type</th>
+<th>Greenplumtype (write)</th>
+<th>Greenplum type (create)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>BooleanType()</code></td>
+<td><code>boolean</code></td>
+<td><code>boolean</code></td>
+</tr>
+<tr>
+<td><code>bit</code><br/><code>bit(N)</code><br/><code>bit varying</code><br/><code>bit varying(N)</code></td>
+<td><br/><br/>unsupported</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>bytea</code></td>
+<td>unsupported <sup id="fnref:4"><a class="footnote-ref" href="#fn:4">4</a></sup></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td><code>BinaryType()</code></td>
+<td><code>bytea</code></td>
+<td><code>bytea</code></td>
+</tr>
+</tbody>
+</table>
 <h3 id="struct-types">Struct types<a class="headerlink" href="#struct-types" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>+--------------------------------+------------------+-----------------------+-------------------------+
-| Greenplum type (read)          | Spark type       | Greenplumtype (write) | Greenplum type (create) |
-+================================+==================+=======================+=========================+
-| `T[]`                        | unsupported      |                       |                         |
-+--------------------------------+------------------+-----------------------+-------------------------+
-| `-``                          | `ArrayType()`  | unsupported           |                         |
-+--------------------------------+------------------+-----------------------+-------------------------+
-| `CREATE TYPE sometype (...)` | `StringType()` | `text`              | `text`                |
-+--------------------------------+------------------+-----------------------+-------------------------+
-| `-``                          | `StructType()` | unsupported           |                         |
-+--------------------------------+------------------+                       |                         |
-| `-``                          | `MapType()`    |                       |                         |
-+--------------------------------+------------------+-----------------------+-------------------------+
-</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Greenplum type (read)</th>
+<th>Spark type</th>
+<th>Greenplumtype (write)</th>
+<th>Greenplum type (create)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>T[]</code></td>
+<td>unsupported</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td><code>ArrayType()</code></td>
+<td>unsupported</td>
+<td></td>
+</tr>
+<tr>
+<td><code>CREATE TYPE sometype (...)</code></td>
+<td><code>StringType()</code></td>
+<td><code>text</code></td>
+<td><code>text</code></td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td><code>StructType()</code><br/><code>MapType()</code></td>
+<td>unsupported</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <h2 id="unsupported-types">Unsupported types<a class="headerlink" href="#unsupported-types" title="Permanent link">&para;</a></h2>
-<p>Columns of these types cannot be read/written by Spark:
-: - <code>cidr</code>
-  - <code>inet</code>
-  - <code>macaddr</code>
-  - <code>macaddr8</code>
-  - <code>circle</code>
-  - <code>box</code>
-  - <code>line</code>
-  - <code>lseg</code>
-  - <code>path</code>
-  - <code>point</code>
-  - <code>polygon</code>
-  - <code>tsvector</code>
-  - <code>tsquery</code>
-  - <code>uuid</code></p>
+<p>Columns of these types cannot be read/written by Spark:</p>
+<ul>
+<li><code>cidr</code></li>
+<li><code>inet</code></li>
+<li><code>macaddr</code></li>
+<li><code>macaddr8</code></li>
+<li><code>circle</code></li>
+<li><code>box</code></li>
+<li><code>line</code></li>
+<li><code>lseg</code></li>
+<li><code>path</code></li>
+<li><code>point</code></li>
+<li><code>polygon</code></li>
+<li><code>tsvector</code></li>
+<li><code>tsquery</code></li>
+<li><code>uuid</code></li>
+</ul>
 <p>The is a way to avoid this - just cast unsupported types to <code>text</code>. But the way this can be done is not a straightforward.</p>
 <h2 id="explicit-type-cast">Explicit type cast<a class="headerlink" href="#explicit-type-cast" title="Permanent link">&para;</a></h2>
 <h3 id="dbreader"><code>DBReader</code><a class="headerlink" href="#dbreader" title="Permanent link">&para;</a></h3>
@@ -7346,7 +7446,7 @@ So instead of relying on Spark to create tables:</p>
 <span class="p">)</span>
 </code></pre></div>
 <p>But there is a workaround - create a view with casting unsupported column to text (or any other supported type).
-For example, you can use <a href="https://www.postgresql.org/docs/current/functions-json.html">to_json</a> Postgres function to convert column of any type to string representation and then parse this column on Spark side using {obj}<code>JSON.parse_column &lt;onetl.file.format.json.JSON.parse_column&gt;</code> method.</p>
+For example, you can use <a href="https://www.postgresql.org/docs/current/functions-json.html">to_json</a> Postgres function to convert column of any type to string representation and then parse this column on Spark side using <a class="autorefs autorefs-internal" title="parse_column(column, schema)" href="../../../../file_df/file_formats/json/#onetl.file.format.json.JSON.parse_column">JSON.parse_column</a> method.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pyspark.sql.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayType</span><span class="p">,</span> <span class="n">IntegerType</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Greenplum</span>
@@ -7385,7 +7485,7 @@ For example, you can use <a href="https://www.postgresql.org/docs/current/functi
 <span class="p">)</span>
 </code></pre></div>
 <h3 id="dbwriter"><code>DBWriter</code><a class="headerlink" href="#dbwriter" title="Permanent link">&para;</a></h3>
-<p>To write data to a <code>text</code> or <code>json</code> column in a Greenplum table, use {obj}<code>JSON.serialize_column &lt;onetl.file.format.json.JSON.serialize_column&gt;</code> method.</p>
+<p>To write data to a <code>text</code> or <code>json</code> column in a Greenplum table, use <a class="autorefs autorefs-internal" title="serialize_column(column)" href="../../../../file_df/file_formats/json/#onetl.file.format.json.JSON.serialize_column">JSON.serialize_column</a> method.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Greenplum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBWriter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">onetl.file.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSON</span>
@@ -7427,21 +7527,21 @@ For example, you can use <a href="https://www.postgresql.org/docs/current/functi
 <div class="footnote">
 <hr />
 <ol>
-<li id="fn:footnote-1">
+<li id="fn:1">
 <p>Yes, <strong>all columns of a table</strong>, not just selected ones.
-This means that if source table <strong>contains</strong> columns with unsupported type, the entire table cannot be read.&#160;<a class="footnote-backref" href="#fnref:footnote-1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+This means that if source table <strong>contains</strong> columns with unsupported type, the entire table cannot be read.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
 </li>
-<li id="fn:footnote-2">
+<li id="fn:2">
 <p>Greenplum support decimal types with unlimited precision.</p>
 <p>But Spark's <code>DecimalType(P, S)</code> supports maximum <code>P=38</code> (128 bit). It is impossible to read, write or operate with values of larger precision,
-this leads to an exception.&#160;<a class="footnote-backref" href="#fnref:footnote-2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+this leads to an exception.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
-<li id="fn:footnote-3">
+<li id="fn:3">
 <p><code>time</code> type is the same as <code>timestamp</code> with date <code>1970-01-01</code>. So instead of reading data from Postgres like <code>23:59:59</code>
-it is actually read <code>1970-01-01 23:59:59</code>, and vice versa.&#160;<a class="footnote-backref" href="#fnref:footnote-3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+it is actually read <code>1970-01-01 23:59:59</code>, and vice versa.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
-<li id="fn:footnote-4">
-<p>Yes, that's weird.&#160;<a class="footnote-backref" href="#fnref:footnote-4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+<li id="fn:4">
+<p>Yes, that's weird.&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>

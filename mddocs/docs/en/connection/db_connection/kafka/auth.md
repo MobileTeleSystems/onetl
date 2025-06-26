@@ -1,7 +1,6 @@
-(kafka-auth)=
+# Kafka Auth { #kafka-auth }
 
-# Kafka Auth
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.kafka.kafka_auth
 ```
@@ -11,3 +10,10 @@
     :members: get_options, cleanup
     :member-order: bysource
 ```
+ -->
+
+::: onetl.connection.db_connection.kafka.kafka_auth.KafkaAuth
+    options:
+        members:
+            - get_options
+            - cleanup
