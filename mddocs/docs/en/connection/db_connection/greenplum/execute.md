@@ -130,33 +130,30 @@ The only port used while interacting with Greenplum in this case is `5432` (Gree
 
     ```mermaid
         ---
-        title: Greenplum master <-> Spark driver
+        title: Greenplum master <—> Spark driver
         ---
+
         sequenceDiagram
             box Spark
-            participant as "Spark driver"
-            end box
-
+            participant A as Spark driver
+            end
             box Greenplum
-            participant as "Greenplum master"
-            end box
+            participant B as Greenplum master
+            end
 
-            == Greenplum.check() ==
+            Note over A,B: == Greenplum.check() ==
 
-            activate "Spark driver"
-            "Spark driver" -> "Greenplum master" ++ : CONNECT
+            A->>B: CONNECT
 
-            == Greenplum.execute(statement) ==
-            "Spark driver" --> "Greenplum master" : EXECUTE statement
-            "Greenplum master" -> "Spark driver" : RETURN result
+            Note over A,B: == Greenplum.execute(statement) ==
 
-            == Greenplum.close() ==
-            "Spark driver" --> "Greenplum master" : CLOSE CONNECTION
+            A-->>B: EXECUTE statement
+            B-->> A: RETURN result
 
-            deactivate "Greenplum master"
-            deactivate "Spark driver"
+            Note over A,B: == Greenplum.close() ==
+
+            A ->> B: CLOSE CONNECTION
     ```
-
 
 ## Options
 
