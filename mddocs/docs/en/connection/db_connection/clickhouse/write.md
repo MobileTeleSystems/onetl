@@ -9,7 +9,7 @@ For writing data to Clickhouse, use [DBWriter][db-writer].
 
 !!! warning
 
-    It is always recommended to create table explicitly using :ref:`Clickhouse.execute <clickhouse-execute>`
+    It is always recommended to create table explicitly using [Clickhouse.execute][clickhouse-execute]
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,

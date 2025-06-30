@@ -1,8 +1,6 @@
-(kafka-write)=
+# Writing to Kafka { #kafka-write }
 
-# Writing to Kafka
-
-For writing data to Kafka, use {obj}`DBWriter <onetl.db.db_writer.db_writer.DBWriter>` with specific options (see below).
+For writing data to Kafka, use [DBWriter][db-writer] with specific options (see below).
 
 ## Dataframe schema
 
@@ -29,9 +27,9 @@ Other fields, like `partition`, `offset`, `timestamp` are set by Kafka, and cann
 To write `value` or `key` of other type than bytes (e.g. struct or integer), users have to serialize values manually.
 
 This could be done using following methods:
-: - {obj}`Avro.serialize_column <onetl.file.format.avro.Avro.serialize_column>`
-  - {obj}`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>`
-  - {obj}`CSV.serialize_column <onetl.file.format.csv.CSV.serialize_column>`
+  - [Avro.serialize_column][onetl.file.format.avro.Avro.serialize_column]
+  - [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column]
+  - [CSV.serialize_column ][onetl.file.format.csv.CSV.serialize_column]
 
 ## Examples
 
@@ -63,6 +61,7 @@ writer.run(write_df)
 
 ## Options
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.kafka.options
 ```
@@ -73,3 +72,6 @@ writer.run(write_df)
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.kafka.options

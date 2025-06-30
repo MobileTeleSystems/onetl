@@ -1,7 +1,6 @@
-(kafka-ssl-protocol)=
+# Kafka SSLProtocol { #kafka-ssl-protocol }
 
-# Kafka SSLProtocol
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.kafka.kafka_ssl_protocol
 ```
@@ -12,3 +11,6 @@
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol

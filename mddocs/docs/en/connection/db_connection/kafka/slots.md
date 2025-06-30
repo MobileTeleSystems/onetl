@@ -1,7 +1,6 @@
-(kafka-slots)=
+# Kafka Slots { #kafka-slots }
 
-# Kafka Slots
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.kafka.slots
 ```
@@ -11,3 +10,12 @@
     :members: normalize_cluster_name, get_known_clusters, normalize_address, get_cluster_addresses
     :member-order: bysource
 ```
+ -->
+
+::: onetl.connection.db_connection.kafka.slots.KafkaSlots
+    options:
+        members:
+            - normalize_cluster_name
+            - get_known_clusters
+            - normalize_address
+            - get_cluster_addresses

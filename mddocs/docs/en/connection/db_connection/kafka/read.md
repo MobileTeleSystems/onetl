@@ -1,22 +1,20 @@
-(kafka-read)=
+# Reading from Kafka { #kafka-read }
 
-# Reading from Kafka
-
-Data can be read from Kafka to Spark using {obj}`DBReader <onetl.db.db_reader.db_reader.DBReader>`.
-It also supports {ref}`strategy` for incremental data reading.
+Data can be read from Kafka to Spark using [DBReader][db-reader].
+It also supports  [strategy][strategy] for incremental data reading.
 
 ## Supported DBReader features
 
 - ❌ `columns` (is not supported by Kafka)
 - ❌ `where` (is not supported by Kafka)
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ {ref}`snapshot-strategy`
-- - ✅︎ {ref}`incremental-strategy`
-- - ❌ {ref}`snapshot-batch-strategy`
-- - ❌ {ref}`incremental-batch-strategy`
+- - ✅︎ [Snapshot strategy][snapshot-strategy]
+- - ✅︎ [Incremental strategy][incremental-strategy]
+- - ❌ [Snapshot batch strategy][snapshot-batch-strategy]
+- - ❌ [Incremental batch strategy][incremental-batch-strategy]
 - ❌ `hint` (is not supported by Kafka)
 - ❌ `df_schema` (see note below)
-- ✅︎ `options` (see {obj}`Kafka.ReadOptions <onetl.connection.db_connection.kafka.options.KafkaReadOptions>`)
+- ✅︎ `options` (see [Kafka.ReadOptions][onetl.connection.db_connection.kafka.options.KafkaReadOptions])
 
 ## Dataframe schema
 
@@ -44,10 +42,10 @@ root
 To read `value` or `key` of other type than bytes (e.g. struct or integer), users have to deserialize values manually.
 
 This could be done using following methods:
-: - {obj}`Avro.parse_column <onetl.file.format.avro.Avro.parse_column>`
-  - {obj}`JSON.parse_column <onetl.file.format.json.JSON.parse_column>`
-  - {obj}`CSV.parse_column <onetl.file.format.csv.CSV.parse_column>`
-  - {obj}`XML.parse_column <onetl.file.format.xml.XML.parse_column>`
+  - [Avro.parse_column][onetl.file.format.avro.Avro.parse_column]
+  - [JSON.parse_column][onetl.file.format.json.JSON.parse_column]
+  - [CSV.parse_column][onetl.file.format.csv.CSV.parse_column]
+  - [XML.parse_column][onetl.file.format.xml.XML.parse_column]
 
 ## Examples
 
@@ -84,8 +82,7 @@ deserialized_df = read_df.select(
 
 Incremental strategy, `value` is JSON string:
 
-```{eval-rst}
-.. note::
+!!! note
 
     Currently Kafka connector does support only HWMs based on `offset` field. Other fields, like `timestamp`, are not yet supported.
 ```
@@ -125,6 +122,7 @@ deserialized_df = read_df.select(
 
 ## Options
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.kafka.options
 ```
@@ -135,3 +133,10 @@ deserialized_df = read_df.select(
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.kafka.options.KafkaReadOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

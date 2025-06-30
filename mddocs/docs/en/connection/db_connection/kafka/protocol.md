@@ -1,7 +1,6 @@
-(kafka-protocol)=
+# Kafka Protocol { #kafka-protocol }
 
-# Kafka Protocol
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.kafka.kafka_protocol
 ```
@@ -11,3 +10,10 @@
     :members: get_options, cleanup
     :member-order: bysource
 ```
+ -->
+
+::: onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol
+    options:
+        members:
+            - get_options
+            - cleanup
