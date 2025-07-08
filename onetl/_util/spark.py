@@ -89,7 +89,7 @@ def inject_spark_param(conf: RuntimeConfig, name: str, value: Any):
     """
     original_value = conf.get(name, None)
 
-    try:
+    try:  # noqa: WPS243
         conf.unset(name)
         if value is not None:
             conf.set(name, value)

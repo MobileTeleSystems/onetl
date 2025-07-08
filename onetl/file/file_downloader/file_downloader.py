@@ -757,7 +757,7 @@ class FileDownloader(FrozenModel):
         strategy = StrategyManager.get_current()
         result = DownloadResult()
         source_files: list[RemotePath] = []
-        try:  # noqa: WPS501
+        try:  # noqa: WPS501, WPS243
             for status, source_file, target_file in self._bulk_download(to_download):
                 if status == FileDownloadStatus.SUCCESSFUL:
                     result.successful.add(target_file)
