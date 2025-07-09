@@ -1,27 +1,16 @@
-(mongodb)=
-
 # MongoDB
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+# Connection
 
-prerequisites
-connection
-```
+* [Prerequisites][mongodb-prerequisites]
+* [MongoDB Connection][mongodb-connection]
 
-```{toctree}
-:caption: Operations
-:maxdepth: 1
+# Operations
 
-read
-pipeline
-write
-```
+* [Reading from MongoDB using `DBReader`][mongodb-read]
+* [Reading from MongoDB using `MongoDB.pipeline`][mongodb-pipeline]
+* [Writing to MongoDB using `DBWriter`][mongodb-write]
 
-```{toctree}
-:caption: Troubleshooting
-:maxdepth: 1
+# Troubleshooting
 
-types
-```
+* [MongoDB <-> Spark type mapping][mongodb-types]

@@ -140,3 +140,6 @@ deserialized_df = read_df.select(
         inherited_members: true
         heading_level: 3
         show_root_heading: true
+        extensions:
+            - griffe_sphinx
+            - griffe_pydantic: {schema: false}

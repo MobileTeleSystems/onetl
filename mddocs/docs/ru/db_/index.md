@@ -1,11 +1,6 @@
 # DB
 
-lslsv
+## DB classes
 
-```{toctree}
-:caption: DB classes
-:maxdepth: 1
-
-db_reader
-db_writer
-```
+* [DB Reader][db-reader]
+* [DB Writer][db-writer]

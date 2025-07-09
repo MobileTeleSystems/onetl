@@ -1,28 +1,25 @@
-(clickhouse-read)=
+# Reading from Clickhouse using `DBReader` { #clickhouse-read }
 
-# Reading from Clickhouse using `DBReader`
-
-{obj}`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports {ref}`strategy` for incremental data reading,
+[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
 but does not support custom queries, like `JOIN`.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Please take into account :ref:`clickhouse-types`
-```
+    Please take into account [Сlickhouse types][clickhouse-types]
+
 
 ## Supported DBReader features
 
 - ✅︎ `columns`
 - ✅︎ `where`
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ {ref}`snapshot-strategy`
-- - ✅︎ {ref}`incremental-strategy`
-- - ✅︎ {ref}`snapshot-batch-strategy`
-- - ✅︎ {ref}`incremental-batch-strategy`
+- - ✅︎ [Snapshot strategy][snapshot-strategy]
+- - ✅︎ [Incremental strategy][incremental-strategy]
+- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
+- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
 - ❌ `hint` (is not supported by Clickhouse)
 - ❌ `df_schema`
-- ✅︎ `options` (see {obj}`Clickhouse.ReadOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseReadOptions>`)
+- ✅︎ `options` (see [Clickhouse.ReadOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseReadOptions])
 
 ## Examples
 
@@ -78,8 +75,9 @@ Instead of filtering data on Spark side using `df.filter(df.column == 'value')` 
 This both reduces the amount of data send from Clickhouse to Spark, and may also improve performance of the query.
 Especially if there are indexes or partitions for columns used in `where` clause.
 
-## Options
+## Options { #clickhouse-read-options }
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.clickhouse.options
 ```
@@ -91,3 +89,12 @@ Especially if there are indexes or partitions for columns used in `where` clause
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.clickhouse.options.ClickhouseReadOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true
+
+

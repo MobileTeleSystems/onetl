@@ -1,7 +1,6 @@
-(kafka-plaintext-protocol)=
+# Kafka PlaintextProtocol { #kafka-plaintext-protocol }
 
-# Kafka PlaintextProtocol
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.kafka.kafka_plaintext_protocol
 ```
@@ -11,4 +10,15 @@
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
-```
+``` 
+-->
+
+::: onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true
+        extensions:
+            - griffe_sphinx
+            - griffe_pydantic: {schema: false}
+        

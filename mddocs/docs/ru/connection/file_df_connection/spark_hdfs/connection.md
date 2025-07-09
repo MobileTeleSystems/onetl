@@ -1,7 +1,6 @@
-(spark-hdfs-connection)=
-
 # Spark HDFS Connection
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.file_df_connection.spark_hdfs.connection
 ```
@@ -10,3 +9,10 @@
 .. autoclass:: SparkHDFS
     :members: check, get_current
 ```
+ -->
+
+::: onetl.connection.file_df_connection.spark_hdfs.connection.SparkHDFS
+    options:
+        members:
+            - check
+            - get_current

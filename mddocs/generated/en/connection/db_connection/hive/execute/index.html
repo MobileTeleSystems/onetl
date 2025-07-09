@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#executing-statements-in-hive" class="md-skip">
+        <a href="#hive-execute" class="md-skip">
           Skip to content
         </a>
       
@@ -1124,6 +1124,15 @@
   <a href="#details" class="md-nav__link">
     <span class="md-ellipsis">
       Details
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.execute--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
     </span>
   </a>
   
@@ -6844,6 +6853,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.execute--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -6865,8 +6883,7 @@
 
 
 
-<p>(hive-execute)=</p>
-<h1 id="executing-statements-in-hive">Executing statements in Hive<a class="headerlink" href="#executing-statements-in-hive" title="Permanent link">&para;</a></h1>
+<h1 id="hive-execute">Executing statements in Hive<a class="headerlink" href="#hive-execute" title="Permanent link">&para;</a></h1>
 <p>Use <code>Hive.execute(...)</code> to execute DDL and DML operations.</p>
 <h2 id="syntax-support">Syntax support<a class="headerlink" href="#syntax-support" title="Permanent link">&para;</a></h2>
 <p>This method supports <strong>any</strong> query syntax supported by Hive, like:</p>
@@ -6880,10 +6897,10 @@
 <li>✅︎ other statements not mentioned here</li>
 <li>❌ <code>SET ...; SELECT ...;</code> - multiple statements not supported</li>
 </ul>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    Actually, query should be written using `SparkSQL &lt;https://spark.apache.org/docs/latest/sql-ref-syntax.html#ddl-statements&gt;`_ syntax, not HiveQL.
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Actually, query should be written using <a href="https://spark.apache.org/docs/latest/sql-ref-syntax.html#ddl-statements">SparkSQL</a> syntax, not HiveQL.</p>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hive</span>
 
@@ -6903,10 +6920,34 @@
 <span class="p">)</span>
 </code></pre></div>
 <h3 id="details">Details<a class="headerlink" href="#details" title="Permanent link">&para;</a></h3>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.hive.connection
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. automethod:: Hive.execute
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+    <div class="doc doc-contents first">
+
+        <p>Execute DDL or DML statement. |support_hooks|</p>
+<p>.. versionadded:: 0.2.0</p>
+<h3 id="onetl.connection.db_connection.hive.connection.Hive.execute--parameters">Parameters<a class="headerlink" href="#onetl.connection.db_connection.hive.connection.Hive.execute--parameters" title="Permanent link">&para;</a></h3>
+<p>statement : str</p>
+<pre><code>Statement to be executed.
+</code></pre>
+
+
+    </div>
+
+</div>
 
 
 

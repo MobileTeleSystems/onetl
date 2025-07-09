@@ -1,21 +1,13 @@
-(teradata)=
-
 # Teradata
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+## Connection
 
-prerequisites
-connection
-```
+* [Prerequisites][teradata-prerequisites]
+* [Teradata connection][teradata-connection]
 
-```{toctree}
-:caption: Operations
-:maxdepth: 1
+## Operations
 
-read
-sql
-write
-execute
-```
+* [Reading from Teradata using `DBReader`][teradata-read]
+* [Reading from Teradata using `Teradata.sql`][teradata-sql]
+* [Writing to Teradata using `DBWriter`][teradata-write]
+* [Executing statements in Teradata][teradata-execute]

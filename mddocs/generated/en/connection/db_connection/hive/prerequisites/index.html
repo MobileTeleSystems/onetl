@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#prerequisites" class="md-skip">
+        <a href="#hive-prerequisites" class="md-skip">
           Skip to content
         </a>
       
@@ -6871,20 +6871,18 @@
 
 
 
-<p>(hive-prerequisites)=</p>
-<h1 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h1>
-<div class="highlight"><pre><span></span><code>.. note::
-
-    onETL&#39;s Hive connection is actually SparkSession with access to `Hive Thrift Metastore &lt;https://docs.cloudera.com/cdw-runtime/1.5.0/hive-hms-overview/topics/hive-hms-introduction.html&gt;`_
-    and HDFS/S3.
-    All data motion is made using Spark. Hive Metastore is used only to store tables and partitions metadata.
-
-    This connector does **NOT** require Hive server. It also does **NOT** use Hive JDBC connector.
-</code></pre></div>
+<h1 id="hive-prerequisites">Prerequisites<a class="headerlink" href="#hive-prerequisites" title="Permanent link">&para;</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>onETL's Hive connection is actually SparkSession with access to <a href="https://docs.cloudera.com/cdw-runtime/1.5.0/hive-hms-overview/topics/hive-hms-introduction.html">Hive Thrift Metastore</a>
+and HDFS/S3.
+All data motion is made using Spark. Hive Metastore is used only to store tables and partitions metadata.</p>
+<p>This connector does <strong>NOT</strong> require Hive server. It also does <strong>NOT</strong> use Hive JDBC connector.</p>
+</div>
 <h2 id="version-compatibility">Version Compatibility<a class="headerlink" href="#version-compatibility" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Hive Metastore version:
-  : - Officially declared: 0.12 - 3.1.3 (may require to add proper .jar file explicitly)<ul>
+<li>Hive Metastore version:<ul>
+<li>Officially declared: 0.12 - 3.1.3 (may require to add proper .jar file explicitly)</li>
 <li>Actually tested: 1.2.100, 2.3.10, 3.1.3</li>
 </ul>
 </li>
@@ -6895,12 +6893,12 @@
 <h2 id="installing-pyspark">Installing PySpark<a class="headerlink" href="#installing-pyspark" title="Permanent link">&para;</a></h2>
 <p>To use Hive connector you should have PySpark installed (or injected to <code>sys.path</code>)
 BEFORE creating the connector instance.</p>
-<p>See {ref}<code>install-spark</code> installation instruction for more details.</p>
+<p>See <a class="autorefs autorefs-internal" title="Spark" href="../../../../install/spark/#install-spark">installation instruction</a> for more details.</p>
 <h2 id="connecting-to-hive-metastore">Connecting to Hive Metastore<a class="headerlink" href="#connecting-to-hive-metastore" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>.. note::
-
-    If you&#39;re using managed Hadoop cluster, skip this step, as all Spark configs are should already present on the host.
-</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you're using managed Hadoop cluster, skip this step, as all Spark configs are should already present on the host.</p>
+</div>
 <p>Create <code>$SPARK_CONF_DIR/hive-site.xml</code> with Hive Metastore URL:</p>
 <div class="highlight"><pre><span></span><code><span class="cp">&lt;?xml version=&quot;1.0&quot;?&gt;</span>
 <span class="cp">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;</span>
@@ -6912,77 +6910,81 @@ BEFORE creating the connector instance.</p>
 <span class="nt">&lt;/configuration&gt;</span>
 </code></pre></div>
 <p>Create <code>$SPARK_CONF_DIR/core-site.xml</code> with warehouse location ,e.g. HDFS IPC port of Hadoop namenode, or S3 bucket address &amp; credentials:</p>
-<div class="highlight"><pre><span></span><code>.. tabs::
-
-    .. code-tab:: xml HDFS
-
-        &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-        &lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;
-        &lt;configuration&gt;
-            &lt;property&gt;
-                &lt;name&gt;fs.defaultFS&lt;/name&gt;
-                &lt;value&gt;hdfs://myhadoopcluster:9820&lt;/value&gt;
-            &lt;/property&gt;
-        &lt;/configuration&gt;
-
-    .. code-tab:: xml S3
-
-        &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-        &lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;
-        &lt;configuration&gt;
-            !-- See https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html#General_S3A_Client_configuration
-            &lt;property&gt;
-                &lt;name&gt;fs.defaultFS&lt;/name&gt;
-                &lt;value&gt;s3a://mys3bucket/&lt;/value&gt;
-            &lt;/property&gt;
-            &lt;property&gt;
-                &lt;name&gt;fs.s3a.bucket.mybucket.endpoint&lt;/name&gt;
-                &lt;value&gt;http://s3.somain&lt;/value&gt;
-            &lt;/property&gt;
-            &lt;property&gt;
-                &lt;name&gt;fs.s3a.bucket.mybucket.connection.ssl.enabled&lt;/name&gt;
-                &lt;value&gt;false&lt;/value&gt;
-            &lt;/property&gt;
-            &lt;property&gt;
-                &lt;name&gt;fs.s3a.bucket.mybucket.path.style.access&lt;/name&gt;
-                &lt;value&gt;true&lt;/value&gt;
-            &lt;/property&gt;
-            &lt;property&gt;
-                &lt;name&gt;fs.s3a.bucket.mybucket.aws.credentials.provider&lt;/name&gt;
-                &lt;value&gt;org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider&lt;/value&gt;
-            &lt;/property&gt;
-            &lt;property&gt;
-                &lt;name&gt;fs.s3a.bucket.mybucket.access.key&lt;/name&gt;
-                &lt;value&gt;some-user&lt;/value&gt;
-            &lt;/property&gt;
-            &lt;property&gt;
-                &lt;name&gt;fs.s3a.bucket.mybucket.secret.key&lt;/name&gt;
-                &lt;value&gt;mysecrettoken&lt;/value&gt;
-            &lt;/property&gt;
-        &lt;/configuration&gt;
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">HDFS</label><label for="__tabbed_1_2">S3</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="w">    </span><span class="cp">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;</span>
+<span class="w">    </span><span class="nt">&lt;configuration&gt;</span>
+<span class="w">        </span><span class="nt">&lt;property&gt;</span>
+<span class="w">            </span><span class="nt">&lt;name&gt;</span>fs.defaultFS<span class="nt">&lt;/name&gt;</span>
+<span class="w">            </span><span class="nt">&lt;value&gt;</span>hdfs://myhadoopcluster:9820<span class="nt">&lt;/value&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/property&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/configuration&gt;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="w">    </span><span class="cp">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;</span>
+<span class="w">    </span><span class="nt">&lt;configuration&gt;</span>
+<span class="w">        </span>!--<span class="w"> </span>See<span class="w"> </span>https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html#General_S3A_Client_configuration
+<span class="w">        </span><span class="nt">&lt;property&gt;</span>
+<span class="w">            </span><span class="nt">&lt;name&gt;</span>fs.defaultFS<span class="nt">&lt;/name&gt;</span>
+<span class="w">            </span><span class="nt">&lt;value&gt;</span>s3a://mys3bucket/<span class="nt">&lt;/value&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/property&gt;</span>
+<span class="w">        </span><span class="nt">&lt;property&gt;</span>
+<span class="w">            </span><span class="nt">&lt;name&gt;</span>fs.s3a.bucket.mybucket.endpoint<span class="nt">&lt;/name&gt;</span>
+<span class="w">            </span><span class="nt">&lt;value&gt;</span>http://s3.somain<span class="nt">&lt;/value&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/property&gt;</span>
+<span class="w">        </span><span class="nt">&lt;property&gt;</span>
+<span class="w">            </span><span class="nt">&lt;name&gt;</span>fs.s3a.bucket.mybucket.connection.ssl.enabled<span class="nt">&lt;/name&gt;</span>
+<span class="w">            </span><span class="nt">&lt;value&gt;</span>false<span class="nt">&lt;/value&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/property&gt;</span>
+<span class="w">        </span><span class="nt">&lt;property&gt;</span>
+<span class="w">            </span><span class="nt">&lt;name&gt;</span>fs.s3a.bucket.mybucket.path.style.access<span class="nt">&lt;/name&gt;</span>
+<span class="w">            </span><span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/property&gt;</span>
+<span class="w">        </span><span class="nt">&lt;property&gt;</span>
+<span class="w">            </span><span class="nt">&lt;name&gt;</span>fs.s3a.bucket.mybucket.aws.credentials.provider<span class="nt">&lt;/name&gt;</span>
+<span class="w">            </span><span class="nt">&lt;value&gt;</span>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider<span class="nt">&lt;/value&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/property&gt;</span>
+<span class="w">        </span><span class="nt">&lt;property&gt;</span>
+<span class="w">            </span><span class="nt">&lt;name&gt;</span>fs.s3a.bucket.mybucket.access.key<span class="nt">&lt;/name&gt;</span>
+<span class="w">            </span><span class="nt">&lt;value&gt;</span>some-user<span class="nt">&lt;/value&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/property&gt;</span>
+<span class="w">        </span><span class="nt">&lt;property&gt;</span>
+<span class="w">            </span><span class="nt">&lt;name&gt;</span>fs.s3a.bucket.mybucket.secret.key<span class="nt">&lt;/name&gt;</span>
+<span class="w">            </span><span class="nt">&lt;value&gt;</span>mysecrettoken<span class="nt">&lt;/value&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/property&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/configuration&gt;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="using-kerberos">Using Kerberos<a class="headerlink" href="#using-kerberos" title="Permanent link">&para;</a></h2>
 <p>Some of Hadoop managed clusters use Kerberos authentication. In this case, you should call <a href="https://web.mit.edu/kerberos/krb5-1.12/doc/user/user_commands/kinit.html">kinit</a> command
-<strong>BEFORE</strong> starting Spark session to generate Kerberos ticket. See {ref}<code>install-kerberos</code>.</p>
+<strong>BEFORE</strong> starting Spark session to generate Kerberos ticket. See <a class="autorefs autorefs-internal" title="Kerberos support" href="../../../../install/kerberos/#install-kerberos">Kerberos installation</a>.</p>
 <p>Sometimes it is also required to pass keytab file to Spark config, allowing Spark executors to generate own Kerberos tickets:</p>
-<div class="highlight"><pre><span></span><code>.. tabs::
-
-    .. code-tab:: python Spark 3
-
-        SparkSession.builder
-            .option(&quot;spark.kerberos.access.hadoopFileSystems&quot;, &quot;hdfs://namenode1.domain.com:9820,hdfs://namenode2.domain.com:9820&quot;)
-            .option(&quot;spark.kerberos.principal&quot;, &quot;user&quot;)
-            .option(&quot;spark.kerberos.keytab&quot;, &quot;/path/to/keytab&quot;)
-            .gerOrCreate()
-
-    .. code-tab:: python Spark 2
-
-        SparkSession.builder
-            .option(&quot;spark.yarn.access.hadoopFileSystems&quot;, &quot;hdfs://namenode1.domain.com:9820,hdfs://namenode2.domain.com:9820&quot;)
-            .option(&quot;spark.yarn.principal&quot;, &quot;user&quot;)
-            .option(&quot;spark.yarn.keytab&quot;, &quot;/path/to/keytab&quot;)
-            .gerOrCreate()
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Spark 3</label><label for="__tabbed_2_2">Spark 2</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>    <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;spark.kerberos.access.hadoopFileSystems&quot;</span><span class="p">,</span> <span class="s2">&quot;hdfs://namenode1.domain.com:9820,hdfs://namenode2.domain.com:9820&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;spark.kerberos.principal&quot;</span><span class="p">,</span> <span class="s2">&quot;user&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;spark.kerberos.keytab&quot;</span><span class="p">,</span> <span class="s2">&quot;/path/to/keytab&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">gerOrCreate</span><span class="p">()</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>    <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;spark.yarn.access.hadoopFileSystems&quot;</span><span class="p">,</span> <span class="s2">&quot;hdfs://namenode1.domain.com:9820,hdfs://namenode2.domain.com:9820&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;spark.yarn.principal&quot;</span><span class="p">,</span> <span class="s2">&quot;user&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;spark.yarn.keytab&quot;</span><span class="p">,</span> <span class="s2">&quot;/path/to/keytab&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">gerOrCreate</span><span class="p">()</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <p>See <a href="https://spark.apache.org/docs/latest/security.html#kerberos">Spark security documentation</a>
 for more details.</p>
 

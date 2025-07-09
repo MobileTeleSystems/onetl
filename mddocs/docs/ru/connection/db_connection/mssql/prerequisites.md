@@ -1,11 +1,9 @@
-(mssql-prerequisites)=
-
-# Prerequisites
+# Prerequisites { #mssql-prerequisites }
 
 ## Version Compatibility
 
 - SQL Server versions:
-  : - Officially declared: 2016 - 2022
+    - Officially declared: 2016 - 2022
     - Actually tested: 2017, 2022
 - Spark versions: 2.3.x - 3.5.x
 - Java versions: 8 - 20
@@ -18,7 +16,7 @@ and [official compatibility matrix](https://learn.microsoft.com/en-us/sql/connec
 To use MSSQL connector you should have PySpark installed (or injected to `sys.path`)
 BEFORE creating the connector instance.
 
-See {ref}`install-spark` installation instruction for more details.
+See [installation instruction][install-spark] for more details.
 
 ## Connecting to MSSQL
 
@@ -41,10 +39,9 @@ Connecting to multiple nodes to perform load balancing, as well as automatic fai
 Ask your MSSQL cluster administrator to set following grants for a user,
 used for creating a connection:
 
-```{eval-rst}
-.. tabs::
+=== "Read + Write (schema is owned by user)"
 
-    .. code-tab:: sql Read + Write (schema is owned by user)
+    ```sql 
 
         -- allow creating tables for user
         GRANT CREATE TABLE TO username;
@@ -55,20 +52,26 @@ used for creating a connection:
         -- only if if_exists="replace_entire_table" is used:
         -- allow dropping/truncating tables in any schema
         GRANT ALTER ON username.mytable TO username;
+    ```
 
-    .. code-tab:: sql Read + Write (schema is not owned by user)
+=== "Read + Write (schema is not owned by user)"
+
+    ```sql
 
         -- allow creating tables for user
         GRANT CREATE TABLE TO username;
 
         -- allow managing tables in specific schema, and inserting data to tables
         GRANT ALTER, SELECT, INSERT ON SCHEMA::someschema TO username;
+    ```
 
-    .. code-tab:: sql Read only
+=== "Read only"
+
+    ```sql
 
         -- allow read access to specific table
         GRANT SELECT ON someschema.mytable TO username;
-```
+    ```
 
 More details can be found in official documentation:
 : - [GRANT ON DATABASE](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-database-permissions-transact-sql)

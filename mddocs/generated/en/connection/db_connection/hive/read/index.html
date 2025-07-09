@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#reading-from-hive-using-dbreader" class="md-skip">
+        <a href="#hive-read" class="md-skip">
           Skip to content
         </a>
       
@@ -6919,9 +6919,8 @@
 
 
 
-<p>(hive-read)=</p>
-<h1 id="reading-from-hive-using-dbreader">Reading from Hive using <code>DBReader</code><a class="headerlink" href="#reading-from-hive-using-dbreader" title="Permanent link">&para;</a></h1>
-<p>{obj}<code>DBReader &lt;onetl.db.db_reader.db_reader.DBReader&gt;</code> supports {ref}<code>strategy</code> for incremental data reading,
+<h1 id="hive-read">Reading from Hive using <code>DBReader</code><a class="headerlink" href="#hive-read" title="Permanent link">&para;</a></h1>
+<p><a class="autorefs autorefs-internal" title="DB Reader" href="../../../../db_/reader/#db-reader">DBReader</a> supports <a class="autorefs autorefs-internal" title="Read Strategies" href="../../../../strategy/#strategy">strategy</a> for incremental data reading,
 but does not support custom queries, like <code>JOIN</code>.</p>
 <h2 id="supported-dbreader-features">Supported DBReader features<a class="headerlink" href="#supported-dbreader-features" title="Permanent link">&para;</a></h2>
 <ul>
@@ -6930,33 +6929,33 @@ but does not support custom queries, like <code>JOIN</code>.</p>
 <li>✅︎ <code>hwm</code>, supported strategies:</li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>snapshot-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Snapshot Strategy" href="../../../../strategy/snapshot_strategy/#snapshot-strategy">Snapshot strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>incremental-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Incremental Strategy" href="../../../../strategy/incremental_strategy/#incremental-strategy">Incremental strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>snapshot-batch-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Snapshot Batch Strategy" href="../../../../strategy/snapshot_batch_strategy/#snapshot-batch-strategy">Snapshot batch strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>incremental-batch-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Incremental Batch Strategy" href="../../../../strategy/incremental_batch_strategy/#incremental-batch-strategy">Incremental batch strategy</a></li>
 </ul>
 </li>
 <li>❌ <code>hint</code> (is not supported by Hive)</li>
 <li>❌ <code>df_schema</code></li>
 <li>❌ <code>options</code> (only Spark config params are used)</li>
 </ul>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    Actually, `columns`, `where` and  `hwm.expression` should be written using `SparkSQL &lt;https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements&gt;`_ syntax,
-    not HiveQL.
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Actually, <code>columns</code>, <code>where</code> and  <code>hwm.expression</code> should be written using <a href="https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements">SparkSQL</a> syntax,
+not HiveQL.</p>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <p>Snapshot strategy:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hive</span>
@@ -6993,7 +6992,7 @@ but does not support custom queries, like <code>JOIN</code>.</p>
 <h2 id="recommendations">Recommendations<a class="headerlink" href="#recommendations" title="Permanent link">&para;</a></h2>
 <h3 id="use-column-based-write-formats">Use column-based write formats<a class="headerlink" href="#use-column-based-write-formats" title="Permanent link">&para;</a></h3>
 <p>Prefer these write formats:
-: - <a href="https://spark.apache.org/docs/latest/sql-data-sources-orc.html">ORC</a>
+  - <a href="https://spark.apache.org/docs/latest/sql-data-sources-orc.html">ORC</a>
   - <a href="https://spark.apache.org/docs/latest/sql-data-sources-parquet.html">Parquet</a>
   - <a href="https://iceberg.apache.org/spark-quickstart/">Iceberg</a>
   - <a href="https://hudi.apache.org/docs/quick-start-guide/">Hudi</a>

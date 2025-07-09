@@ -1,17 +1,9 @@
-(hdfs)=
-
 # HDFS
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+# Connection
 
-connection
-```
+* [HDFS connection][hdfs-connection]
 
-```{toctree}
-:caption: For developers
-:maxdepth: 1
+# For developers
 
-slots
-```
+* [HDFS Slots][hdfs-slots]

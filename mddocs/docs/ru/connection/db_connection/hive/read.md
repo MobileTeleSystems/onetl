@@ -1,8 +1,6 @@
-(hive-read)=
+# Reading from Hive using `DBReader` { #hive-read }
 
-# Reading from Hive using `DBReader`
-
-{obj}`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports {ref}`strategy` for incremental data reading,
+[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
 but does not support custom queries, like `JOIN`.
 
 ## Supported DBReader features
@@ -10,20 +8,18 @@ but does not support custom queries, like `JOIN`.
 - ✅︎ `columns`
 - ✅︎ `where`
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ {ref}`snapshot-strategy`
-- - ✅︎ {ref}`incremental-strategy`
-- - ✅︎ {ref}`snapshot-batch-strategy`
-- - ✅︎ {ref}`incremental-batch-strategy`
+- - ✅︎ [Snapshot strategy][snapshot-strategy]
+- - ✅︎ [Incremental strategy][incremental-strategy]
+- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
+- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
 - ❌ `hint` (is not supported by Hive)
 - ❌ `df_schema`
 - ❌ `options` (only Spark config params are used)
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Actually, ``columns``, ``where`` and  ``hwm.expression`` should be written using `SparkSQL <https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements>`_ syntax,
+    Actually, `columns`, `where` and  `hwm.expression` should be written using [SparkSQL](https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements) syntax,
     not HiveQL.
-```
 
 ## Examples
 
@@ -70,7 +66,7 @@ with IncrementalStrategy():
 ### Use column-based write formats
 
 Prefer these write formats:
-: - [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html)
+  - [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html)
   - [Parquet](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html)
   - [Iceberg](https://iceberg.apache.org/spark-quickstart/)
   - [Hudi](https://hudi.apache.org/docs/quick-start-guide/)

@@ -1,18 +1,14 @@
-(teradata-write)=
+# Writing to Teradata using `DBWriter` { #teradata-write }
 
-# Writing to Teradata using `DBWriter`
+For writing data to Teradata, use [DBWriter][db-writer].
 
-For writing data to Teradata, use {obj}`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
-
-```{eval-rst}
-.. warning::
+!!! warning
 
     It is always recommended to create table explicitly using :ref:`Teradata.execute <teradata-execute>`
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,
     causing precision loss or other issues.
-```
 
 ## Examples
 
@@ -103,10 +99,11 @@ Choosing one of the modes can alter connector behavior. For example:
       This can lead to slower insert time, because each row will be checked against a unique index.
       Fortunately, this can be disabled by passing custom `createTableOptions`.
 
-## Options
+## Options { #teradata-write-options }
 
-Method above accepts {obj}`Teradata.WriteOptions <onetl.connection.db_connection.teradata.options.TeradataWriteOptions>`
+Method above accepts [Teradata.WriteOptions][onetl.connection.db_connection.teradata.options.TeradataWriteOptions]
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.teradata.options
 ```
@@ -118,3 +115,10 @@ Method above accepts {obj}`Teradata.WriteOptions <onetl.connection.db_connection
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.teradata.options.TeradataWriteOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

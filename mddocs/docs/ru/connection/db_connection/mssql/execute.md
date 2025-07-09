@@ -1,14 +1,10 @@
-(mssql-execute)=
+# Executing statements in MSSQL { #mssql-execute }
 
-# Executing statements in MSSQL
-
-```{eval-rst}
-.. warning::
+!!! warning
 
     Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
 
-    Do **NOT** use them to read large amounts of data. Use :ref:`DBReader <mssql-read>` or :ref:`MSSQL.sql <mssql-sql>` instead.
-```
+    Do **NOT** use them to read large amounts of data. Use [DBReader][mssql-read] or [MSSQL.sql][mssql-sql] instead.
 
 ## How to
 
@@ -19,15 +15,13 @@ There are 2 ways to execute some statement in MSSQL
 Use this method to perform some `SELECT` query which returns **small number or rows**, like reading
 MSSQL config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts {obj}`MSSQL.FetchOptions <onetl.connection.db_connection.mssql.options.MSSQLFetchOptions>`.
+Method accepts [MSSQL.FetchOptions][onetl.connection.db_connection.mssql.options.MSSQLFetchOptions].
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Please take into account :ref:`mssql-types`.
-```
+    Please take into account [MSSQL types][mssql-types].
 
 #### Syntax support
 
@@ -57,7 +51,7 @@ value = df.collect()[0][0]  # get value from first row and first column
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts {obj}`MSSQL.ExecuteOptions <onetl.connection.db_connection.mssql.options.MSSQLExecuteOptions>`.
+Method accepts [MSSQL.ExecuteOptions][onetl.connection.db_connection.mssql.options.MSSQLExecuteOptions].
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
@@ -96,6 +90,7 @@ mssql.execute(
 
 ## Options
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.mssql.options
 ```
@@ -115,3 +110,16 @@ mssql.execute(
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.mssql.options.MSSQLFetchOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true
+
+::: onetl.connection.db_connection.mssql.options.MSSQLExecuteOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

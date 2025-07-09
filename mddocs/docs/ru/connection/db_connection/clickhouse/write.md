@@ -1,24 +1,20 @@
-(clickhouse-write)=
+# Writing to Clickhouse using `DBWriter` { #clickhouse-write }
 
-# Writing to Clickhouse using `DBWriter`
+For writing data to Clickhouse, use [DBWriter][db-writer].
 
-For writing data to Clickhouse, use {obj}`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
+!!! warning
 
-```{eval-rst}
-.. warning::
+    Please take into account [Clickhouse types][clickhouse-types]
 
-    Please take into account :ref:`clickhouse-types`
-```
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    It is always recommended to create table explicitly using :ref:`Clickhouse.execute <clickhouse-execute>`
+    It is always recommended to create table explicitly using [Clickhouse.execute][clickhouse-execute]
     instead of relying on Spark's table DDL generation.
 
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,
     causing precision loss or other issues.
-```
+
 
 ## Examples
 
@@ -43,10 +39,11 @@ writer = DBWriter(
 writer.run(df)
 ```
 
-## Options
+## Options { #clickhouse-write-options }
 
-Method above accepts {obj}`Clickhouse.WriteOptions <onetl.connection.db_connection.clickhouse.options.ClickhouseWriteOptions>`
+Method above accepts [Clickhouse.WriteOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseWriteOptions]
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.clickhouse.options
 ```
@@ -57,4 +54,11 @@ Method above accepts {obj}`Clickhouse.WriteOptions <onetl.connection.db_connecti
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
-```
+``` 
+-->
+
+::: onetl.connection.db_connection.clickhouse.options.ClickhouseWriteOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

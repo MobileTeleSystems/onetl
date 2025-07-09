@@ -1461,18 +1461,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.get_options" class="md-nav__link">
+  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.parse" class="md-nav__link">
     <span class="md-ellipsis">
-      get_options
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.cleanup" class="md-nav__link">
-    <span class="md-ellipsis">
-      cleanup
+      parse
     </span>
   </a>
   
@@ -6845,18 +6836,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.get_options" class="md-nav__link">
+  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.parse" class="md-nav__link">
     <span class="md-ellipsis">
-      get_options
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.cleanup" class="md-nav__link">
-    <span class="md-ellipsis">
-      cleanup
+      parse
     </span>
   </a>
   
@@ -6990,29 +6972,21 @@ auth = Kafka.KerberosAuth.parse(
 <div class="doc doc-object doc-function">
 
 
-<h4 id="onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.get_options" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_options</span><span class="p">(</span><span class="n">kafka</span><span class="p">)</span></code>
+<h4 id="onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.parse" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">parse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></code>
 
-<a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.get_options" class="headerlink" title="Permanent link">&para;</a></h4>
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
-
-    <div class="doc doc-contents ">
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.cleanup" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">cleanup</span><span class="p">(</span><span class="n">kafka</span><span class="p">)</span></code>
-
-<a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.cleanup" class="headerlink" title="Permanent link">&para;</a></h4>
+<a href="#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth.parse" class="headerlink" title="Permanent link">&para;</a></h4>
 
 
     <div class="doc doc-contents ">
+
+        <p>If a parameter inherited from the ReadOptions class was passed, then it will be returned unchanged.
+If a Dict object was passed it will be converted to ReadOptions.</p>
+<p>Otherwise, an exception will be raised</p>
 
 
     </div>

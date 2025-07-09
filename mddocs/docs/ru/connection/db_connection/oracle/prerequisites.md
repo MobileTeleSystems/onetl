@@ -1,11 +1,9 @@
-(oracle-prerequisites)=
-
-# Prerequisites
+# Prerequisites { #oracle-prerequisites }
 
 ## Version Compatibility
 
 - Oracle Server versions:
-  : - Officially declared: 19c, 21c, 23ai
+    - Officially declared: 19c, 21c, 23ai
     - Actually tested: 11.2, 23.5
 - Spark versions: 2.3.x - 3.5.x
 - Java versions: 8 - 20
@@ -17,7 +15,7 @@ See [official documentation](https://www.oracle.com/cis/database/technologies/ap
 To use Oracle connector you should have PySpark installed (or injected to `sys.path`)
 BEFORE creating the connector instance.
 
-See {ref}`install-spark` installation instruction for more details.
+See [installation instruction][install-spark] for more details.
 
 ## Connecting to Oracle
 
@@ -60,10 +58,9 @@ See [official documentation](https://oracle-base.com/articles/misc/proxy-users-a
 Ask your Oracle cluster administrator to set following grants for a user,
 used for creating a connection:
 
-```{eval-rst}
-.. tabs::
+=== "Read + Write (schema is owned by user)"
 
-    .. code-tab:: sql Read + Write (schema is owned by user)
+    ```sql 
 
         -- allow user to log in
         GRANT CREATE SESSION TO username;
@@ -73,8 +70,11 @@ used for creating a connection:
 
         -- allow read & write access to specific table
         GRANT SELECT, INSERT ON username.mytable TO username;
+    ```
 
-    .. code-tab:: sql Read + Write (schema is not owned by user)
+=== "Read + Write (schema is not owned by user)"
+
+    ```sql 
 
         -- allow user to log in
         GRANT CREATE SESSION TO username;
@@ -90,18 +90,21 @@ used for creating a connection:
         -- allow dropping/truncating tables in any schema,
         -- as Oracle does not support specifying exact schema name
         GRANT DROP ANY TABLE TO username;
+    ```
 
-    .. code-tab:: sql Read only
+=== "Read only"
+
+    ```sql 
 
         -- allow user to log in
         GRANT CREATE SESSION TO username;
 
         -- allow read access to specific table
         GRANT SELECT ON someschema.mytable TO username;
-```
+    ```
 
 More details can be found in official documentation:
-: - [GRANT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/GRANT.html)
+  - [GRANT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/GRANT.html)
   - [SELECT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html)
   - [CREATE TABLE](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html)
   - [INSERT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/INSERT.html)

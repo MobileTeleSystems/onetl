@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#kafka-sslprotocol" class="md-skip">
+        <a href="#kafka-ssl-protocol" class="md-skip">
           Skip to content
         </a>
       
@@ -1493,6 +1493,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    SSL protocol
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1504,6 +1517,58 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      KafkaSSLProtocol
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KafkaSSLProtocol">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol.parse" class="md-nav__link">
+    <span class="md-ellipsis">
+      parse
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -6745,6 +6810,47 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      KafkaSSLProtocol
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KafkaSSLProtocol">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol.parse" class="md-nav__link">
+    <span class="md-ellipsis">
+      parse
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -6759,15 +6865,173 @@
 
 
 
-<p>(kafka-ssl-protocol)=</p>
-<h1 id="kafka-sslprotocol">Kafka SSLProtocol<a class="headerlink" href="#kafka-sslprotocol" title="Permanent link">&para;</a></h1>
+<h1 id="kafka-ssl-protocol">Kafka SSLProtocol<a class="headerlink" href="#kafka-ssl-protocol" title="Permanent link">&para;</a></h1>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.kafka.kafka_ssl_protocol
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autopydantic_model:: KafkaSSLProtocol
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol" class="doc doc-heading">
+            <code>onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol</code>
+
+
+<a href="#onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol">KafkaProtocol</span></code>, <code><span title="onetl.impl.GenericOptions">GenericOptions</span></code></p>
+
+
+        <p>Connect to Kafka using <code>SSL</code> or <code>SASL_SSL</code> security protocols.</p>
+<p>For more details see:</p>
+<ul>
+<li><code>Kafka Documentation &lt;https://kafka.apache.org/documentation/#producerconfigs_ssl.keystore.location&gt;</code>_</li>
+<li><code>IBM Documentation &lt;https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/19.0.x?topic=fcee-kafka-using-ssl-kerberos-authentication&gt;</code>_</li>
+<li><code>How to use PEM Certificates with Kafka &lt;https://codingharbour.com/apache-kafka/using-pem-certificates-with-apache-kafka/&gt;</code>_</li>
+</ul>
+<p>.. versionadded:: 0.9.0</p>
+<h5 id="onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol--examples" title="Permanent link">&para;</a></h5>
+<p>Pass PEM key and certificates as files located on Spark driver host:</p>
+<p>.. code:: python</p>
+<pre><code>from pathlib import Path
+
+# Just read existing files located on host, and pass key and certificates as strings
+protocol = Kafka.SSLProtocol(
+    keystore_type="PEM",
+    keystore_certificate_chain=Path("path/to/user.crt").read_text(),
+    keystore_key=Path("path/to/user.key").read_text(),
+    truststore_type="PEM",
+    truststore_certificates=Path("/path/to/server.crt").read_text(),
+)
+</code></pre>
+<p>Pass PEM key and certificates as raw strings:</p>
+<p>.. code:: python</p>
+<pre><code>protocol = Kafka.SSLProtocol(
+    keystore_type="PEM",
+    keystore_certificate_chain="-----BEGIN CERTIFICATE-----\nMIIDZjC...\n-----END CERTIFICATE-----",
+    keystore_key="-----BEGIN PRIVATE KEY-----\nMIIEvg..\n-----END PRIVATE KEY-----",
+    truststore_type="PEM",
+    truststore_certificates="-----BEGIN CERTIFICATE-----\nMICC...\n-----END CERTIFICATE-----",
+)
+</code></pre>
+<p>Pass custom options:</p>
+<p>.. code:: python</p>
+<pre><code>protocol = Kafka.SSLProtocol.parse(
+    {
+        # Just the same options as above, but using Kafka config naming with dots
+        "ssl.keystore.type": "PEM",
+        "ssl.keystore.certificate_chain": "-----BEGIN CERTIFICATE-----\nMIIDZjC...\n-----END CERTIFICATE-----",
+        "ssl.keystore.key": "-----BEGIN PRIVATE KEY-----\nMIIEvg..\n-----END PRIVATE KEY-----",
+        "ssl.truststore.type": "PEM",
+        "ssl.truststore.certificates": "-----BEGIN CERTIFICATE-----\nMICC...\n-----END CERTIFICATE-----",
+        # Any option starting from "ssl." is passed to Kafka client as-is
+        "ssl.protocol": "TLSv1.3",
+    }
+)
+</code></pre>
+<p>.. dropdown:: Not recommended</p>
+<pre><code>These options are error-prone and have several drawbacks, so it is not recommended to use them.
+
+Passing PEM certificates as files:
+
+* ENCRYPT ``user.key`` file with password ``"some password"`` `using PKCS#8 scheme &lt;https://www.mkssoftware.com/docs/man1/openssl_pkcs8.1.asp&gt;`_.
+* Save encrypted key to file ``/path/to/user/encrypted_key_with_certificate_chain.pem``.
+* Then append user certificate to the end of this file.
+* Deploy this file (and server certificate too) to **EVERY** host Spark could run (both driver and executors).
+* Then pass file locations and password for key decryption to options below.
+
+.. code:: python
+
+    protocol = Kafka.SSLProtocol(
+        keystore_type="PEM",
+        keystore_location="/path/to/user/encrypted_key_with_certificate_chain.pem",
+        key_password="some password",
+        truststore_type="PEM",
+        truststore_location="/path/to/server.crt",
+    )
+
+Passing JKS (Java Key Store) location:
+
+* `Add user key and certificate to JKS keystore &lt;https://stackoverflow.com/a/4326346&gt;`_.
+* `Add server certificate to JKS truststore &lt;https://stackoverflow.com/a/373307&gt;`_.
+* This should be done on **EVERY** host Spark could run (both driver and executors).
+* Pass keystore and truststore paths to options below, as well as passwords for accessing these stores:
+
+.. code:: python
+
+    protocol = Kafka.SSLProtocol(
+        keystore_type="JKS",
+        keystore_location="/usr/lib/jvm/default/lib/security/keystore.jks",
+        keystore_password="changeit",
+        truststore_type="JKS",
+        truststore_location="/usr/lib/jvm/default/lib/security/truststore.jks",
+        truststore_password="changeit",
+    )
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol.parse" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">parse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol.parse" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>If a parameter inherited from the ReadOptions class was passed, then it will be returned unchanged.
+If a Dict object was passed it will be converted to ReadOptions.</p>
+<p>Otherwise, an exception will be raised</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 

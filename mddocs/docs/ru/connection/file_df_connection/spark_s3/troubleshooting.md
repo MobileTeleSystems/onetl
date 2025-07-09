@@ -1,12 +1,8 @@
-(spark-s3-troubleshooting)=
+# Spark S3 Troubleshooting { #spark-s3-troubleshooting }
 
-# Spark S3 Troubleshooting
+!!! note
 
-```{eval-rst}
-.. note::
-
-    General guide: :ref:`troubleshooting`.
-```
+    General guide: [Troubleshooting][troubleshooting-main].
 
 More details:
 
@@ -35,13 +31,12 @@ So user is waiting for [almost 15 minutes](https://issues.apache.org/jira/browse
 
 #### Make logging more verbose
 
-Change Spark session log level to {ref}`DEBUG <troubleshooting-spark>` to print result of each attempt.
+Change Spark session log level to [DEBUG][troubleshooting-spark] to print result of each attempt.
 Resulting logs will look like this
 
-```{eval-rst}
-.. dropdown:: See log
+??? note "See log"
 
-    .. code:: text
+    ```text
 
         23/08/03 11:25:10 DEBUG S3AFileSystem: Using S3ABlockOutputStream with buffer = disk; block=67108864; queue limit=4
         23/08/03 11:25:10 DEBUG S3Guard: Metastore option source [core-default.xml]
@@ -167,7 +162,7 @@ Resulting logs will look like this
         23/08/03 11:25:10 DEBUG AmazonHttpClient: Unable to execute HTTP request: Unsupported or unrecognized SSL message Request will be retried.
         23/08/03 11:25:10 DEBUG request: Retrying Request: GET https://test-bucket.localhost:9000 / Parameters: ({"list-type":["2"],"delimiter":["/"],"max-keys":["2"],"prefix":["fake/"],"fetch-owner":["false"]}Headers: (amz-sdk-invocation-id: e6d62603-96e4-a80f-10a1-816e0822bc71, Content-Type: application/octet-stream, User-Agent: Hadoop 3.3.4, aws-sdk-java/1.12.262 Linux/6.4.7-1-MANJARO OpenJDK_64-Bit_Server_VM/25.292-b10 java/1.8.0_292 scala/2.12.17 vendor/AdoptOpenJDK cfg/retry-mode/legacy, )
         23/08/03 11:25:10 DEBUG AmazonHttpClient: Retriable error detected, will retry in 49ms, attempt number: 0
-```
+    ```
 
 #### Change number of retries
 
@@ -311,11 +306,9 @@ This [drastically increases writing performance](https://spot.io/blog/improve-ap
 
 To use this committer, set [following properties](https://github.com/apache/spark/pull/32518) while creating Spark session.
 
-```{eval-rst}
-.. tabs::
+=== "S3 your main distributed filesystem (Spark on Kubernetes)"
 
-    .. code-tab:: py S3 your main distributed filesystem (Spark on Kubernetes)
-
+    ```python 
         # https://issues.apache.org/jira/browse/SPARK-23977
         # https://spark.apache.org/docs/latest/cloud-integration.html#committing-work-into-cloud-storage-safely-and-fast
         spark = (
@@ -327,9 +320,11 @@ To use this committer, set [following properties](https://github.com/apache/spar
             .config("spark.sql.sources.commitProtocolClass", "org.apache.spark.internal.io.cloud.PathOutputCommitProtocol")
             .getOrCreate()
         )
+    ```
 
-    .. code-tab:: py HDFS is your main distributed filesystem (Spark on Hadoop)
+=== "HDFS is your main distributed filesystem (Spark on Hadoop)"
 
+    ```python 
         # https://community.cloudera.com/t5/Support-Questions/spark-sql-sources-partitionOverwriteMode-dynamic-quot-not/m-p/343483/highlight/true
         spark = (
             SparkSession.builder.appName("spark-app-name")
@@ -337,26 +332,18 @@ To use this committer, set [following properties](https://github.com/apache/spar
             .config("spark.hadoop.fs.s3a.committer.name", "magic")
             .getOrCreate()
         )
-```
+    ```
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    ``magic`` committer requires S3 implementation to have strong consistency - file upload API return response only
-    if it was written on enough number of cluster nodes, and any cluster node error does not lead to missing or corrupting files.
+    `magic` committer requires S3 implementation to have strong consistency - file upload API return response only if it was written on enough number of cluster nodes, and any cluster node error does not lead to missing or corrupting files.
 
-    Some S3 implementations does have strong consistency
-    (like `AWS S3 <https://aws.amazon.com/ru/blogs/aws/amazon-s3-update-strong-read-after-write-consistency/>`_ and
-    `MinIO <https://blog.min.io/migrating-hdfs-to-object-storage/>`_), some not. Please contact your S3 provider
-    to get information about S3 implementation consistency.
-```
+    Some S3 implementations does have strong consistency (like [AWS S3](https://aws.amazon.com/ru/blogs/aws/amazon-s3-update-strong-read-after-write-consistency/) and [MinIO](https://blog.min.io/migrating-hdfs-to-object-storage/)), some not. Please contact your S3 provider to get information about S3 implementation consistency.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    ``magic`` committer does not support ``if_exists="replace_overlapping_partitions"``.
-    Either use another ``if_exists`` value, or use ``partitioned`` committer.
-```
+    `magic` committer does not support `if_exists="replace_overlapping_partitions"`.
+    Either use another `if_exists` value, or use `partitioned` committer.
 
 ### See also
 
@@ -370,7 +357,7 @@ Please read following documentation:
 - [experimental.input.fadvise](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html#Improving_data_input_performance_through_fadvise)
 - [Parquet and ORC I/O settings](https://spark.apache.org/docs/latest/cloud-integration.html#parquet-io-settings)
 
-If you're reading data from row-based formats, like {ref}`csv-file-format`, prefer
+If you're reading data from row-based formats, like [CSV][csv-file-format], prefer
 [experimental.input.fadvise="sequential" with increased readahead.range](https://issues.apache.org/jira/browse/HADOOP-17789?focusedCommentId=17383559#comment-17383559).
 
 But for other file formats, especially using compression, prefer

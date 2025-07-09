@@ -1,28 +1,24 @@
-(mssql-read)=
+# Reading from MSSQL using `DBReader` { #mssql-read }
 
-# Reading from MSSQL using `DBReader`
-
-{obj}`DBReader <onetl.db.db_reader.db_reader.DBReader>` supports {ref}`strategy` for incremental data reading,
+[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
 but does not support custom queries, like `JOIN`.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    Please take into account :ref:`mssql-types`
-```
+    Please take into account [MSSQL types][mssql-types]
 
 ## Supported DBReader features
 
 - ✅︎ `columns`
 - ✅︎ `where`
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ {ref}`snapshot-strategy`
-- - ✅︎ {ref}`incremental-strategy`
-- - ✅︎ {ref}`snapshot-batch-strategy`
-- - ✅︎ {ref}`incremental-batch-strategy`
+- - ✅︎ [Snapshot strategy][snapshot-strategy]
+- - ✅︎ [Incremental strategy][incremental-strategy]
+- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
+- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
 - ❌ `hint` (MSSQL does support hints, but DBReader not, at least for now)
 - ❌ `df_schema`
-- ✅︎ `options` (see {obj}`MSSQL.ReadOptions <onetl.connection.db_connection.mssql.options.MSSQLReadOptions>`)
+- ✅︎ `options` (see [MSSQL.ReadOptions][onetl.connection.db_connection.mssql.options.MSSQLReadOptions])
 
 ## Examples
 
@@ -80,6 +76,7 @@ Especially if there are indexes or partitions for columns used in `where` clause
 
 ## Options
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.mssql.options
 ```
@@ -91,3 +88,10 @@ Especially if there are indexes or partitions for columns used in `where` clause
     :model-show-field-summary: false
     :field-show-constraints: false
 ```
+ -->
+
+::: onetl.connection.db_connection.mssql.options.MSSQLReadOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

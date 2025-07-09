@@ -13,8 +13,6 @@
 
 ::: onetl.connection.db_connection.kafka.connection.Kafka
     options:
-        members:
-            - get_packages
-            - get_exclude_packages
-            - check
-            - close
+        extensions:
+            - griffe_sphinx
+            - griffe_pydantic: {schema: false}

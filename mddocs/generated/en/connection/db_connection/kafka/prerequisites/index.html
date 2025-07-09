@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#prerequisites" class="md-skip">
+        <a href="#kafka-prerequisites" class="md-skip">
           Skip to content
         </a>
       
@@ -6937,12 +6937,11 @@
 
 
 
-<p>(kafka-prerequisites)=</p>
-<h1 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h1>
+<h1 id="kafka-prerequisites">Prerequisites<a class="headerlink" href="#kafka-prerequisites" title="Permanent link">&para;</a></h1>
 <h2 id="version-compatibility">Version Compatibility<a class="headerlink" href="#version-compatibility" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Kafka server versions:
-  : - Officially declared: 0.10 or higher<ul>
+<li>Kafka server versions:<ul>
+<li>Officially declared: 0.10 or higher</li>
 <li>Actually tested: 3.2.3, 3.9.0 (only Kafka 3.x supports message headers)</li>
 </ul>
 </li>
@@ -6953,7 +6952,7 @@
 <h2 id="installing-pyspark">Installing PySpark<a class="headerlink" href="#installing-pyspark" title="Permanent link">&para;</a></h2>
 <p>To use Kafka connector you should have PySpark installed (or injected to <code>sys.path</code>)
 BEFORE creating the connector instance.</p>
-<p>See {ref}<code>install-spark</code> installation instruction for more details.</p>
+<p>See <a class="autorefs autorefs-internal" title="Spark" href="../../../../install/spark/#install-spark">installation instruction</a> for more details.</p>
 <h2 id="connecting-to-kafka">Connecting to Kafka<a class="headerlink" href="#connecting-to-kafka" title="Permanent link">&para;</a></h2>
 <h3 id="connection-address">Connection address<a class="headerlink" href="#connection-address" title="Permanent link">&para;</a></h3>
 <p>Kafka is a distributed service, and usually has a list of brokers you can connect to (unlike other connectors, there only one host+port can be set).
@@ -6962,25 +6961,25 @@ Please contact your Kafka administrator to get addresses of these brokers, as th
 So you don't have to pass all brokers to <code>addresses</code>, it can be some subset. Other broker addresses will be fetched directly from the cluster.</p>
 <h3 id="connection-protocol">Connection protocol<a class="headerlink" href="#connection-protocol" title="Permanent link">&para;</a></h3>
 <p>Kafka can support different connection protocols. List of currently supported protocols:
-: - {obj}<code>PLAINTEXT &lt;onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol&gt;</code> (not secure)
-  - {obj}<code>SSL &lt;onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol&gt;</code> (secure, recommended)</p>
+  - <a class="autorefs autorefs-internal" title="onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol" href="../plaintext_protocol/#onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol">PLAINTEXT</a> (not secure)
+  - <a class="autorefs autorefs-internal" title="onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol" href="../ssl_protocol/#onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol">SSL</a> (secure, recommended)</p>
 <p>Note that specific port can listen for only one of these protocols, so it is important to set
 proper port number + protocol combination.</p>
 <h3 id="authentication-mechanism">Authentication mechanism<a class="headerlink" href="#authentication-mechanism" title="Permanent link">&para;</a></h3>
 <p>Kafka can support different authentication mechanism (also known as <a href="https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL</a>).</p>
 <p>List of currently supported mechanisms:
-: - {obj}<code>PLAIN &lt;onetl.connection.db_connection.kafka.kafka_basic_auth.KafkaBasicAuth&gt;</code>. To no confuse this with <code>PLAINTEXT</code> connection protocol, onETL uses name <code>BasicAuth</code>.
-  - {obj}<code>GSSAPI &lt;onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth&gt;</code>. To simplify naming, onETL uses name <code>KerberosAuth</code>.
-  - {obj}<code>SCRAM-SHA-256 or SCRAM-SHA-512 &lt;onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth&gt;</code> (recommended).</p>
+  - <a class="autorefs autorefs-internal" title="onetl.connection.db_connection.kafka.kafka_basic_auth.KafkaBasicAuth" href="../basic_auth/#onetl.connection.db_connection.kafka.kafka_basic_auth.KafkaBasicAuth">PLAIN</a>. To no confuse this with <code>PLAINTEXT</code> connection protocol, onETL uses name <code>BasicAuth</code>.
+  - <a class="autorefs autorefs-internal" title="onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth" href="../kerberos_auth/#onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth">GSSAPI</a>. To simplify naming, onETL uses name <code>KerberosAuth</code>.
+  - [SCRAM-SHA-256] or SCRAM-SHA-512 <onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth>` (recommended).</p>
 <p>Different mechanisms use different types of credentials (login + password, keytab file, and so on).</p>
 <p>Note that connection protocol and auth mechanism are set in pairs:
-: - If you see <code>SASL_PLAINTEXT</code> this means <code>PLAINTEXT</code> connection protocol + some auth mechanism.
+  - If you see <code>SASL_PLAINTEXT</code> this means <code>PLAINTEXT</code> connection protocol + some auth mechanism.
   - If you see <code>SASL_SSL</code> this means <code>SSL</code> connection protocol + some auth mechanism.
   - If you see just <code>PLAINTEXT</code> or <code>SSL</code> (<strong>no</strong> <code>SASL</code>), this means that authentication is disabled (anonymous access).</p>
 <p>Please contact your Kafka administrator to get details about enabled auth mechanism in a specific Kafka instance.</p>
 <h3 id="required-grants">Required grants<a class="headerlink" href="#required-grants" title="Permanent link">&para;</a></h3>
 <p>Ask your Kafka administrator to set following grants for a user, <em>if Kafka instance uses ACL</em>:
-: - <code>Describe</code> + <code>Read</code> for reading data from Kafka (Consumer).
+  - <code>Describe</code> + <code>Read</code> for reading data from Kafka (Consumer).
   - <code>Describe</code> + <code>Write</code> for writing data from Kafka (Producer).</p>
 <p>More details can be found in <a href="https://kafka.apache.org/documentation/#operations_in_kafka">documentation</a>.</p>
 

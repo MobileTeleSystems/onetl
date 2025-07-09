@@ -1,15 +1,15 @@
-# Подключения к файловым системам с использованием DataFrame
+# File DataFrame Connections
 
-* [Spark LocalFS](spark_local_fs.md)
-* [Spark HDFS](spark_hdfs/index.md)
-  * [Prerequisites](spark_hdfs/prerequisites.md)
-  * [Connection](spark_hdfs/connection.md)
-  * [Slots](spark_hdfs/slots.md)
-* [Spark S3](spark_s3/index.md)
-  * [Prerequisites](spark_s3/prerequisites.md)
-  * [Connection](spark_s3/connection.md)
-  * [Troubleshooting](spark_s3/troubleshooting.md)
+* [Spark LocalFS][spark-local-fs]
+* [Spark HDFS][spark-hdfs]
+  * [Prerequisites][spark-hdfs-prerequisites]
+  * [Connection][spark-hdfs-connection]
+  * [Slots][spark-hdfs-slots]
+* [Spark S3][spark-s3]
+  * [Prerequisites][spark-s3-prerequisites]
+  * [Connection][spark-s3-connection]
+  * [Troubleshooting][spark-s3-troubleshooting]
 
-# Для разработчиков
+# For developers
 
-* [Base interface](base.md)
+* [Base interface][base-file-df-connection]

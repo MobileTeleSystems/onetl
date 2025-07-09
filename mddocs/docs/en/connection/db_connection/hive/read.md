@@ -1,4 +1,4 @@
-# Reading from Hive using `DBReader` [hive-read]
+# Reading from Hive using `DBReader` { #hive-read }
 
 [DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
 but does not support custom queries, like `JOIN`.

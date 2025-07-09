@@ -1,21 +1,17 @@
-(hive-prerequisites)=
+# Prerequisites { #hive-prerequisites }
 
-# Prerequisites
+!!! note
 
-```{eval-rst}
-.. note::
-
-    onETL's Hive connection is actually SparkSession with access to `Hive Thrift Metastore <https://docs.cloudera.com/cdw-runtime/1.5.0/hive-hms-overview/topics/hive-hms-introduction.html>`_
+    onETL's Hive connection is actually SparkSession with access to [Hive Thrift Metastore](https://docs.cloudera.com/cdw-runtime/1.5.0/hive-hms-overview/topics/hive-hms-introduction.html)
     and HDFS/S3.
     All data motion is made using Spark. Hive Metastore is used only to store tables and partitions metadata.
 
     This connector does **NOT** require Hive server. It also does **NOT** use Hive JDBC connector.
-```
 
 ## Version Compatibility
 
 - Hive Metastore version:
-  : - Officially declared: 0.12 - 3.1.3 (may require to add proper .jar file explicitly)
+    - Officially declared: 0.12 - 3.1.3 (may require to add proper .jar file explicitly)
     - Actually tested: 1.2.100, 2.3.10, 3.1.3
 - Spark versions: 2.3.x - 3.5.x
 - Java versions: 8 - 20
@@ -27,15 +23,13 @@ See [official documentation](https://spark.apache.org/docs/latest/sql-data-sourc
 To use Hive connector you should have PySpark installed (or injected to `sys.path`)
 BEFORE creating the connector instance.
 
-See {ref}`install-spark` installation instruction for more details.
+See [installation instruction][install-spark] for more details.
 
 ## Connecting to Hive Metastore
 
-```{eval-rst}
-.. note::
+!!! note
 
     If you're using managed Hadoop cluster, skip this step, as all Spark configs are should already present on the host.
-```
 
 Create `$SPARK_CONF_DIR/hive-site.xml` with Hive Metastore URL:
 
@@ -52,10 +46,9 @@ Create `$SPARK_CONF_DIR/hive-site.xml` with Hive Metastore URL:
 
 Create `$SPARK_CONF_DIR/core-site.xml` with warehouse location ,e.g. HDFS IPC port of Hadoop namenode, or S3 bucket address & credentials:
 
-```{eval-rst}
-.. tabs::
+=== "HDFS"
 
-    .. code-tab:: xml HDFS
+    ```xml
 
         <?xml version="1.0" encoding="UTF-8"?>
         <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -65,8 +58,11 @@ Create `$SPARK_CONF_DIR/core-site.xml` with warehouse location ,e.g. HDFS IPC po
                 <value>hdfs://myhadoopcluster:9820</value>
             </property>
         </configuration>
+    ```
 
-    .. code-tab:: xml S3
+=== "S3"
+
+    ```xml
 
         <?xml version="1.0" encoding="UTF-8"?>
         <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -101,34 +97,36 @@ Create `$SPARK_CONF_DIR/core-site.xml` with warehouse location ,e.g. HDFS IPC po
                 <value>mysecrettoken</value>
             </property>
         </configuration>
-```
+    ```
 
 ## Using Kerberos
 
 Some of Hadoop managed clusters use Kerberos authentication. In this case, you should call [kinit](https://web.mit.edu/kerberos/krb5-1.12/doc/user/user_commands/kinit.html) command
-**BEFORE** starting Spark session to generate Kerberos ticket. See {ref}`install-kerberos`.
+**BEFORE** starting Spark session to generate Kerberos ticket. See [Kerberos installation][install-kerberos].
 
 Sometimes it is also required to pass keytab file to Spark config, allowing Spark executors to generate own Kerberos tickets:
 
-```{eval-rst}
-.. tabs::
+=== "Spark 3"
 
-    .. code-tab:: python Spark 3
+    ```python
 
         SparkSession.builder
             .option("spark.kerberos.access.hadoopFileSystems", "hdfs://namenode1.domain.com:9820,hdfs://namenode2.domain.com:9820")
             .option("spark.kerberos.principal", "user")
             .option("spark.kerberos.keytab", "/path/to/keytab")
             .gerOrCreate()
+    ```
 
-    .. code-tab:: python Spark 2
+=== "Spark 2"
+
+    ```python
 
         SparkSession.builder
             .option("spark.yarn.access.hadoopFileSystems", "hdfs://namenode1.domain.com:9820,hdfs://namenode2.domain.com:9820")
             .option("spark.yarn.principal", "user")
             .option("spark.yarn.keytab", "/path/to/keytab")
             .gerOrCreate()
-```
+    ```
 
 See [Spark security documentation](https://spark.apache.org/docs/latest/security.html#kerberos)
 for more details.

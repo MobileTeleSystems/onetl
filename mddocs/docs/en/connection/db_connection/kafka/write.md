@@ -74,4 +74,11 @@ writer.run(write_df)
 ```
  -->
 
-::: onetl.connection.db_connection.kafka.options
+::: onetl.connection.db_connection.kafka.options.KafkaWriteOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true
+        extensions:
+            - griffe_sphinx
+            - griffe_pydantic: {schema: false}

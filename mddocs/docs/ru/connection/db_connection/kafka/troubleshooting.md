@@ -1,12 +1,9 @@
-(kafka-troubleshooting)=
+# Kafka Troubleshooting { #kafka-troubleshooting }
 
-# Kafka Troubleshooting
+!!! note
 
-```{eval-rst}
-.. note::
+    [General guide][troubleshooting].
 
-    General guide: :ref:`troubleshooting`.
-```
 
 ## Cannot connect using `SSL` protocol
 

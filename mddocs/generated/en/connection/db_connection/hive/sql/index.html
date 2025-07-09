@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#reading-from-hive-using-hivesql" class="md-skip">
+        <a href="#hive-sql" class="md-skip">
           Skip to content
         </a>
       
@@ -1236,6 +1236,30 @@
       Details
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.sql--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.sql--returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Returns
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -6919,6 +6943,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.sql--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.sql--returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Returns
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -6937,8 +6985,7 @@
 
 
 
-<p>(hive-sql)=</p>
-<h1 id="reading-from-hive-using-hivesql">Reading from Hive using <code>Hive.sql</code><a class="headerlink" href="#reading-from-hive-using-hivesql" title="Permanent link">&para;</a></h1>
+<h1 id="hive-sql">Reading from Hive using <code>Hive.sql</code><a class="headerlink" href="#hive-sql" title="Permanent link">&para;</a></h1>
 <p><code>Hive.sql</code> allows passing custom SQL query, but does not support incremental strategies.</p>
 <h2 id="syntax-support">Syntax support<a class="headerlink" href="#syntax-support" title="Permanent link">&para;</a></h2>
 <p>Only queries with the following syntax are supported:</p>
@@ -6947,10 +6994,10 @@
 <li>✅︎ <code>WITH alias AS (...) SELECT ...</code></li>
 <li>❌ <code>SET ...; SELECT ...;</code> - multiple statements not supported</li>
 </ul>
-<div class="highlight"><pre><span></span><code>.. warning::
-
-    Actually, query should be written using `SparkSQL &lt;https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements&gt;`_ syntax, not HiveQL.
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Actually, query should be written using <a href="https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements">SparkSQL</a> syntax, not HiveQL.</p>
+</div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hive</span>
 
@@ -6989,10 +7036,39 @@ This drastically reduces the amount of data read by Spark, <strong>if column-bas
 This allows Spark to read only small set of files (<em>partition pruning</em>) instead of scanning the entire table, so this drastically increases performance.</p>
 <p>Supported operators are: <code>=</code>, <code>&gt;</code>, <code>&lt;</code> and <code>BETWEEN</code>, and only against some <strong>static</strong> value.</p>
 <h2 id="details">Details<a class="headerlink" href="#details" title="Permanent link">&para;</a></h2>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.hive.connection
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. automethod:: Hive.sql
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+    <div class="doc doc-contents first">
+
+        <p>Lazily execute SELECT statement and return DataFrame. |support_hooks|</p>
+<p>Same as <code>spark.sql(query)</code>.</p>
+<p>.. versionadded:: 0.2.0</p>
+<h3 id="onetl.connection.db_connection.hive.connection.Hive.sql--parameters">Parameters<a class="headerlink" href="#onetl.connection.db_connection.hive.connection.Hive.sql--parameters" title="Permanent link">&para;</a></h3>
+<p>query : str</p>
+<pre><code>SQL query to be executed.
+</code></pre>
+<h3 id="onetl.connection.db_connection.hive.connection.Hive.sql--returns">Returns<a class="headerlink" href="#onetl.connection.db_connection.hive.connection.Hive.sql--returns" title="Permanent link">&para;</a></h3>
+<p>df : pyspark.sql.dataframe.DataFrame</p>
+<pre><code>Spark dataframe
+</code></pre>
+
+
+    </div>
+
+</div>
 
 
 

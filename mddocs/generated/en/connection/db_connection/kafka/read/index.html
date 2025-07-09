@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#reading-from-kafka" class="md-skip">
+        <a href="#kafka-read" class="md-skip">
           Skip to content
         </a>
       
@@ -1391,6 +1391,54 @@
       Options
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      KafkaReadOptions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KafkaReadOptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions.include_headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      include_headers
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions.parse" class="md-nav__link">
+    <span class="md-ellipsis">
+      parse
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -6871,6 +6919,54 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      KafkaReadOptions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KafkaReadOptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions.include_headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      include_headers
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions.parse" class="md-nav__link">
+    <span class="md-ellipsis">
+      parse
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -6889,10 +6985,9 @@
 
 
 
-<p>(kafka-read)=</p>
-<h1 id="reading-from-kafka">Reading from Kafka<a class="headerlink" href="#reading-from-kafka" title="Permanent link">&para;</a></h1>
-<p>Data can be read from Kafka to Spark using {obj}<code>DBReader &lt;onetl.db.db_reader.db_reader.DBReader&gt;</code>.
-It also supports {ref}<code>strategy</code> for incremental data reading.</p>
+<h1 id="kafka-read">Reading from Kafka<a class="headerlink" href="#kafka-read" title="Permanent link">&para;</a></h1>
+<p>Data can be read from Kafka to Spark using <a class="autorefs autorefs-internal" title="DB Reader" href="../../../../db_/reader/#db-reader">DBReader</a>.
+It also supports  <a class="autorefs autorefs-internal" title="Read Strategies" href="../../../../strategy/#strategy">strategy</a> for incremental data reading.</p>
 <h2 id="supported-dbreader-features">Supported DBReader features<a class="headerlink" href="#supported-dbreader-features" title="Permanent link">&para;</a></h2>
 <ul>
 <li>❌ <code>columns</code> (is not supported by Kafka)</li>
@@ -6900,27 +6995,27 @@ It also supports {ref}<code>strategy</code> for incremental data reading.</p>
 <li>✅︎ <code>hwm</code>, supported strategies:</li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>snapshot-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Snapshot Strategy" href="../../../../strategy/snapshot_strategy/#snapshot-strategy">Snapshot strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>✅︎ {ref}<code>incremental-strategy</code></li>
+<li>✅︎ <a class="autorefs autorefs-internal" title="Incremental Strategy" href="../../../../strategy/incremental_strategy/#incremental-strategy">Incremental strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>❌ {ref}<code>snapshot-batch-strategy</code></li>
+<li>❌ <a class="autorefs autorefs-internal" title="Snapshot Batch Strategy" href="../../../../strategy/snapshot_batch_strategy/#snapshot-batch-strategy">Snapshot batch strategy</a></li>
 </ul>
 </li>
 <li>
 <ul>
-<li>❌ {ref}<code>incremental-batch-strategy</code></li>
+<li>❌ <a class="autorefs autorefs-internal" title="Incremental Batch Strategy" href="../../../../strategy/incremental_batch_strategy/#incremental-batch-strategy">Incremental batch strategy</a></li>
 </ul>
 </li>
 <li>❌ <code>hint</code> (is not supported by Kafka)</li>
 <li>❌ <code>df_schema</code> (see note below)</li>
-<li>✅︎ <code>options</code> (see {obj}<code>Kafka.ReadOptions &lt;onetl.connection.db_connection.kafka.options.KafkaReadOptions&gt;</code>)</li>
+<li>✅︎ <code>options</code> (see <a class="autorefs autorefs-internal" title="onetl.connection.db_connection.kafka.options.KafkaReadOptions" href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions">Kafka.ReadOptions</a>)</li>
 </ul>
 <h2 id="dataframe-schema">Dataframe schema<a class="headerlink" href="#dataframe-schema" title="Permanent link">&para;</a></h2>
 <p>Unlike other DB connections, Kafka does not have concept of columns.
@@ -6941,10 +7036,10 @@ All the topics messages have the same set of fields, see structure below:</p>
 <h2 id="value-deserialization">Value deserialization<a class="headerlink" href="#value-deserialization" title="Permanent link">&para;</a></h2>
 <p>To read <code>value</code> or <code>key</code> of other type than bytes (e.g. struct or integer), users have to deserialize values manually.</p>
 <p>This could be done using following methods:
-: - {obj}<code>Avro.parse_column &lt;onetl.file.format.avro.Avro.parse_column&gt;</code>
-  - {obj}<code>JSON.parse_column &lt;onetl.file.format.json.JSON.parse_column&gt;</code>
-  - {obj}<code>CSV.parse_column &lt;onetl.file.format.csv.CSV.parse_column&gt;</code>
-  - {obj}<code>XML.parse_column &lt;onetl.file.format.xml.XML.parse_column&gt;</code></p>
+  - <a class="autorefs autorefs-internal" title="parse_column(column)" href="../../../../file_df/file_formats/avro/#onetl.file.format.avro.Avro.parse_column">Avro.parse_column</a>
+  - <a class="autorefs autorefs-internal" title="parse_column(column, schema)" href="../../../../file_df/file_formats/json/#onetl.file.format.json.JSON.parse_column">JSON.parse_column</a>
+  - <a class="autorefs autorefs-internal" title="parse_column(column, schema)" href="../../../../file_df/file_formats/csv/#onetl.file.format.csv.CSV.parse_column">CSV.parse_column</a>
+  - <a class="autorefs autorefs-internal" title="parse_column(column, schema)" href="../../../../file_df/file_formats/xml/#onetl.file.format.xml.XML.parse_column">XML.parse_column</a></p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <p>Snapshot strategy, <code>value</code> is Avro binary data:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Kafka</span>
@@ -6975,49 +7070,179 @@ All the topics messages have the same set of fields, see structure below:</p>
 <span class="p">)</span>
 </code></pre></div>
 <p>Incremental strategy, <code>value</code> is JSON string:</p>
-<div class="highlight"><pre><span></span><code>.. note::
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Currently Kafka connector does support only HWMs based on <code>offset</code> field. Other fields, like <code>timestamp</code>, are not yet supported.</p>
+</div>
+<div class="highlight"><pre><span></span><code>```python
+from onetl.connection import Kafka
+from onetl.db import DBReader, DBWriter
+from onetl.file.format import JSON
+from pyspark.sql.functions import decode
 
-    Currently Kafka connector does support only HWMs based on `offset` field. Other fields, like `timestamp`, are not yet supported.
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">onetl.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">Kafka</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">onetl.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBReader</span><span class="p">,</span> <span class="n">DBWriter</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">onetl.file.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSON</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyspark.sql.functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">decode</span>
+kafka = Kafka(...)
 
-<span class="n">kafka</span> <span class="o">=</span> <span class="n">Kafka</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+# read only new data from Kafka topic
+reader = DBReader(
+    connection=kafka,
+    source=&quot;topic_name&quot;,
+    hwm=DBReader.AutoDetectHWM(name=&quot;kafka_hwm&quot;, expression=&quot;offset&quot;),
+)
 
-<span class="c1"># read only new data from Kafka topic</span>
-<span class="n">reader</span> <span class="o">=</span> <span class="n">DBReader</span><span class="p">(</span>
-    <span class="n">connection</span><span class="o">=</span><span class="n">kafka</span><span class="p">,</span>
-    <span class="n">source</span><span class="o">=</span><span class="s2">&quot;topic_name&quot;</span><span class="p">,</span>
-    <span class="n">hwm</span><span class="o">=</span><span class="n">DBReader</span><span class="o">.</span><span class="n">AutoDetectHWM</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;kafka_hwm&quot;</span><span class="p">,</span> <span class="n">expression</span><span class="o">=</span><span class="s2">&quot;offset&quot;</span><span class="p">),</span>
-<span class="p">)</span>
+with IncrementalStrategy():
+    read_df = reader.run()
 
-<span class="k">with</span> <span class="n">IncrementalStrategy</span><span class="p">():</span>
-    <span class="n">read_df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-
-<span class="c1"># parse JSON format to Spark struct</span>
-<span class="n">json</span> <span class="o">=</span> <span class="n">JSON</span><span class="p">()</span>
-<span class="n">schema</span> <span class="o">=</span> <span class="n">StructType</span><span class="p">(</span>
-    <span class="p">[</span>
-        <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">StringType</span><span class="p">(),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-        <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;age&quot;</span><span class="p">,</span> <span class="n">IntegerType</span><span class="p">(),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-    <span class="p">],</span>
-<span class="p">)</span>
-<span class="n">deserialized_df</span> <span class="o">=</span> <span class="n">read_df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
-    <span class="c1"># cast binary key to string</span>
-    <span class="n">decode</span><span class="p">(</span><span class="s2">&quot;key&quot;</span><span class="p">,</span> <span class="s2">&quot;UTF-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;key&quot;</span><span class="p">),</span>
-    <span class="n">json</span><span class="o">.</span><span class="n">parse_column</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">json</span><span class="p">),</span>
-<span class="p">)</span>
+# parse JSON format to Spark struct
+json = JSON()
+schema = StructType(
+    [
+        StructField(&quot;name&quot;, StringType(), nullable=True),
+        StructField(&quot;age&quot;, IntegerType(), nullable=True),
+    ],
+)
+deserialized_df = read_df.select(
+    # cast binary key to string
+    decode(&quot;key&quot;, &quot;UTF-8&quot;).alias(&quot;key&quot;),
+    json.parse_column(&quot;value&quot;, json),
+)
 </code></pre></div>
 <h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.kafka.options
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autopydantic_model:: KafkaReadOptions
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="onetl.connection.db_connection.kafka.options.KafkaReadOptions" class="doc doc-heading">
+            <code>onetl.connection.db_connection.kafka.options.KafkaReadOptions</code>
+
+
+<a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="onetl.impl.GenericOptions">GenericOptions</span></code></p>
+
+
+        <p>Reading options for Kafka connector.</p>
+<p>.. warning::</p>
+<pre><code>Options:
+    * ``assign``
+    * ``endingOffsets``
+    * ``endingOffsetsByTimestamp``
+    * ``kafka.*``
+    * ``startingOffsets``
+    * ``startingOffsetsByTimestamp``
+    * ``startingTimestamp``
+    * ``subscribe``
+    * ``subscribePattern``
+
+are populated from connection attributes, and cannot be overridden by the user in ``ReadOptions`` to avoid issues.
+</code></pre>
+<p>.. versionadded:: 0.9.0</p>
+<h5 id="onetl.connection.db_connection.kafka.options.KafkaReadOptions--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions--examples" title="Permanent link">&para;</a></h5>
+<p>.. note ::</p>
+<pre><code>You can pass any value
+`supported by connector &lt;https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html&gt;`_,
+even if it is not mentioned in this documentation. **Option names should be in** ``camelCase``!
+
+The set of supported options depends on connector version.
+</code></pre>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import Kafka
+
+options = Kafka.ReadOptions(
+    includeHeaders=False,
+    minPartitions=50,
+)
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="onetl.connection.db_connection.kafka.options.KafkaReadOptions.include_headers" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">include_headers</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;includeHeaders&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions.include_headers" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>If <code>True</code>, add <code>headers</code> column to output DataFrame.</p>
+<p>If <code>False</code>, column will not be added.</p>
+
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="onetl.connection.db_connection.kafka.options.KafkaReadOptions.parse" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">parse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#onetl.connection.db_connection.kafka.options.KafkaReadOptions.parse" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>If a parameter inherited from the ReadOptions class was passed, then it will be returned unchanged.
+If a Dict object was passed it will be converted to ReadOptions.</p>
+<p>Otherwise, an exception will be raised</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 

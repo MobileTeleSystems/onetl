@@ -14,6 +14,6 @@
 
 ::: onetl.connection.db_connection.kafka.kafka_auth.KafkaAuth
     options:
-        members:
-            - get_options
-            - cleanup
+        extensions:
+            - griffe_sphinx
+            - griffe_pydantic: {schema: false}

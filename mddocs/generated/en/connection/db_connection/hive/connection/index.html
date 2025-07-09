@@ -1015,6 +1015,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Connection
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1026,6 +1039,85 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.get_current" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_current
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="get_current">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.get_current--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.get_current--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.check" class="md-nav__link">
+    <span class="md-ellipsis">
+      check
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -6745,6 +6837,74 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.get_current" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_current
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="get_current">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.get_current--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.get_current--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.hive.connection.Hive.check" class="md-nav__link">
+    <span class="md-ellipsis">
+      check
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -6760,12 +6920,168 @@
 
 
 <h1 id="hive-connection">Hive Connection<a class="headerlink" href="#hive-connection" title="Permanent link">&para;</a></h1>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.hive.connection
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autoclass:: Hive
     :members: get_current, check
     :member-order: bysource
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="onetl.connection.db_connection.db_connection.DBConnection">DBConnection</span></code></p>
+
+
+        <p>Spark connection with Hive MetaStore support. |support_hooks|</p>
+<p>.. seealso::</p>
+<pre><code>Before using this connector please take into account :ref:`hive-prerequisites`
+</code></pre>
+<p>.. versionadded:: 0.1.0</p>
+<h3 id="onetl.connection.db_connection.hive.connection.Hive--parameters">Parameters<a class="headerlink" href="#onetl.connection.db_connection.hive.connection.Hive--parameters" title="Permanent link">&para;</a></h3>
+<p>cluster : str
+    Cluster name. Used for HWM and lineage.</p>
+<pre><code>.. versionadded:: 0.7.0
+</code></pre>
+
+
+<details class="spark-" open>
+  <summary>:obj:<code>pyspark.sql.SparkSession</code></summary>
+  <p>Spark session with Hive metastore support enabled</p>
+</details>        <h3 id="onetl.connection.db_connection.hive.connection.Hive--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.hive.connection.Hive--examples" title="Permanent link">&para;</a></h3>
+<p>.. tabs::</p>
+<pre><code>.. tab:: Create Hive connection with Kerberos auth
+
+    Execute ``kinit`` consome command before creating Spark Session
+
+    .. code:: bash
+
+        $ kinit -kt /path/to/keytab user
+
+    .. code:: python
+
+        from onetl.connection import Hive
+        from pyspark.sql import SparkSession
+
+        # Create Spark session
+        # Use names "spark.yarn.access.hadoopFileSystems", "spark.yarn.principal"
+        # and "spark.yarn.keytab" for Spark 2
+
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .option("spark.kerberos.access.hadoopFileSystems", "hdfs://cluster.name.node:8020")
+            .option("spark.kerberos.principal", "user")
+            .option("spark.kerberos.keytab", "/path/to/keytab")
+            .enableHiveSupport()
+            .getOrCreate()
+        )
+
+        # Create connection
+        hive = Hive(cluster="rnd-dwh", spark=spark).check()
+
+.. code-tab:: py Create Hive connection with anonymous auth
+
+    from onetl.connection import Hive
+    from pyspark.sql import SparkSession
+
+    # Create Spark session
+    spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
+
+    # Create connection
+    hive = Hive(cluster="rnd-dwh", spark=spark).check()
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onetl.connection.db_connection.hive.connection.Hive.get_current" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_current</span><span class="p">(</span><span class="n">spark</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#onetl.connection.db_connection.hive.connection.Hive.get_current" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create connection for current cluster. |support_hooks|</p>
+<p>.. note::</p>
+<pre><code>Can be used only if there are some hooks bound to
+:obj:`Slots.get_current_cluster &lt;onetl.connection.db_connection.hive.slots.HiveSlots.get_current_cluster&gt;` slot.
+</code></pre>
+<p>.. versionadded:: 0.7.0</p>
+<h4 id="onetl.connection.db_connection.hive.connection.Hive.get_current--parameters">Parameters<a class="headerlink" href="#onetl.connection.db_connection.hive.connection.Hive.get_current--parameters" title="Permanent link">&para;</a></h4>
+<p>spark : :obj:<code>pyspark.sql.SparkSession</code>
+    Spark session</p>
+<h4 id="onetl.connection.db_connection.hive.connection.Hive.get_current--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.hive.connection.Hive.get_current--examples" title="Permanent link">&para;</a></h4>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import Hive
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("spark-app-name").enableHiveSupport().getOrCreate()
+
+# injecting current cluster name via hooks mechanism
+hive = Hive.get_current(spark=spark)
+</code></pre>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onetl.connection.db_connection.hive.connection.Hive.check" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">check</span><span class="p">()</span></code>
+
+<a href="#onetl.connection.db_connection.hive.connection.Hive.check" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 

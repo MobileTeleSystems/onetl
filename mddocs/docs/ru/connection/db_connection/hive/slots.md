@@ -1,7 +1,6 @@
-(hive-slots)=
+# Hive Slots { #hive-slots }
 
-# Hive Slots
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.hive.slots
 ```
@@ -11,3 +10,11 @@
     :members: normalize_cluster_name, get_known_clusters, get_current_cluster
     :member-order: bysource
 ```
+ -->
+
+::: onetl.connection.db_connection.hive.slots.HiveSlots
+    options:
+        members:
+            - normalize_cluster_name
+            - get_known_clusters
+            - get_current_cluster

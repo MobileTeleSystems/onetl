@@ -1,14 +1,10 @@
-(postgres-execute)=
+# Executing statements in Postgres { #postgres-execute }
 
-# Executing statements in Postgres
-
-```{eval-rst}
-.. warning::
+!!! warning
 
     Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
 
-    Do **NOT** use them to read large amounts of data. Use :ref:`DBReader <postgres-read>` or :ref:`Postgres.sql <postgres-sql>` instead.
-```
+    Do **NOT** use them to read large amounts of data. Use [DBReader][postgres-read] or [Postgres.sql][postgres-sql] instead.
 
 ## How to
 
@@ -19,15 +15,13 @@ There are 2 ways to execute some statement in Postgres
 Use this method to execute some `SELECT` query which returns **small number or rows**, like reading
 Postgres config, or reading data from some reference table. Method returns Spark DataFrame.
 
-Method accepts {obj}`Postgres.FetchOptions <onetl.connection.db_connection.postgres.options.PostgresFetchOptions>`.
+Method accepts [Postgres.FetchOptions][onetl.connection.db_connection.postgres.options.PostgresFetchOptions].
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
     Please take into account :ref:`postgres-types`.
-```
 
 #### Syntax support
 
@@ -56,7 +50,7 @@ value = df.collect()[0][0]  # get value from first row and first column
 
 Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
 
-Method accepts {obj}`Postgres.ExecuteOptions <onetl.connection.db_connection.postgres.options.PostgresExecuteOptions>`.
+Method accepts [Postgres.ExecuteOptions][onetl.connection.db_connection.postgres.options.PostgresExecuteOptions].
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
@@ -93,8 +87,9 @@ postgres.execute(
 )
 ```
 
-## Options
+## Options { #postgres-fetch-options }
 
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.postgres.options
 ```
@@ -111,3 +106,16 @@ postgres.execute(
     :inherited-members: GenericOptions
     :member-order: bysource
 ```
+ -->
+
+::: onetl.connection.db_connection.postgres.options.PostgresFetchOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true
+
+::: onetl.connection.db_connection.postgres.options.PostgresExecuteOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

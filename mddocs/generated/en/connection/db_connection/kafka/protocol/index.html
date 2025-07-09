@@ -1447,6 +1447,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    protocol
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1458,6 +1471,82 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      cleanup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="cleanup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.cleanup--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_options
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="get_options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options--returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Returns
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -6745,6 +6834,71 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      cleanup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="cleanup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.cleanup--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_options
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="get_options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options--parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options--returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Returns
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -6759,14 +6913,112 @@
 
 
 
-<p>(kafka-protocol)=</p>
 <h1 id="kafka-protocol">Kafka Protocol<a class="headerlink" href="#kafka-protocol" title="Permanent link">&para;</a></h1>
+<!-- 
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.kafka.kafka_protocol
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autoclass:: KafkaProtocol
     :members: get_options, cleanup
     :member-order: bysource
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="abc.ABC">ABC</span></code></p>
+
+
+        <p>Interface for Kafka connection Protocol classes.</p>
+<p>.. versionadded:: 0.9.0</p>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.cleanup" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">cleanup</span><span class="p">(</span><span class="n">kafka</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.cleanup" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>This method is called while closing Kafka connection.</p>
+<p>Implement it to cleanup resources like temporary files.</p>
+<h4 id="onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.cleanup--parameters">Parameters<a class="headerlink" href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.cleanup--parameters" title="Permanent link">&para;</a></h4>
+<p>kafka : :obj:<code>Kafka &lt;onetl.connection.db_connection.kafka.connection.Kafka&gt;</code>
+    Connection instance</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_options</span><span class="p">(</span><span class="n">kafka</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get options for Kafka connection</p>
+<h4 id="onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options--parameters">Parameters<a class="headerlink" href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options--parameters" title="Permanent link">&para;</a></h4>
+<p>kafka : :obj:<code>Kafka &lt;onetl.connection.db_connection.kafka.connection.Kafka&gt;</code>
+    Connection instance</p>
+<h4 id="onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options--returns">Returns<a class="headerlink" href="#onetl.connection.db_connection.kafka.kafka_protocol.KafkaProtocol.get_options--returns" title="Permanent link">&para;</a></h4>
+<p>dict:
+    Kafka client options</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 

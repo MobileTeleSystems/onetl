@@ -1,6 +1,4 @@
-(spark-s3-prerequisites)=
-
-# Prerequisites
+# Prerequisites { #spark-s3-prerequisites }
 
 ## Version Compatibility
 
@@ -12,7 +10,7 @@
 To use SparkS3 connector you should have PySpark installed (or injected to `sys.path`)
 BEFORE creating the connector instance.
 
-See {ref}`install-spark` installation instruction for more details.
+See [installation instruction][install-spark] for more details.
 
 ## Connecting to S3
 
@@ -58,4 +56,4 @@ See [Hadoop-AWS](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-a
 
 ## Troubleshooting
 
-See {ref}`spark-s3-troubleshooting`.
+See [troubleshooting guide][spark-s3-troubleshooting].

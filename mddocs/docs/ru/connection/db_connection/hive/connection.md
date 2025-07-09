@@ -1,7 +1,6 @@
-(hive-connection)=
+# Hive Connection { #hive-connection }
 
-# Hive Connection
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.hive.connection
 ```
@@ -11,3 +10,10 @@
     :members: get_current, check
     :member-order: bysource
 ```
+ -->
+
+::: onetl.connection.db_connection.hive.connection.Hive
+    options:
+        members:
+            - get_current
+            - check

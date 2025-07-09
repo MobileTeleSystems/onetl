@@ -1,11 +1,9 @@
-(mongodb-prerequisites)=
-
-# Prerequisites
+# Prerequisites { #mongodb-prerequisites }
 
 ## Version Compatibility
 
 - MongoDB server versions:
-  : - Officially declared: 4.0 or higher
+    - Officially declared: 4.0 or higher
     - Actually tested: 4.0.0, 8.0.4
 - Spark versions: 3.2.x - 3.5.x
 - Java versions: 8 - 20
@@ -17,7 +15,7 @@ See [official documentation](https://www.mongodb.com/docs/spark-connector/).
 To use MongoDB connector you should have PySpark installed (or injected to `sys.path`)
 BEFORE creating the connector instance.
 
-See {ref}`install-spark` installation instruction for more details.
+See [installation instruction][install-spark] for more details.
 
 ## Connecting to MongoDB
 
@@ -53,20 +51,21 @@ Please ask your MongoDB administrator to provide required information.
 Ask your MongoDB cluster administrator to set following grants for a user,
 used for creating a connection:
 
-```{eval-rst}
-.. tabs::
+=== "Read + Write"
 
-    .. code-tab:: js Read + Write
+    ```js
+    // allow writing data to specific database
+    db.grantRolesToUser("username", [{db: "somedb", role: "readWrite"}])
+    ```
 
-        // allow writing data to specific database
-        db.grantRolesToUser("username", [{db: "somedb", role: "readWrite"}])
+=== "Read only"
 
-    .. code-tab:: js Read only
+    ```js
+    // allow reading data from specific database
+    db.grantRolesToUser("username", [{db: "somedb", role: "read"}])
+    ```
 
-        // allow reading data from specific database
-        db.grantRolesToUser("username", [{db: "somedb", role: "read"}])
-```
 
 See:
-: - [db.grantRolesToUser documentation](https://www.mongodb.com/docs/manual/reference/method/db.grantRolesToUser)
+  - [db.grantRolesToUser documentation](https://www.mongodb.com/docs/manual/reference/method/db.grantRolesToUser)
   - [MongoDB builtin roles](https://www.mongodb.com/docs/manual/reference/built-in-roles)

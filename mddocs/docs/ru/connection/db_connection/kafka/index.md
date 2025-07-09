@@ -1,46 +1,29 @@
-(kafka)=
-
 # Kafka
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+# Connection
 
-prerequisites
-connection
-troubleshooting
-```
+* [Prerequisites][kafka-prerequisites]
+* [Kafka Connection][kafka-connection]
+* [Kafka Troubleshooting][kafka-troubleshooting]
 
-```{toctree}
-:caption: Protocols
-:maxdepth: 1
+# Protocols
 
-plaintext_protocol
-ssl_protocol
-```
+* [Kafka PlaintextProtocol][kafka-plaintext-protocol]
+* [Kafka SSLProtocol][kafka-ssl-protocol]
 
-```{toctree}
-:caption: Auth methods
-:maxdepth: 1
+# Auth methods
 
-basic_auth
-kerberos_auth
-scram_auth
-```
+* [Kafka BasicAuth][kafka-basic-auth]
+* [Kafka KerberosAuth][kafka-kerberos-auth]
+* [Kafka ScramAuth][kafka-scram-auth]
 
-```{toctree}
-:caption: Operations
-:maxdepth: 1
+# Operations
 
-read
-write
-```
+* [Reading from Kafka][kafka-read]
+* [Writing to Kafka][kafka-write]
 
-```{toctree}
-:caption: For developers
-:maxdepth: 1
+# For developers
 
-auth
-protocol
-slots
-```
+* [Kafka Auth][kafka-auth]
+* [Kafka Protocol][kafka-protocol]
+* [Kafka Slots][kafka-slots]

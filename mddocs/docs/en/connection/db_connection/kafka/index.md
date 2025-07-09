@@ -8,14 +8,14 @@
 
 # Protocols
 
-* [Kafka PlaintextProtocol][kafka-plaintext protocol]
-* [Kafka SSLProtocol][kafka-ssl_protocol]
+* [Kafka PlaintextProtocol][kafka-plaintext-protocol]
+* [Kafka SSLProtocol][kafka-ssl-protocol]
 
 # Auth methods
 
-* [Kafka BasicAuth][kafka-basic auth]
-* [Kafka KerberosAuth][kafka-kerberos auth]
-* [Kafka ScramAuth][kafka-scram auth]
+* [Kafka BasicAuth][kafka-basic-auth]
+* [Kafka KerberosAuth][kafka-kerberos-auth]
+* [Kafka ScramAuth][kafka-scram-auth]
 
 # Operations
 

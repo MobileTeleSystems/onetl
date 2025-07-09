@@ -1,6 +1,6 @@
-# Подключение
+# Connection
 
- ## Подключения к БД
+ DB Connection
 
 * [DB Connections](db_connection/index.md)
   * [Clickhouse](db_connection/clickhouse/index.md)
@@ -14,7 +14,7 @@
   * [Postgres](db_connection/postgres/index.md)
   * [Teradata](db_connection/teradata/index.md)
 
- ## Подключения к файловым системам\серверам
+ File Connection
 
 * [File Connections](file_connection/index.md)
   * [FTP](file_connection/ftp.md)
@@ -25,7 +25,7 @@
   * [S3](file_connection/s3.md)
   * [Webdav](file_connection/webdav.md)
 
- ## Подключения к файловым системам с использованием DataFrame
+ File DataFrame Connection
 
 * [File DataFrame Connections](file_df_connection/index.md)
   * [Spark LocalFS](file_df_connection/spark_local_fs.md)

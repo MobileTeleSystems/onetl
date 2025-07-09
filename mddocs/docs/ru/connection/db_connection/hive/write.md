@@ -1,8 +1,6 @@
-(hive-write)=
+# Writing to Hive using `DBWriter` { #hive-write }
 
-# Writing to Hive using `DBWriter`
-
-For writing data to Hive, use {obj}`DBWriter <onetl.db.db_writer.db_writer.DBWriter>`.
+For writing data to Hive, use [DBWriter][db-writer].
 
 ## Examples
 
@@ -45,16 +43,14 @@ writer.run(write_df)
 ### Use column-based write formats
 
 Prefer these write formats:
-: - [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html) (**default**)
+  - [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html) (**default**)
   - [Parquet](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html)
   - [Iceberg](https://iceberg.apache.org/spark-quickstart/)
   - [Hudi](https://hudi.apache.org/docs/quick-start-guide/)
   - [Delta](https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake)
 
-```{eval-rst}
-.. warning::
-    When using ``DBWriter``, the default spark data format configured in ``spark.sql.sources.default`` is ignored, as  ``Hive.WriteOptions(format=...)`` default value is explicitly set to ``orc``.
-```
+!!! warning
+    When using `DBWriter`, the default spark data format configured in `spark.sql.sources.default` is ignored, as  `Hive.WriteOptions(format=...)` default value is explicitly set to `orc`.
 
 For column-based write formats, each file contains separated sections where column data is stored. The file footer contains
 location of each column section/group. Spark can use this information to load only sections required by specific query, e.g. only selected columns,
@@ -80,7 +76,7 @@ For example, dataframe with content like this:
 | US              | 2024-01-03          | 5678         | 3464574567  |
 
 With `partitionBy=["country", "business_dt"]` data will be stored as files in the following subfolders:
-: - `/country=RU/business_date=2024-01-01/`
+  - `/country=RU/business_date=2024-01-01/`
   - `/country=RU/business_date=2024-01-02/`
   - `/country=US/business_date=2024-01-01/`
   - `/country=US/business_date=2024-01-02/`
@@ -168,6 +164,8 @@ then `sort_columns` should start with `repartition_columns` or be equal to it.
 
 ## Options
 
+
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.hive.options
 ```
@@ -177,4 +175,11 @@ then `sort_columns` should start with `repartition_columns` or be equal to it.
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
-```
+``` 
+-->
+
+::: onetl.connection.db_connection.hive.options.HiveWriteOptions
+    options:
+        inherited_members: true
+        heading_level: 3
+        show_root_heading: true

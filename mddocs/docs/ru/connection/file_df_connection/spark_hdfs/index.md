@@ -1,18 +1,8 @@
-(spark-hdfs)=
-
 # Spark HDFS
 
-```{toctree}
-:caption: Connection
-:maxdepth: 1
+* [Prerequisites][spark-hdfs-prerequisites]
+* [Connection][spark-hdfs-connection]
 
-prerequisites
-Connection <connection>
-```
+# For developers
 
-```{toctree}
-:caption: For developers
-:maxdepth: 1
-
-Slots <slots>
-```
+* [Slots][spark-hdfs-slots]

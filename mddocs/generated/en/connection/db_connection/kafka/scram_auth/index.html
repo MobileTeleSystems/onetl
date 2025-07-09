@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#kafka-scramauth" class="md-skip">
+        <a href="#kafka-scram-auth" class="md-skip">
           Skip to content
         </a>
       
@@ -1424,6 +1424,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Scram Auth
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1435,6 +1448,58 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth" class="md-nav__link">
+    <span class="md-ellipsis">
+      KafkaScramAuth
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KafkaScramAuth">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth.parse" class="md-nav__link">
+    <span class="md-ellipsis">
+      parse
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -6745,6 +6810,47 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth" class="md-nav__link">
+    <span class="md-ellipsis">
+      KafkaScramAuth
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KafkaScramAuth">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth--examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth.parse" class="md-nav__link">
+    <span class="md-ellipsis">
+      parse
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -6759,15 +6865,116 @@
 
 
 
-<p>(kafka-scram-auth)=</p>
-<h1 id="kafka-scramauth">Kafka ScramAuth<a class="headerlink" href="#kafka-scramauth" title="Permanent link">&para;</a></h1>
+<h1 id="kafka-scram-auth">Kafka ScramAuth<a class="headerlink" href="#kafka-scram-auth" title="Permanent link">&para;</a></h1>
+<!-- 
+
 <div class="highlight"><pre><span></span><code>.. currentmodule:: onetl.connection.db_connection.kafka.kafka_scram_auth
 </code></pre></div>
+
 <div class="highlight"><pre><span></span><code>.. autopydantic_model:: KafkaScramAuth
     :member-order: bysource
     :model-show-field-summary: false
     :field-show-constraints: false
 </code></pre></div>
+ -->
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth" class="doc doc-heading">
+            <code>onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth</code>
+
+
+<a href="#onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="onetl.connection.db_connection.kafka.kafka_auth.KafkaAuth">KafkaAuth</span></code>, <code><span title="onetl.impl.GenericOptions">GenericOptions</span></code></p>
+
+
+        <p>Connect to Kafka using <code>sasl.mechanism="SCRAM-SHA-256"</code> or <code>sasl.mechanism="SCRAM-SHA-512"</code>.</p>
+<p>For more details see <code>Kafka Documentation &lt;https://kafka.apache.org/documentation/#security_sasl_scram_clientconfig&gt;</code>_.</p>
+<p>.. versionadded:: 0.9.0</p>
+<h5 id="onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth--examples">Examples<a class="headerlink" href="#onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth--examples" title="Permanent link">&para;</a></h5>
+<p>Auth in Kafka with <code>SCRAM-SHA-256</code> mechanism:</p>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import Kafka
+
+auth = Kafka.ScramAuth(
+    user="me",
+    password="abc",
+    digest="SHA-256",
+)
+</code></pre>
+<p>Auth in Kafka with <code>SCRAM-SHA-512</code> mechanism and some custom SASL options passed to Kafka client config:</p>
+<p>.. code:: python</p>
+<pre><code>from onetl.connection import Kafka
+
+auth = Kafka.ScramAuth.parse(
+    {
+        "user": "me",
+        "password": "abc",
+        "digest": "SHA-512",
+        # options with `sasl.login.` prefix are passed to Kafka client config as-is
+        "sasl.login.class": "com.example.CustomScramLogin",
+    }
+)
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth.parse" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">parse</span><span class="p">(</span><span class="n">options</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth.parse" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>If a parameter inherited from the ReadOptions class was passed, then it will be returned unchanged.
+If a Dict object was passed it will be converted to ReadOptions.</p>
+<p>Otherwise, an exception will be raised</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 
 

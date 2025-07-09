@@ -1,7 +1,6 @@
-(spark-local-fs)=
+# Spark LocalFS { #spark-local-fs }
 
-# Spark LocalFS
-
+<!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.file_df_connection.spark_local_fs
 ```
@@ -10,3 +9,9 @@
 .. autoclass:: SparkLocalFS
     :members: check
 ```
+ -->
+
+::: onetl.connection.file_df_connection.spark_local_fs.SparkLocalFS
+    options:
+        members:
+            - check
