@@ -1,0 +1,18 @@
+stages:
+  - security-scan
+
+## -------------- Security Pipeline ---------------- ##
+
+security-scan:
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /(develop)/
+      when: always
+  stage: security-scan
+  trigger:
+    include:
+      - project: 'devsecops3000Pro/public/pipelines/security-pipeline'
+        file: 'security_pipeline.yaml'
+        ref: 'master'
+    forward:
+      pipeline_variables: true
+      yaml_variables: true
