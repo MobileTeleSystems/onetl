@@ -1,15 +1,15 @@
-# File DataFrame Connections
+# Подключения к файлам как DataFrame
 
-* [Spark LocalFS][spark-local-fs]
-* [Spark HDFS][spark-hdfs]
-  * [Prerequisites][spark-hdfs-prerequisites]
-  * [Connection][spark-hdfs-connection]
-  * [Slots][spark-hdfs-slots]
-* [Spark S3][spark-s3]
-  * [Prerequisites][spark-s3-prerequisites]
-  * [Connection][spark-s3-connection]
-  * [Troubleshooting][spark-s3-troubleshooting]
+* [Spark на локальной файловой системе][spark-local-fs]
+* [Spark на HDFS][spark-hdfs]
+  * [Предварительные требования][spark-hdfs-prerequisites]
+  * [Подключение][spark-hdfs-connection]
+  * [Слоты][spark-hdfs-slots]
+* [Spark на S3][spark-s3]
+  * [Предварительные требования][spark-s3-prerequisites]
+  * [Подключение][spark-s3-connection]
+  * [Устранение неполадок][spark-s3-troubleshooting]
 
-# For developers
+# Для разработчиков
 
-* [Base interface][base-file-df-connection]
+* [Базовый интерфейс][base-file-df-connection]

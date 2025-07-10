@@ -1,8 +1,8 @@
-# Connection
+# Подключение
 
- DB Connection
+ Подключения к базам данных
 
-* [DB Connections](db_connection/index.md)
+* [Подключения к БД](db_connection/index.md)
   * [Clickhouse](db_connection/clickhouse/index.md)
   * [Greenplum](db_connection/greenplum/index.md)
   * [Kafka](db_connection/kafka/index.md)
@@ -14,9 +14,9 @@
   * [Postgres](db_connection/postgres/index.md)
   * [Teradata](db_connection/teradata/index.md)
 
- File Connection
+ Подключения к файловым источникам
 
-* [File Connections](file_connection/index.md)
+* [Подключения к файлам](file_connection/index.md)
   * [FTP](file_connection/ftp.md)
   * [FTPS](file_connection/ftps.md)
   * [HDFS](file_connection/hdfs/index.md)
@@ -25,9 +25,9 @@
   * [S3](file_connection/s3.md)
   * [Webdav](file_connection/webdav.md)
 
- File DataFrame Connection
+ Подключения к файловым источникам в виде DataFrame
 
-* [File DataFrame Connections](file_df_connection/index.md)
+* [Файлы как DataFrame](file_df_connection/index.md)
   * [Spark LocalFS](file_df_connection/spark_local_fs.md)
   * [Spark HDFS](file_df_connection/spark_hdfs/index.md)
   * [Spark S3](file_df_connection/spark_s3/index.md)

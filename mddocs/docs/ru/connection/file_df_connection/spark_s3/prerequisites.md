@@ -1,35 +1,33 @@
-# Prerequisites { #spark-s3-prerequisites }
+# Предварительные требования { #spark-s3-prerequisites }
 
-## Version Compatibility
+## Совместимость версий
 
-- Spark versions: 3.2.x - 3.5.x (only with Hadoop 3.x libraries)
-- Java versions: 8 - 20
+- Версии Spark: 3.2.x - 3.5.x (только с библиотеками Hadoop 3.x)
+- Версии Java: 8 - 20
 
-## Installing PySpark
+## Установка PySpark
 
-To use SparkS3 connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+Для использования коннектора SparkS3 у вас должен быть установлен PySpark (или добавлен в `sys.path`) **ДО** создания экземпляра коннектора.
 
-See [installation instruction][install-spark] for more details.
+Подробнее см. в [инструкции по установке][install-spark].
 
-## Connecting to S3
+## Подключение к S3
 
-### Bucket access style
+### Стиль доступа к корзине
 
-AWS and some other S3 cloud providers allows bucket access using domain style only, e.g. `https://mybucket.s3provider.com`.
+AWS и некоторые другие облачные провайдеры S3 разрешают доступ к корзине только с использованием доменного стиля, например, `https://mybucket.s3provider.com`.
 
-Other implementations, like Minio, by default allows path style access only, e.g. `https://s3provider.com/mybucket`
-(see [MINIO_DOMAIN](https://min.io/docs/minio/linux/reference/minio-server/minio-server.html#envvar.MINIO_DOMAIN)).
+Другие реализации, такие как Minio, по умолчанию разрешают доступ только в стиле пути, например, `https://s3provider.com/mybucket` (см. [MINIO_DOMAIN](https://min.io/docs/minio/linux/reference/minio-server/minio-server.html#envvar.MINIO_DOMAIN)).
 
-You should set `path.style.access` to `True` or `False`, to choose the preferred style.
+Вам следует установить для `path.style.access` значение `True` или `False`, чтобы выбрать предпочтительный стиль.
 
-### Authentication
+### Аутентификация
 
-Different S3 instances can use different authentication methods, like:
-: - `access_key + secret_key` (or username + password)
+Разные экземпляры S3 могут использовать разные методы аутентификации, такие как:
+  - `access_key + secret_key` (или имя пользователя + пароль)
   - `access_key + secret_key + session_token`
 
-Usually these are just passed to SparkS3 constructor:
+Обычно они просто передаются в конструктор SparkS3:
 
 ```python
 SparkS3(
@@ -39,21 +37,21 @@ SparkS3(
 )
 ```
 
-But some S3 cloud providers, like AWS, may require custom credential providers. You can pass them like:
+Но некоторые облачные провайдеры S3, такие как AWS, могут требовать пользовательские провайдеры учетных данных. Вы можете передать их так:
 
 ```python
 SparkS3(
     extra={
-        # provider class
+        # класс провайдера
         "aws.credentials.provider": "org.apache.hadoop.fs.s3a.auth.AssumedRoleCredentialProvider",
-        # other options, if needed
+        # другие параметры, если необходимо
         "assumed.role.arn": "arn:aws:iam::90066806600238:role/s3-restricted",
     },
 )
 ```
 
-See [Hadoop-AWS](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/index.html#Changing_Authentication_Providers) documentation.
+См. документацию [Hadoop-AWS](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/index.html#Changing_Authentication_Providers).
 
-## Troubleshooting
+## Устранение неполадок
 
-See [troubleshooting guide][spark-s3-troubleshooting].
+См. [руководство по устранению неполадок][spark-s3-troubleshooting].

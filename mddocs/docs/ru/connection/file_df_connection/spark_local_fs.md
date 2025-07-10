@@ -1,4 +1,4 @@
-# Spark LocalFS { #spark-local-fs }
+# Spark на локальной файловой системе { #spark-local-fs }
 
 <!-- 
 ```{eval-rst}

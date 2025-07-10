@@ -1,40 +1,38 @@
-# Spark S3 Troubleshooting { #spark-s3-troubleshooting }
+# Устранение неполадок Spark S3 { #spark-s3-troubleshooting }
 
 !!! note
 
-    General guide: [Troubleshooting][troubleshooting-main].
+    Общее руководство: [Устранение неполадок][troubleshooting-main].
 
-More details:
+Подробнее:
 
-- [Hadoop AWS Troubleshooting Guide](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/troubleshooting_s3a.html)
-- [Hadoop AWS Performance Guide](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html)
-- [Spark integration with Cloud Infrastructures](https://spark.apache.org/docs/latest/cloud-integration.html)
+- [Руководство по устранению неполадок Hadoop AWS](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/troubleshooting_s3a.html)
+- [Руководство по производительности Hadoop AWS](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html)
+- [Интеграция Spark с облачными инфраструктурами](https://spark.apache.org/docs/latest/cloud-integration.html)
 
-## `SparkS3.check()` and other methods hang
+## `SparkS3.check()` и другие методы зависают
 
-### Details
+### Подробности
 
-S3 may not respond for connection attempts for a long time if it's under heavy load.
-To handle this, Hadoop AWS library has retry mechanism. By default it retries 7 times with 500ms interval.
+S3 может долго не отвечать на попытки подключения, если она находится под большой нагрузкой.
+Чтобы справиться с этим, библиотека Hadoop AWS имеет механизм повторных попыток. По умолчанию он повторяет 7 раз с интервалом 500 мс.
 
-Hadoop AWS is based on AWS SDK library, which also has retry mechanism. This mechanism is not disabled because it handles different
-errors than Hadoop AWS, so they complement each other. Default number of attempts in AWS SDK is 20 with minimal 5s interval,
-which is exponentially increasing with each failed attempt.
+Hadoop AWS основан на библиотеке AWS SDK, которая также имеет механизм повторных попыток. Этот механизм не отключен, потому что он обрабатывает другие ошибки, чем Hadoop AWS, поэтому они дополняют друг друга. Количество попыток по умолчанию в AWS SDK составляет 20 с минимальным интервалом 5 с, который экспоненциально увеличивается с каждой неудачной попыткой.
 
-It is not a problem if S3 source is not accessible at all, like hostname cannot be resolved, or port is not opened.
-These errors are not recoverable, and retry mechanism is not activated.
+Это не проблема, если источник S3 вообще недоступен, например, не удается разрешить имя хоста или порт не открыт.
+Эти ошибки не восстанавливаются, и механизм повторных попыток не активируется.
 
-But errors like SSL issues, are considered recoverable, and this causing retry of retry over increasing interval.
-So user is waiting for [almost 15 minutes](https://issues.apache.org/jira/browse/HADOOP-18839) just to get exception message.
+Но такие ошибки, как проблемы с SSL, считаются восстанавливаемыми, и это вызывает повторную попытку с увеличением интервала.
+Таким образом, пользователь ждет [почти 15 минут](https://issues.apache.org/jira/browse/HADOOP-18839) только для того, чтобы получить сообщение об исключении.
 
-### How to determine reason
+### Как определить причину
 
-#### Make logging more verbose
+#### Сделайте ведение журнала более подробным
 
-Change Spark session log level to [DEBUG][troubleshooting-spark] to print result of each attempt.
-Resulting logs will look like this
+Измените уровень журнала сеанса Spark на [DEBUG][troubleshooting-spark], чтобы распечатать результат каждой попытки.
+Полученные журналы будут выглядеть так
 
-??? note "See log"
+??? note "Посмотреть лог"
 
     ```text
 
@@ -164,9 +162,9 @@ Resulting logs will look like this
         23/08/03 11:25:10 DEBUG AmazonHttpClient: Retriable error detected, will retry in 49ms, attempt number: 0
     ```
 
-#### Change number of retries
+#### Измените количество повторных попыток
 
-You can also change number of retries performed by both libraries using `extra` parameter:
+Вы также можете изменить количество повторных попыток, выполняемых обеими библиотеками, используя параметр `extra`:
 
 ```python
 spark_s3 = SparkS3(
@@ -178,51 +176,51 @@ spark_s3 = SparkS3(
 )
 ```
 
-So accessing S3 will fail almost immediately if there is any error.
+Таким образом, доступ к S3 завершится почти сразу, если возникнет какая-либо ошибка.
 
-### Most common mistakes
+### Наиболее распространенные ошибки
 
-#### No network access
+#### Нет доступа к сети
 
 ```text
 Caused by: java.net.ConnectException: Connection refused
 ```
 
-Mostly caused by:
+В основном вызвано:
 
-- Trying to access port number which S3 server does not listen
-- You're trying to access host which is unreachable from your network (e.g. running behind some proxy or VPN)
-- There are some firewall restrictions for accessing specific host or port
+- Попытка доступа к номеру порта, который не прослушивается сервером S3
+- Вы пытаетесь получить доступ к хосту, который недоступен из вашей сети (например, работает за каким-то прокси или VPN)
+- Существуют некоторые ограничения брандмауэра для доступа к определенному хосту или порту
 
-#### Using HTTPS protocol for HTTP port
+#### Использование протокола HTTPS для порта HTTP
 
 ```text
 Caused by: javax.net.ssl.SSLException: Unsupported or unrecognized SSL message
 ```
 
-By default, SparkS3 uses HTTPS protocol for connection.
-If you change port number, this does not lead to changing protocol:
+По умолчанию SparkS3 использует протокол HTTPS для подключения.
+Если вы измените номер порта, это не приведет к изменению протокола:
 
 ```python
 spark_s3 = SparkS3(host="s3provider.com", port=8080, ...)
 ```
 
-You should pass protocol explicitly:
+Вы должны явно передать протокол:
 
 ```python
 spark_s3 = SparkS3(host="s3provider.com", port=8080, protocol="http", ...)
 ```
 
-#### SSL certificate is self-signed
+#### SSL-сертификат является самоподписанным
 
 ```text
 sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
 ```
 
-To connect to HTTPS port with self-signed certificate, you should
-[add certificate chain to Java TrustedStore](https://stackoverflow.com/questions/373295/digital-certificate-how-to-import-cer-file-in-to-truststore-file-using).
+Чтобы подключиться к порту HTTPS с самоподписанным сертификатом, вы должны
+[добавить цепочку сертификатов в Java TrustedStore](https://stackoverflow.com/questions/373295/digital-certificate-how-to-import-cer-file-in-to-truststore-file-using).
 
-Another option is to disable SSL check:
+Другой вариант - отключить проверку SSL:
 
 ```python
 spark_s3 = SparkS3(
@@ -233,15 +231,15 @@ spark_s3 = SparkS3(
 )
 ```
 
-But is is **NOT** recommended.
+Но это **НЕ** рекомендуется.
 
-#### Accessing S3 without domain-style access style support
+#### Доступ к S3 без поддержки стиля доступа на основе домена
 
 ```text
 Caused by: java.net.UnknownHostException: my-bucket.s3provider.com
 ```
 
-To use path-style access, use option below:
+Чтобы использовать стиль доступа на основе пути, используйте опцию ниже:
 
 ```python
 spark_s3 = SparkS3(
@@ -254,59 +252,59 @@ spark_s3 = SparkS3(
 )
 ```
 
-## Slow or unstable writing to S3
+## Медленная или нестабильная запись в S3
 
-Hadoop AWS allows to use different writing strategies for different S3 implementations, depending
-on list of supported features by server.
+Hadoop AWS позволяет использовать различные стратегии записи для различных реализаций S3, в зависимости
+от списка поддерживаемых сервером функций.
 
-These strategies are called [committers](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/committers.html).
-There are [different types of committers](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/committers.html#Switching_to_an_S3A_Committer):
+Эти стратегии называются [коммиттерами](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/committers.html).
+Существуют [различные типы коммиттеров](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/committers.html#Switching_to_an_S3A_Committer):
 
-- `file` (default)
+- `file` (по умолчанию)
 - `directory`
 - `partitioned`
 - `magic`
 
-### `file` committer
+### `file` коммиттер
 
-This committer is quite slow and unstable, so it is not recommended to use:
+Этот коммиттер довольно медленный и нестабильный, поэтому его не рекомендуется использовать:
 
 ```text
 WARN AbstractS3ACommitterFactory: Using standard FileOutputCommitter to commit work. This is slow and potentially unsafe.
 ```
 
-This is caused by the fact it creates files in the temp directory on remote filesystem, and after all of them are written successfully,
-they are moved to target directory on same remote filesystem.
+Это вызвано тем, что он создает файлы во временном каталоге в удаленной файловой системе, и после того, как все они будут успешно записаны,
+они перемещаются в целевой каталог в той же удаленной файловой системе.
 
-This is not an issue for HDFS which does support file move operations and also support renaming directory
-as atomic operation with `O(1)` time complexity.
+Это не проблема для HDFS, который поддерживает операции перемещения файлов, а также поддерживает переименование каталога
+как атомарную операцию со сложностью по времени `O(1)`.
 
-But S3 does support only file copying, so moving is performed via copy + delete.
-Also it does not support atomic directory rename operation. Instead, renaming files with the same prefix has time complexity `O(n)`.
+Но S3 поддерживает только копирование файлов, поэтому перемещение выполняется путем копирования + удаления.
+Также он не поддерживает атомарную операцию переименования каталога. Вместо этого переименование файлов с одинаковым префиксом имеет временную сложность `O(n)`.
 
-### `directory` and `partitioned` committers
+### `directory` и `partitioned` коммиттеры
 
-These are [staging committers](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/committer_architecture.html),
-meaning that they create temp directories on local filesystem, and after all files are written successfully,
-they will be uploaded to S3. Local filesystems do support file moving and directory renaming,
-so these committers does not have issues that `file` committer has.
+Это [промежуточные коммиттеры](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/committer_architecture.html),
+что означает, что они создают временные каталоги в локальной файловой системе, и после того, как все файлы будут успешно записаны,
+они будут загружены в S3. Локальные файловые системы поддерживают перемещение файлов и переименование каталогов,
+поэтому у этих коммиттеров нет проблем, которые есть у коммиттера `file`.
 
-But they both require free space on local filesystem, and this may be an issue if user need to write large amount of data.
-Also this can be an issue for container environment, like Kubernetes, there resources should be allocated before starting a container.
+Но им обоим требуется свободное место в локальной файловой системе, и это может быть проблемой, если пользователю необходимо записать большой объем данных.
+Также это может быть проблемой для контейнерной среды, такой как Kubernetes, где ресурсы должны быть выделены до запуска контейнера.
 
-### `magic` committer
+### `magic` коммиттер
 
-This committer uses multipart upload feature of S3 API, allowing to create multiple files
-and after all of them were written successfully finish the transaction. Before transaction is finished,
-files will not be accessible by other clients.
+Этот коммиттер использует функцию многокомпонентной загрузки API S3, позволяя создавать несколько файлов
+и после того, как все они будут успешно записаны, завершить транзакцию. До завершения транзакции
+файлы не будут доступны другим клиентам.
 
-Because it does not require neither file moving operations, nor directory atomic rename,
-upload process is done in most efficient way S3 support.
-This [drastically increases writing performance](https://spot.io/blog/improve-apache-spark-performance-with-the-s3-magic-committer/).
+Поскольку он не требует ни операций перемещения файлов, ни атомарного переименования каталога,
+процесс загрузки выполняется наиболее эффективным способом, который поддерживает S3.
+Это [резко увеличивает производительность записи](https://spot.io/blog/improve-apache-spark-performance-with-the-s3-magic-committer/).
 
-To use this committer, set [following properties](https://github.com/apache/spark/pull/32518) while creating Spark session.
+Чтобы использовать этот коммиттер, установите [следующие свойства](https://github.com/apache/spark/pull/32518) при создании сеанса Spark.
 
-=== "S3 your main distributed filesystem (Spark on Kubernetes)"
+=== "S3 - ваша основная распределенная файловая система (Spark on Kubernetes)"
 
     ```python 
         # https://issues.apache.org/jira/browse/SPARK-23977
@@ -322,7 +320,7 @@ To use this committer, set [following properties](https://github.com/apache/spar
         )
     ```
 
-=== "HDFS is your main distributed filesystem (Spark on Hadoop)"
+=== "HDFS - ваша основная распределенная файловая система (Spark on Hadoop)"
 
     ```python 
         # https://community.cloudera.com/t5/Support-Questions/spark-sql-sources-partitionOverwriteMode-dynamic-quot-not/m-p/343483/highlight/true
@@ -336,29 +334,29 @@ To use this committer, set [following properties](https://github.com/apache/spar
 
 !!! warning
 
-    `magic` committer requires S3 implementation to have strong consistency - file upload API return response only if it was written on enough number of cluster nodes, and any cluster node error does not lead to missing or corrupting files.
+    `magic` коммиттер требует, чтобы реализация S3 имела строгую согласованность - API загрузки файлов возвращает ответ только в том случае, если он был записан на достаточном количестве узлов кластера, и любая ошибка узла кластера не приводит к отсутствию или повреждению файлов.
 
-    Some S3 implementations does have strong consistency (like [AWS S3](https://aws.amazon.com/ru/blogs/aws/amazon-s3-update-strong-read-after-write-consistency/) and [MinIO](https://blog.min.io/migrating-hdfs-to-object-storage/)), some not. Please contact your S3 provider to get information about S3 implementation consistency.
+    Некоторые реализации S3 имеют строгую согласованность (например, [AWS S3](https://aws.amazon.com/ru/blogs/aws/amazon-s3-update-strong-read-after-write-consistency/) и [MinIO](https://blog.min.io/migrating-hdfs-to-object-storage/)), некоторые - нет. Пожалуйста, свяжитесь с вашим поставщиком S3, чтобы получить информацию о согласованности реализации S3.
 
 !!! warning
 
-    `magic` committer does not support `if_exists="replace_overlapping_partitions"`.
-    Either use another `if_exists` value, or use `partitioned` committer.
+    `magic` коммиттер не поддерживает `if_exists="replace_overlapping_partitions"`.
+    Либо используйте другое значение `if_exists`, либо используйте `partitioned` коммиттер.
 
-### See also
+### Смотрите также
 
 - [directory.marker.retention="keep"](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/directory_markers.html)
 
-## Slow reading from S3
+## Медленное чтение из S3
 
-Please read following documentation:
+Пожалуйста, прочитайте следующую документацию:
 
 - [prefetch.enabled](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/prefetching.html)
 - [experimental.input.fadvise](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html#Improving_data_input_performance_through_fadvise)
-- [Parquet and ORC I/O settings](https://spark.apache.org/docs/latest/cloud-integration.html#parquet-io-settings)
+- [Настройки Parquet и ORC I/O](https://spark.apache.org/docs/latest/cloud-integration.html#parquet-io-settings)
 
-If you're reading data from row-based formats, like [CSV][csv-file-format], prefer
-[experimental.input.fadvise="sequential" with increased readahead.range](https://issues.apache.org/jira/browse/HADOOP-17789?focusedCommentId=17383559#comment-17383559).
+Если вы читаете данные из строковых форматов, таких как [CSV][csv-file-format], предпочтительнее
+[experimental.input.fadvise="sequential" с увеличенным readahead.range](https://issues.apache.org/jira/browse/HADOOP-17789?focusedCommentId=17383559#comment-17383559).
 
-But for other file formats, especially using compression, prefer
+Но для других форматов файлов, особенно с использованием сжатия, предпочтительнее
 [experimental.input.fadvise="normal"](https://issues.apache.org/jira/browse/HADOOP-17789?focusedCommentId=17383743#comment-17383743)

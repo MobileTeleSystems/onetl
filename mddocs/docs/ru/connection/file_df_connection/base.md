@@ -1,4 +1,4 @@
-# Base interface { #base-file-df-connection }
+# Базовый интерфейс { #base-file-df-connection }
 
 <!-- 
 ```{eval-rst}
