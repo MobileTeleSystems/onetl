@@ -1,24 +1,22 @@
-# Prerequisites { #spark-hdfs-prerequisites }
+# Предварительные требования { #spark-hdfs-prerequisites }
 
-## Version Compatibility
+## Совместимость версий
 
-- Hadoop versions: 2.x, 3.x (only with Hadoop 3.x libraries)
-- Spark versions: 2.3.x - 3.5.x
-- Java versions: 8 - 20
+- Версии Hadoop: 2.x, 3.x (только с библиотеками Hadoop 3.x)
+- Версии Spark: 2.3.x - 3.5.x
+- Версии Java: 8 - 20
 
-## Installing PySpark
+## Установка PySpark
 
-To use SparkHDFS connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+Чтобы использовать коннектор SparkHDFS, у вас должен быть установлен PySpark (или добавлен в `sys.path`) **ДО** создания экземпляра коннектора.
 
-See [installation instruction][install-spark] for more details.
+См. [инструкцию по установке][install-spark] для получения более подробной информации.
 
-## Using Kerberos
+## Использование Kerberos
 
-Some of Hadoop managed clusters use Kerberos authentication. In this case, you should call [kinit](https://web.mit.edu/kerberos/krb5-1.12/doc/user/user_commands/kinit.html) command
-**BEFORE** starting Spark session to generate Kerberos ticket. See [Kerberos installation instructions][install-kerberos].
+Некоторые управляемые кластеры Hadoop используют аутентификацию Kerberos. В этом случае вам следует вызвать команду [kinit](https://web.mit.edu/kerberos/krb5-1.12/doc/user/user_commands/kinit.html) **ДО** запуска сессии Spark для генерации тикета Kerberos. См. [инструкции по установке Kerberos][install-kerberos].
 
-Sometimes it is also required to pass keytab file to Spark config, allowing Spark executors to generate own Kerberos tickets:
+Иногда также требуется передать файл keytab в конфигурацию Spark, позволяя исполнителям Spark генерировать собственные тикеты Kerberos:
 
 === "Spark 3"
 
@@ -42,5 +40,4 @@ Sometimes it is also required to pass keytab file to Spark config, allowing Spar
             .gerOrCreate()
     ```
 
-See [Spark security documentation](https://spark.apache.org/docs/latest/security.html#kerberos)
-for more details.
+См. [документацию по безопасности Spark](https://spark.apache.org/docs/latest/security.html#kerberos) для получения более подробной информации.

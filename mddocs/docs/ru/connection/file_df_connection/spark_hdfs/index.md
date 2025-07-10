@@ -1,8 +1,8 @@
 # Spark HDFS
 
-* [Prerequisites][spark-hdfs-prerequisites]
-* [Connection][spark-hdfs-connection]
+* [Предварительные требования][spark-hdfs-prerequisites]
+* [Подключение][spark-hdfs-connection]
 
-# For developers
+## Для разработчиков
 
-* [Slots][spark-hdfs-slots]
+* [Слоты][spark-hdfs-slots]

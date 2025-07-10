@@ -1,4 +1,4 @@
-# Spark HDFS Connection
+# Подключение Spark HDFS
 
 <!-- 
 ```{eval-rst}

@@ -1,5 +1,5 @@
 # Spark на S3
 
-* [Prerequisites][spark-s3-prerequisites]
-* [Connection][spark-s3-connection]
-* [Troubleshooting][spark-s3-troubleshooting]
+* [Предварительные условия][spark-s3-prerequisites]
+* [Подключение][spark-s3-connection]
+* [Устранение неполадок][spark-s3-troubleshooting]

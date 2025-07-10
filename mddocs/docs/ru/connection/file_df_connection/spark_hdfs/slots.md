@@ -1,5 +1,4 @@
-# Spark HDFS Slots
-
+# Слоты Spark HDFS
 
 <!-- 
 ```{eval-rst}
