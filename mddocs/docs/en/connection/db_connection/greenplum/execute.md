@@ -21,8 +21,7 @@ Connection opened using this method should be then closed with `connection.close
 
 !!! warning
 
-    `Greenplum.fetch` is implemented using Postgres JDBC connection,
-    so types are handled a bit differently than in `DBReader`. See [Postgres types][postgres-types].
+    `Greenplum.fetch` is implemented using Postgres JDBC connection, so types are handled a bit differently than in `DBReader`. See [Postgres types][postgres-types].
 
 #### Syntax support
 
@@ -35,18 +34,19 @@ This method supports **any** query syntax supported by Greenplum, like:
 
 #### Examples
 
-```python
-from onetl.connection import Greenplum
+    ```python
+    from onetl.connection import Greenplum
 
-greenplum = Greenplum(...)
+    greenplum = Greenplum(...)
 
-df = greenplum.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=Greenplum.FetchOptions(queryTimeout=10),
-)
-greenplum.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+    df = greenplum.fetch(
+        "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+        options=Greenplum.FetchOptions(queryTimeout=10),
+    )
+    greenplum.close()
+    value = df.collect()[0][0]  # get value from first row and first column 
+        
+    ```
 
 ### Use `Greenplum.execute`
 
@@ -71,24 +71,24 @@ This method supports **any** query syntax supported by Greenplum, like:
 
 #### Examples
 
-```python
-from onetl.connection import Greenplum
+    ```python
+    from onetl.connection import Greenplum
 
-greenplum = Greenplum(...)
+    greenplum = Greenplum(...)
 
-greenplum.execute("DROP TABLE schema.table")
-greenplum.execute(
-    """
-    CREATE TABLE schema.table (
-        id int,
-        key text,
-        value real
-    )
-    DISTRIBUTED BY id
-    """,
-    options=Greenplum.ExecuteOptions(queryTimeout=10),
-)
-```
+    greenplum.execute("DROP TABLE schema.table")
+    greenplum.execute(
+        """
+        CREATE TABLE schema.table (
+            id int,
+            key text,
+            value real
+        )
+        DISTRIBUTED BY id
+        """,
+        options=Greenplum.ExecuteOptions(queryTimeout=10),
+    ) 
+    ```
 
 ## Interaction schema
 
@@ -158,26 +158,25 @@ The only port used while interacting with Greenplum in this case is `5432` (Gree
 ## Options
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.greenplum.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.greenplum.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: GreenplumFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
+    ```{eval-rst}
+    .. autopydantic_model:: GreenplumFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
 
-```
-
-```{eval-rst}
-.. autopydantic_model:: GreenplumExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: GreenplumExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.greenplum.options.GreenplumFetchOptions

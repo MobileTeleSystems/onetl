@@ -1,9 +1,9 @@
 # HDFS
 
-# Connection
+## Подключение
 
-* [HDFS connection][hdfs-connection]
+* [Подключение к HDFS][hdfs-connection]
 
-# For developers
+## Для разработчиков
 
-* [HDFS Slots][hdfs-slots]
+* [Слоты HDFS][hdfs-slots]

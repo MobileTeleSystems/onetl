@@ -6,7 +6,6 @@
 
     Do **NOT** use them to read large amounts of data. Use [DBReader][clickhouse-read] or [Clickhouse.sql][clickhouse-sql] instead.
 
-
 ## How to
 
 There are 2 ways to execute some statement in Clickhouse
@@ -24,7 +23,6 @@ Connection opened using this method should be then closed with `connection.close
 
     Please take into account [Clickhouse types][clickhouse-types].
 
-
 #### Syntax support
 
 This method supports **any** query syntax supported by Clickhouse, like:
@@ -37,18 +35,18 @@ This method supports **any** query syntax supported by Clickhouse, like:
 
 #### Examples
 
-```python
-from onetl.connection import Clickhouse
+    ```python
+    from onetl.connection import Clickhouse
 
-clickhouse = Clickhouse(...)
+    clickhouse = Clickhouse(...)
 
-df = clickhouse.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=Clickhouse.FetchOptions(queryTimeout=10),
-)
-clickhouse.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+    df = clickhouse.fetch(
+        "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+        options=Clickhouse.FetchOptions(queryTimeout=10),
+    )
+    clickhouse.close()
+    value = df.collect()[0][0]  # get value from first row and first column
+    ```
 
 ### Use `Clickhouse.execute`
 
@@ -71,25 +69,25 @@ This method supports **any** query syntax supported by Clickhouse, like:
 
 #### Examples
 
-```python
-from onetl.connection import Clickhouse
+    ```python
+    from onetl.connection import Clickhouse
 
-clickhouse = Clickhouse(...)
+    clickhouse = Clickhouse(...)
 
-clickhouse.execute("DROP TABLE schema.table")
-clickhouse.execute(
-    """
-    CREATE TABLE schema.table (
-        id UInt8,
-        key String,
-        value Float32
+    clickhouse.execute("DROP TABLE schema.table")
+    clickhouse.execute(
+        """
+        CREATE TABLE schema.table (
+            id UInt8,
+            key String,
+            value Float32
+        )
+        ENGINE = MergeTree()
+        ORDER BY id
+        """,
+        options=Clickhouse.ExecuteOptions(queryTimeout=10),
     )
-    ENGINE = MergeTree()
-    ORDER BY id
-    """,
-    options=Clickhouse.ExecuteOptions(queryTimeout=10),
-)
-```
+    ```
 
 ## Notes
 
@@ -100,26 +98,26 @@ So it should **NOT** be used to read large amounts of data. Use [DBReader][click
 ## Options { #clickhouse-execute-options }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.clickhouse.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.clickhouse.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: ClickhouseFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
+    ```{eval-rst}
+    .. autopydantic_model:: ClickhouseFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
 
-```
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: ClickhouseExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: ClickhouseExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.clickhouse.options.ClickhouseFetchOptions

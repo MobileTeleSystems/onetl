@@ -25,19 +25,19 @@ It is possible to connect to MongoDB host by using either DNS name of host or it
 
 It is also possible to connect to MongoDB shared cluster:
 
-```python
-mongo = MongoDB(
-    host="master.host.or.ip",
-    user="user",
-    password="*****",
-    database="target_database",
-    spark=spark,
-    extra={
-        # read data from secondary cluster node, switch to primary if not available
-        "readPreference": "secondaryPreferred",
-    },
-)
-```
+    ```python
+        mongo = MongoDB(
+            host="master.host.or.ip",
+            user="user",
+            password="*****",
+            database="target_database",
+            spark=spark,
+            extra={
+                # read data from secondary cluster node, switch to primary if not available
+                "readPreference": "secondaryPreferred",
+            },
+        )
+    ```
 
 Supported `readPreference` values are described in [official documentation](https://www.mongodb.com/docs/manual/core/read-preference/).
 
@@ -48,8 +48,7 @@ Please ask your MongoDB administrator to provide required information.
 
 ### Required grants
 
-Ask your MongoDB cluster administrator to set following grants for a user,
-used for creating a connection:
+Ask your MongoDB cluster administrator to set following grants for a user, used for creating a connection:
 
 === "Read + Write"
 
@@ -65,7 +64,7 @@ used for creating a connection:
     db.grantRolesToUser("username", [{db: "somedb", role: "read"}])
     ```
 
-
 See:
-  - [db.grantRolesToUser documentation](https://www.mongodb.com/docs/manual/reference/method/db.grantRolesToUser)
-  - [MongoDB builtin roles](https://www.mongodb.com/docs/manual/reference/built-in-roles)
+
+- [db.grantRolesToUser documentation](https://www.mongodb.com/docs/manual/reference/method/db.grantRolesToUser)
+- [MongoDB builtin roles](https://www.mongodb.com/docs/manual/reference/built-in-roles)

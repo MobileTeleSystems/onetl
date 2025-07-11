@@ -1,116 +1,93 @@
-# Executing statements in MSSQL { #mssql-execute }
+# Выполнение запросов в MSSQL { #mssql-execute }
 
 !!! warning
 
-    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+    Методы ниже **загружают все строки** из БД **в память драйвера Spark**, и только потом конвертируют их в DataFrame.
 
-    Do **NOT** use them to read large amounts of data. Use [DBReader][mssql-read] or [MSSQL.sql][mssql-sql] instead.
+    **НЕ** используйте их для чтения больших объемов данных. Вместо этого используйте [DBReader][mssql-read] или [MSSQL.sql][mssql-sql].
 
-## How to
+## Как использовать
 
-There are 2 ways to execute some statement in MSSQL
+Существует 2 способа выполнения запросов в MSSQL
 
-### Use `MSSQL.fetch`
+### Использование `MSSQL.fetch`
 
-Use this method to perform some `SELECT` query which returns **small number or rows**, like reading
-MSSQL config, or reading data from some reference table. Method returns Spark DataFrame.
+Используйте этот метод для выполнения запросов `SELECT`, которые возвращают **небольшое количество строк**, например, для чтения конфигурации MSSQL или данных из справочной таблицы. Метод возвращает Spark DataFrame.
 
-Method accepts [MSSQL.FetchOptions][onetl.connection.db_connection.mssql.options.MSSQLFetchOptions].
+Метод принимает [MSSQL.FetchOptions][onetl.connection.db_connection.mssql.options.MSSQLFetchOptions].
 
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+Соединение, открытое с использованием этого метода, следует затем закрыть с помощью `connection.close()` или `with connection:`.
 
 !!! warning
 
-    Please take into account [MSSQL types][mssql-types].
+    Пожалуйста, учитывайте [типы данных MSSQL][mssql-types].
 
-#### Syntax support
+#### Поддержка синтаксиса
 
-This method supports **any** query syntax supported by MSSQL, like:
+Этот метод поддерживает **любой** синтаксис запросов, поддерживаемый MSSQL, например:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
-- ✅︎ `SELECT func(arg1, arg2) FROM DUAL` - call function
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ✅︎ `SELECT func(arg1, arg2) FROM DUAL` - вызов функции
+- ❌ `SET ...; SELECT ...;` - несколько запросов не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import MSSQL
+    ```python
+        from onetl.connection import MSSQL
 
-mssql = MSSQL(...)
+        mssql = MSSQL(...)
 
-df = mssql.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=MSSQL.FetchOptions(queryTimeout=10),
-)
-mssql.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+        df = mssql.fetch(
+            "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+            options=MSSQL.FetchOptions(queryTimeout=10),
+        )
+        mssql.close()
+        value = df.collect()[0][0]  # получение значения из первой строки и первого столбца
+    ```
 
-### Use `MSSQL.execute`
+### Использование `MSSQL.execute`
 
-Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
+Используйте этот метод для выполнения операций DDL и DML. Каждый вызов метода выполняет операцию в отдельной транзакции и затем фиксирует ее.
 
-Method accepts [MSSQL.ExecuteOptions][onetl.connection.db_connection.mssql.options.MSSQLExecuteOptions].
+Метод принимает [MSSQL.ExecuteOptions][onetl.connection.db_connection.mssql.options.MSSQLExecuteOptions].
 
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+Соединение, открытое с использованием этого метода, следует затем закрыть с помощью `connection.close()` или `with connection:`.
 
-#### Syntax support
+#### Поддержка синтаксиса
 
-This method supports **any** query syntax supported by MSSQL, like:
+Этот метод позволяет использовать **любой** синтаксис запросов, поддерживаемый MSSQL, например:
 
 - ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`
 - ✅︎ `ALTER ...`
 - ✅︎ `INSERT INTO ... AS SELECT ...`
-- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE`, and so on
-- ✅︎ `EXEC procedure(arg1, arg2) ...` or `{call procedure(arg1, arg2)}` - special syntax for calling procedure
-- ✅︎ `DECLARE ... BEGIN ... END` - execute PL/SQL statement
-- ✅︎ other statements not mentioned here
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE` и т.д.
+- ✅︎ `EXEC procedure(arg1, arg2) ...` или `{call procedure(arg1, arg2)}` - специальный синтаксис для вызова процедуры
+- ✅︎ `DECLARE ... BEGIN ... END` - выполнение PL/SQL-выражения
+- ✅︎ другие запросы, не упомянутые здесь
+- ❌ `SET ...; SELECT ...;` - несколько запросов не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import MSSQL
+    ```python
+        from onetl.connection import MSSQL
 
-mssql = MSSQL(...)
+        mssql = MSSQL(...)
 
-mssql.execute("DROP TABLE schema.table")
-mssql.execute(
-    """
-    CREATE TABLE schema.table (
-        id bigint GENERATED ALWAYS AS IDENTITY,
-        key VARCHAR2(4000),
-        value NUMBER
-    )
-    """,
-    options=MSSQL.ExecuteOptions(queryTimeout=10),
-)
-```
+        mssql.execute("DROP TABLE schema.table")
+        mssql.execute(
+            """
+            CREATE TABLE schema.table (
+                id bigint GENERATED ALWAYS AS IDENTITY,
+                key VARCHAR2(4000),
+                value NUMBER
+            )
+            """,
+            options=MSSQL.ExecuteOptions(queryTimeout=10),
+        )
+    ```
 
-## Options
-
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mssql.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: MSSQLFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
-
-```{eval-rst}
-.. autopydantic_model:: MSSQLExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
- -->
+## Опции
 
 ::: onetl.connection.db_connection.mssql.options.MSSQLFetchOptions
     options:

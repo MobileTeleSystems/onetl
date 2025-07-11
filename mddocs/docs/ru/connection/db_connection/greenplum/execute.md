@@ -1,103 +1,100 @@
-# Executing statements in Greenplum { #greenplum-execute }
+# Выполнение предложений в Greenplum { #greenplum-execute }
 
 !!! warning
 
-    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+    Методы, описанные ниже, **загружают все строки** из БД **в память драйвера Spark**, а затем конвертируют их в DataFrame.
 
-    Do **NOT** use them to read large amounts of data. Use [DBReader][greenplum-read] instead.
+    **НЕ** используйте их для чтения больших объёмов данных. Вместо этого используйте [DBReader][greenplum-read].
 
-## How to
+## Как использовать
 
-There are 2 ways to execute some statement in Greenplum
+Существует 2 способа выполнения запросов в Greenplum
 
-### Use `Greenplum.fetch`
+### Использование `Greenplum.fetch`
 
-Use this method to perform some `SELECT` query which returns **small number or rows**, like reading
-Greenplum config, or reading data from some reference table. Method returns Spark DataFrame.
+Используйте этот метод для выполнения запросов `SELECT`, которые возвращают **небольшое количество строк**, например, для чтения конфигурации Greenplum или данных из справочных таблиц. Метод возвращает Spark DataFrame.
 
-Method accepts [Greenplum.FetchOptions][onetl.connection.db_connection.greenplum.options.GreenplumFetchOptions].
+Метод принимает [Greenplum.FetchOptions][onetl.connection.db_connection.greenplum.options.GreenplumFetchOptions].
 
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+Соединение, открытое с помощью этого метода, следует закрыть с помощью `connection.close()` или конструкции `with connection:`.
 
 !!! warning
 
-    `Greenplum.fetch` is implemented using Postgres JDBC connection,
-    so types are handled a bit differently than in `DBReader`. See [Postgres types][postgres-types].
+    `Greenplum.fetch` реализован с использованием JDBC-подключения к Postgres, поэтому типы данных обрабатываются немного иначе, чем в `DBReader`. См. [Типы данных Postgres][postgres-types].
 
-#### Syntax support
+#### Поддержка синтаксиса
 
-This method supports **any** query syntax supported by Greenplum, like:
+Этот метод позволяет использовать **любой** синтаксис запросов, который поддерживается Greenplum, например:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
-- ✅︎ `SELECT func(arg1, arg2)` or `{call func(arg1, arg2)}` - special syntax for calling functions
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ✅︎ `SELECT func(arg1, arg2)` или `{call func(arg1, arg2)}` - специальный синтаксис для вызова функций
+- ❌ `SET ...; SELECT ...;` - множественные запросы не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import Greenplum
+    ```python
+    from onetl.connection import Greenplum
 
-greenplum = Greenplum(...)
+    greenplum = Greenplum(...)
 
-df = greenplum.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=Greenplum.FetchOptions(queryTimeout=10),
-)
-greenplum.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
-
-### Use `Greenplum.execute`
-
-Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
-
-Method accepts [Greenplum.ExecuteOptions][onetl.connection.db_connection.greenplum.options.GreenplumExecuteOptions].
-
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
-
-#### Syntax support
-
-This method supports **any** query syntax supported by Greenplum, like:
-
-- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`, and so on
-- ✅︎ `ALTER ...`
-- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...`, and so on
-- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE`, and so on
-- ✅︎ `CALL procedure(arg1, arg2) ...`
-- ✅︎ `SELECT func(arg1, arg2)` or `{call func(arg1, arg2)}` - special syntax for calling functions
-- ✅︎ other statements not mentioned here
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
-
-#### Examples
-
-```python
-from onetl.connection import Greenplum
-
-greenplum = Greenplum(...)
-
-greenplum.execute("DROP TABLE schema.table")
-greenplum.execute(
-    """
-    CREATE TABLE schema.table (
-        id int,
-        key text,
-        value real
+    df = greenplum.fetch(
+        "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+        options=Greenplum.FetchOptions(queryTimeout=10),
     )
-    DISTRIBUTED BY id
-    """,
-    options=Greenplum.ExecuteOptions(queryTimeout=10),
-)
-```
+    greenplum.close()
+    value = df.collect()[0][0]  # получить значение из первой строки и первого столбца 
+    ```
 
-## Interaction schema
+### Использование `Greenplum.execute`
 
-Unlike reading & writing, executing statements in Greenplum is done **only** through Greenplum master node,
-without any interaction between Greenplum segments and Spark executors. More than that, Spark executors are not used in this case.
+Используйте этот метод для выполнения операций DDL и DML. Каждый вызов метода выполняет операцию в отдельной транзакции и затем фиксирует её.
 
-The only port used while interacting with Greenplum in this case is `5432` (Greenplum master port).
+Метод принимает [Greenplum.ExecuteOptions][onetl.connection.db_connection.greenplum.options.GreenplumExecuteOptions].
 
-??? note "Spark <-> Greenplum interaction during Greenplum.execute()/Greenplum.fetch()"
+Соединение, открытое с помощью этого метода, следует закрыть с помощью `connection.close()` или конструкции `with connection:`.
+
+#### Поддержка синтаксиса
+
+Этот метод поддерживает **любой** синтаксис запросов, который можно использовать в Greenplum, например:
+
+- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...` и т.д.
+- ✅︎ `ALTER ...`
+- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...` и т.д.
+- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE` и т.д.
+- ✅︎ `CALL procedure(arg1, arg2) ...`
+- ✅︎ `SELECT func(arg1, arg2)` или `{call func(arg1, arg2)}` - специальный синтаксис для вызова функций
+- ✅︎ другие запросы, не упомянутые здесь
+- ❌ `SET ...; SELECT ...;` - множественные запросы не поддерживаются
+
+#### Примеры
+
+    ```python
+    from onetl.connection import Greenplum
+
+    greenplum = Greenplum(...)
+
+    greenplum.execute("DROP TABLE schema.table")
+    greenplum.execute(
+        """
+        CREATE TABLE schema.table (
+            id int,
+            key text,
+            value real
+        )
+        DISTRIBUTED BY id
+        """,
+        options=Greenplum.ExecuteOptions(queryTimeout=10),
+    ) 
+    ```
+
+## Схема взаимодействия
+
+В отличие от чтения и записи, выполнение запросов в Greenplum происходит **только** через мастер-узел Greenplum без какого-либо взаимодействия между сегментами Greenplum и исполнителями Spark. Более того, исполнители Spark в этом случае не используются.
+
+Единственный порт, используемый при взаимодействии с Greenplum в этом случае — `5432` (порт мастер-узла Greenplum).
+
+??? note "Взаимодействие Spark <-> Greenplum при Greenplum.execute()/Greenplum.fetch()"
 
     ```plantuml
 
@@ -155,29 +152,28 @@ The only port used while interacting with Greenplum in this case is `5432` (Gree
             A ->> B: CLOSE CONNECTION
     ```
 
-## Options
+## Опции
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.greenplum.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.greenplum.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: GreenplumFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
+    ```{eval-rst}
+    .. autopydantic_model:: GreenplumFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
 
-```
-
-```{eval-rst}
-.. autopydantic_model:: GreenplumExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: GreenplumExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.greenplum.options.GreenplumFetchOptions

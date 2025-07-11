@@ -1,78 +1,77 @@
-# Reading from MSSQL using `MSSQL.sql` { #mssql-sql }
+# Чтение из MSSQL с использованием `MSSQL.sql` { #mssql-sql }
 
-`MSSQL.sql` allows passing custom SQL query, but does not support incremental strategies.
-
-!!! warning
-
-    Please take into account [MSSQL types][mssql-types]
+`MSSQL.sql` позволяет передавать пользовательский SQL-запрос, но не поддерживает инкрементальные стратегии.
 
 !!! warning
 
-    Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside,
-    they can change data in your database.
+    Пожалуйста, учитывайте [типы данных MSSQL][mssql-types]
 
-## Syntax support
+!!! warning
 
-Only queries with the following syntax are supported:
+    Запрос выполняется в соединении с **чтением-записью**, поэтому если вы вызываете функции/процедуры с DDL/DML-операторами внутри, они могут изменить данные в вашей базе данных.
+
+## Поддержка синтаксиса
+
+Поддерживаются только запросы со следующим синтаксисом:
 
 - ✅︎ `SELECT ... FROM ...`
 - ❌ `WITH alias AS (...) SELECT ...`
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ❌ `SET ...; SELECT ...;` - множественные операторы не поддерживаются
 
-## Examples
+## Примеры
 
-```python
-from onetl.connection import MSSQL
+    ```python
+        from onetl.connection import MSSQL
 
-mssql = MSSQL(...)
-df = mssql.sql(
-    """
-    SELECT
-        id,
-        key,
-        CAST(value AS text) value,
-        updated_at
-    FROM
-        some.mytable
-    WHERE
-        key = 'something'
-    """,
-    options=MSSQL.SQLOptions(
-        partitionColumn="id",
-        numPartitions=10,
-        lowerBound=0,
-        upperBound=1000,
-    ),
-)
-```
+        mssql = MSSQL(...)
+        df = mssql.sql(
+            """
+            SELECT
+                id,
+                key,
+                CAST(value AS text) value,
+                updated_at
+            FROM
+                some.mytable
+            WHERE
+                key = 'something'
+            """,
+            options=MSSQL.SQLOptions(
+                partitionColumn="id",
+                numPartitions=10,
+                lowerBound=0,
+                upperBound=1000,
+            ),
+        )
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только необходимые столбцы
 
-Instead of passing `SELECT * FROM ...` prefer passing exact column names `SELECT col1, col2, ...`.
-This reduces the amount of data passed from MSSQL to Spark.
+Вместо передачи `SELECT * FROM ...` предпочтительнее указывать точные имена столбцов `SELECT col1, col2, ...`.
+Это уменьшает объем данных, передаваемых из MSSQL в Spark.
 
-### Pay attention to `where` value
+### Обращайте внимание на значение `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `WHERE column = 'value'` clause.
-This both reduces the amount of data send from MSSQL to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')` передавайте правильное условие `WHERE column = 'value'`.
+Это не только уменьшает объем данных, передаваемых из MSSQL в Spark, но и может улучшить производительность запроса.
+Особенно если существуют индексы или секции для столбцов, используемых в условии `where`.
 
-## Options
+## Опции
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mssql.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mssql.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MSSQLSQLOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MSSQLSQLOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.mssql.options.MSSQLSQLOptions

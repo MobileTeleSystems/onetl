@@ -1,56 +1,55 @@
-# Executing statements in Hive { #hive-execute }
+# Выполнение предложений в Hive { #hive-execute }
 
-Use `Hive.execute(...)` to execute DDL and DML operations.
+Используйте `Hive.execute(...)` для выполнения операций DDL и DML.
 
-## Syntax support
+## Поддержка синтаксиса
 
-This method supports **any** query syntax supported by Hive, like:
+Этот метод позволяет использовать **любой** синтаксис запросов, поддерживаемый Hive, например:
 
-- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`, and so on
-- ✅︎ `LOAD DATA ...`, and so on
+- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...` и так далее
+- ✅︎ `LOAD DATA ...` и так далее
 - ✅︎ `ALTER ...`
-- ✅︎ `INSERT INTO ... SELECT ...`, and so on
-- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, and so on
-- ✅︎ `MSCK REPAIR TABLE ...`, and so on
-- ✅︎ other statements not mentioned here
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ✅︎ `INSERT INTO ... SELECT ...` и так далее
+- ✅︎ `DROP TABLE ...`, `DROP VIEW ...` и так далее
+- ✅︎ `MSCK REPAIR TABLE ...` и так далее
+- ✅︎ другие запросы, не упомянутые здесь
+- ❌ `SET ...; SELECT ...;` - множественные запросы не поддерживаются
 
 !!! warning
 
-    Actually, query should be written using [SparkSQL](https://spark.apache.org/docs/latest/sql-ref-syntax.html#ddl-statements) syntax, not HiveQL.
+    Фактически, запрос должен быть написан с использованием синтаксиса [SparkSQL](https://spark.apache.org/docs/latest/sql-ref-syntax.html#ddl-statements), а не HiveQL.
 
-## Examples
+## Примеры
 
-```python
-from onetl.connection import Hive
+    ```python
+        from onetl.connection import Hive
 
-hive = Hive(...)
+        hive = Hive(...)
 
-hive.execute("DROP TABLE schema.table")
-hive.execute(
-    """
-    CREATE TABLE schema.table (
-        id NUMBER,
-        key VARCHAR,
-        value DOUBLE
-    )
-    PARTITION BY (business_date DATE)
-    STORED AS orc
-    """
-)
-```
+        hive.execute("DROP TABLE schema.table")
+        hive.execute(
+            """
+            CREATE TABLE schema.table (
+                id NUMBER,
+                key VARCHAR,
+                value DOUBLE
+            )
+            PARTITION BY (business_date DATE)
+            STORED AS orc
+            """
+        )
+    ```
 
-### Details
-
+### Подробности
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.hive.connection
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.hive.connection
+    ```
 
-```{eval-rst}
-.. automethod:: Hive.execute
-```
+    ```{eval-rst}
+    .. automethod:: Hive.execute
+    ```
  -->
 
 ::: onetl.connection.db_connection.hive.connection.Hive.execute

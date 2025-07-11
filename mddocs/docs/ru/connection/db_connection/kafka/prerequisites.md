@@ -1,63 +1,65 @@
-# Prerequisites { #kafka-prerequisites }
+# Предварительные требования { #kafka-prerequisites }
 
-## Version Compatibility
+## Совместимость версий
 
-- Kafka server versions:
-    - Officially declared: 0.10 or higher
-    - Actually tested: 3.2.3, 3.9.0 (only Kafka 3.x supports message headers)
-- Spark versions: 2.4.x - 3.5.x
-- Java versions: 8 - 17
+- Версии Kafka сервера:
+    - Официально заявленные: 0.10 или выше
+    - Фактически протестированные: 3.2.3, 3.9.0 (только Kafka 3.x поддерживает заголовки сообщений)
+- Версии Spark: 2.4.x - 3.5.x
+- Версии Java: 8 - 17
 
-See [official documentation](https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html).
+См. [официальную документацию](https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html).
 
-## Installing PySpark
+## Установка PySpark
 
-To use Kafka connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+Для использования коннектора Kafka необходимо установить PySpark (или добавить его в `sys.path`) **ДО** создания экземпляра коннектора.
 
-See [installation instruction][install-spark] for more details.
+Подробнее см. [инструкцию по установке][install-spark].
 
-## Connecting to Kafka
+## Подключение к Kafka
 
-### Connection address
+### Адрес подключения
 
-Kafka is a distributed service, and usually has a list of brokers you can connect to (unlike other connectors, there only one host+port can be set).
-Please contact your Kafka administrator to get addresses of these brokers, as there are no defaults.
+Kafka — это распределенный сервис, и обычно имеет список брокеров, к которым можно подключиться (в отличие от других коннекторов, где можно указать только один хост и порт).
+Пожалуйста, обратитесь к администратору Kafka, чтобы получить адреса этих брокеров, так как стандартных значений нет.
 
-Also Kafka has a feature called *advertised listeners* - client connects to one broker, and received list of other brokers in the clusters.
-So you don't have to pass all brokers to `addresses`, it can be some subset. Other broker addresses will be fetched directly from the cluster.
+Также у Kafka есть функция *advertised listeners* — клиент подключается к одному брокеру и получает список других брокеров в кластере.
+Поэтому вам не нужно передавать все брокеры в `addresses`, это может быть некоторое подмножество. Адреса других брокеров будут получены непосредственно из кластера.
 
-### Connection protocol
+### Протокол подключения
 
-Kafka can support different connection protocols. List of currently supported protocols:
-  - [PLAINTEXT][onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol] (not secure)
-  - [SSL][onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol] (secure, recommended)
+Kafka может поддерживать различные протоколы подключения. Список поддерживаемых на данный момент протоколов:
 
-Note that specific port can listen for only one of these protocols, so it is important to set
-proper port number + protocol combination.
+- [PLAINTEXT][onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol] (не защищенный)
+- [SSL][onetl.connection.db_connection.kafka.kafka_ssl_protocol.KafkaSSLProtocol] (защищенный, рекомендуется)
 
-### Authentication mechanism
+Обратите внимание, что конкретный порт может прослушивать только один из этих протоколов, поэтому важно установить правильную комбинацию номера порта и протокола.
 
-Kafka can support different authentication mechanism (also known as [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer)).
+### Механизм аутентификации
 
-List of currently supported mechanisms:
-  - [PLAIN][onetl.connection.db_connection.kafka.kafka_basic_auth.KafkaBasicAuth]. To no confuse this with `PLAINTEXT` connection protocol, onETL uses name `BasicAuth`.
-  - [GSSAPI][onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth]. To simplify naming, onETL uses name `KerberosAuth`.
-  - [SCRAM-SHA-256] or SCRAM-SHA-512 <onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth>` (recommended).
+Kafka может поддерживать различные механизмы аутентификации (также известные как [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer)).
 
-Different mechanisms use different types of credentials (login + password, keytab file, and so on).
+Список поддерживаемых на данный момент механизмов:
 
-Note that connection protocol and auth mechanism are set in pairs:
-  - If you see `SASL_PLAINTEXT` this means `PLAINTEXT` connection protocol + some auth mechanism.
-  - If you see `SASL_SSL` this means `SSL` connection protocol + some auth mechanism.
-  - If you see just `PLAINTEXT` or `SSL` (**no** `SASL`), this means that authentication is disabled (anonymous access).
+- [PLAIN][onetl.connection.db_connection.kafka.kafka_basic_auth.KafkaBasicAuth]. Чтобы не путать с протоколом подключения `PLAINTEXT`, onETL использует название `BasicAuth`.
+- [GSSAPI][onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth]. Для упрощения именования onETL использует название `KerberosAuth`.
+- [SCRAM-SHA-256 или SCRAM-SHA-512][onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth] (рекомендуется).
 
-Please contact your Kafka administrator to get details about enabled auth mechanism in a specific Kafka instance.
+Различные механизмы используют разные типы учетных данных (логин + пароль, файл keytab и т.д.).
 
-### Required grants
+Обратите внимание, что протокол подключения и механизм аутентификации устанавливаются парами:
 
-Ask your Kafka administrator to set following grants for a user, *if Kafka instance uses ACL*:
-  - `Describe` + `Read` for reading data from Kafka (Consumer).
-  - `Describe` + `Write` for writing data from Kafka (Producer).
+- Если вы видите `SASL_PLAINTEXT`, это означает протокол подключения `PLAINTEXT` + какой-то механизм аутентификации.
+- Если вы видите `SASL_SSL`, это означает протокол подключения `SSL` + какой-то механизм аутентификации.
+- Если вы видите просто `PLAINTEXT` или `SSL` (**без** `SASL`), это означает, что аутентификация отключена (анонимный доступ).
 
-More details can be found in [documentation](https://kafka.apache.org/documentation/#operations_in_kafka).
+Пожалуйста, обратитесь к администратору Kafka, чтобы получить подробную информацию о включенном механизме аутентификации в конкретном экземпляре Kafka.
+
+### Необходимые разрешения
+
+Попросите администратора Kafka установить следующие разрешения для пользователя, *если экземпляр Kafka использует ACL*:
+
+- `Describe` + `Read` для чтения данных из Kafka (Consumer).
+- `Describe` + `Write` для записи данных в Kafka (Producer).
+
+Более подробную информацию можно найти в [документации](https://kafka.apache.org/documentation/#operations_in_kafka).

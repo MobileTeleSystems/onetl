@@ -1,29 +1,29 @@
 # Kafka
 
-# Connection
+## Подключение
 
-* [Prerequisites][kafka-prerequisites]
-* [Kafka Connection][kafka-connection]
-* [Kafka Troubleshooting][kafka-troubleshooting]
+* [Предварительные требования][kafka-prerequisites]
+* [Подключение к Kafka][kafka-connection]
+* [Устранение неполадок Kafka][kafka-troubleshooting]
 
-# Protocols
+## Протоколы
 
 * [Kafka PlaintextProtocol][kafka-plaintext-protocol]
 * [Kafka SSLProtocol][kafka-ssl-protocol]
 
-# Auth methods
+## Методы аутентификации
 
 * [Kafka BasicAuth][kafka-basic-auth]
 * [Kafka KerberosAuth][kafka-kerberos-auth]
 * [Kafka ScramAuth][kafka-scram-auth]
 
-# Operations
+## Операции
 
-* [Reading from Kafka][kafka-read]
-* [Writing to Kafka][kafka-write]
+* [Чтение из Kafka][kafka-read]
+* [Запись в Kafka][kafka-write]
 
-# For developers
+## Для разработчиков
 
 * [Kafka Auth][kafka-auth]
 * [Kafka Protocol][kafka-protocol]
-* [Kafka Slots][kafka-slots]
+* [Слоты Kafka][kafka-slots]

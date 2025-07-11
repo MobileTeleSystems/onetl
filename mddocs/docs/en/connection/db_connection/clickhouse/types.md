@@ -6,7 +6,7 @@
 
 !!! note
 
-    It is recommended to use `spark-dialect-extension <https://github.com/MobileTeleSystems/spark-dialect-extension>`_ package,
+    It is recommended to use [spark-dialect-extension](https://github.com/MobileTeleSystems/spark-dialect-extension) package,
     which implements writing Arrays from Spark to Clickhouse, fixes dropping fractions of seconds in `TimestampType`,
     and fixes other type conversion issues.
 
@@ -121,7 +121,6 @@ See [official documentation](https://clickhouse.com/docs/en/sql-reference/data-t
 
 ### Numeric types
 
-
 | Clickhouse type (read)         | Spark type                        | Clickhouse type (write)       | Clickhouse type (create)    
 |--------------------------------|-----------------------------------|-------------------------------|-----------------------------
 | `Bool`                         | `BooleanType()`                 | `Bool`                      | `UInt64`                   
@@ -145,7 +144,6 @@ See [official documentation](https://clickhouse.com/docs/en/sql-reference/data-t
 | `UInt32`<br/>`UInt64`          | `DecimalType(20,0)`             | `Decimal(20,0)`             | `Decimal(20,0)`            
 | `UInt128`<br/>`UInt256`        | unsupported [^3]                |                             |                            
 
-
 [^3]: Clickhouse support numeric types up to 256 bit - `Int256`, `UInt256`, `Decimal256(S)`, `Decimal(P=39..76, S=0..76)`.
 
     But Spark's `DecimalType(P, S)` supports maximum `P=38` (128 bit). It is impossible to read, write or operate with values of larger precision,
@@ -154,10 +152,10 @@ See [official documentation](https://clickhouse.com/docs/en/sql-reference/data-t
 ### Temporal types
 
 Notes:
-  - Datetime with timezone has the same precision as without timezone
-  - `DateTime` is alias for `DateTime32`
-  - `TIMESTAMP` is alias for `DateTime32`, but `TIMESTAMP(N)` is alias for `DateTime64(N)`
 
+- Datetime with timezone has the same precision as without timezone
+- `DateTime` is alias for `DateTime32`
+- `TIMESTAMP` is alias for `DateTime32`, but `TIMESTAMP(N)` is alias for `DateTime64(N)`
 
 | Clickhouse type (read)            | Spark type                           | Clickhouse type (write)          | Clickhouse type (create)      |
 |-----------------------------------|--------------------------------------|----------------------------------|-------------------------------|
@@ -171,7 +169,6 @@ Notes:
 | `-`                             | `TimestampNTZType()`, microseconds |                                  |                               |
 | `DateTime32(TZ)`<br/>`DateTime64(P, TZ)`                | unsupported [^7]_                     |                                  |                               |
 | `IntervalNanosecond`<br/>`IntervalMicrosecond`<br/>`IntervalMillisecond`<br/>`IntervalSecond`<br/>`IntervalMinute`<br/>`IntervalHour`<br/>`IntervalDay`<br/>`IntervalMonth`<br/>`IntervalQuarter`<br/>`IntervalWeek`<br/>`IntervalYear`            | <br/><br/><br/><br/><br/><br/>`LongType()`                       | <br/><br/><br/><br/><br/><br/>`Int64`                        |  <br/><br/><br/><br/><br/><br/>`Int64`                    |
-
 
 !!! warning
 
@@ -192,7 +189,6 @@ Notes:
     * [Clickhouse Datetime64 documentation](https://clickhouse.com/docs/en/sql-reference/data-types/datetime64)
     * [Spark DateType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
     * [Spark TimestampType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
-
 
 [^4]: `Date32` has different bytes representation than `Date`, and inserting value of type `Date32` to `Date` column
     leads to errors on Clickhouse side, e.g. `Date(106617) should be between 0 and 65535 inclusive of both values`.
@@ -224,30 +220,30 @@ Notes:
 
 Columns of these Clickhouse types cannot be read by Spark:
 
-  - `AggregateFunction(func, T)`
-  - `Array(T)`
-  - `JSON`
-  - `Map(K, V)`
-  - `MultiPolygon`
-  - `Nested(field1 T1, ...)`
-  - `Nothing`
-  - `Point`
-  - `Polygon`
-  - `Ring`
-  - `SimpleAggregateFunction(func, T)`
-  - `Tuple(T1, T2, ...)`
+- `AggregateFunction(func, T)`
+- `Array(T)`
+- `JSON`
+- `Map(K, V)`
+- `MultiPolygon`
+- `Nested(field1 T1, ...)`
+- `Nothing`
+- `Point`
+- `Polygon`
+- `Ring`
+- `SimpleAggregateFunction(func, T)`
+- `Tuple(T1, T2, ...)`
 
 Dataframe with these Spark types cannot be written to Clickhouse:
 
-  - `ArrayType(T)`
-  - `BinaryType()`
-  - `CharType(N)`
-  - `DayTimeIntervalType(P, S)`
-  - `MapType(K, V)`
-  - `NullType()`
-  - `StructType([...])`
-  - `TimestampNTZType()`
-  - `VarcharType(N)`
+- `ArrayType(T)`
+- `BinaryType()`
+- `CharType(N)`
+- `DayTimeIntervalType(P, S)`
+- `MapType(K, V)`
+- `NullType()`
+- `StructType([...])`
+- `TimestampNTZType()`
+- `VarcharType(N)`
 
 This is because Spark does not have dedicated Clickhouse dialect, and uses Generic JDBC dialect instead.
 This dialect does not have type conversion between some types, like Clickhouse `Array` -> Spark `ArrayType()`, and vice versa.
@@ -262,89 +258,89 @@ Use `CAST` or `toJSONString` to get column data as string in JSON format,
 
 For parsing JSON columns in ClickHouse, [JSON.parse_column][onetl.file.format.json.JSON.parse_column] method.
 
-```python
-from pyspark.sql.types import ArrayType, IntegerType
+    ```python
+    from pyspark.sql.types import ArrayType, IntegerType
 
-from onetl.file.format import JSON
-from onetl.connection import ClickHouse
-from onetl.db import DBReader
+    from onetl.file.format import JSON
+    from onetl.connection import ClickHouse
+    from onetl.db import DBReader
 
-reader = DBReader(
-    connection=clickhouse,
-    target="default.source_tbl",
-    columns=[
-        "id",
-        "toJSONString(array_column) array_column",
-    ],
-)
-df = reader.run()
+    reader = DBReader(
+        connection=clickhouse,
+        target="default.source_tbl",
+        columns=[
+            "id",
+            "toJSONString(array_column) array_column",
+        ],
+    )
+    df = reader.run()
 
-# Spark requires all columns to have some specific type, describe it
-column_type = ArrayType(IntegerType())
+    # Spark requires all columns to have some specific type, describe it
+    column_type = ArrayType(IntegerType())
 
-json = JSON()
-df = df.select(
-    df.id,
-    json.parse_column("array_column", column_type),
-)
-```
+    json = JSON()
+    df = df.select(
+        df.id,
+        json.parse_column("array_column", column_type),
+    ) 
+    ```
 
 ### `DBWriter`
 
 For writing JSON data to ClickHouse, use the [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column] method to convert a DataFrame column to JSON format efficiently and write it as a `String` column in Clickhouse.
 
-```python
-from onetl.file.format import JSON
-from onetl.connection import ClickHouse
-from onetl.db import DBWriter
+    ```python
+    from onetl.file.format import JSON
+    from onetl.connection import ClickHouse
+    from onetl.db import DBWriter
 
-clickhouse = ClickHouse(...)
+    clickhouse = ClickHouse(...)
 
-clickhouse.execute(
-    """
-    CREATE TABLE default.target_tbl (
-        id Int32,
-        array_column_json String,
+    clickhouse.execute(
+        """
+        CREATE TABLE default.target_tbl (
+            id Int32,
+            array_column_json String,
+        )
+        ENGINE = MergeTree()
+        ORDER BY id
+        """,
     )
-    ENGINE = MergeTree()
-    ORDER BY id
-    """,
-)
 
-json = JSON()
-df = df.select(
-    df.id,
-    json.serialize_column(df.array_column).alias("array_column_json"),
-)
+    json = JSON()
+    df = df.select(
+        df.id,
+        json.serialize_column(df.array_column).alias("array_column_json"),
+    )
 
-writer.run(df)
-```
+    writer.run(df) 
+    ```
 
 Then you can parse this column on Clickhouse side - for example, by creating a view:
 
-```sql
-SELECT
-    id,
-    JSONExtract(json_column, 'Array(String)') AS array_column
-FROM target_tbl
-```
+    ```sql
+    SELECT
+        id,
+        JSONExtract(json_column, 'Array(String)') AS array_column
+    FROM target_tbl 
+    ```
 
 You can also use [ALIAS](https://clickhouse.com/docs/en/sql-reference/statements/create/table#alias)
 or [MATERIALIZED](https://clickhouse.com/docs/en/sql-reference/statements/create/table#materialized) columns
 to avoid writing such expression in every `SELECT` clause all the time:
 
-```sql
-CREATE TABLE default.target_tbl (
-    id Int32,
-    array_column_json String,
-    -- computed column
-    array_column Array(String) ALIAS JSONExtract(json_column, 'Array(String)')
-    -- or materialized column
-    -- array_column Array(String) MATERIALIZED JSONExtract(json_column, 'Array(String)')
-)
-ENGINE = MergeTree()
-ORDER BY id
-```
+    ```sql
+    CREATE TABLE default.target_tbl (
+        id Int32,
+        array_column_json String,
+        -- computed column
+        array_column Array(String) ALIAS JSONExtract(json_column, 'Array(String)')
+        -- or materialized column
+        -- array_column Array(String) MATERIALIZED JSONExtract(json_column, 'Array(String)')
+    )
+    ENGINE = MergeTree()
+    ORDER BY id 
+    ```
 
 Downsides:
 

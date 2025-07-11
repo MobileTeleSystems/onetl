@@ -1,7 +1,6 @@
 # Reading from MongoDB using `DBReader` { #mongodb-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom pipelines, e.g. aggregation.
+[DBReader][db-reader] supports [strategy][strategy] for incremental data reading, but does not support custom pipelines, e.g. aggregation.
 
 !!! warning
 
@@ -12,11 +11,11 @@ but does not support custom pipelines, e.g. aggregation.
 - ❌ `columns` (for now, all document fields are read)
 - ✅︎ `where` (passed to `{"$match": ...}` aggregation pipeline)
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
-- - Note that `expression` field of HWM can only be a field name, not a custom expression
+  - ✅︎ [Snapshot strategy][snapshot-strategy]
+  - ✅︎ [Incremental strategy][incremental-strategy]
+  - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
+  - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
+  - Note that `expression` field of HWM can only be a field name, not a custom expression
 - ✅︎ `hint` (see [official documentation](https://www.mongodb.com/docs/v5.0/reference/operator/meta/hint/))
 - ✅︎ `df_schema` (mandatory)
 - ✅︎ `options` (see [MongoDB.ReadOptions][onetl.connection.db_connection.mongodb.options.MongoDBReadOptions])
@@ -25,95 +24,95 @@ but does not support custom pipelines, e.g. aggregation.
 
 Snapshot strategy:
 
-```python
-from onetl.connection import MongoDB
-from onetl.db import DBReader
+    ```python
+    from onetl.connection import MongoDB
+    from onetl.db import DBReader
 
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    IntegerType,
-    StringType,
-    TimestampType,
-)
+    from pyspark.sql.types import (
+        StructType,
+        StructField,
+        IntegerType,
+        StringType,
+        TimestampType,
+    )
 
-mongodb = MongoDB(...)
+    mongodb = MongoDB(...)
 
-# mandatory
-df_schema = StructType(
-    [
-        StructField("_id", StringType()),
-        StructField("some", StringType()),
-        StructField(
-            "field",
-            StructType(
-                [
-                    StructField("nested", IntegerType()),
-                ],
+    # mandatory
+    df_schema = StructType(
+        [
+            StructField("_id", StringType()),
+            StructField("some", StringType()),
+            StructField(
+                "field",
+                StructType(
+                    [
+                        StructField("nested", IntegerType()),
+                    ],
+                ),
             ),
-        ),
-        StructField("updated_dt", TimestampType()),
-    ]
-)
+            StructField("updated_dt", TimestampType()),
+        ]
+    )
 
-reader = DBReader(
-    connection=mongodb,
-    source="some_collection",
-    df_schema=df_schema,
-    where={"field": {"$eq": 123}},
-    hint={"field": 1},
-    options=MongoDBReadOptions(batchSize=10000),
-)
-df = reader.run()
-```
+    reader = DBReader(
+        connection=mongodb,
+        source="some_collection",
+        df_schema=df_schema,
+        where={"field": {"$eq": 123}},
+        hint={"field": 1},
+        options=MongoDBReadOptions(batchSize=10000),
+    )
+    df = reader.run()
+    ```
 
 Incremental strategy:
 
-```python
-from onetl.connection import MongoDB
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+    from onetl.connection import MongoDB
+    from onetl.db import DBReader
+    from onetl.strategy import IncrementalStrategy
 
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    IntegerType,
-    StringType,
-    TimestampType,
-)
+    from pyspark.sql.types import (
+        StructType,
+        StructField,
+        IntegerType,
+        StringType,
+        TimestampType,
+    )
 
-mongodb = MongoDB(...)
+    mongodb = MongoDB(...)
 
-# mandatory
-df_schema = StructType(
-    [
-        StructField("_id", StringType()),
-        StructField("some", StringType()),
-        StructField(
-            "field",
-            StructType(
-                [
-                    StructField("nested", IntegerType()),
-                ],
+    # mandatory
+    df_schema = StructType(
+        [
+            StructField("_id", StringType()),
+            StructField("some", StringType()),
+            StructField(
+                "field",
+                StructType(
+                    [
+                        StructField("nested", IntegerType()),
+                    ],
+                ),
             ),
-        ),
-        StructField("updated_dt", TimestampType()),
-    ]
-)
+            StructField("updated_dt", TimestampType()),
+        ]
+    )
 
-reader = DBReader(
-    connection=mongodb,
-    source="some_collection",
-    df_schema=df_schema,
-    where={"field": {"$eq": 123}},
-    hint={"field": 1},
-    hwm=DBReader.AutoDetectHWM(name="mongodb_hwm", expression="updated_dt"),
-    options=MongoDBReadOptions(batchSize=10000),
-)
+    reader = DBReader(
+        connection=mongodb,
+        source="some_collection",
+        df_schema=df_schema,
+        where={"field": {"$eq": 123}},
+        hint={"field": 1},
+        hwm=DBReader.AutoDetectHWM(name="mongodb_hwm", expression="updated_dt"),
+        options=MongoDBReadOptions(batchSize=10000),
+    )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+    with IncrementalStrategy():
+        df = reader.run()
+    ```
 
 ## Recommendations
 
@@ -126,17 +125,16 @@ Especially if there are indexes for columns used in `where` clause.
 ## Read options
 
 <!-- 
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mongodb.options
+    ```
 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mongodb.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: MongoDBReadOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MongoDBReadOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.mongodb.options.MongoDBReadOptions

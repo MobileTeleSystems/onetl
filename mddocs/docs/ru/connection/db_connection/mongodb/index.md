@@ -1,16 +1,16 @@
 # MongoDB
 
-# Connection
+## Подключение
 
-* [Prerequisites][mongodb-prerequisites]
-* [MongoDB Connection][mongodb-connection]
+* [Предварительные требования][mongodb-prerequisites]
+* [Подключение к MongoDB][mongodb-connection]
 
-# Operations
+## Операции
 
-* [Reading from MongoDB using `DBReader`][mongodb-read]
-* [Reading from MongoDB using `MongoDB.pipeline`][mongodb-pipeline]
-* [Writing to MongoDB using `DBWriter`][mongodb-write]
+* [Чтение из MongoDB с использованием `DBReader`][mongodb-read]
+* [Чтение из MongoDB с использованием `MongoDB.pipeline`][mongodb-pipeline]
+* [Запись в MongoDB с использованием `DBWriter`][mongodb-write]
 
-# Troubleshooting
+## Устранение неполадок
 
-* [MongoDB <-> Spark type mapping][mongodb-types]
+* [Сопоставление типов MongoDB <-> Spark][mongodb-types]

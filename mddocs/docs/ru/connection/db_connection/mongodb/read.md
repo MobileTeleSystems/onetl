@@ -1,142 +1,140 @@
-# Reading from MongoDB using `DBReader` { #mongodb-read }
+# Чтение из MongoDB с использованием `DBReader` { #mongodb-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom pipelines, e.g. aggregation.
+[DBReader][db-reader] поддерживает [стратегии][strategy] для инкрементального чтения данных, но не поддерживает пользовательские пайплайны, например, агрегацию.
 
 !!! warning
 
-    Please take into account [MongoDB types][mongodb-types]
+    Пожалуйста, учитывайте [типы данных MongoDB][mongodb-types]
 
-## Supported DBReader features
+## Поддерживаемые функции DBReader
 
-- ❌ `columns` (for now, all document fields are read)
-- ✅︎ `where` (passed to `{"$match": ...}` aggregation pipeline)
-- ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
-- - Note that `expression` field of HWM can only be a field name, not a custom expression
-- ✅︎ `hint` (see [official documentation](https://www.mongodb.com/docs/v5.0/reference/operator/meta/hint/))
-- ✅︎ `df_schema` (mandatory)
-- ✅︎ `options` (see [MongoDB.ReadOptions][onetl.connection.db_connection.mongodb.options.MongoDBReadOptions])
+- ❌ `columns` (на данный момент читаются все поля документа)
+- ✅︎ `where` (передается в пайплайн агрегации `{"$match": ...}`)
+- ✅︎ `hwm`, поддерживаемые стратегии:
+  - ✅︎ [Snapshot][snapshot-strategy]
+  - ✅︎ [Incremental][incremental-strategy]
+  - ✅︎ [Snapshot batch][snapshot-batch-strategy]
+  - ✅︎ [Incremental][incremental-batch-strategy]
+  - Обратите внимание, что поле `expression` для HWM может быть только именем поля, а не пользовательским выражением
+- ✅︎ `hint` (см. [официальную документацию](https://www.mongodb.com/docs/v5.0/reference/operator/meta/hint/))
+- ✅︎ `df_schema` (обязательно)
+- ✅︎ `options` (см. [MongoDB.ReadOptions][onetl.connection.db_connection.mongodb.options.MongoDBReadOptions])
 
-## Examples
+## Примеры
 
-Snapshot strategy:
+Стратегия Snapshot:
 
-```python
-from onetl.connection import MongoDB
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import MongoDB
+        from onetl.db import DBReader
 
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    IntegerType,
-    StringType,
-    TimestampType,
-)
+        from pyspark.sql.types import (
+            StructType,
+            StructField,
+            IntegerType,
+            StringType,
+            TimestampType,
+        )
 
-mongodb = MongoDB(...)
+        mongodb = MongoDB(...)
 
-# mandatory
-df_schema = StructType(
-    [
-        StructField("_id", StringType()),
-        StructField("some", StringType()),
-        StructField(
-            "field",
-            StructType(
-                [
-                    StructField("nested", IntegerType()),
-                ],
-            ),
-        ),
-        StructField("updated_dt", TimestampType()),
-    ]
-)
+        # обязательно
+        df_schema = StructType(
+            [
+                StructField("_id", StringType()),
+                StructField("some", StringType()),
+                StructField(
+                    "field",
+                    StructType(
+                        [
+                            StructField("nested", IntegerType()),
+                        ],
+                    ),
+                ),
+                StructField("updated_dt", TimestampType()),
+            ]
+        )
 
-reader = DBReader(
-    connection=mongodb,
-    source="some_collection",
-    df_schema=df_schema,
-    where={"field": {"$eq": 123}},
-    hint={"field": 1},
-    options=MongoDBReadOptions(batchSize=10000),
-)
-df = reader.run()
-```
+        reader = DBReader(
+            connection=mongodb,
+            source="some_collection",
+            df_schema=df_schema,
+            where={"field": {"$eq": 123}},
+            hint={"field": 1},
+            options=MongoDBReadOptions(batchSize=10000),
+        )
+        df = reader.run()
+    ```
 
-Incremental strategy:
+Стратегия Incremental:
 
-```python
-from onetl.connection import MongoDB
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import MongoDB
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    IntegerType,
-    StringType,
-    TimestampType,
-)
+        from pyspark.sql.types import (
+            StructType,
+            StructField,
+            IntegerType,
+            StringType,
+            TimestampType,
+        )
 
-mongodb = MongoDB(...)
+        mongodb = MongoDB(...)
 
-# mandatory
-df_schema = StructType(
-    [
-        StructField("_id", StringType()),
-        StructField("some", StringType()),
-        StructField(
-            "field",
-            StructType(
-                [
-                    StructField("nested", IntegerType()),
-                ],
-            ),
-        ),
-        StructField("updated_dt", TimestampType()),
-    ]
-)
+        # обязательно
+        df_schema = StructType(
+            [
+                StructField("_id", StringType()),
+                StructField("some", StringType()),
+                StructField(
+                    "field",
+                    StructType(
+                        [
+                            StructField("nested", IntegerType()),
+                        ],
+                    ),
+                ),
+                StructField("updated_dt", TimestampType()),
+            ]
+        )
 
-reader = DBReader(
-    connection=mongodb,
-    source="some_collection",
-    df_schema=df_schema,
-    where={"field": {"$eq": 123}},
-    hint={"field": 1},
-    hwm=DBReader.AutoDetectHWM(name="mongodb_hwm", expression="updated_dt"),
-    options=MongoDBReadOptions(batchSize=10000),
-)
+        reader = DBReader(
+            connection=mongodb,
+            source="some_collection",
+            df_schema=df_schema,
+            where={"field": {"$eq": 123}},
+            hint={"field": 1},
+            hwm=DBReader.AutoDetectHWM(name="mongodb_hwm", expression="updated_dt"),
+            options=MongoDBReadOptions(batchSize=10000),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Pay attention to `where` value
+### Обратите внимание на значение `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `DBReader(where={"column": {"$eq": "value"}})` clause.
-This both reduces the amount of data send from MongoDB to Spark, and may also improve performance of the query.
-Especially if there are indexes for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с использованием `df.filter(df.column == 'value')` передавайте соответствующее условие `DBReader(where={"column": {"$eq": "value"}})`.
+Это уменьшает объем данных, передаваемых из MongoDB в Spark, и может повысить производительность запроса.
+Особенно если есть индексы для столбцов, используемых в условии `where`.
 
-## Read options
+## Параметры чтения
 
 <!-- 
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mongodb.options
+    ```
 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mongodb.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: MongoDBReadOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MongoDBReadOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.mongodb.options.MongoDBReadOptions

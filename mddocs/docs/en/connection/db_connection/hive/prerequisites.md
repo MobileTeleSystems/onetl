@@ -2,8 +2,7 @@
 
 !!! note
 
-    onETL's Hive connection is actually SparkSession with access to [Hive Thrift Metastore](https://docs.cloudera.com/cdw-runtime/1.5.0/hive-hms-overview/topics/hive-hms-introduction.html)
-    and HDFS/S3.
+    onETL's Hive connection is actually SparkSession with access to [Hive Thrift Metastore](https://docs.cloudera.com/cdw-runtime/1.5.0/hive-hms-overview/topics/hive-hms-introduction.html) and HDFS/S3.
     All data motion is made using Spark. Hive Metastore is used only to store tables and partitions metadata.
 
     This connector does **NOT** require Hive server. It also does **NOT** use Hive JDBC connector.
@@ -20,8 +19,7 @@ See [official documentation](https://spark.apache.org/docs/latest/sql-data-sourc
 
 ## Installing PySpark
 
-To use Hive connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+To use Hive connector you should have PySpark installed (or injected to `sys.path`) BEFORE creating the connector instance.
 
 See [installation instruction][install-spark] for more details.
 
@@ -33,16 +31,16 @@ See [installation instruction][install-spark] for more details.
 
 Create `$SPARK_CONF_DIR/hive-site.xml` with Hive Metastore URL:
 
-```xml
-<?xml version="1.0"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-<configuration>
-    <property>
-        <name>hive.metastore.uris</name>
-        <value>thrift://metastore.host.name:9083</value>
-    </property>
-</configuration>
-```
+    ```xml
+        <?xml version="1.0"?>
+        <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+        <configuration>
+            <property>
+                <name>hive.metastore.uris</name>
+                <value>thrift://metastore.host.name:9083</value>
+            </property>
+        </configuration>
+    ```
 
 Create `$SPARK_CONF_DIR/core-site.xml` with warehouse location ,e.g. HDFS IPC port of Hadoop namenode, or S3 bucket address & credentials:
 
@@ -101,8 +99,7 @@ Create `$SPARK_CONF_DIR/core-site.xml` with warehouse location ,e.g. HDFS IPC po
 
 ## Using Kerberos
 
-Some of Hadoop managed clusters use Kerberos authentication. In this case, you should call [kinit](https://web.mit.edu/kerberos/krb5-1.12/doc/user/user_commands/kinit.html) command
-**BEFORE** starting Spark session to generate Kerberos ticket. See [Kerberos installation][install-kerberos].
+Some of Hadoop managed clusters use Kerberos authentication. In this case, you should call [kinit](https://web.mit.edu/kerberos/krb5-1.12/doc/user/user_commands/kinit.html) command **BEFORE** starting Spark session to generate Kerberos ticket. See [Kerberos installation][install-kerberos].
 
 Sometimes it is also required to pass keytab file to Spark config, allowing Spark executors to generate own Kerberos tickets:
 
@@ -128,5 +125,4 @@ Sometimes it is also required to pass keytab file to Spark config, allowing Spar
             .gerOrCreate()
     ```
 
-See [Spark security documentation](https://spark.apache.org/docs/latest/security.html#kerberos)
-for more details.
+See [Spark security documentation](https://spark.apache.org/docs/latest/security.html#kerberos) for more details.

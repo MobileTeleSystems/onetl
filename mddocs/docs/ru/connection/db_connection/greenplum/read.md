@@ -1,113 +1,110 @@
-# Reading from Greenplum using `DBReader` { #greenplum-read }
+# Чтение из Greenplum с использованием `DBReader` { #greenplum-read }
 
-Data can be read from Greenplum to Spark using [DBReader][db-reader].
-It also supports [strategy][strategy] for incremental data reading.
+Данные могут быть прочитаны из Greenplum в Spark с использованием [DBReader][db-reader]. Он также поддерживает [стратегии][strategy] для инкрементального чтения данных.
 
 !!! warning
 
-    Please take into account  [Greenplum types][greenplum-types].
+    Пожалуйста, учитывайте [типы данных Greenplum][greenplum-types].
 
 !!! note
 
-    Unlike JDBC connectors, *Greenplum connector for Spark* does not support
-    executing **custom** SQL queries using `.sql` method. Connector can be used to only read data from a table or view.
+    В отличие от коннекторов JDBC, *Greenplum connector for Spark* не поддерживает выполнение **пользовательских** SQL-запросов с использованием метода `.sql`. Коннектор может использоваться только для чтения данных из таблицы или представления.
 
-## Supported DBReader features
+## Поддерживаемые функции DBReader
 
-- ✅︎ `columns` (see note below)
-- ✅︎ `where` (see note below)
-- ✅︎ `hwm` (see note below), supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
-- ❌ `hint` (is not supported by Greenplum)
+- ✅︎ `columns` (см. примечание ниже)
+- ✅︎ `where` (см. примечание ниже)
+- ✅︎ `hwm` (см. примечание ниже), поддерживаемые стратегии:
+  - ✅︎ [Snapshot][snapshot-strategy]
+  - ✅︎ [Incremental][incremental-strategy]
+  - ✅︎ [Snapshot batch][snapshot-batch-strategy]
+  - ✅︎ [Incremental batch][incremental-batch-strategy]
+- ❌ `hint` (не поддерживается Greenplum)
 - ❌ `df_schema`
-- ✅︎ `options` (see [Greenplum.ReadOptions][onetl.connection.db_connection.greenplum.options.GreenplumReadOptions])
+- ✅︎ `options` (см. [Greenplum.ReadOptions][onetl.connection.db_connection.greenplum.options.GreenplumReadOptions])
 
 !!! warning
 
-    In case of Greenplum connector, `DBReader` does not generate raw `SELECT` query. Instead it relies on Spark SQL syntax
-    which in some cases (using column projection and predicate pushdown) can be converted to Greenplum SQL.
+    В случае коннектора Greenplum, `DBReader` не генерирует сырой запрос `SELECT`. Вместо этого он полагается на синтаксис Spark SQL, который в некоторых случаях (при использовании проекции столбцов и предикатов) может быть преобразован в SQL Greenplum.
 
-    So `columns`, `where` and `hwm.expression` should be specified in [Spark SQL](https://spark.apache.org/docs/latest/sql-ref-syntax.html) syntax,
-    not Greenplum SQL.
+    Поэтому `columns`, `where` и `hwm.expression` должны быть указаны в синтаксисе [Spark SQL](https://spark.apache.org/docs/latest/sql-ref-syntax.html), а не в SQL Greenplum.
 
-    This is OK:
+    Это правильно:
 
     ```python
 
         DBReader(
             columns=[
                 "some_column",
-                # this cast is executed on Spark side
+                # это преобразование выполняется на стороне Spark
                 "CAST(another_column AS STRING)",
             ],
-            # this predicate is parsed by Spark, and can be pushed down to Greenplum
+            # этот предикат анализируется Spark и может быть передан в Greenplum
             where="some_column LIKE 'val1%'",
-        )
+        ) 
     ```
 
-    This is will fail:
+    А это приведет к ошибке:
 
     ```python
 
         DBReader(
             columns=[
                 "some_column",
-                # Spark does not have `text` type
+                # у Spark нет типа `text`
                 "CAST(another_column AS text)",
             ],
-            # Spark does not support ~ syntax for regexp matching
+            # Spark не поддерживает синтаксис ~ для сопоставления регулярных выражений
             where="some_column ~ 'val1.*'",
-        )
+        ) 
     ```
 
-## Examples
+## Примеры
 
-Snapshot strategy:
+Стратегия Snapshot:
 
-```python
-from onetl.connection import Greenplum
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import Greenplum
+        from onetl.db import DBReader
 
-greenplum = Greenplum(...)
+        greenplum = Greenplum(...)
 
-reader = DBReader(
-    connection=greenplum,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS string) value", "updated_dt"],
-    where="key = 'something'",
-)
-df = reader.run()
-```
+        reader = DBReader(
+            connection=greenplum,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS string) value", "updated_dt"],
+            where="key = 'something'",
+        )
+        df = reader.run() 
+        
+    ```
 
-Incremental strategy:
+Стратегия Incremental:
 
-```python
-from onetl.connection import Greenplum
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import Greenplum
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-greenplum = Greenplum(...)
+        greenplum = Greenplum(...)
 
-reader = DBReader(
-    connection=greenplum,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS string) value", "updated_dt"],
-    where="key = 'something'",
-    hwm=DBReader.AutoDetectHWM(name="greenplum_hwm", expression="updated_dt"),
-)
+        reader = DBReader(
+            connection=greenplum,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS string) value", "updated_dt"],
+            where="key = 'something'",
+            hwm=DBReader.AutoDetectHWM(name="greenplum_hwm", expression="updated_dt"),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()
+    ```
 
-## Interaction schema
+## Схема взаимодействия
 
-High-level schema is described in [Greenplum prerequisites][greenplum-prerequisites]. You can find detailed interaction schema below.
+Высокоуровневая схема описана в [Greenplum prerequisites][greenplum-prerequisites]. Ниже вы можете найти подробную схему взаимодействия.
 
-??? note "Spark <-> Greenplum interaction during DBReader.run()"
+??? note "Схема взаимодействия Spark <-> Greenplum во время DBReader.run()"
 
     ```plantuml
 
@@ -257,36 +254,31 @@ High-level schema is described in [Greenplum prerequisites][greenplum-prerequisi
         deactivate A
     ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только необходимые столбцы
 
-Instead of passing `"*"` in `DBReader(columns=[...])` prefer passing exact column names. This reduces the amount of data passed from Greenplum to Spark.
+Вместо передачи `"*"` в `DBReader(columns=[...])` предпочтительнее передавать точные имена столбцов. Это уменьшает объем данных, передаваемых из Greenplum в Spark.
 
-### Pay attention to `where` value
+### Обратите внимание на значение `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `DBReader(where="column = 'value'")` clause.
-This both reduces the amount of data send from Greenplum to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с использованием `df.filter(df.column == 'value')` передайте правильное условие `DBReader(where="column = 'value'")`. Это уменьшает объем данных, отправляемых из Greenplum в Spark, и может улучшить производительность запроса. Особенно если есть индексы или разделы для столбцов, используемых в условии `where`.
 
-### Read data in parallel
+### Параллельное чтение данных
 
-`DBReader` in case of Greenplum connector requires view or table to have a column which is used by Spark
-for parallel reads.
+`DBReader` в случае коннектора Greenplum требует, чтобы представление или таблица имели столбец, который используется Spark для параллельного чтения.
 
-Choosing proper column allows each Spark executor to read only part of data stored in the specified segment,
-avoiding moving large amounts of data between segments, which improves reading performance.
+Выбор правильного столбца позволяет каждому исполнителю Spark читать только часть данных, хранящихся в указанном сегменте, избегая перемещения больших объемов данных между сегментами, что улучшает производительность чтения.
 
-#### Using `gp_segment_id`
+#### Использование `gp_segment_id`
 
-By default, `DBReader` will use [gp_segment_id](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/troubleshooting.html#reading-from-a-view)
-column for parallel data reading. Each DataFrame partition will contain data of a specific Greenplum segment.
+По умолчанию `DBReader` будет использовать столбец [gp_segment_id](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/troubleshooting.html#reading-from-a-view) для параллельного чтения данных. Каждый раздел DataFrame будет содержать данные конкретного сегмента Greenplum.
 
-This allows each Spark executor read only data from specific Greenplum segment, avoiding moving large amounts of data between segments.
+Это позволяет каждому исполнителю Spark читать только данные из определенного сегмента Greenplum, избегая перемещения больших объемов данных между сегментами.
 
-If view is used, it is recommended to include `gp_segment_id` column to this view:
+Если используется представление, рекомендуется включить столбец `gp_segment_id` в это представление:
 
-??? note "Reading from view with gp_segment_id column"
+??? note "Чтение из представления со столбцом gp_segment_id"
 
     ```python
 
@@ -302,7 +294,7 @@ If view is used, it is recommended to include `gp_segment_id` column to this vie
                 id,
                 some_column,
                 another_column,
-                gp_segment_id  -- IMPORTANT
+                gp_segment_id  -- ВАЖНО
             FROM schema.some_table
             """,
         )
@@ -311,17 +303,16 @@ If view is used, it is recommended to include `gp_segment_id` column to this vie
             connection=greenplum,
             source="schema.view_with_gp_segment_id",
         )
-        df = reader.run()
+        df = reader.run() 
     ```
 
-#### Using custom `partition_column`
+#### Использование пользовательского `partition_column`
 
-Sometimes table or view is lack of `gp_segment_id` column, but there is some column
-with value range correlated with Greenplum segment distribution.
+Иногда в таблице или представлении отсутствует столбец `gp_segment_id`, но есть некоторый столбец с диапазоном значений, коррелирующим с распределением сегмента Greenplum.
 
-In this case, custom column can be used instead:
+В этом случае вместо него можно использовать пользовательский столбец:
 
-??? note "Reading from view with custom partition_column"
+??? note "Чтение из представления с пользовательским partition_column"
 
     ```python
 
@@ -336,7 +327,7 @@ In this case, custom column can be used instead:
             SELECT
                 id,
                 some_column,
-                part_column  -- correlated to greenplum segment ID
+                part_column  -- коррелирует с ID сегмента greenplum
             FROM schema.some_table
             """,
         )
@@ -345,31 +336,30 @@ In this case, custom column can be used instead:
             connection=greenplum,
             source="schema.view_with_partition_column",
             options=Greenplum.ReadOptions(
-                # parallelize data using specified column
+                # параллельное чтение данных с использованием указанного столбца
                 partitionColumn="part_column",
-                # create 10 Spark tasks, each will read only part of table data
+                # создание 10 задач Spark, каждая будет читать только часть данных таблицы
                 partitions=10,
             ),
         )
-        df = reader.run()
+        df = reader.run() 
     ```
 
-#### Reading `DISTRIBUTED REPLICATED` tables
+#### Чтение таблиц `DISTRIBUTED REPLICATED`
 
-Replicated tables do not have `gp_segment_id` column at all, so you need to set `partition_column` to some column name
-of type integer/bigint/smallint.
+Реплицированные таблицы вообще не имеют столбца `gp_segment_id`, поэтому вам нужно установить `partition_column` на имя некоторого столбца типа integer/bigint/smallint.
 
-### Parallel `JOIN` execution
+### Параллельное выполнение `JOIN`
 
-In case of using views which require some data motion between Greenplum segments, like `JOIN` queries, another approach should be used.
+В случае использования представлений, которые требуют перемещения данных между сегментами Greenplum, например запросов `JOIN`, следует использовать другой подход.
 
-Each Spark executor N will run the same query, so each of N query will start its own JOIN process, leading to really heavy load on Greenplum segments.
-**This should be avoided**.
+Каждый экзекутор Spark из N будет выполнять один и тот же запрос, поэтому каждый из N запросов запустит свой собственный процесс JOIN, что приведет к очень высокой нагрузке на сегменты Greenplum.
 
-Instead is recommended to run `JOIN` query on Greenplum side, save the result to an intermediate table,
-and then read this table using `DBReader`:
+**Этого следует избегать**.
 
-??? note "Reading from view using intermediate table"
+Вместо этого рекомендуется выполнить запрос `JOIN` на стороне Greenplum, сохранить результат во временной таблице, а затем прочитать эту таблицу с помощью `DBReader`:
+
+??? note "Чтение из представления с использованием промежуточной таблицы"
 
     ```python
 
@@ -402,55 +392,52 @@ and then read this table using `DBReader`:
         )
         df = reader.run()
 
-        # write dataframe somethere
+        # запись dataframe куда-либо
 
         greenplum.execute(
             """
             DROP TABLE schema.intermediate_table
             """,
-        )
+        ) 
     ```
 
 !!! warning
 
-    **NEVER** do that:
+    **НИКОГДА** не делайте так:
 
     ```python
 
         df1 = DBReader(connection=greenplum, target="public.table1", ...).run()
         df2 = DBReader(connection=greenplum, target="public.table2", ...).run()
 
-        joined_df = df1.join(df2, on="col")
-
-    This will lead to sending all the data from both `table1` and `table2` to Spark executor memory, and then `JOIN``
-    will be performed on Spark side, not inside Greenplum. This is **VERY** inefficient.
+        joined_df = df1.join(df2, on="col") 
     ```
 
-#### `TEMPORARY` tables notice
+    Это приведет к отправке всех данных из обеих таблиц `table1` и `table2` в память исполнителя Spark, а затем `JOIN` будет выполнен на стороне Spark, а не внутри Greenplum. Это **ОЧЕНЬ** неэффективно.
 
-Someone could think that writing data from view or result of `JOIN` to `TEMPORARY` table,
-and then passing it to `DBReader`, is an efficient way to read data from Greenplum. This is because temp tables are not generating WAL files,
-and are automatically deleted after finishing the transaction.
+#### Примечание о таблицах `TEMPORARY`
 
-That will **NOT** work. Each Spark executor establishes its own connection to Greenplum.
-And each connection starts its own transaction which means that every executor will read empty temporary table.
+Кто-то может подумать, что запись данных из представления или результата `JOIN` во временную таблицу (`TEMPORARY`), а затем передача ее в `DBReader`, является эффективным способом чтения данных из Greenplum. Это потому, что временные таблицы не генерируют файлы WAL и автоматически удаляются после завершения транзакции.
 
-You should use [UNLOGGED](https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-sql_commands-CREATE_TABLE.html) tables
-to write data to intermediate table without generating WAL logs.
+Это **НЕ** сработает. Каждый экзекутор Spark устанавливает свое собственное соединение с Greenplum. И каждое соединение начинает свою собственную транзакцию, что означает, что каждый исполнитель будет читать пустую временную таблицу.
 
-## Options
+Вам следует использовать таблицы [UNLOGGED](https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-sql_commands-CREATE_TABLE.html) для записи данных во временную таблицу без генерации журналов WAL.
+
+## Параметры
+
+### GreenplumReadOptions
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.greenplum.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.greenplum.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: GreenplumReadOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: GreenplumReadOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.greenplum.options.GreenplumReadOptions

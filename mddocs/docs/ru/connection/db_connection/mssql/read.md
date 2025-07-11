@@ -1,94 +1,79 @@
-# Reading from MSSQL using `DBReader` { #mssql-read }
+# Чтение из MSSQL с использованием `DBReader` { #mssql-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom queries, like `JOIN`.
+[DBReader][db-reader] поддерживает [стратегии][strategy] для инкрементального чтения данных, но не поддерживает пользовательские запросы, такие как `JOIN`.
 
 !!! warning
 
-    Please take into account [MSSQL types][mssql-types]
+    Пожалуйста, учитывайте [типы данных MSSQL][mssql-types]
 
-## Supported DBReader features
+## Поддерживаемые функции DBReader
 
 - ✅︎ `columns`
 - ✅︎ `where`
-- ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
-- ❌ `hint` (MSSQL does support hints, but DBReader not, at least for now)
+- ✅︎ `hwm`, поддерживаемые стратегии:
+  - ✅︎ [Snapshot][snapshot-strategy]
+  - ✅︎ [Incremental][incremental-strategy]
+  - ✅︎ [Snapshot batch][snapshot-batch-strategy]
+  - ✅︎ [Incremental batch][incremental-batch-strategy]
+- ❌ `hint` (MSSQL поддерживает подсказки, но DBReader не поддерживает, по крайней мере, пока)
 - ❌ `df_schema`
-- ✅︎ `options` (see [MSSQL.ReadOptions][onetl.connection.db_connection.mssql.options.MSSQLReadOptions])
+- ✅︎ `options` (смотрите [MSSQL.ReadOptions][onetl.connection.db_connection.mssql.options.MSSQLReadOptions])
 
-## Examples
+## Примеры
 
-Snapshot strategy:
+Стратегия Snapshot:
 
-```python
-from onetl.connection import MSSQL
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import MSSQL
+        from onetl.db import DBReader
 
-mssql = MSSQL(...)
+        mssql = MSSQL(...)
 
-reader = DBReader(
-    connection=mssql,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    options=MSSQL.ReadOptions(partitionColumn="id", numPartitions=10),
-)
-df = reader.run()
-```
+        reader = DBReader(
+            connection=mssql,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            options=MSSQL.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
+        df = reader.run()
+    ```
 
-Incremental strategy:
+Cтратегия Incremental:
 
-```python
-from onetl.connection import MSSQL
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import MSSQL
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-mssql = MSSQL(...)
+        mssql = MSSQL(...)
 
-reader = DBReader(
-    connection=mssql,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    hwm=DBReader.AutoDetectHWM(name="mssql_hwm", expression="updated_dt"),
-    options=MSSQL.ReadOptions(partitionColumn="id", numPartitions=10),
-)
+        reader = DBReader(
+            connection=mssql,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            hwm=DBReader.AutoDetectHWM(name="mssql_hwm", expression="updated_dt"),
+            options=MSSQL.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только необходимые столбцы
 
-Instead of passing `"*"` in `DBReader(columns=[...])` prefer passing exact column names. This reduces the amount of data passed from MSSQL to Spark.
+Вместо передачи `"*"` в `DBReader(columns=[...])` предпочтительнее передавать точные имена столбцов. Это уменьшает объем данных, передаваемых из MSSQL в Spark.
 
-### Pay attention to `where` value
+### Обратите внимание на значение `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `DBReader(where="column = 'value'")` clause.
-This both reduces the amount of data send from MSSQL to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')` передавайте соответствующее условие `DBReader(where="column = 'value'")`.
+Это не только уменьшает количество данных, отправляемых из MSSQL в Spark, но и может улучшить производительность запроса.
+Особенно если существуют индексы или разделы для столбцов, используемых в условии `where`.
 
-## Options
-
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mssql.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: MSSQLReadOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
- -->
+## Опции
 
 ::: onetl.connection.db_connection.mssql.options.MSSQLReadOptions
     options:

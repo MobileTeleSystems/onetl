@@ -1,17 +1,17 @@
 # MSSQL
 
-# Connection
+## Подключение
 
-* [Prerequisites][mssql-prerequisites]
-* [MSSQL connection][mssql-connection]
+* [Предварительные требования][mssql-prerequisites]
+* [Подключение к MSSQL][mssql-connection]
 
-# Operations
+## Операции
 
-* [Reading from MSSQL using `DBReader`][mssql-read]
-* [Reading from MSSQL using `MSSQL.sql`][mssql-sql]
-* [Writing to MSSQL using `DBWriter`][mssql-write]
-* [Executing statements in MSSQL][mssql-execute]
+* [Чтение из MSSQL с использованием `DBReader`][mssql-read]
+* [Чтение из MSSQL с использованием `MSSQL.sql`][mssql-sql]
+* [Запись в MSSQL с использованием `DBWriter`][mssql-write]
+* [Выполнение запросов в MSSQL][mssql-execute]
 
-# Troubleshooting
+## Устранение неполадок
 
-* [MSSQL <-> Spark type mapping][mssql-types]
+* [Сопоставление типов MSSQL <-> Spark][mssql-types]

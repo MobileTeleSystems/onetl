@@ -1,51 +1,27 @@
-# Reading from MongoDB using `MongoDB.pipeline` { #mongodb-pipeline }
+# Чтение из MongoDB с использованием `MongoDB.pipeline` { #mongodb-pipeline }
 
-[MongoDB.sql][onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline] allows passing custom pipeline,
-but does not support incremental strategies.
+[MongoDB.sql][onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline] позволяет передавать пользовательский пайплайн, но не поддерживает инкрементальные стратегии.
 
-!!! warning
+!!! warning "Предупреждение"
 
-    Please take into account [Mongodb types][mongodb-types]
+    Пожалуйста, учитывайте [типы данных MongoDB][mongodb-types]
 
-## Recommendations
+## Рекомендации
 
-### Pay attention to `pipeline` value
+### Обратите внимание на значение `pipeline`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `mongodb.pipeline(..., pipeline={"$match": {"column": {"$eq": "value"}}})` value.
-This both reduces the amount of data send from MongoDB to Spark, and may also improve performance of the query.
-Especially if there are indexes for columns used in `pipeline` value.
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')` передавайте правильное значение `mongodb.pipeline(..., pipeline={"$match": {"column": {"$eq": "value"}}})`.
+Это одновременно уменьшает объем данных, передаваемых из MongoDB в Spark, и может также улучшить производительность запроса.
+Особенно если есть индексы для столбцов, используемых в значении `pipeline`.
 
-## References
-
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mongodb.connection
-```
-
-```{eval-rst}
-.. automethod:: MongoDB.pipeline
-```
-
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mongodb.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: MongoDBPipelineOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
- -->
+## Справочная информация
 
 ::: onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline
     options:
         heading_level: 3
         show_root_heading: true
 
-
 ::: onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions
     options:
         heading_level: 3
         show_root_heading: true
-

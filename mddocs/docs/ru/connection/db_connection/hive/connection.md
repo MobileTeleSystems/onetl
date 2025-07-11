@@ -1,4 +1,4 @@
-# Hive Connection { #hive-connection }
+# Подключение к Hive { #hive-connection }
 
 <!-- 
 ```{eval-rst}

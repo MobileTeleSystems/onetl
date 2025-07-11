@@ -1,16 +1,16 @@
 # Greenplum
 
-# Connection
+## Подключение
 
-* [Prerequisites][greenplum-prerequisites]
-* [Greenplum connection][greenplum-connection]
+* [Предварительные требования][greenplum-prerequisites]
+* [Подключение к Greenplum][greenplum-connection]
 
-# Operations
+## Операции
 
-* [Reading from Greenplum using `DBReader`][greenplum-read]
-* [Writing to Greenplum using `DBWriter`][greenplum-write]
-* [Executing statements in Greenplum][greenplum-execute]
+* [Чтение из Greenplum с помощью `DBReader`][greenplum-read]
+* [Запись в Greenplum с помощью `DBWriter`][greenplum-write]
+* [Выполнение SQL-запросов в Greenplum][greenplum-execute]
 
-# Troubleshooting
+## Устранение неполадок
 
-* [Greenplum <-> Spark type mapping][greenplum-types]
+* [Соответствие типов данных Greenplum <-> Spark][greenplum-types]

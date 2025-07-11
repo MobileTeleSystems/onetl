@@ -1,4 +1,4 @@
-# HDFS connection { #hdfs-connection }
+# Подключение к HDFS { #hdfs-connection }
 
 <!-- 
 ```{eval-rst}

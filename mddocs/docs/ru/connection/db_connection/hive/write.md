@@ -1,70 +1,70 @@
-# Writing to Hive using `DBWriter` { #hive-write }
+# Запись данных в Hive с помощью `DBWriter` { #hive-write }
 
-For writing data to Hive, use [DBWriter][db-writer].
+Для записи данных в Hive используйте [DBWriter][db-writer].
 
-## Examples
+## Примеры
 
-```python
-from onetl.connection import Hive
-from onetl.db import DBWriter
+    ```python
+        from onetl.connection import Hive
+        from onetl.db import DBWriter
 
-hive = Hive(...)
+        hive = Hive(...)
 
-df = ...  # data is here
+        df = ...  # данные находятся здесь
 
-# Create dataframe with specific number of Spark partitions.
-# Use the Hive partitioning columns to group the data. Create max 20 files per Hive partition.
-# Also sort the data by column which most data is correlated with (e.g. user_id), reducing files size.
+        # Создаем датафрейм с определенным количеством партиций Spark.
+        # Используем колонки партиционирования Hive для группировки данных. Создаем максимум 20 файлов на каждую партицию Hive.
+        # Также сортируем данные по колонке, с которой наиболее коррелируют данные (например, user_id), уменьшая размер файлов.
 
-num_files_per_partition = 20
-partition_columns = ["country", "business_date"]
-sort_columns = ["user_id"]
-write_df = df.repartition(
-    num_files_per_partition,
-    *partition_columns,
-    *sort_columns,
-).sortWithinPartitions(*partition_columns, *sort_columns)
+        num_files_per_partition = 20
+        partition_columns = ["country", "business_date"]
+        sort_columns = ["user_id"]
+        write_df = df.repartition(
+            num_files_per_partition,
+            *partition_columns,
+            *sort_columns,
+        ).sortWithinPartitions(*partition_columns, *sort_columns)
 
-writer = DBWriter(
-    connection=hive,
-    target="schema.table",
-    options=Hive.WriteOptions(
-        if_exists="append",
-        # Hive partitioning columns.
-        partitionBy=partition_columns,
-    ),
-)
+        writer = DBWriter(
+            connection=hive,
+            target="schema.table",
+            options=Hive.WriteOptions(
+                if_exists="append",
+                # Колонки партиционирования Hive.
+                partitionBy=partition_columns,
+            ),
+        )
 
-writer.run(write_df)
-```
+        writer.run(write_df)
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Use column-based write formats
+### Используйте колоночные форматы записи
 
-Prefer these write formats:
-  - [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html) (**default**)
-  - [Parquet](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html)
-  - [Iceberg](https://iceberg.apache.org/spark-quickstart/)
-  - [Hudi](https://hudi.apache.org/docs/quick-start-guide/)
-  - [Delta](https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake)
+Предпочтительные форматы записи:
+
+- [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html) (**по умолчанию**)
+- [Parquet](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html)
+- [Iceberg](https://iceberg.apache.org/spark-quickstart/)
+- [Hudi](https://hudi.apache.org/docs/quick-start-guide/)
+- [Delta](https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake)
 
 !!! warning
-    When using `DBWriter`, the default spark data format configured in `spark.sql.sources.default` is ignored, as  `Hive.WriteOptions(format=...)` default value is explicitly set to `orc`.
+    При использовании `DBWriter` формат данных spark по умолчанию, настроенный в `spark.sql.sources.default`, игнорируется, так как значение по умолчанию для `Hive.WriteOptions(format=...)` явно установлено на `orc`.
 
-For column-based write formats, each file contains separated sections where column data is stored. The file footer contains
-location of each column section/group. Spark can use this information to load only sections required by specific query, e.g. only selected columns,
-to drastically speed up the query.
+В колоночных форматах записи каждый файл содержит отдельные секции, где хранятся данные столбцов. Подвал файла содержит
+информацию о расположении каждой секции/группы столбцов. Spark может использовать эту информацию для загрузки только тех секций, которые требуются для конкретного запроса, например, только выбранных столбцов, чтобы значительно ускорить выполнение запроса.
 
-Another advantage is high compression ratio, e.g. 10x-100x in comparison to JSON or CSV.
+Еще одно преимущество — высокий коэффициент сжатия, например, в 10-100 раз по сравнению с JSON или CSV.
 
-### Use partitioning
+### Используйте партиционирование
 
-#### How does it work
+#### Как это работает
 
-Hive support splitting data to partitions, which are different directories in filesystem with names like `some_col=value1/another_col=value2`.
+Hive поддерживает разделение данных на партиции, которые представляют собой разные каталоги в файловой системе с именами типа `some_col=value1/another_col=value2`.
 
-For example, dataframe with content like this:
+Например, датафрейм с содержимым:
 
 | country: string | business_date: date | user_id: int | bytes: long |
 | --------------- | ------------------- | ------------ | ----------- |
@@ -75,65 +75,62 @@ For example, dataframe with content like this:
 | US              | 2024-01-02          | 5678         | 5474575745  |
 | US              | 2024-01-03          | 5678         | 3464574567  |
 
-With `partitionBy=["country", "business_dt"]` data will be stored as files in the following subfolders:
-  - `/country=RU/business_date=2024-01-01/`
-  - `/country=RU/business_date=2024-01-02/`
-  - `/country=US/business_date=2024-01-01/`
-  - `/country=US/business_date=2024-01-02/`
-  - `/country=US/business_date=2024-01-03/`
+С параметром `partitionBy=["country", "business_dt"]` данные будут храниться в виде файлов в следующих подкаталогах:
 
-A separated subdirectory is created for each distinct combination of column values in the dataframe.
+- `/country=RU/business_date=2024-01-01/`
+- `/country=RU/business_date=2024-01-02/`
+- `/country=US/business_date=2024-01-01/`
+- `/country=US/business_date=2024-01-02/`
+- `/country=US/business_date=2024-01-03/`
 
-Please do not confuse Spark dataframe partitions (a.k.a batches of data handled by Spark executors, usually in parallel)
-and Hive partitioning (store data in different subdirectories).
-Number of Spark dataframe partitions is correlated the number of files created in **each** Hive partition.
-For example, Spark dataframe with 10 partitions and 5 distinct values of Hive partition columns will be saved as 5 subfolders with 10 files each = 50 files in total.
-Without Hive partitioning, all the files are placed into one flat directory.
+Отдельный подкаталог создается для каждой уникальной комбинации значений столбцов в датафрейме.
 
-#### But why?
+Пожалуйста, не путайте партиции датафрейма Spark (т.е. партии данных, обрабатываемые исполнителями Spark, обычно параллельно) и партиционирование Hive (хранение данных в разных подкаталогах).
+Количество партиций датафрейма Spark коррелирует с количеством файлов, создаваемых в **каждой** партиции Hive.
+Например, датафрейм Spark с 10 партициями и 5 различными значениями столбцов партиции Hive будет сохранен как 5 подкаталогов по 10 файлов в каждом = всего 50 файлов.
+Без партиционирования Hive все файлы размещаются в одном плоском каталоге.
 
-Queries which has `WHERE` clause with filters on Hive partitioning columns, like `WHERE country = 'RU' AND business_date='2024-01-01'`, will
-read only files from this exact partitions, like `/country=RU/business_date=2024-01-01/`, and skip files from other partitions.
+#### Но зачем?
 
-This drastically increases performance and reduces the amount of memory used by Spark.
-Consider using Hive partitioning in all tables.
+Запросы, которые имеют условие `WHERE` с фильтрами по столбцам партиционирования Hive, например `WHERE country = 'RU' AND business_date='2024-01-01'`, будут считывать только файлы из этой конкретной партиции, например `/country=RU/business_date=2024-01-01/`, и пропускать файлы из других партиций.
 
-#### Which columns should I use?
+Это значительно повышает производительность и снижает объем памяти, используемой Spark.
+Рекомендуется использовать партиционирование Hive во всех таблицах.
 
-Usually Hive partitioning columns are based on event date or location, like `country: string`, `business_date: date`, `run_date: date` and so on.
+#### Какие колонки следует использовать?
 
-**Partition columns should contain data with low cardinality.**
-Dates, small integers, strings with low number of possible values are OK.
-But timestamp, float, decimals, longs (like user id), strings with lots oj unique values (like user name or email) should **NOT** be used as Hive partitioning columns.
-Unlike some other databases, range and hash-based partitions are not supported.
+Обычно столбцы партиционирования Hive основываются на дате события или местоположении, например `country: string`, `business_date: date`, `run_date: date` и т. д.
 
-Partition column should be a part of a dataframe. If you want to partition values by date component of `business_dt: timestamp` column,
-add a new column to dataframe like this: `df.withColumn("business_date", date(df.business_dt))`.
+**Столбцы партиций должны содержать данные с низкой кардинальностью.**
+Даты, небольшие целые числа, строки с малым количеством возможных значений подходят.
+Но временные метки, числа с плавающей точкой, десятичные числа, длинные целые (например, идентификатор пользователя), строки с большим количеством уникальных значений (например, имя пользователя или email) **НЕ** должны использоваться в качестве столбцов партиционирования Hive.
+В отличие от некоторых других баз данных, партиции на основе диапазонов и хэш-функций не поддерживаются.
 
-### Use compression
+Столбец партиции должен быть частью датафрейма. Если вы хотите разбить значения по компоненту даты столбца `business_dt: timestamp`, добавьте новый столбец в датафрейм следующим образом: `df.withColumn("business_date", date(df.business_dt))`.
 
-Using compression algorithms like `snappy`, `lz4` or `zstd` can reduce the size of files (up to 10x).
+### Используйте сжатие
 
-### Prefer creating large files
+Использование алгоритмов сжатия, таких как `snappy`, `lz4` или `zstd`, может уменьшить размер файлов (до 10 раз).
 
-Storing millions of small files is not that HDFS and S3 are designed for. Minimal file size should be at least 10Mb, but usually it is like 128Mb+ or 256Mb+ (HDFS block size).
-**NEVER** create files with few Kbytes in size.
+### Предпочитайте создавать большие файлы
 
-Number of files can be different in different cases.
-On one hand, Spark Adaptive Query Execution (AQE) can merge small Spark dataframe partitions into one larger.
-On the other hand, dataframes with skewed data can produce a larger number of files than expected.
+HDFS и S3 не предназначены для хранения миллионов маленьких файлов. Минимальный размер файла должен быть не менее 10Мб, но обычно он составляет 128Мб+ или 256Мб+ (размер блока HDFS).
+**НИКОГДА** не создавайте файлы размером в несколько килобайт.
 
-To create small amount of large files, you can reduce number of Spark dataframe partitions.
-Use [df.repartition(N, columns...)](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.repartition.html) function,
-like this: `df.repartition(20, "col1", "col2")`.
-This creates new Spark dataframe with partitions using `hash(df.col1 + df.col2) mod 20` expression, avoiding data skew.
+Количество файлов может различаться в разных случаях.
+С одной стороны, Spark Adaptive Query Execution (AQE) может объединять маленькие партиции датафрейма Spark в одну большую.
+С другой стороны, датафреймы с данными, в которых есть перекос могут создавать больше файлов, чем ожидалось.
 
-Note: larger dataframe partitions requires more resources (CPU, RAM) on Spark executor. The exact number of partitions
-should be determined empirically, as it depends on the amount of data and available resources.
+Для создания небольшого количества больших файлов можно уменьшить количество партиций датафрейма Spark.
+Используйте функцию [df.repartition(N, columns...)](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.repartition.html), например: `df.repartition(20, "col1", "col2")`.
+Это создаст новый датафрейм Spark с партициями, используя выражение `hash(df.col1 + df.col2) mod 20`, избегая перекоса данных.
 
-### Sort data before writing
+**Примечание:** большие партиции датафрейма требуют больше ресурсов (CPU, RAM) на исполнителе Spark. Точное количество партиций
+должно определяться эмпирически, так как оно зависит от объема данных и доступных ресурсов.
 
-Dataframe with sorted content:
+### Сортируйте данные перед записью
+
+Датафрейм с отсортированным содержимым:
 
 | country: string | business_date: date | user_id: int | business_dt: timestamp  | bytes: long |
 | --------------- | ------------------- | ------------ | ----------------------- | ----------- |
@@ -144,7 +141,7 @@ Dataframe with sorted content:
 | US              | 2024-01-02          | 2345         | 2024-01-01T15:11:22.345 | 13435       |
 | US              | 2024-01-03          | 2345         | 2024-01-01T20:22:33.567 | 14564       |
 
-Has a much better compression rate than unsorted one, e.g. 2x or even higher:
+Имеет гораздо лучший коэффициент сжатия, чем несортированный, например, в 2 или даже больше раз:
 
 | country: string | business_date: date | user_id: int | business_dt: timestamp  | bytes: long |
 | --------------- | ------------------- | ------------ | ----------------------- | ----------- |
@@ -155,15 +152,11 @@ Has a much better compression rate than unsorted one, e.g. 2x or even higher:
 | US              | 2024-01-02          | 2345         | 2024-09-01T04:24:22.345 | 3235        |
 | US              | 2024-01-03          | 3575         | 2024-03-01T21:37:33.567 | 346345764   |
 
-Choosing columns to sort data by is really depends on the data. If data is correlated with some specific
-column, like in example above the amount of traffic is correlated with both `user_id` and `timestamp`,
-use `df.sortWithinPartitions("user_id", "timestamp")` before writing the data.
+Выбор столбцов для сортировки данных действительно зависит от самих данных. Если данные коррелируют с каким-то конкретным столбцом, как в примере выше, где объем трафика коррелирует как с `user_id`, так и с `timestamp`, используйте `df.sortWithinPartitions("user_id", "timestamp")` перед записью данных.
 
-If `df.repartition(N, repartition_columns...)` is used in combination with `df.sortWithinPartitions(sort_columns...)`,
-then `sort_columns` should start with `repartition_columns` or be equal to it.
+Если `df.repartition(N, repartition_columns...)` используется в сочетании с `df.sortWithinPartitions(sort_columns...)`, то `sort_columns` должны начинаться с `repartition_columns` или быть равными им.
 
-## Options
-
+## Опции
 
 <!-- 
 ```{eval-rst}

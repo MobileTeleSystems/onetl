@@ -33,16 +33,16 @@ Each Spark executor can connect to random Clickhouse nodes, instead of sending a
 This requires all Clickhouse servers to run on different hosts, and **listen the same HTTP port**.
 Set `auto_discovery=True` to enable this feature (disabled by default):
 
-```python
-Clickhouse(
-    host="node1.of.cluster",
-    port=8123,
-    extra={
-        "auto_discovery": True,
-        "load_balancing_policy": "roundRobin",
-    },
-)
-```
+    ```python
+    Clickhouse(
+        host="node1.of.cluster",
+        port=8123,
+        extra={
+            "auto_discovery": True,
+            "load_balancing_policy": "roundRobin",
+        },
+    )
+    ```
 
 See [official documentation](https://clickhouse.com/docs/en/integrations/java#configuring-node-discovery-load-balancing-and-failover).
 

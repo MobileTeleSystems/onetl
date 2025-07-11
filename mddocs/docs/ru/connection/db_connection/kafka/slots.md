@@ -1,4 +1,4 @@
-# Kafka Slots { #kafka-slots }
+# Слоты Kafka { #kafka-slots }
 
 <!-- 
 ```{eval-rst}

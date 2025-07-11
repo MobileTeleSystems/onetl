@@ -1,4 +1,4 @@
-# MongoDB Connection
+# Подключение к MongoDB
 
 <!-- 
 ```{eval-rst}

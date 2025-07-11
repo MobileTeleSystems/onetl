@@ -1,4 +1,4 @@
-# Hive Slots { #hive-slots }
+# Слоты Hive { #hive-slots }
 
 <!-- 
 ```{eval-rst}

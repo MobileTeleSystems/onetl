@@ -1,4 +1,4 @@
-# File Connections { #file-connections-0 }
+# Подключения к файлам { #file-connections-0 }
 
 * [FTP][ftp]
 * [FTPS][ftps]

@@ -1,66 +1,62 @@
-# Clickhouse \<-> Spark type mapping { #clickhouse-types }
+# Преобразование типов между Clickhouse и Spark { #clickhouse-types }
 
 !!! note
 
-    The results below are valid for Spark 3.5.5, and may differ on other Spark versions.
+    Результаты ниже актуальны для Spark 3.5.5 и могут отличаться для других версий Spark.
 
 !!! note
 
-    It is recommended to use `spark-dialect-extension <https://github.com/MobileTeleSystems/spark-dialect-extension>`_ package,
-    which implements writing Arrays from Spark to Clickhouse, fixes dropping fractions of seconds in `TimestampType`,
-    and fixes other type conversion issues.
+    Рекомендуется использовать пакет [spark-dialect-extension](https://github.com/MobileTeleSystems/spark-dialect-extension), который реализует запись массивов из Spark в Clickhouse, исправляет потерю долей секунд в `TimestampType` и некоторые другие проблемы преобразования типов.
 
-## Type detection & casting
+## Определение типов и приведение
 
-Spark's DataFrames always have a `schema` which is a list of columns with corresponding Spark types. All operations on a column are performed using column type.
+DataFrame в Spark всегда имеют `schema` — список колонок с соответствующими типами Spark. Все операции над колонками выполняются с использованием типа колонки.
 
-### Reading from Clickhouse
+### Чтение из Clickhouse
 
-This is how Clickhouse connector performs this:
+Коннектор Clickhouse выполняет следующие действия:
 
-- For each column in query result (`SELECT column1, column2, ... FROM table ...`) get column name and Clickhouse type.
-- Find corresponding `Clickhouse type (read)` → `Spark type` combination (see below) for each DataFrame column. If no combination is found, raise exception.
-- Create DataFrame from query with specific column names and Spark types.
+- Для каждой колонки в результате запроса (`SELECT column1, column2, ... FROM table ...`) получает имя колонки и тип Clickhouse.
+- Находит соответствующую комбинацию `Тип Clickhouse (чтение)` → `Тип Spark` (см. ниже) для каждой колонки DataFrame. Если комбинация не найдена, выбрасывает исключение.
+- Создает DataFrame из запроса с определенными именами колонок и типами Spark.
 
-### Writing to some existing Clickhouse table
+### Запись в существующую таблицу Clickhouse
 
-This is how Clickhouse connector performs this:
+Коннектор Clickhouse выполняет следующие действия:
 
-- Get names of columns in DataFrame. [^1]
-- Perform `SELECT * FROM table LIMIT 0` query.
-- Take only columns present in DataFrame (by name, case insensitive). For each found column get Clickhouse type.
-- **Find corresponding** `Clickhouse type (read)` → `Spark type` **combination** (see below) for each DataFrame column. If no combination is found, raise exception. [^2]
-- Find corresponding `Spark type` → `Clickhousetype (write)` combination (see below) for each DataFrame column. If no combination is found, raise exception.
-- If `Clickhousetype (write)` match `Clickhouse type (read)`, no additional casts will be performed, DataFrame column will be written to Clickhouse as is.
-- If `Clickhousetype (write)` does not match `Clickhouse type (read)`, DataFrame column will be casted to target column type **on Clickhouse side**. For example, you can write column with text data to `Int32` column, if column contains valid integer values within supported value range and precision.
+- Получает имена колонок в DataFrame. [^1]
+- Выполняет запрос `SELECT * FROM table LIMIT 0`.
+- Берет только колонки, присутствующие в DataFrame (по имени, без учета регистра). Для каждой найденной колонки получает тип Clickhouse.
+- **Находит соответствующую комбинацию** `Тип Clickhouse (чтение)` → `Тип Spark` (см. ниже) для каждой колонки DataFrame. Если комбинация не найдена, выбрасывает исключение. [^2]
+- Находит соответствующую комбинацию `Тип Spark` → `Тип Clickhouse (запись)` (см. ниже) для каждой колонки DataFrame. Если комбинация не найдена, выбрасывает исключение.
+- Если `Тип Clickhouse (запись)` соответствует `Тип Clickhouse (чтение)`, дополнительные преобразования не выполняются, колонка DataFrame записывается в Clickhouse как есть.
+- Если `Тип Clickhouse (запись)` не соответствует `Тип Clickhouse (чтение)`, колонка DataFrame будет приведена к целевому типу колонки **на стороне Clickhouse**. Например, вы можете записать колонку с текстовыми данными в колонку `Int32`, если колонка содержит допустимые целочисленные значения в пределах поддерживаемого диапазона значений и точности.
 
-[^1]: This allows to write data to tables with `DEFAULT` columns - if DataFrame has no such column, it will be populated by Clickhouse.
+[^1]: Это позволяет записывать данные в таблицы с колонками `DEFAULT` - если в DataFrame нет такой колонки, она будет заполнена Clickhouse.
 
-[^2]: Yes, this is weird.
+[^2]: Да, это странно.
 
-### Create new table using Spark
+### Создание новой таблицы с помощью Spark
 
 !!! warning
 
-    ABSOLUTELY NOT RECOMMENDED!
+    АБСОЛЮТНО НЕ РЕКОМЕНДУЕТСЯ!
 
-This is how Clickhouse connector performs this:
+Коннектор Clickhouse выполняет следующие действия:
 
-- Find corresponding `Spark type` → `Clickhouse type (create)` combination (see below) for each DataFrame column. If no combination is found, raise exception.
-- Generate DDL for creating table in Clickhouse, like `CREATE TABLE (col1 ...)`, and run it.
-- Write DataFrame to created table as is.
+- Находит соответствующую комбинацию `Тип Spark` → `Тип Clickhouse (создание)` (см. ниже) для каждой колонки DataFrame. Если комбинация не найдена, выбрасывает исключение.
+- Генерирует DDL для создания таблицы в Clickhouse, например `CREATE TABLE (col1 ...)`, и выполняет его.
+- Записывает DataFrame в созданную таблицу как есть.
 
-But Spark does not have specific dialect for Clickhouse, so Generic JDBC dialect is used.
-Generic dialect is using SQL ANSI type names while creating tables in target database, not database-specific types.
+Но Spark не имеет специфического диалекта для Clickhouse, поэтому используется диалект Generic JDBC.
+Общий диалект использует имена типов SQL ANSI при создании таблиц в целевой базе данных, а не типы, специфичные для базы данных.
 
-If some cases this may lead to using wrong column type. For example, Spark creates column of type `TIMESTAMP`
-which corresponds to Clickhouse type `DateTime32` (precision up to seconds)
-instead of more precise `DateTime64` (precision up to nanoseconds).
-This may lead to incidental precision loss, or sometimes data cannot be written to created table at all.
+В некоторых случаях это может привести к использованию неправильного типа колонки. Например, Spark создает колонку типа `TIMESTAMP`, которая соответствует типу Clickhouse `DateTime32` (точность до секунд), вместо более точного `DateTime64` (точность до наносекунд).
+Это может привести к случайной потере точности, или иногда данные вообще невозможно записать в созданную таблицу.
 
-So instead of relying on Spark to create tables:
+Поэтому вместо того, чтобы полагаться на Spark для создания таблиц:
 
-??? "See example"
+??? "Используйте пример"
 
     ```python
 
@@ -69,16 +65,16 @@ So instead of relying on Spark to create tables:
             target="default.target_tbl",
             options=Clickhouse.WriteOptions(
                 if_exists="append",
-                # ENGINE is required by Clickhouse
+                # ENGINE обязателен для Clickhouse
                 createTableOptions="ENGINE = MergeTree() ORDER BY id",
             ),
         )
         writer.run(df)
     ```
 
-Always prefer creating tables with specific types **BEFORE WRITING DATA**:
+Всегда предпочитайте создавать таблицы с конкретными типами **ПЕРЕД ЗАПИСЬЮ ДАННЫХ**:
 
-??? "See example"
+??? "Пример"
 
     ```python
 
@@ -86,7 +82,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
             """
             CREATE TABLE default.target_tbl (
                 id UInt8,
-                value DateTime64(6) -- specific type and precision
+                value DateTime64(6) -- конкретный тип и точность
             )
             ENGINE = MergeTree()
             ORDER BY id
@@ -101,257 +97,251 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
         writer.run(df)
     ```
 
-### References
+### Ссылки
 
-Here you can find source code with type conversions:
+Здесь вы можете найти исходный код с преобразованиями типов:
 
 - [Clickhouse -> JDBC](https://github.com/ClickHouse/clickhouse-java/blob/0.3.2/clickhouse-jdbc/src/main/java/com/clickhouse/jdbc/JdbcTypeMapping.java#L39-L176)
 - [JDBC -> Spark](https://github.com/apache/spark/blob/v3.5.5/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JdbcUtils.scala#L307)
 - [Spark -> JDBC](https://github.com/apache/spark/blob/v3.5.5/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JdbcUtils.scala#L141-L164)
 - [JDBC -> Clickhouse](https://github.com/ClickHouse/clickhouse-java/blob/0.3.2/clickhouse-jdbc/src/main/java/com/clickhouse/jdbc/JdbcTypeMapping.java#L185-L311)
 
-## Supported types
+## Поддерживаемые типы
 
-See [official documentation](https://clickhouse.com/docs/en/sql-reference/data-types)
+См. [официальную документацию](https://clickhouse.com/docs/en/sql-reference/data-types)
 
-### Generic types
+### Общие типы
 
-- `LowCardinality(T)` is same as `T`
-- `Nullable(T)` is same as `T`, but Spark column is inferred as `nullable=True`
+- `LowCardinality(T)` то же самое, что и `T`
+- `Nullable(T)` то же самое, что и `T`, но колонка Spark определяется как `nullable=True`
 
-### Numeric types
+### Числовые типы
 
-
-| Clickhouse type (read)         | Spark type                        | Clickhouse type (write)       | Clickhouse type (create)    
+| Тип Clickhouse (чтение)         | Тип Spark                        | Тип Clickhouse (запись)       | Тип Clickhouse (создание)    
 |--------------------------------|-----------------------------------|-------------------------------|-----------------------------
 | `Bool`                         | `BooleanType()`                 | `Bool`                      | `UInt64`                   
 | `Decimal`                      | `DecimalType(P=10, S=0)`        | `Decimal(P=10, S=0)`        | `Decimal(P=10, S=0)`       
 | `Decimal(P=0..38)`             | `DecimalType(P=0..38, S=0)`     | `Decimal(P=0..38, S=0)`     | `Decimal(P=0..38, S=0)`    
 | `Decimal(P=0..38, S=0..38)`    | `DecimalType(P=0..38, S=0..38)` | `Decimal(P=0..38, S=0..38)` | `Decimal(P=0..38, S=0..38)`
-| `Decimal(P=39..76, S=0..76)`   | unsupported [^3]               |                             |                             
+| `Decimal(P=39..76, S=0..76)`   | не поддерживается [^3]         |                             |                             
 | `Decimal32(P=0..9)`            | `DecimalType(P=9, S=0..9)`      | `Decimal(P=9, S=0..9)`      | `Decimal(P=9, S=0..9)`     
 | `Decimal64(S=0..18)`           | `DecimalType(P=18, S=0..18)`    | `Decimal(P=18, S=0..18)`    | `Decimal(P=18, S=0..18)`   
 | `Decimal128(S=0..38)`          | `DecimalType(P=38, S=0..38)`    | `Decimal(P=38, S=0..38)`    | `Decimal(P=38, S=0..38)`   
-| `Decimal256(S=0..76)`          | unsupported [^3]               |                             |                             
+| `Decimal256(S=0..76)`          | не поддерживается [^3]         |                             |                             
 | `Float32`                      | `FloatType()`                   | `Float32`                   | `Float32`                  
 | `Float64`                      | `DoubleType()`                  | `Float64`                   | `Float64`                  
 | `Int8`<br/>`Int16`<br/>`Int32` | <br/>`IntegerType()`            | <br/>`Int32`                | <br/>`Int32`
 | `Int64`                        | `LongType()`                    | `Int64`                     | `Int64`                    
-| `Int128`<br/>`Int256`          | unsupported [^3]               |                             |                             
+| `Int128`<br/>`Int256`          | не поддерживается [^3]         |                             |                             
 | `-`                            | `ByteType()`                    | `Int8`                      | `Int8`                     
 | `-`                            | `ShortType()`                   | `Int32`                     | `Int32`                    
 | `UInt8`                        | `IntegerType()`                 | `Int32`                     | `Int32`                    
 | `UInt16`                       | `LongType()`                    | `Int64`                     | `Int64`                    
 | `UInt32`<br/>`UInt64`          | `DecimalType(20,0)`             | `Decimal(20,0)`             | `Decimal(20,0)`            
-| `UInt128`<br/>`UInt256`        | unsupported [^3]                |                             |                            
+| `UInt128`<br/>`UInt256`        | не поддерживается [^3]          |                             |                            
 
+[^3]: Clickhouse поддерживает числовые типы до 256 бит - `Int256`, `UInt256`, `Decimal256(S)`, `Decimal(P=39..76, S=0..76)`.
 
-[^3]: Clickhouse support numeric types up to 256 bit - `Int256`, `UInt256`, `Decimal256(S)`, `Decimal(P=39..76, S=0..76)`.
+    Но `DecimalType(P, S)` в Spark поддерживает максимум `P=38` (128 бит). Невозможно читать, записывать или работать со значениями большей точности,
+    это приводит к исключению.
 
-    But Spark's `DecimalType(P, S)` supports maximum `P=38` (128 bit). It is impossible to read, write or operate with values of larger precision,
-    this leads to an exception.
+### Временные типы
 
-### Temporal types
+Примечания:
 
-Notes:
-  - Datetime with timezone has the same precision as without timezone
-  - `DateTime` is alias for `DateTime32`
-  - `TIMESTAMP` is alias for `DateTime32`, but `TIMESTAMP(N)` is alias for `DateTime64(N)`
+- Дата-время с часовым поясом имеет ту же точность, что и без часового пояса
+- `DateTime` является псевдонимом для `DateTime32`
+- `TIMESTAMP` является псевдонимом для `DateTime32`, но `TIMESTAMP(N)` является псевдонимом для `DateTime64(N)`
 
-
-| Clickhouse type (read)            | Spark type                           | Clickhouse type (write)          | Clickhouse type (create)      |
+| Тип Clickhouse (чтение)            | Тип Spark                           | Тип Clickhouse (запись)          | Тип Clickhouse (создание)      |
 |-----------------------------------|--------------------------------------|----------------------------------|-------------------------------|
 | `Date`                          | `DateType()`                       | `Date`                         | `Date`                      |
-| `Date32`                        | `DateType()`                       | `Date`                         | `Date`, **cannot insert data** [^4]                    |
+| `Date32`                        | `DateType()`                       | `Date`                         | `Date`, **невозможно вставить данные** [^4]                    |
 |                                   |                                      |                                  | _   |
-| `DateTime32`, seconds           | `TimestampType()`, microseconds    | `DateTime64(6)`, microseconds  | `DateTime32`, seconds       |
-| `DateTime64(3)`, milliseconds   | `TimestampType()`, microseconds    | `DateTime64(6)`, microseconds  | `DateTime32`, seconds, **precision loss** [^5]     |
-| `DateTime64(6)`, microseconds   | `TimestampType()`, microseconds    |                                  | `DateTime32`, seconds, **precision loss** [^7]      |
-| `DateTime64(7..9)`, nanoseconds | `TimestampType()`, microseconds, **precision loss** [^6]   |                                  |                               |
-| `-`                             | `TimestampNTZType()`, microseconds |                                  |                               |
-| `DateTime32(TZ)`<br/>`DateTime64(P, TZ)`                | unsupported [^7]_                     |                                  |                               |
+| `DateTime32`, секунды           | `TimestampType()`, микросекунды    | `DateTime64(6)`, микросекунды  | `DateTime32`, секунды       |
+| `DateTime64(3)`, миллисекунды   | `TimestampType()`, микросекунды    | `DateTime64(6)`, микросекунды  | `DateTime32`, секунды, **потеря точности** [^5]     |
+| `DateTime64(6)`, микросекунды   | `TimestampType()`, микросекунды    |                                  | `DateTime32`, секунды, **потеря точности** [^7]      |
+| `DateTime64(7..9)`, наносекунды | `TimestampType()`, микросекунды, **потеря точности** [^6]   |                                  |                               |
+| `-`                             | `TimestampNTZType()`, микросекунды |                                  |                               |
+| `DateTime32(TZ)`<br/>`DateTime64(P, TZ)`                | не поддерживается [^7]_                     |                                  |                               |
 | `IntervalNanosecond`<br/>`IntervalMicrosecond`<br/>`IntervalMillisecond`<br/>`IntervalSecond`<br/>`IntervalMinute`<br/>`IntervalHour`<br/>`IntervalDay`<br/>`IntervalMonth`<br/>`IntervalQuarter`<br/>`IntervalWeek`<br/>`IntervalYear`            | <br/><br/><br/><br/><br/><br/>`LongType()`                       | <br/><br/><br/><br/><br/><br/>`Int64`                        |  <br/><br/><br/><br/><br/><br/>`Int64`                    |
-
 
 !!! warning
 
-    Note that types in Clickhouse and Spark have different value ranges:
+    Обратите внимание, что типы в Clickhouse и Spark имеют разные диапазоны значений:
 
-    | Clickhouse type        | Min value                         | Max value                         | Spark type          | Min value                      | Max value                      | 
+    | Тип Clickhouse        | Минимальное значение                | Максимальное значение                | Тип Spark          | Минимальное значение               | Максимальное значение               | 
     |------------------------|-----------------------------------|-----------------------------------|---------------------|--------------------------------|--------------------------------| 
     | `Date`                 | `1970-01-01`                      | `2149-06-06`                      | <br/><br/>`DateType()` {: rowspan=3}        | <br/><br/>`0001-01-01 00:00:00.000000` {: rowspan=3}   | <br/><br/>`9999-12-31 23:59:59.999999` {:  rowspan=3} |   
     | `DateTime64(P=0..8)`   | `1900-01-01 00:00:00.00000000`    | `2299-12-31 23:59:59.99999999`  | &#8288 {: style="padding:0"} | &#8288 {: style="padding:0"} | &#8288 {: style="padding:0"} | 
     | `DateTime64(P=9)`      | `1900-01-01 00:00:00.000000000`   | `2262-04-11 23:47:16.999999999` | &#8288 {: style="padding:0"} | &#8288 {: style="padding:0"} | &#8288 {: style="padding:0"} | 
         
-    So not all of values in Spark DataFrame can be written to Clickhouse.
+    Таким образом, не все значения в DataFrame Spark могут быть записаны в Clickhouse.
         
-    References:
+    Ссылки:
          
-    * [Clickhouse Date documentation](https://clickhouse.com/docs/en/sql-reference/data-types/date)
-    * [Clickhouse Datetime32 documentation](https://clickhouse.com/docs/en/sql-reference/data-types/datetime)
-    * [Clickhouse Datetime64 documentation](https://clickhouse.com/docs/en/sql-reference/data-types/datetime64)
-    * [Spark DateType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
-    * [Spark TimestampType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
+    * [Документация Clickhouse по типу Date](https://clickhouse.com/docs/en/sql-reference/data-types/date)
+    * [Документация Clickhouse по типу Datetime32](https://clickhouse.com/docs/en/sql-reference/data-types/datetime)
+    * [Документация Clickhouse по типу Datetime64](https://clickhouse.com/docs/en/sql-reference/data-types/datetime64)
+    * [Документация Spark по типу DateType](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
+    * [Документация Spark по типу TimestampType](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
 
+[^4]: `Date32` имеет другое байтовое представление, чем `Date`, и вставка значения типа `Date32` в колонку `Date`
+    приводит к ошибкам на стороне Clickhouse, например, `Date(106617) should be between 0 and 65535 inclusive of both values`.
+    Хотя Spark правильно читает колонку `Date32` как `DateType()`, и никакой разницы быть не должно.
+    Вероятно, это какой-то баг в драйвере Clickhouse.
 
-[^4]: `Date32` has different bytes representation than `Date`, and inserting value of type `Date32` to `Date` column
-    leads to errors on Clickhouse side, e.g. `Date(106617) should be between 0 and 65535 inclusive of both values`.
-    Although Spark does properly read the `Date32` column as `DateType()`, and there should be no difference at all.
-    Probably this is some bug in Clickhouse driver.
+[^5]: Общий диалект JDBC генерирует DDL с типом Clickhouse `TIMESTAMP`, который является псевдонимом для `DateTime32` с точностью до секунд (`23:59:59`).
+    Вставка данных с точностью до миллисекунд (`23:59:59.999`) приведет к **отбрасыванию миллисекунд**.
+    Решение: создайте таблицу вручную, с правильным типом колонки.
 
-[^5]: Generic JDBC dialect generates DDL with Clickhouse type `TIMESTAMP` which is alias for `DateTime32` with precision up to seconds (`23:59:59`).
-    Inserting data with milliseconds precision (`23:59:59.999`) will lead to **throwing away milliseconds**.
-    Solution: create table manually, with proper column type.
+[^6]: Clickhouse поддерживает дату-время с точностью до наносекунд (`23:59:59.999999999`),
+    но `TimestampType()` в Spark поддерживает дату-время с точностью до микросекунд (`23:59:59.999999`).
+    Наносекунды будут потеряны во время операций чтения или записи.
+    Решение: создайте таблицу вручную, с правильным типом колонки.
 
-[^6]: Clickhouse support datetime up to nanoseconds precision (`23:59:59.999999999`),
-    but Spark `TimestampType()` supports datetime up to microseconds precision (`23:59:59.999999`).
-    Nanoseconds will be lost during read or write operations.
-    Solution: create table manually, with proper column type.
+[^7]: Clickhouse выбросит исключение, что данные в формате `2001-01-01 23:59:59.999999` имеют данные `.999999`, которые не соответствуют формату `YYYY-MM-DD hh:mm:ss`
+    типа колонки `DateTime32` (см. [^5]).
+    Таким образом, Spark может создать таблицу Clickhouse, но не может записать данные в колонку этого типа.
+    Решение: создайте таблицу вручную, с правильным типом колонки.
 
-[^7]: Clickhouse will raise an exception that data in format `2001-01-01 23:59:59.999999` has data `.999999` which does not match format `YYYY-MM-DD hh:mm:ss`
-    of `DateTime32` column type (see [^5]).
-    So Spark can create Clickhouse table, but cannot write data to column of this type.
-    Solution: create table manually, with proper column type.
+### Строковые типы
 
-### String types
-
-| Clickhouse type (read)               | Spark type       | Clickhousetype (write) | Clickhouse type (create) |
+| Тип Clickhouse (чтение)               | Тип Spark       | Тип Clickhouse (запись) | Тип Clickhouse (создание) |
 |--------------------------------------|------------------|------------------------|--------------------------|
 | `FixedString(N)`<br/>`String`<br/>`Enum8`<br/>`Enum16`<br/>`IPv4`<br/>`IPv6`<br/>`UUID`                   | <br/><br/><br/>`StringType()` | <br/><br/><br/>`String`             | <br/><br/><br/>`String`               |
 | `-`                                | `BinaryType()` |                        |                          |
 
-## Unsupported types
+## Неподдерживаемые типы
 
-Columns of these Clickhouse types cannot be read by Spark:
+Колонки следующих типов Clickhouse не могут быть прочитаны Spark:
 
-  - `AggregateFunction(func, T)`
-  - `Array(T)`
-  - `JSON`
-  - `Map(K, V)`
-  - `MultiPolygon`
-  - `Nested(field1 T1, ...)`
-  - `Nothing`
-  - `Point`
-  - `Polygon`
-  - `Ring`
-  - `SimpleAggregateFunction(func, T)`
-  - `Tuple(T1, T2, ...)`
+- `AggregateFunction(func, T)`
+- `Array(T)`
+- `JSON`
+- `Map(K, V)`
+- `MultiPolygon`
+- `Nested(field1 T1, ...)`
+- `Nothing`
+- `Point`
+- `Polygon`
+- `Ring`
+- `SimpleAggregateFunction(func, T)`
+- `Tuple(T1, T2, ...)`
 
-Dataframe with these Spark types cannot be written to Clickhouse:
+DataFrame со следующими типами Spark не могут быть записаны в Clickhouse:
 
-  - `ArrayType(T)`
-  - `BinaryType()`
-  - `CharType(N)`
-  - `DayTimeIntervalType(P, S)`
-  - `MapType(K, V)`
-  - `NullType()`
-  - `StructType([...])`
-  - `TimestampNTZType()`
-  - `VarcharType(N)`
+- `ArrayType(T)`
+- `BinaryType()`
+- `CharType(N)`
+- `DayTimeIntervalType(P, S)`
+- `MapType(K, V)`
+- `NullType()`
+- `StructType([...])`
+- `TimestampNTZType()`
+- `VarcharType(N)`
 
-This is because Spark does not have dedicated Clickhouse dialect, and uses Generic JDBC dialect instead.
-This dialect does not have type conversion between some types, like Clickhouse `Array` -> Spark `ArrayType()`, and vice versa.
+Это происходит потому, что Spark не имеет специального диалекта для Clickhouse и использует вместо этого общий диалект JDBC.
+Этот диалект не имеет преобразования типов между некоторыми типами, такими как Clickhouse `Array` -> Spark `ArrayType()` и наоборот.
 
-The is a way to avoid this - just cast everything to `String`.
+Есть способ избежать этого - просто приводить всё к типу `String`.
 
-## Explicit type cast
+## Явное приведение типов
 
 ### `DBReader`
 
-Use `CAST` or `toJSONString` to get column data as string in JSON format,
+Используйте `CAST` или `toJSONString` для получения данных колонки в виде строки в формате JSON,
 
-For parsing JSON columns in ClickHouse, [JSON.parse_column][onetl.file.format.json.JSON.parse_column] method.
+Для разбора JSON-колонок в ClickHouse используйте метод [JSON.parse_column][onetl.file.format.json.JSON.parse_column].
 
-```python
-from pyspark.sql.types import ArrayType, IntegerType
+    ```python
+    from pyspark.sql.types import ArrayType, IntegerType
 
-from onetl.file.format import JSON
-from onetl.connection import ClickHouse
-from onetl.db import DBReader
+    from onetl.file.format import JSON
+    from onetl.connection import ClickHouse
+    from onetl.db import DBReader
 
-reader = DBReader(
-    connection=clickhouse,
-    target="default.source_tbl",
-    columns=[
-        "id",
-        "toJSONString(array_column) array_column",
-    ],
-)
-df = reader.run()
+    reader = DBReader(
+        connection=clickhouse,
+        target="default.source_tbl",
+        columns=[
+            "id",
+            "toJSONString(array_column) array_column",
+        ],
+    )
+    df = reader.run()
 
-# Spark requires all columns to have some specific type, describe it
-column_type = ArrayType(IntegerType())
+    # Spark требует, чтобы все колонки имели определенный тип, опишите его
+    column_type = ArrayType(IntegerType())
 
-json = JSON()
-df = df.select(
-    df.id,
-    json.parse_column("array_column", column_type),
-)
-```
+    json = JSON()
+    df = df.select(
+        df.id,
+        json.parse_column("array_column", column_type),
+    ) 
+    ```
 
 ### `DBWriter`
 
-For writing JSON data to ClickHouse, use the [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column] method to convert a DataFrame column to JSON format efficiently and write it as a `String` column in Clickhouse.
+Для записи JSON-данных в ClickHouse используйте метод [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column] для эффективного преобразования колонки DataFrame в формат JSON и записи ее как колонки типа `String` в Clickhouse.
 
-```python
-from onetl.file.format import JSON
-from onetl.connection import ClickHouse
-from onetl.db import DBWriter
+    ```python
+    from onetl.file.format import JSON
+    from onetl.connection import ClickHouse
+    from onetl.db import DBWriter
 
-clickhouse = ClickHouse(...)
+    clickhouse = ClickHouse(...)
 
-clickhouse.execute(
-    """
+    clickhouse.execute(
+        """
+        CREATE TABLE default.target_tbl (
+            id Int32,
+            array_column_json String,
+        )
+        ENGINE = MergeTree()
+        ORDER BY id
+        """,
+    )
+
+    json = JSON()
+    df = df.select(
+        df.id,
+        json.serialize_column(df.array_column).alias("array_column_json"),
+    )
+
+    writer.run(df) 
+    ```
+
+Затем вы можете разобрать эту колонку на стороне Clickhouse - например, создав представление:
+
+    ```sql
+    SELECT
+        id,
+        JSONExtract(json_column, 'Array(String)') AS array_column
+    FROM target_tbl 
+    ```
+
+Вы также можете использовать колонки [ALIAS](https://clickhouse.com/docs/en/sql-reference/statements/create/table#alias) или [MATERIALIZED](https://clickhouse.com/docs/en/sql-reference/statements/create/table#materialized), чтобы избежать написания такого выражения в каждом запросе `SELECT`:
+
+    ```sql
     CREATE TABLE default.target_tbl (
         id Int32,
         array_column_json String,
+        -- вычисляемая колонка
+        array_column Array(String) ALIAS JSONExtract(json_column, 'Array(String)')
+        -- или материализованная колонка
+        -- array_column Array(String) MATERIALIZED JSONExtract(json_column, 'Array(String)')
     )
     ENGINE = MergeTree()
-    ORDER BY id
-    """,
-)
+    ORDER BY id 
+    ```
 
-json = JSON()
-df = df.select(
-    df.id,
-    json.serialize_column(df.array_column).alias("array_column_json"),
-)
+Недостатки:
 
-writer.run(df)
-```
-
-Then you can parse this column on Clickhouse side - for example, by creating a view:
-
-```sql
-SELECT
-    id,
-    JSONExtract(json_column, 'Array(String)') AS array_column
-FROM target_tbl
-```
-
-You can also use [ALIAS](https://clickhouse.com/docs/en/sql-reference/statements/create/table#alias)
-or [MATERIALIZED](https://clickhouse.com/docs/en/sql-reference/statements/create/table#materialized) columns
-to avoid writing such expression in every `SELECT` clause all the time:
-
-```sql
-CREATE TABLE default.target_tbl (
-    id Int32,
-    array_column_json String,
-    -- computed column
-    array_column Array(String) ALIAS JSONExtract(json_column, 'Array(String)')
-    -- or materialized column
-    -- array_column Array(String) MATERIALIZED JSONExtract(json_column, 'Array(String)')
-)
-ENGINE = MergeTree()
-ORDER BY id
-```
-
-Downsides:
-
-- Using `SELECT JSONExtract(...)` or `ALIAS` column can be expensive, because value is calculated on every row access. This can be especially harmful if such column is used in `WHERE` clause.
-- `ALIAS` and `MATERIALIZED` columns are not included in `SELECT *` clause, they should be added explicitly: `SELECT *, calculated_column FROM table`.
+- Использование `SELECT JSONExtract(...)` или колонки `ALIAS` может быть дорогостоящим, поскольку значение вычисляется при каждом доступе к строке. Это может быть особенно вредным, если такая колонка используется в условии `WHERE`.
+- Колонки `ALIAS` и `MATERIALIZED` не включаются в выражение `SELECT *`, их следует добавлять явно: `SELECT *, calculated_column FROM table`.
 
 !!! warning
 
-    [EPHEMERAL](https://clickhouse.com/docs/en/sql-reference/statements/create/table#ephemeral) columns are not supported by Spark
-    because they cannot be selected to determine target column type.
+    Колонки [EPHEMERAL](https://clickhouse.com/docs/en/sql-reference/statements/create/table#ephemeral) не поддерживаются Spark,
+    поскольку их нельзя выбрать для определения типа целевой колонки.

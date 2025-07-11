@@ -1,125 +1,122 @@
-# Executing statements in Clickhouse { #clickhouse-execute }
+# Выполнение запросов в Clickhouse { #clickhouse-execute }
 
 !!! warning
 
-    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+    Методы, описанные ниже, **загружают все строки**, возвращаемые из БД, **в память драйвера Spark**, а затем преобразуют их в DataFrame.
 
-    Do **NOT** use them to read large amounts of data. Use [DBReader][clickhouse-read] or [Clickhouse.sql][clickhouse-sql] instead.
+    **НЕ** используйте их для чтения больших объемов данных. Вместо этого используйте [DBReader][clickhouse-read] или [Clickhouse.sql][clickhouse-sql].
 
+## Как использовать
 
-## How to
+Есть два способа выполнить запрос в Clickhouse:
 
-There are 2 ways to execute some statement in Clickhouse
+### Использование `Clickhouse.fetch`
 
-### Use `Clickhouse.fetch`
+Используйте этот метод для выполнения `SELECT`-запросов, которые возвращают **небольшое количество строк**, например, чтение конфигурации Clickhouse или получение данных из справочной таблицы. Метод возвращает Spark DataFrame.
 
-Use this method to perform some `SELECT` query which returns **small number or rows**, like reading
-Clickhouse config, or reading data from some reference table. Method returns Spark DataFrame.
+Метод принимает [Clickhouse.FetchOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseFetchOptions].
 
-Method accepts [Clickhouse.FetchOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseFetchOptions].
-
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+Соединение, открытое с использованием этого метода, должно быть закрыто через `connection.close()` или `with connection:`.
 
 !!! warning
 
-    Please take into account [Clickhouse types][clickhouse-types].
+    Пожалуйста, учтите [типы данных Clickhouse][clickhouse-types].
 
+#### Поддержка синтаксиса
 
-#### Syntax support
-
-This method supports **any** query syntax supported by Clickhouse, like:
+Этот метод позволяет использовать **любой** синтаксис запросов, поддерживаемый Clickhouse, например:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
-- ✅︎ `SELECT func(arg1, arg2)` - call function
+- ✅︎ `SELECT func(arg1, arg2)` — вызов функции
 - ✅︎ `SHOW ...`
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ❌ `SET ...; SELECT ...;` — множественные запросы не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import Clickhouse
+    ```python
+    from onetl.connection import Clickhouse
 
-clickhouse = Clickhouse(...)
+    clickhouse = Clickhouse(...)
 
-df = clickhouse.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=Clickhouse.FetchOptions(queryTimeout=10),
-)
-clickhouse.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
-
-### Use `Clickhouse.execute`
-
-Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
-
-Method accepts [Clickhouse.ExecuteOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseExecuteOptions].
-
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
-
-#### Syntax support
-
-This method supports **any** query syntax supported by Clickhouse, like:
-
-- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`, and so on
-- ✅︎ `ALTER ...`
-- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...`, and so on
-- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE`, and so on
-- ✅︎ other statements not mentioned here
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
-
-#### Examples
-
-```python
-from onetl.connection import Clickhouse
-
-clickhouse = Clickhouse(...)
-
-clickhouse.execute("DROP TABLE schema.table")
-clickhouse.execute(
-    """
-    CREATE TABLE schema.table (
-        id UInt8,
-        key String,
-        value Float32
+    df = clickhouse.fetch(
+        "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+        options=Clickhouse.FetchOptions(queryTimeout=10),
     )
-    ENGINE = MergeTree()
-    ORDER BY id
-    """,
-    options=Clickhouse.ExecuteOptions(queryTimeout=10),
-)
-```
+    clickhouse.close()
+    value = df.collect()[0][0]  # получаем значение из первой строки и первого столбца
+    ```
 
-## Notes
+### Использование `Clickhouse.execute`
 
-These methods **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+Используйте этот метод для выполнения операций DDL (определение данных) и DML (манипуляция данными). Каждый вызов метода выполняет операцию в отдельной транзакции, после чего она фиксируется.
 
-So it should **NOT** be used to read large amounts of data. Use [DBReader][clickhouse-read] or [Clickhouse.sql][clickhouse-sql] instead.
+Метод принимает [Clickhouse.ExecuteOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseExecuteOptions].
 
-## Options { #clickhouse-execute-options }
+Соединение, открытое с использованием этого метода, должно быть закрыто через `connection.close()` или `with connection:`.
+
+#### Поддержка синтаксиса
+
+Этот метод поддерживает **любой** синтаксис запросов, используемый Clickhouse, например:
+
+- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`, и т.д.
+- ✅︎ `ALTER ...`
+- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...`, и т.д.
+- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE`, и т.д.
+- ✅︎ другие утверждения, не упомянутые здесь
+- ❌ `SET ...; SELECT ...;` — множественные запросы не поддерживаются
+
+#### Примеры
+
+    ```python
+    from onetl.connection import Clickhouse
+
+    clickhouse = Clickhouse(...)
+
+    clickhouse.execute("DROP TABLE schema.table")
+    clickhouse.execute(
+        """
+        CREATE TABLE schema.table (
+            id UInt8,
+            key String,
+            value Float32
+        )
+        ENGINE = MergeTree()
+        ORDER BY id
+        """,
+        options=Clickhouse.ExecuteOptions(queryTimeout=10),
+    )
+    ```
+
+## Примечания
+
+Эти методы **прочитывают все строки**, возвращаемые из БД, **в память драйвера Spark**, а затем преобразуют их в DataFrame.
+
+Поэтому их **не следует** использовать для чтения больших объемов данных. Вместо этого используйте [DBReader][clickhouse-read] или [Clickhouse.sql][clickhouse-sql].
+
+## Опции { #clickhouse-execute-options }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.clickhouse.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.clickhouse.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: ClickhouseFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
+    ```{eval-rst}
+    .. autopydantic_model:: ClickhouseFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
 
-```
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: ClickhouseExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: ClickhouseExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.clickhouse.options.ClickhouseFetchOptions

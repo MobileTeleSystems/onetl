@@ -6,12 +6,10 @@
 
     Please take into account [Clickhouse types][clickhouse-types]
 
-
 !!! warning
 
     Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside,
     they can change data in your database.
-
 
 ## Syntax support
 
@@ -23,30 +21,30 @@ Only queries with the following syntax are supported:
 
 ## Examples
 
-```python
-from onetl.connection import Clickhouse
+    ```python
+    from onetl.connection import Clickhouse
 
-clickhouse = Clickhouse(...)
-df = clickhouse.sql(
-    """
-    SELECT
-        id,
-        key,
-        CAST(value AS String) value,
-        updated_at
-    FROM
-        some.mytable
-    WHERE
-        key = 'something'
-    """,
-    options=Clickhouse.SQLOptions(
-        partitionColumn="id",
-        numPartitions=10,
-        lowerBound=0,
-        upperBound=1000,
-    ),
-)
-```
+    clickhouse = Clickhouse(...)
+    df = clickhouse.sql(
+        """
+        SELECT
+            id,
+            key,
+            CAST(value AS String) value,
+            updated_at
+        FROM
+            some.mytable
+        WHERE
+            key = 'something'
+        """,
+        options=Clickhouse.SQLOptions(
+            partitionColumn="id",
+            numPartitions=10,
+            lowerBound=0,
+            upperBound=1000,
+        ),
+    )
+    ```
 
 ## Recommendations
 
@@ -64,19 +62,18 @@ Especially if there are indexes or partitions for columns used in `where` clause
 ## Options
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.clickhouse.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.clickhouse.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: ClickhouseSQLOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: ClickhouseSQLOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
-
 
 ::: onetl.connection.db_connection.clickhouse.options.ClickhouseSQLOptions
     options:

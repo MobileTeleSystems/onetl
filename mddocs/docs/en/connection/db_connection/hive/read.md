@@ -8,73 +8,71 @@ but does not support custom queries, like `JOIN`.
 - ✅︎ `columns`
 - ✅︎ `where`
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
+  - ✅︎ [Snapshot strategy][snapshot-strategy]
+  - ✅︎ [Incremental strategy][incremental-strategy]
+  - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
+  - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
 - ❌ `hint` (is not supported by Hive)
 - ❌ `df_schema`
 - ❌ `options` (only Spark config params are used)
 
 !!! warning
 
-    Actually, `columns`, `where` and  `hwm.expression` should be written using [SparkSQL](https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements) syntax,
-    not HiveQL.
+    Actually, `columns`, `where` and  `hwm.expression` should be written using [SparkSQL](https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements) syntax, not HiveQL.
 
 ## Examples
 
 Snapshot strategy:
 
-```python
-from onetl.connection import Hive
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import Hive
+        from onetl.db import DBReader
 
-hive = Hive(...)
+        hive = Hive(...)
 
-reader = DBReader(
-    connection=hive,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-)
-df = reader.run()
-```
+        reader = DBReader(
+            connection=hive,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+        )
+        df = reader.run() 
+    ```
 
 Incremental strategy:
 
-```python
-from onetl.connection import Hive
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import Hive
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-hive = Hive(...)
+        hive = Hive(...)
 
-reader = DBReader(
-    connection=hive,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    hwm=DBReader.AutoDetectHWM(name="hive_hwm", expression="updated_dt"),
-)
+        reader = DBReader(
+            connection=hive,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            hwm=DBReader.AutoDetectHWM(name="hive_hwm", expression="updated_dt"),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()
+    ```
 
 ## Recommendations
 
 ### Use column-based write formats
 
-Prefer these write formats:
-  - [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html)
-  - [Parquet](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html)
-  - [Iceberg](https://iceberg.apache.org/spark-quickstart/)
-  - [Hudi](https://hudi.apache.org/docs/quick-start-guide/)
-  - [Delta](https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake)
+Prefer thesыe write formats:
 
-For colum-based write formats, each file contains separated sections there column data is stored. The file footer contains
-location of each column section/group. Spark can use this information to load only sections required by specific query, e.g. only selected columns,
-to drastically speed up the query.
+- [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html)
+- [Parquet](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html)
+- [Iceberg](https://iceberg.apache.org/spark-quickstart/)
+- [Hudi](https://hudi.apache.org/docs/quick-start-guide/)
+- [Delta](https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake)
+
+For colum-based write formats, each file contains separated sections there column data is stored. The file footer contains location of each column section/group. Spark can use this information to load only sections required by specific query, e.g. only selected columns, to drastically speed up the query.
 
 Another advantage is high compression ratio, e.g. 10x-100x in comparison to JSON or CSV.
 

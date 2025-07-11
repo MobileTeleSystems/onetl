@@ -1,79 +1,79 @@
-# Prerequisites { #mssql-prerequisites }
+# Предварительные требования { #mssql-prerequisites }
 
-## Version Compatibility
+## Совместимость версий
 
-- SQL Server versions:
-    - Officially declared: 2016 - 2022
-    - Actually tested: 2017, 2022
-- Spark versions: 2.3.x - 3.5.x
-- Java versions: 8 - 20
+- Версии SQL Server:
+    - Официально заявленные: 2016 - 2022
+    - Фактически протестированные: 2017, 2022
+- Версии Spark: 2.3.x - 3.5.x
+- Версии Java: 8 - 20
 
-See [official documentation](https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver)
-and [official compatibility matrix](https://learn.microsoft.com/en-us/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server-support-matrix).
+См. [официальную документацию](https://learn.microsoft.com/en-us/sql/connect/jdbc/system-requirements-for-the-jdbc-driver)
+и [официальную матрицу совместимости](https://learn.microsoft.com/en-us/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server-support-matrix).
 
-## Installing PySpark
+## Установка PySpark
 
-To use MSSQL connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+Для использования коннектора MSSQL у вас должен быть установлен PySpark (или добавлен в `sys.path`) **ДО** создания экземпляра коннектора.
 
-See [installation instruction][install-spark] for more details.
+См. [инструкцию по установке][install-spark] для получения дополнительной информации.
 
-## Connecting to MSSQL
+## Подключение к MSSQL
 
-### Connection port
+### Порт подключения
 
-Connection is usually performed to port 1433. Port may differ for different MSSQL instances.
-Please ask your MSSQL administrator to provide required information.
+Подключение обычно выполняется через порт 1433. Порт может отличаться для разных экземпляров MSSQL.
+Пожалуйста, обратитесь к администратору MSSQL для получения необходимой информации.
 
-For named MSSQL instances (`instanceName` option), [port number is optional](https://learn.microsoft.com/en-us/sql/connect/jdbc/building-the-connection-url?view=sql-server-ver16#named-and-multiple-sql-server-instances), and could be omitted.
+Для именованных экземпляров MSSQL (опция `instanceName`), [номер порта необязателен](https://learn.microsoft.com/en-us/sql/connect/jdbc/building-the-connection-url?view=sql-server-ver16#named-and-multiple-sql-server-instances) и может быть опущен.
 
-### Connection host
+### Хост подключения
 
-It is possible to connect to MSSQL by using either DNS name of host or it's IP address.
+Можно подключиться к MSSQL, используя либо DNS-имя хоста, либо его IP-адрес.
 
-If you're using MSSQL cluster, it is currently possible to connect only to **one specific node**.
-Connecting to multiple nodes to perform load balancing, as well as automatic failover to new master/replica are not supported.
+Если вы используете кластер MSSQL, в настоящее время возможно подключение только к **одному конкретному узлу**.
+Подключение к нескольким узлам для балансировки нагрузки, а также автоматическое переключение на новый master/replica не поддерживаются.
 
-### Required grants
+### Необходимые разрешения
 
-Ask your MSSQL cluster administrator to set following grants for a user,
-used for creating a connection:
+Попросите администратора кластера MSSQL установить следующие разрешения для пользователя,
+используемого для создания соединения:
 
-=== "Read + Write (schema is owned by user)"
+=== "Чтение + Запись (схема принадлежит пользователю)"
 
     ```sql 
 
-        -- allow creating tables for user
+        -- разрешить создание таблиц для пользователя
         GRANT CREATE TABLE TO username;
 
-        -- allow read & write access to specific table
+        -- разрешить доступ на чтение и запись к определенной таблице
         GRANT SELECT, INSERT ON username.mytable TO username;
 
-        -- only if if_exists="replace_entire_table" is used:
-        -- allow dropping/truncating tables in any schema
+        -- только если используется if_exists="replace_entire_table":
+        -- разрешить удаление/очистку таблиц в любой схеме
         GRANT ALTER ON username.mytable TO username;
     ```
 
-=== "Read + Write (schema is not owned by user)"
+=== "Чтение + Запись (схема не принадлежит пользователю)"
 
     ```sql
 
-        -- allow creating tables for user
+        -- разрешить создание таблиц для пользователя
         GRANT CREATE TABLE TO username;
 
-        -- allow managing tables in specific schema, and inserting data to tables
+        -- разрешить управление таблицами в определенной схеме и вставку данных в таблицы
         GRANT ALTER, SELECT, INSERT ON SCHEMA::someschema TO username;
     ```
 
-=== "Read only"
+=== "Только чтение"
 
     ```sql
 
-        -- allow read access to specific table
+        -- разрешить доступ на чтение к определенной таблице
         GRANT SELECT ON someschema.mytable TO username;
     ```
 
-More details can be found in official documentation:
-: - [GRANT ON DATABASE](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-database-permissions-transact-sql)
-  - [GRANT ON OBJECT](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-object-permissions-transact-sql)
-  - [GRANT ON SCHEMA](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-schema-permissions-transact-sql)
+Более подробную информацию можно найти в официальной документации:
+
+- [GRANT ON DATABASE](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-database-permissions-transact-sql)
+- [GRANT ON OBJECT](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-object-permissions-transact-sql)
+- [GRANT ON SCHEMA](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-schema-permissions-transact-sql)

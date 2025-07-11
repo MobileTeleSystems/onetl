@@ -1,10 +1,9 @@
-# Kafka Troubleshooting { #kafka-troubleshooting }
+# Устранение неполадок при работе с Kafka { #kafka-troubleshooting }
 
 !!! note
 
-    [General guide][troubleshooting].
+    [Общее руководство][troubleshooting].
 
+## Не удается подключиться, используя протокол `SSL`
 
-## Cannot connect using `SSL` protocol
-
-Please check that certificate files are not Base-64 encoded.
+Пожалуйста, проверьте, что файлы сертификатов не закодированы в формате Base-64.

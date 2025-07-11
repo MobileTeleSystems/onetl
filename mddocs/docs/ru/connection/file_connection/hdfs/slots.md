@@ -1,4 +1,4 @@
-# HDFS Slots { #hdfs-slots }
+# Слоты HDFS { #hdfs-slots }
 
 <!-- 
 ```{eval-rst}

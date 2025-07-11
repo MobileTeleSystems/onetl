@@ -1,4 +1,4 @@
-# WebDAV connection { #webdav }
+# Подключение к WebDAV { #webdav }
 
 <!-- 
 ```{eval-rst}

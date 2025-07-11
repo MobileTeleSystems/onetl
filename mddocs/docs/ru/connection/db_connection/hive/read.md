@@ -1,91 +1,88 @@
-# Reading from Hive using `DBReader` { #hive-read }
+# Чтение из Hive с использованием `DBReader` { #hive-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom queries, like `JOIN`.
+[DBReader][db-reader] поддерживает [стратегии][strategy] для инкрементального чтения данных, но не поддерживает пользовательские запросы, такие, например, включающие `JOIN`.
 
-## Supported DBReader features
+## Поддерживаемые функции DBReader
 
 - ✅︎ `columns`
 - ✅︎ `where`
-- ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
-- ❌ `hint` (is not supported by Hive)
+- ✅︎ `hwm`, поддерживаемые стратегии:
+  - ✅︎ [Snapshot][snapshot-strategy]
+  - ✅︎ [Incremental][incremental-strategy]
+  - ✅︎ [Snapshot batch][snapshot-batch-strategy]
+  - ✅︎ [Incremental batch][incremental-batch-strategy]
+- ❌ `hint` (не поддерживается Hive)
 - ❌ `df_schema`
-- ❌ `options` (only Spark config params are used)
+- ❌ `options` (используются только параметры конфигурации Spark)
 
-!!! warning
+!!! warning "Предупреждение"
 
-    Actually, `columns`, `where` and  `hwm.expression` should be written using [SparkSQL](https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements) syntax,
-    not HiveQL.
+    Фактически, `columns`, `where` и `hwm.expression` должны быть написаны с использованием синтаксиса [SparkSQL](https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements), а не HiveQL.
 
-## Examples
+## Примеры
 
-Snapshot strategy:
+Стратегия Snapshot:
 
-```python
-from onetl.connection import Hive
-from onetl.db import DBReader
+    ```python
+    from onetl.connection import Hive
+    from onetl.db import DBReader
 
-hive = Hive(...)
+    hive = Hive(...)
 
-reader = DBReader(
-    connection=hive,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-)
-df = reader.run()
-```
+    reader = DBReader(
+        connection=hive,
+        source="schema.table",
+        columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+        where="key = 'something'",
+    )
+    df = reader.run() 
+    ```
 
-Incremental strategy:
+Cтратегия Incremental:
 
-```python
-from onetl.connection import Hive
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import Hive
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-hive = Hive(...)
+        hive = Hive(...)
 
-reader = DBReader(
-    connection=hive,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    hwm=DBReader.AutoDetectHWM(name="hive_hwm", expression="updated_dt"),
-)
+        reader = DBReader(
+            connection=hive,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            hwm=DBReader.AutoDetectHWM(name="hive_hwm", expression="updated_dt"),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Use column-based write formats
+### Используйте форматы записи на основе столбцов
 
-Prefer these write formats:
-  - [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html)
-  - [Parquet](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html)
-  - [Iceberg](https://iceberg.apache.org/spark-quickstart/)
-  - [Hudi](https://hudi.apache.org/docs/quick-start-guide/)
-  - [Delta](https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake)
+Предпочтительны следующие форматы записи:
 
-For colum-based write formats, each file contains separated sections there column data is stored. The file footer contains
-location of each column section/group. Spark can use this information to load only sections required by specific query, e.g. only selected columns,
-to drastically speed up the query.
+- [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html)
+- [Parquet](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html)
+- [Iceberg](https://iceberg.apache.org/spark-quickstart/)
+- [Hudi](https://hudi.apache.org/docs/quick-start-guide/)
+- [Delta](https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake)
 
-Another advantage is high compression ratio, e.g. 10x-100x in comparison to JSON or CSV.
+Для форматов записи на основе столбцов каждый файл содержит отдельные секции, где хранятся данные столбцов. Футер файла содержит информацию о расположении каждой секции/группы столбцов. Spark может использовать эту информацию для загрузки только тех секций, которые требуются для конкретного запроса, например, только выбранных столбцов, что значительно ускоряет выполнение запроса.
 
-### Select only required columns
+Еще одно преимущество — высокий коэффициент сжатия, например, в 10-100 раз по сравнению с JSON или CSV.
 
-Instead of passing `"*"` in `DBReader(columns=[...])` prefer passing exact column names.
-This drastically reduces the amount of data read by Spark, **if column-based file formats are used**.
+### Выбирайте только необходимые столбцы
 
-### Use partition columns in `where` clause
+Вместо передачи `"*"` в `DBReader(columns=[...])` предпочтительнее передавать точные имена столбцов.
+Это существенно уменьшает объем данных, считываемых Spark, **если используются форматы файлов на основе столбцов**.
 
-Queries should include `WHERE` clause with filters on Hive partitioning columns.
-This allows Spark to read only small set of files (*partition pruning*) instead of scanning the entire table, so this drastically increases performance.
+### Используйте столбцы секционирования в условии `where`
 
-Supported operators are: `=`, `>`, `<` and `BETWEEN`, and only against some **static** value.
+Запросы должны включать условие `WHERE` с фильтрами по столбцам секционирования Hive.
+Это позволяет Spark читать только небольшой набор файлов (*отсечение секций*) вместо сканирования всей таблицы, что значительно повышает производительность.
+
+Поддерживаемые операторы: `=`, `>`, `<` и `BETWEEN`, и только в сравнении с некоторым **статическим** значением.

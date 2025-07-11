@@ -87,7 +87,7 @@ Number of connections can be limited by 2 ways:
             # Spark will run with 5 threads in local mode, allowing up to 5 parallel tasks
             .config("spark.master", "local[5]")
             .config("spark.executor.cores", 1)
-        ).getOrCreate()
+        ).getOrCreate() 
     ```
 
 === "Spark with master=yarn or master=k8s, dynamic allocation"
@@ -100,7 +100,7 @@ Number of connections can be limited by 2 ways:
             # Spark will start MAX 10 executors with 1 core each (dynamically), so max number of parallel jobs is 10
             .config("spark.dynamicAllocation.maxExecutors", 10)
             .config("spark.executor.cores", 1)
-        ).getOrCreate()
+        ).getOrCreate() 
     ```
 
 === "Spark with master=yarn or master=k8s, static allocation"
@@ -113,23 +113,23 @@ Number of connections can be limited by 2 ways:
             # Spark will start EXACTLY 10 executors with 1 core each, so max number of parallel jobs is 10
             .config("spark.executor.instances", 10)
             .config("spark.executor.cores", 1)
-        ).getOrCreate()
+        ).getOrCreate() 
     ```
 
 - By limiting connection pool size user by Spark (**only** for Spark with `master=local`):
 
-```python
-spark = SparkSession.builder.config("spark.master", "local[*]").getOrCreate()
+    ```python
+        spark = SparkSession.builder.config("spark.master", "local[*]").getOrCreate()
 
-# No matter how many executors are started and how many cores they have,
-# number of connections cannot exceed pool size:
-Greenplum(
-    ...,
-    extra={
-        "pool.maxSize": 10,
-    },
-)
-```
+        # No matter how many executors are started and how many cores they have,
+        # number of connections cannot exceed pool size:
+        Greenplum(
+            ...,
+            extra={
+                "pool.maxSize": 10,
+            },
+        ) 
+    ```
 
 See [connection pooling](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/using_the_connector.html#jdbcconnpool)
 documentation.
@@ -158,34 +158,35 @@ To read data from Greenplum using Spark, following ports should be opened in fir
 
   This port number should be set while connecting to Greenplum:
 
-  ```python
-  greenplum = Greenplum(host="master.host", port=5432, ...)
-  ```
+        ```python
+        greenplum = Greenplum(host="master.host", port=5432, ...)
+        ```
 
 - Greenplum segments -> some port range (e.g. `41000-42000`) **listened by Spark executors**.
 
   This range should be set in `extra` option:
 
-  ```python
-  greenplum = Greenplum(
-      ...,
-      extra={
-          "server.port": "41000-42000",
-      },
-  )
-  ```
+        ```python
+            greenplum = Greenplum(
+                ...,
+                extra={
+                    "server.port": "41000-42000",
+                },
+            )
+        ```
 
   Number of ports in this range is `number of parallel running Spark sessions` * `number of parallel connections per session`.
 
   Number of connections per session (see below) is usually less than `30` (see above).
 
   Number of session depends on your environment:
-  : - For `master=local` only few ones-tens sessions can be started on the same host, depends on available RAM and CPU.
-    - For `master=yarn` hundreds or thousands of sessions can be started simultaneously,
-      but they are executing on different cluster nodes, so one port can be opened on different nodes at the same time.
+
+- For `master=local` only few ones-tens sessions can be started on the same host, depends on available RAM and CPU.
+- For `master=yarn` hundreds or thousands of sessions can be started simultaneously, but they are executing on different cluster nodes, so one port can be opened on different nodes at the same time.
 
 More details can be found in official documentation:
-: - [port requirements](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/sys_reqs.html#network-port-requirements)
+
+  - [port requirements](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/sys_reqs.html#network-port-requirements)
   - [format of server.port value](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html#server.port)
   - [port troubleshooting](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/troubleshooting.html#port-errors)
 
@@ -202,56 +203,56 @@ This may fail in some cases.
 
 For example, IP can be resolved using `/etc/hosts` content like this:
 
-```text
-127.0.0.1 localhost real-host-name
-```
+    ```text
+        127.0.0.1 localhost real-host-name
+    ```
 
-```bash
-$ hostname -f
-localhost
+    ```bash
+        $ hostname -f
+        localhost
 
-$ hostname -i
-127.0.0.1
-```
+        $ hostname -i
+        127.0.0.1
+    ```
 
 Reading/writing data to Greenplum will fail with following exception:
 
-```text
-org.postgresql.util.PSQLException: ERROR: connection with gpfdist failed for
-"gpfdist://127.0.0.1:49152/local-1709739764667/exec/driver",
-effective url: "http://127.0.0.1:49152/local-1709739764667/exec/driver":
-error code = 111 (Connection refused);  (seg3 slice1 12.34.56.78:10003 pid=123456)
-```
+    ```text
+        org.postgresql.util.PSQLException: ERROR: connection with gpfdist failed for
+        "gpfdist://127.0.0.1:49152/local-1709739764667/exec/driver",
+        effective url: "http://127.0.0.1:49152/local-1709739764667/exec/driver":
+        error code = 111 (Connection refused);  (seg3 slice1 12.34.56.78:10003 pid=123456)
+    ```
 
 There are 2 ways to fix that:
 
 - Explicitly pass your host IP address to connector, like this
 
-  ```python
-  import os
+        ```python
+            import os
 
-  # pass here real host IP (accessible from GP segments)
-  os.environ["HOST_IP"] = "192.168.1.1"
+            # pass here real host IP (accessible from GP segments)
+            os.environ["HOST_IP"] = "192.168.1.1"
 
-  greenplum = Greenplum(
-      ...,
-      extra={
-          # connector will read IP from this environment variable
-          "server.hostEnv": "env.HOST_IP",
-      },
-      spark=spark,
-  )
-  ```
+            greenplum = Greenplum(
+                ...,
+                extra={
+                    # connector will read IP from this environment variable
+                    "server.hostEnv": "env.HOST_IP",
+                },
+                spark=spark,
+            )
+        ```
 
   More details can be found in [official documentation](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html#server.hostenv).
 
 - Update `/etc/hosts` file to include real host IP:
 
-  ```text
-  127.0.0.1 localhost
-  # this IP should be accessible from GP segments
-  192.168.1.1 driver-host-name
-  ```
+        ```text
+        127.0.0.1 localhost
+        # this IP should be accessible from GP segments
+        192.168.1.1 driver-host-name
+        ```
 
   So Greenplum connector will properly resolve host IP.
 
@@ -263,14 +264,14 @@ There are 3 ways to fix that:
 
 - Pass node hostname to `gpfdist` URL. So IP will be resolved on segment side:
 
-  ```python
-  greenplum = Greenplum(
-      ...,
-      extra={
-          "server.useHostname": "true",
-      },
-  )
-  ```
+        ```python
+        greenplum = Greenplum(
+            ...,
+            extra={
+                "server.useHostname": "true",
+            },
+        )
+        ```
 
   But this may fail if Hadoop cluster node hostname cannot be resolved from Greenplum segment side.
 
@@ -278,14 +279,14 @@ There are 3 ways to fix that:
 
 - Set specific network interface to get IP address from:
 
-  ```python
-  greenplum = Greenplum(
-      ...,
-      extra={
-          "server.nic": "eth0",
-      },
-  )
-  ```
+        ```python
+        greenplum = Greenplum(
+            ...,
+            extra={
+                "server.nic": "eth0",
+            },
+        ) 
+        ```
 
   You can get list of network interfaces using this command.
 
@@ -293,15 +294,15 @@ There are 3 ways to fix that:
 
     This command should be executed on Hadoop cluster node, **not** Spark driver host!
 
-  ```bash
-  $ ip address
-  1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
-      inet 127.0.0.1/8 scope host lo
-      valid_lft forever preferred_lft forever
-  2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
-      inet 192.168.1.1/24 brd 192.168.1.255 scope global dynamic noprefixroute eth0
-      valid_lft 83457sec preferred_lft 83457sec
-  ```
+    ```bash
+        $ ip address
+        1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+            inet 127.0.0.1/8 scope host lo
+            valid_lft forever preferred_lft forever
+        2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+            inet 192.168.1.1/24 brd 192.168.1.255 scope global dynamic noprefixroute eth0
+            valid_lft 83457sec preferred_lft 83457sec
+    ```
 
   Note that in this case **each** Hadoop cluster node node should have network interface with name `eth0`.
 
@@ -309,11 +310,11 @@ There are 3 ways to fix that:
 
 - Update `/etc/hosts` on each Hadoop cluster node to include real node IP:
 
-  ```text
-  127.0.0.1 localhost
-  # this IP should be accessible from GP segments
-  192.168.1.1 cluster-node-name
-  ```
+        ```text
+            127.0.0.1 localhost
+            # this IP should be accessible from GP segments
+            192.168.1.1 cluster-node-name
+        ```
 
   So Greenplum connector will properly resolve node IP.
 

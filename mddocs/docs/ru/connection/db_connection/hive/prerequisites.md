@@ -1,55 +1,52 @@
-# Prerequisites { #hive-prerequisites }
+# Предварительные требования { #hive-prerequisites }
 
 !!! note
 
-    onETL's Hive connection is actually SparkSession with access to [Hive Thrift Metastore](https://docs.cloudera.com/cdw-runtime/1.5.0/hive-hms-overview/topics/hive-hms-introduction.html)
-    and HDFS/S3.
-    All data motion is made using Spark. Hive Metastore is used only to store tables and partitions metadata.
+    Подключение к Hive в onETL на самом деле является SparkSession с доступом к [Hive Thrift Metastore](https://docs.cloudera.com/cdw-runtime/1.5.0/hive-hms-overview/topics/hive-hms-introduction.html) и HDFS/S3.
+    Все перемещения данных осуществляются с использованием Spark. Hive Metastore используется только для хранения метаданных таблиц и разделов.
 
-    This connector does **NOT** require Hive server. It also does **NOT** use Hive JDBC connector.
+    Этот коннектор **НЕ** требует наличия Hive сервера. Он также **НЕ** использует Hive JDBC коннектор.
 
-## Version Compatibility
+## Совместимость версий
 
-- Hive Metastore version:
-    - Officially declared: 0.12 - 3.1.3 (may require to add proper .jar file explicitly)
-    - Actually tested: 1.2.100, 2.3.10, 3.1.3
-- Spark versions: 2.3.x - 3.5.x
-- Java versions: 8 - 20
+- Версии Hive Metastore:
+    - Официально заявленные: 0.12 - 3.1.3 (может потребоваться явное добавление соответствующего .jar файла)
+    - Фактически протестированные: 1.2.100, 2.3.10, 3.1.3
+- Версии Spark: 2.3.x - 3.5.x
+- Версии Java: 8 - 20
 
-See [official documentation](https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html).
+См. [официальную документацию](https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html).
 
-## Installing PySpark
+## Установка PySpark
 
-To use Hive connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+Для использования коннектора Hive у вас должен быть установлен PySpark (или добавлен в `sys.path`) **ДО** создания экземпляра коннектора.
 
-See [installation instruction][install-spark] for more details.
+Подробнее см. [инструкцию по установке][install-spark].
 
-## Connecting to Hive Metastore
+## Подключение к Hive Metastore
 
 !!! note
 
-    If you're using managed Hadoop cluster, skip this step, as all Spark configs are should already present on the host.
+    Если вы используете управляемый кластер Hadoop, пропустите этот шаг, так как все конфигурации Spark уже должны присутствовать на хосте.
 
-Create `$SPARK_CONF_DIR/hive-site.xml` with Hive Metastore URL:
+Создайте файл `$SPARK_CONF_DIR/hive-site.xml` с URL-адресом Hive Metastore:
 
-```xml
-<?xml version="1.0"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-<configuration>
-    <property>
-        <name>hive.metastore.uris</name>
-        <value>thrift://metastore.host.name:9083</value>
-    </property>
-</configuration>
-```
+    ```xml
+        <?xml version="1.0"?>
+        <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+        <configuration>
+            <property>
+                <name>hive.metastore.uris</name>
+                <value>thrift://metastore.host.name:9083</value>
+            </property>
+        </configuration>
+    ```
 
-Create `$SPARK_CONF_DIR/core-site.xml` with warehouse location ,e.g. HDFS IPC port of Hadoop namenode, or S3 bucket address & credentials:
+Создайте файл `$SPARK_CONF_DIR/core-site.xml` с расположением хранилища, например, порт HDFS IPC неймноды Hadoop или адрес и учетные данные бакета S3:
 
 === "HDFS"
 
     ```xml
-
         <?xml version="1.0" encoding="UTF-8"?>
         <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
         <configuration>
@@ -63,11 +60,10 @@ Create `$SPARK_CONF_DIR/core-site.xml` with warehouse location ,e.g. HDFS IPC po
 === "S3"
 
     ```xml
-
         <?xml version="1.0" encoding="UTF-8"?>
         <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
         <configuration>
-            !-- See https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html#General_S3A_Client_configuration
+            !-- См. https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html#General_S3A_Client_configuration
             <property>
                 <name>fs.defaultFS</name>
                 <value>s3a://mys3bucket/</value>
@@ -99,17 +95,15 @@ Create `$SPARK_CONF_DIR/core-site.xml` with warehouse location ,e.g. HDFS IPC po
         </configuration>
     ```
 
-## Using Kerberos
+## Использование Kerberos
 
-Some of Hadoop managed clusters use Kerberos authentication. In this case, you should call [kinit](https://web.mit.edu/kerberos/krb5-1.12/doc/user/user_commands/kinit.html) command
-**BEFORE** starting Spark session to generate Kerberos ticket. See [Kerberos installation][install-kerberos].
+Некоторые управляемые кластеры Hadoop используют аутентификацию Kerberos. В этом случае вы должны вызвать команду [kinit](https://web.mit.edu/kerberos/krb5-1.12/doc/user/user_commands/kinit.html) **ДО** запуска сессии Spark для генерации тикета Kerberos. См. [Установка Kerberos][install-kerberos].
 
-Sometimes it is also required to pass keytab file to Spark config, allowing Spark executors to generate own Kerberos tickets:
+Иногда также требуется передать файл keytab в конфигурацию Spark, позволяя экзекуторам Spark генерировать собственные тикеты Kerberos:
 
 === "Spark 3"
 
     ```python
-
         SparkSession.builder
             .option("spark.kerberos.access.hadoopFileSystems", "hdfs://namenode1.domain.com:9820,hdfs://namenode2.domain.com:9820")
             .option("spark.kerberos.principal", "user")
@@ -120,7 +114,6 @@ Sometimes it is also required to pass keytab file to Spark config, allowing Spar
 === "Spark 2"
 
     ```python
-
         SparkSession.builder
             .option("spark.yarn.access.hadoopFileSystems", "hdfs://namenode1.domain.com:9820,hdfs://namenode2.domain.com:9820")
             .option("spark.yarn.principal", "user")
@@ -128,5 +121,4 @@ Sometimes it is also required to pass keytab file to Spark config, allowing Spar
             .gerOrCreate()
     ```
 
-See [Spark security documentation](https://spark.apache.org/docs/latest/security.html#kerberos)
-for more details.
+Дополнительную информацию см. в [документации по безопасности Spark](https://spark.apache.org/docs/latest/security.html#kerberos).

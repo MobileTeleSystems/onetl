@@ -15,27 +15,27 @@ For writing data to Greenplum, use [DBWriter][db-writer] with [GreenplumWriteOpt
 
 ## Examples
 
-```python
-from onetl.connection import Greenplum
-from onetl.db import DBWriter
+    ```python
+        from onetl.connection import Greenplum
+        from onetl.db import DBWriter
 
-greenplum = Greenplum(...)
+        greenplum = Greenplum(...)
 
-df = ...  # data is here
+        df = ...  # data is here
 
-writer = DBWriter(
-    connection=greenplum,
-    target="schema.table",
-    options=Greenplum.WriteOptions(
-        if_exists="append",
-        # by default distribution is random
-        distributedBy="id",
-        # partitionBy is not supported
-    ),
-)
+        writer = DBWriter(
+            connection=greenplum,
+            target="schema.table",
+            options=Greenplum.WriteOptions(
+                if_exists="append",
+                # by default distribution is random
+                distributedBy="id",
+                # partitionBy is not supported
+            ),
+        )
 
-writer.run(df)
-```
+        writer.run(df) 
+    ```
 
 ## Interaction schema
 
@@ -212,16 +212,16 @@ High-level schema is described in [Greenplum prerequisites][greenplum-prerequisi
 ## Options
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.greenplum.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.greenplum.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: GreenplumWriteOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: GreenplumWriteOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.greenplum.options.GreenplumWriteOptions

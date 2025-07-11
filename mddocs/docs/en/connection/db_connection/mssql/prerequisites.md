@@ -13,8 +13,7 @@ and [official compatibility matrix](https://learn.microsoft.com/en-us/sql/connec
 
 ## Installing PySpark
 
-To use MSSQL connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+To use MSSQL connector you should have PySpark installed (or injected to `sys.path`) BEFORE creating the connector instance.
 
 See [installation instruction][install-spark] for more details.
 
@@ -74,6 +73,7 @@ used for creating a connection:
     ```
 
 More details can be found in official documentation:
-: - [GRANT ON DATABASE](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-database-permissions-transact-sql)
-  - [GRANT ON OBJECT](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-object-permissions-transact-sql)
-  - [GRANT ON SCHEMA](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-schema-permissions-transact-sql)
+
+- [GRANT ON DATABASE](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-database-permissions-transact-sql)
+- [GRANT ON OBJECT](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-object-permissions-transact-sql)
+- [GRANT ON SCHEMA](https://learn.microsoft.com/en-us/sql/t-sql/statements/grant-schema-permissions-transact-sql)

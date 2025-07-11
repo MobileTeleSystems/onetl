@@ -30,7 +30,7 @@ This is how Greenplum connector performs this:
 - For each column in query result get column name and Greenplum type.
 - Match table columns with DataFrame columns (by name, case insensitive).
   If some column is present only in target table, but not in DataFrame (like `DEFAULT` or `SERIAL` column), and vice versa, raise an exception.
-  See [Explicit type cast].
+  See [Explicit type cast][explicit-type-cast].
 - Find corresponding `Spark type` → `Greenplumtype (write)` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 - If `Greenplumtype (write)` match `Greenplum type (read)`, no additional casts will be performed, DataFrame column will be written to Greenplum as is.
 - If `Greenplumtype (write)` does not match `Greenplum type (read)`, DataFrame column will be casted to target column type **on Greenplum side**. For example, you can write column with text data to `json` column which Greenplum connector currently does not support.
@@ -66,7 +66,7 @@ So instead of relying on Spark to create tables:
                 # partitionBy is not supported
             ),
         )
-        writer.run(df)
+        writer.run(df) 
     ```
 
 Always prefer creating table with desired DDL **BEFORE WRITING DATA**:
@@ -100,8 +100,8 @@ See Greenplum [CREATE TABLE](https://docs.vmware.com/en/VMware-Greenplum/7/green
 ## Supported types
 
 See:
-  - [official connector documentation](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/reference-datatype_mapping.html)
-  - [list of Greenplum types](https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-data_types.html)
+- [official connector documentation](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-sparkreference-datatype_mapping.html)
+- [list of Greenplum types](https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-data_types.html)
 
 ### Numeric types
 
@@ -183,122 +183,122 @@ See:
 
 Columns of these types cannot be read/written by Spark:
 
-  - `cidr`
-  - `inet`
-  - `macaddr`
-  - `macaddr8`
-  - `circle`
-  - `box`
-  - `line`
-  - `lseg`
-  - `path`
-  - `point`
-  - `polygon`
-  - `tsvector`
-  - `tsquery`
-  - `uuid`
+- `cidr`
+- `inet`
+- `macaddr`
+- `macaddr8`
+- `circle`
+- `box`
+- `line`
+- `lseg`
+- `path`
+- `point`
+- `polygon`
+- `tsvector`
+- `tsquery`
+- `uuid`
 
 The is a way to avoid this - just cast unsupported types to `text`. But the way this can be done is not a straightforward.
 
-## Explicit type cast
+## Explicit type cast { #explicit-type-cast }
 
 ### `DBReader`
 
 Direct casting of Greenplum types is not supported by DBReader due to the connector’s implementation specifics.
 
-```python
-reader = DBReader(
-    connection=greenplum,
-    # will fail
-    columns=["CAST(unsupported_column AS text)"],
-)
-```
+    ```python
+        reader = DBReader(
+            connection=greenplum,
+            # will fail
+            columns=["CAST(unsupported_column AS text)"],
+        ) 
+    ```
 
 But there is a workaround - create a view with casting unsupported column to text (or any other supported type).
 For example, you can use [to_json](https://www.postgresql.org/docs/current/functions-json.html) Postgres function to convert column of any type to string representation and then parse this column on Spark side using [JSON.parse_column][onetl.file.format.json.JSON.parse_column] method.
 
-```python
-from pyspark.sql.types import ArrayType, IntegerType
+    ```python
+            from pyspark.sql.types import ArrayType, IntegerType
 
-from onetl.connection import Greenplum
-from onetl.db import DBReader
-from onetl.file.format import JSON
+            from onetl.connection import Greenplum
+            from onetl.db import DBReader
+            from onetl.file.format import JSON
 
-greenplum = Greenplum(...)
+            greenplum = Greenplum(...)
 
-greenplum.execute(
-    """
-    CREATE VIEW schema.view_with_json_column AS
-    SELECT
-        id,
-        supported_column,
-        to_json(array_column) array_column_as_json,
-        gp_segment_id  -- ! important !
-    FROM
-        schema.table_with_unsupported_columns
-    """,
-)
+            greenplum.execute(
+                """
+                CREATE VIEW schema.view_with_json_column AS
+                SELECT
+                    id,
+                    supported_column,
+                    to_json(array_column) array_column_as_json,
+                    gp_segment_id  -- ! important !
+                FROM
+                    schema.table_with_unsupported_columns
+                """,
+            )
 
-# create dataframe using this view
-reader = DBReader(
-    connection=greenplum,
-    source="schema.view_with_json_column",
-)
-df = reader.run()
+            # create dataframe using this view
+            reader = DBReader(
+                connection=greenplum,
+                source="schema.view_with_json_column",
+            )
+            df = reader.run()
 
-# Define the schema for the JSON data
-json_scheme = ArrayType(IntegerType())
+            # Define the schema for the JSON data
+            json_scheme = ArrayType(IntegerType())
 
-df = df.select(
-    df.id,
-    df.supported_column,
-    JSON().parse_column(df.array_column_as_json, json_scheme).alias("array_column"),
-)
-```
+            df = df.select(
+                df.id,
+                df.supported_column,
+                JSON().parse_column(df.array_column_as_json, json_scheme).alias("array_column"),
+            )
+    ```
 
 ### `DBWriter`
 
 To write data to a `text` or `json` column in a Greenplum table, use [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column] method.
 
-```python
-from onetl.connection import Greenplum
-from onetl.db import DBWriter
-from onetl.file.format import JSON
+    ```python
+        from onetl.connection import Greenplum
+        from onetl.db import DBWriter
+        from onetl.file.format import JSON
 
-greenplum = Greenplum(...)
+        greenplum = Greenplum(...)
 
-greenplum.execute(
-    """
-    CREATE TABLE schema.target_table (
-        id int,
-        supported_column timestamp,
-        array_column_as_json jsonb, -- or text
-    )
-    DISTRIBUTED BY id
-    """,
-)
+        greenplum.execute(
+            """
+            CREATE TABLE schema.target_table (
+                id int,
+                supported_column timestamp,
+                array_column_as_json jsonb, -- or text
+            )
+            DISTRIBUTED BY id
+            """,
+        )
 
-write_df = df.select(
-    df.id,
-    df.supported_column,
-    JSON().serialize_column(df.array_column).alias("array_column_json"),
-)
+        write_df = df.select(
+            df.id,
+            df.supported_column,
+            JSON().serialize_column(df.array_column).alias("array_column_json"),
+        )
 
-writer = DBWriter(
-    connection=greenplum,
-    target="schema.target_table",
-)
-writer.run(write_df)
-```
+        writer = DBWriter(
+            connection=greenplum,
+            target="schema.target_table",
+        )
+        writer.run(write_df) 
+    ```
 
 Then you can parse this column on Greenplum side:
 
-```sql
-SELECT
-    id,
-    supported_column,
-    -- access first item of an array
-    array_column_as_json->0
-FROM
-    schema.target_table
-```
+    ```sql
+        SELECT
+            id,
+            supported_column,
+            -- access first item of an array
+            array_column_as_json->0
+        FROM
+            schema.target_table
+    ```

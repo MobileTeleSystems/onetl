@@ -1,7 +1,6 @@
 # Reading from MongoDB using `MongoDB.pipeline` { #mongodb-pipeline }
 
-[MongoDB.sql][onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline] allows passing custom pipeline,
-but does not support incremental strategies.
+[MongoDB.sql][onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline] allows passing custom pipeline, but does not support incremental strategies.
 
 !!! warning
 
@@ -18,24 +17,24 @@ Especially if there are indexes for columns used in `pipeline` value.
 ## References
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mongodb.connection
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mongodb.connection
+    ```
 
-```{eval-rst}
-.. automethod:: MongoDB.pipeline
-```
+    ```{eval-rst}
+    .. automethod:: MongoDB.pipeline
+    ```
 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mongodb.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mongodb.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MongoDBPipelineOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MongoDBPipelineOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline
@@ -43,9 +42,7 @@ Especially if there are indexes for columns used in `pipeline` value.
         heading_level: 3
         show_root_heading: true
 
-
 ::: onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions
     options:
         heading_level: 3
         show_root_heading: true
-

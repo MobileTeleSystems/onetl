@@ -1,17 +1,17 @@
 # Clickhouse
 
-## Connection
+## Подключение
 
-* [Prerequisites][clickhouse-prerequisites]
-* [Clickhouse connection][clickhouse-connection]
+* [Предварительные требования][clickhouse-prerequisites]
+* [Подключение к Clickhouse][clickhouse-connection]
 
-## Operations
+## Операции
 
-* [Reading from Clickhouse using `DBReader`][clickhouse-read]
-* [Reading from Clickhouse using `Clickhouse.sql`][clickhouse-sql]
-* [Writing to Clickhouse using `DBWriter`][clickhouse-write]
-* [Executing statements in Clickhouse][clickhouse-execute]
+* [Чтение из Clickhouse с использованием `DBReader`][clickhouse-read]
+* [Чтение из Clickhouse с использованием `Clickhouse.sql`][clickhouse-sql]
+* [Запись в Clickhouse с использованием `DBWriter`][clickhouse-write]
+* [Выполнение предложений в Clickhouse][clickhouse-execute]
 
-## Troubleshooting
+## Устранение неисправностей
 
-* [Clickhouse <-> Spark type mapping][clickhouse-types]
+* [Соответствие типов Clickhouse <-> Spark][clickhouse-types]

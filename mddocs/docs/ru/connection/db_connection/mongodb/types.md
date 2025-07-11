@@ -1,18 +1,18 @@
-# MongoDB <-> Spark type mapping { #mongodb-types }
+# Сопоставление типов MongoDB <-> Spark { #mongodb-types }
 
 !!! note
 
-    The results below are valid for Spark 3.5.5, and may differ on other Spark versions.
+    Результаты ниже действительны для Spark 3.5.5 и могут отличаться в других версиях Spark.
 
-## Type detection & casting
+## Определение типов и приведение
 
-Spark's DataFrames always have a `schema` which is a list of fields with corresponding Spark types. All operations on a field are performed using field type.
+DataFrame в Spark всегда имеют `schema` — список полей с соответствующими типами Spark. Все операции с полем выполняются с использованием типа поля.
 
-MongoDB is, by design, \_\_schemaless\_\_. So there are 2 ways how this can be handled:
+MongoDB по своей природе является \_\_бесхемной\_\_ (schemaless). Поэтому есть 2 способа решения этой проблемы:
 
-- User provides DataFrame schema explicitly:
+- Пользователь явно указывает схему DataFrame:
 
-??? note "See example"
+??? note "Смотрите пример"
 
     ```python
 
@@ -51,7 +51,7 @@ MongoDB is, by design, \_\_schemaless\_\_. So there are 2 ways how this can be h
         )
         df = reader.run()
 
-        # or
+        # или
 
         df = mongodb.pipeline(
             collection="some_collection",
@@ -59,152 +59,152 @@ MongoDB is, by design, \_\_schemaless\_\_. So there are 2 ways how this can be h
         )
     ```
 
-- Rely on MongoDB connector schema infer:
+- Положиться на автоматическое определение схемы коннектором MongoDB:
 
-  ```python
-  df = mongodb.pipeline(collection="some_collection")
-  ```
+        ```python
+            df = mongodb.pipeline(collection="some_collection")
+        ```
 
-  In this case MongoDB connector read a sample of collection documents, and build DataFrame schema based on document fields and values.
+  В этом случае коннектор MongoDB читает образец документов коллекции и создает схему DataFrame на основе полей и значений документов.
 
-It is highly recommended to pass `df_schema` explicitly, to avoid type conversion issues.
+Настоятельно рекомендуется явно передавать `df_schema`, чтобы избежать проблем с преобразованием типов.
 
-### References
+### Ссылки
 
-Here you can find source code with type conversions:
+Здесь вы можете найти исходный код с преобразованиями типов:
 
 - [MongoDB -> Spark](https://github.com/mongodb/mongo-spark/blob/r10.4.1/src/main/java/com/mongodb/spark/sql/connector/schema/InferSchema.java#L214-L260)
 - [Spark -> MongoDB](https://github.com/mongodb/mongo-spark/blob/r10.4.1/src/main/java/com/mongodb/spark/sql/connector/schema/RowToBsonDocumentConverter.java#L157-L260)
 
-## Supported types
+## Поддерживаемые типы
 
-See [official documentation](https://www.mongodb.com/docs/manual/reference/bson-types/)
+См. [официальную документацию](https://www.mongodb.com/docs/manual/reference/bson-types/)
 
-### Numeric types
+### Числовые типы
 
-| MongoDB type (read) | Spark type                  | MongoDB type (write) |
-|---------------------|-----------------------------|----------------------|
-| `Decimal128`      | `DecimalType(P=34, S=32)` | `Decimal128`       |
-| `-`<br/>`Double`               | `FloatType()`<br/>`DoubleType()`             | `Double`           |
-| `-`<br/>`-`<br/>`Int32`               | `ByteType()`<br/>`ShortType()`<br/>`IntegerType()`              | `Int32`            |
-| `Int64`           | `LongType()`              | `Int64`            |
+| Тип MongoDB (чтение) | Тип Spark                   | Тип MongoDB (запись) |
+|----------------------|-----------------------------|-----------------------|
+| `Decimal128`        | `DecimalType(P=34, S=32)`  | `Decimal128`         |
+| `-`<br/>`Double`    | `FloatType()`<br/>`DoubleType()` | `Double`           |
+| `-`<br/>`-`<br/>`Int32` | `ByteType()`<br/>`ShortType()`<br/>`IntegerType()` | `Int32`            |
+| `Int64`             | `LongType()`              | `Int64`              |
 
-### Temporal types
+### Временные типы
 
-| MongoDB type (read)    | Spark type                        | MongoDB type (write)    |
-|------------------------|-----------------------------------|-------------------------|
-| `-``                  | `DateType()`, days              | `Date`, milliseconds  |
-| `Date`, milliseconds | `TimestampType()`, microseconds | `Date`, milliseconds, **precision loss** [^1]|
-| `Timestamp`, seconds | `TimestampType()`, microseconds | `Date`, milliseconds  |
-| `-`<br/>`-`                  | `TimestampNTZType()`<br/>`DayTimeIntervalType()`            | unsupported             |
+| Тип MongoDB (чтение)     | Тип Spark                         | Тип MongoDB (запись)    |
+|--------------------------|-----------------------------------|-------------------------|
+| `-`                      | `DateType()`, дни               | `Date`, миллисекунды  |
+| `Date`, миллисекунды   | `TimestampType()`, микросекунды | `Date`, миллисекунды, **потеря точности** [^1]|
+| `Timestamp`, секунды   | `TimestampType()`, микросекунды | `Date`, миллисекунды  |
+| `-`<br/>`-`              | `TimestampNTZType()`<br/>`DayTimeIntervalType()`            | не поддерживается      |
 
 !!! warning
 
-    Note that types in MongoDB and Spark have different value ranges:
+    Обратите внимание, что типы в MongoDB и Spark имеют различные диапазоны значений:
 
     
-    | MongoDB type  | Min value                      | Max value                      | Spark type          | Min value                      | Max value                      |
-    |---------------|--------------------------------|--------------------------------|---------------------|--------------------------------|--------------------------------|
-    | `Date`<br/>`Timestamp`      | -290 million years<br/>`1970-01-01 00:00:00`             | 290 million years<br/>`2106-02-07 09:28:16`              | `TimestampType()` | `0001-01-01 00:00:00.000000` | `9999-12-31 23:59:59.999999` |
+    | Тип MongoDB   | Минимальное значение                 | Максимальное значение                | Тип Spark          | Минимальное значение              | Максимальное значение               |
+    |---------------|--------------------------------------|-------------------------------------|---------------------|-----------------------------------|--------------------------------------|
+    | `Date`<br/>`Timestamp`      | -290 миллионов лет<br/>`1970-01-01 00:00:00`             | 290 миллионов лет<br/>`2106-02-07 09:28:16`              | `TimestampType()` | `0001-01-01 00:00:00.000000` | `9999-12-31 23:59:59.999999` |
 
-    So not all values can be read from MongoDB to Spark, and can written from Spark DataFrame to MongoDB.
+    Таким образом, не все значения могут быть прочитаны из MongoDB в Spark или записаны из Spark DataFrame в MongoDB.
 
-    References:
+    Ссылки:
 
-    * [MongoDB Date type documentation](https://www.mongodb.com/docs/manual/reference/bson-types/#date)
-    * [MongoDB Timestamp documentation](https://www.mongodb.com/docs/manual/reference/bson-types/#timestamps)
-    * [Spark DateType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
-    * [Spark TimestampType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
+    * [Документация по типу Date в MongoDB](https://www.mongodb.com/docs/manual/reference/bson-types/#date)
+    * [Документация по Timestamp в MongoDB](https://www.mongodb.com/docs/manual/reference/bson-types/#timestamps)
+    * [Документация по DateType в Spark](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
+    * [Документация по TimestampType в Spark](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
 
-[^1]: MongoDB `Date` type has precision up to milliseconds (`23:59:59.999`).
-    Inserting data with microsecond precision (`23:59:59.999999`)
-    will lead to **throwing away microseconds**.
+[^1]: Тип `Date` в MongoDB имеет точность до миллисекунд (`23:59:59.999`).
+    Вставка данных с точностью до микросекунд (`23:59:59.999999`)
+    приведет к **отбрасыванию микросекунд**.
 
-### String types
+### Строковые типы
 
-Note: fields of deprecated MongoDB type `Symbol` are excluded during read.
+Примечание: поля устаревшего типа MongoDB `Symbol` исключаются при чтении.
 
-| MongoDB type (read) | Spark type       | MongoDB type (write) |
-|---------------------|------------------|----------------------|
-| `String`<br/>`Code`<br/>`RegExp`          | `StringType()` | `String`           |
+| Тип MongoDB (чтение) | Тип Spark       | Тип MongoDB (запись) |
+|----------------------|-----------------|----------------------|
+| `String`<br/>`Code`<br/>`RegExp` | `StringType()` | `String`           |
 
-### Binary types
+### Бинарные типы
 
-| MongoDB type (read) | Spark type      | MongoDB type (write) |
-| ------------------- | --------------- | -------------------- |
-| `Boolean`           | `BooleanType()` | `Boolean`            |
-| `Binary`            | `BinaryType()`  | `Binary`             |
+| Тип MongoDB (чтение) | Тип Spark      | Тип MongoDB (запись) |
+| -------------------- | --------------- | -------------------- |
+| `Boolean`            | `BooleanType()` | `Boolean`            |
+| `Binary`             | `BinaryType()`  | `Binary`             |
 
-### Struct types
+### Структурные типы
 
-| MongoDB type (read) | Spark type            | MongoDB type (write) |
-|---------------------|-----------------------|----------------------|
-| `Array[T]`        | `ArrayType(T)`      | `Array[T]`         |
+| Тип MongoDB (чтение) | Тип Spark            | Тип MongoDB (запись) |
+|----------------------|-----------------------|----------------------|
+| `Array[T]`          | `ArrayType(T)`      | `Array[T]`         |
 | `Object[...]`<br/>`-`     | `StructType([...])`<br/>`MapType(...)` | <br/>`Object[...]`      |
 
-### Special types
+### Специальные типы
 
-| MongoDB type (read) | Spark type                                              | MongoDB type (write)                  |
-|---------------------|---------------------------------------------------------|---------------------------------------|
+| Тип MongoDB (чтение) | Тип Spark                                              | Тип MongoDB (запись)                  |
+|----------------------|---------------------------------------------------------|---------------------------------------|
 | `ObjectId`<br/>`MaxKey`<br/>`MinKey`        | <br/><br/>`StringType()`                                        | <br/><br/>`String`                            |
 | `Null`<br/>`Undefined`            | `NullType()`                                          | `Null`                              |
 | `DBRef`           | `StructType([$ref: StringType(), $id: StringType()])` | `Object[$ref: String, $id: String]` |
 
-## Explicit type cast
+## Явное приведение типов
 
 ### `DBReader`
 
-Currently it is not possible to cast field types using `DBReader`. But this can be done using `MongoDB.pipeline`.
+В настоящее время невозможно приводить типы полей с помощью `DBReader`. Но это можно сделать с помощью `MongoDB.pipeline`.
 
 ### `MongoDB.pipeline`
 
-You can use `$project` aggregation to cast field types:
+Вы можете использовать агрегацию `$project` для приведения типов полей:
 
-```python
-from pyspark.sql.types import IntegerType, StructField, StructType
+    ```python
+        from pyspark.sql.types import IntegerType, StructField, StructType
 
-from onetl.connection import MongoDB
-from onetl.db import DBReader
+        from onetl.connection import MongoDB
+        from onetl.db import DBReader
 
-mongodb = MongoDB(...)
+        mongodb = MongoDB(...)
 
-df = mongodb.pipeline(
-    collection="my_collection",
-    pipeline=[
-        {
-            "$project": {
-                # convert unsupported_field to string
-                "unsupported_field_str": {
-                    "$convert": {
-                        "input": "$unsupported_field",
-                        "to": "string",
-                    },
-                },
-                # skip unsupported_field from result
-                "unsupported_field": 0,
-            }
-        }
-    ],
-)
+        df = mongodb.pipeline(
+            collection="my_collection",
+            pipeline=[
+                {
+                    "$project": {
+                        # преобразование unsupported_field в строку
+                        "unsupported_field_str": {
+                            "$convert": {
+                                "input": "$unsupported_field",
+                                "to": "string",
+                            },
+                        },
+                        # исключение unsupported_field из результата
+                        "unsupported_field": 0,
+                    }
+                }
+            ],
+        )
 
-# cast field content to proper Spark type
-df = df.select(
-    df.id,
-    df.supported_field,
-    # explicit cast
-    df.unsupported_field_str.cast("integer").alias("parsed_integer"),
-)
-```
+        # приведение содержимого поля к правильному типу Spark
+        df = df.select(
+            df.id,
+            df.supported_field,
+            # явное приведение
+            df.unsupported_field_str.cast("integer").alias("parsed_integer"),
+        )
+    ```
 
 ### `DBWriter`
 
-Convert dataframe field to string on Spark side, and then write it to MongoDB:
+Преобразование поля dataframe в строку на стороне Spark, а затем запись в MongoDB:
 
-```python
-df = df.select(
-    df.id,
-    df.unsupported_field.cast("string").alias("array_field_json"),
-)
+    ```python
+        df = df.select(
+            df.id,
+            df.unsupported_field.cast("string").alias("array_field_json"),
+        )
 
-writer.run(df)
-```
+        writer.run(df)
+    ```

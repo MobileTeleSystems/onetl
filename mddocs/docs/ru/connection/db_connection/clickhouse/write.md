@@ -1,60 +1,57 @@
-# Writing to Clickhouse using `DBWriter` { #clickhouse-write }
+# Запись в Clickhouse с использованием `DBWriter` { #clickhouse-write }
 
-For writing data to Clickhouse, use [DBWriter][db-writer].
-
-!!! warning
-
-    Please take into account [Clickhouse types][clickhouse-types]
-
+Для записи данных в Clickhouse используйте [DBWriter][db-writer].
 
 !!! warning
 
-    It is always recommended to create table explicitly using [Clickhouse.execute][clickhouse-execute]
-    instead of relying on Spark's table DDL generation.
+    Пожалуйста, учитывайте [типы данных Clickhouse][clickhouse-types]
 
-    This is because Spark's DDL generator can create columns with different precision and types than it is expected,
-    causing precision loss or other issues.
+!!! warning
 
+    Всегда рекомендуется создавать таблицу явно с помощью [Clickhouse.execute][clickhouse-execute] вместо того, чтобы полагаться на генерацию DDL таблицы в Spark.
 
-## Examples
+    Это связано с тем, что генератор DDL Spark может создавать столбцы с другой точностью и типами, чем ожидается, что приводит к потере точности или другим проблемам.
 
-```python
-from onetl.connection import Clickhouse
-from onetl.db import DBWriter
+## Примеры
 
-clickhouse = Clickhouse(...)
+    ```python
+    from onetl.connection import Clickhouse
+    from onetl.db import DBWriter
 
-df = ...  # data is here
+    clickhouse = Clickhouse(...)
 
-writer = DBWriter(
-    connection=clickhouse,
-    target="schema.table",
-    options=Clickhouse.WriteOptions(
-        if_exists="append",
-        # ENGINE is required by Clickhouse
-        createTableOptions="ENGINE = MergeTree() ORDER BY id",
-    ),
-)
+    df = ...  # данные находятся здесь
 
-writer.run(df)
-```
+    writer = DBWriter(
+        connection=clickhouse,
+        target="schema.table",
+        options=Clickhouse.WriteOptions(
+            if_exists="append",
+            # ENGINE обязателен для Clickhouse
+            createTableOptions="ENGINE = MergeTree() ORDER BY id",
+        ),
+    )
 
-## Options { #clickhouse-write-options }
+    writer.run(df) 
+              
+    ```
 
-Method above accepts [Clickhouse.WriteOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseWriteOptions]
+## Опции { #clickhouse-write-options }
+
+Метод выше принимает [Clickhouse.WriteOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseWriteOptions]
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.clickhouse.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.clickhouse.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: ClickhouseWriteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-``` 
+    ```{eval-rst}
+    .. autopydantic_model:: ClickhouseWriteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ``` 
 -->
 
 ::: onetl.connection.db_connection.clickhouse.options.ClickhouseWriteOptions

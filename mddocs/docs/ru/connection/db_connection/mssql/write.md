@@ -1,55 +1,53 @@
-# Writing to MSSQL using `DBWriter` { #mssql-write }
+# Запись в MSSQL с помощью `DBWriter` { #mssql-write }
 
-For writing data to MSSQL, use [DBWriter][db-writer].
-
-!!! warning
-
-    Please take into account [MSSQL types][mssql-types]
+Для записи данных в MSSQL используйте [DBWriter][db-writer].
 
 !!! warning
 
-    It is always recommended to create table explicitly using [MSSQL.execute][mssql-execute]
-    instead of relying on Spark's table DDL generation.
+    Пожалуйста, учитывайте [типы данных MSSQL][mssql-types]
 
-    This is because Spark's DDL generator can create columns with different precision and types than it is expected,
-    causing precision loss or other issues.
+!!! warning
 
-## Examples
+    Всегда рекомендуется создавать таблицу явно с помощью [MSSQL.execute][mssql-execute] вместо того, чтобы полагаться на автоматическую генерацию DDL Spark.
 
-```python
-from onetl.connection import MSSQL
-from onetl.db import DBWriter
+    Это связано с тем, что генератор DDL Spark может создавать столбцы с другой точностью и типами, чем ожидается, что приводит к потере точности или другим проблемам.
 
-mssql = MSSQL(...)
+## Примеры
 
-df = ...  # data is here
+    ```python
+        from onetl.connection import MSSQL
+        from onetl.db import DBWriter
 
-writer = DBWriter(
-    connection=mssql,
-    target="schema.table",
-    options=MSSQL.WriteOptions(if_exists="append"),
-)
+        mssql = MSSQL(...)
 
-writer.run(df)
-```
+        df = ...  # данные находятся здесь
 
-## Options
+        writer = DBWriter(
+            connection=mssql,
+            target="schema.table",
+            options=MSSQL.WriteOptions(if_exists="append"),
+        )
 
-Method above accepts [MSSQL.WriteOptions][onetl.connection.db_connection.mssql.options.MSSQLWriteOptions]
+        writer.run(df)
+    ```
+
+## Опции
+
+Метод выше принимает [MSSQL.WriteOptions][onetl.connection.db_connection.mssql.options.MSSQLWriteOptions]
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mssql.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mssql.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MSSQLWriteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
+    ```{eval-rst}
+    .. autopydantic_model:: MSSQLWriteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
 ```
- -->
+-->
 
 ::: onetl.connection.db_connection.mssql.options.MSSQLWriteOptions
     options:

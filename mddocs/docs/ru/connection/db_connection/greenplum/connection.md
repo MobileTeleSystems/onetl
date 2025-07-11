@@ -1,4 +1,4 @@
-# Greenplum connection
+# Подключение к Greenplum
 
 <!-- 
 ```{eval-rst}

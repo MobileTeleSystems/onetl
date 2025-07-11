@@ -1,4 +1,4 @@
-# DB Connections
+# Подключения к БД
 
 * [Clickhouse][clickhouse]
 * [Greenplum][greenplum]

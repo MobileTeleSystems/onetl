@@ -16,38 +16,38 @@ For writing data to MSSQL, use [DBWriter][db-writer].
 
 ## Examples
 
-```python
-from onetl.connection import MSSQL
-from onetl.db import DBWriter
+    ```python
+        from onetl.connection import MSSQL
+        from onetl.db import DBWriter
 
-mssql = MSSQL(...)
+        mssql = MSSQL(...)
 
-df = ...  # data is here
+        df = ...  # data is here
 
-writer = DBWriter(
-    connection=mssql,
-    target="schema.table",
-    options=MSSQL.WriteOptions(if_exists="append"),
-)
+        writer = DBWriter(
+            connection=mssql,
+            target="schema.table",
+            options=MSSQL.WriteOptions(if_exists="append"),
+        )
 
-writer.run(df)
-```
+        writer.run(df)
+    ```
 
 ## Options
 
 Method above accepts [MSSQL.WriteOptions][onetl.connection.db_connection.mssql.options.MSSQLWriteOptions]
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mssql.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mssql.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MSSQLWriteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
+    ```{eval-rst}
+    .. autopydantic_model:: MSSQLWriteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
 ```
  -->
 

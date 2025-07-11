@@ -1,4 +1,4 @@
-# FTPS connection { #ftps }
+# Подключение к FTPS { #ftps }
 
 <!-- 
 ```{eval-rst}

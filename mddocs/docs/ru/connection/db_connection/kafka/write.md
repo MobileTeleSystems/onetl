@@ -1,78 +1,66 @@
-# Writing to Kafka { #kafka-write }
+# Запись в Kafka { #kafka-write }
 
-For writing data to Kafka, use [DBWriter][db-writer] with specific options (see below).
+Для записи данных в Kafka используйте [DBWriter][db-writer] с определенными параметрами (см. ниже).
 
-## Dataframe schema
+## Схема DataFrame
 
-Unlike other DB connections, Kafka does not have concept of columns.
-All the topics messages have the same set of fields. Only some of them can be written:
+В отличие от других подключений к БД, Kafka не имеет концепции столбцов.
+Все сообщения в топиках имеют одинаковый набор полей. Записать можно только некоторые из них:
 
-```text
-root
-|-- key: binary (nullable = true)
-|-- value: binary (nullable = true)
-|-- headers: struct (nullable = true)
-    |-- key: string (nullable = false)
-    |-- value: binary (nullable = true)
-```
+    ```text
+        root
+        |-- key: binary (nullable = true)
+        |-- value: binary (nullable = true)
+        |-- headers: struct (nullable = true)
+            |-- key: string (nullable = false)
+            |-- value: binary (nullable = true)
+    ```
 
-`headers` can be passed only with `Kafka.WriteOptions(include_headers=True)` (compatibility with Kafka 1.x).
+Поле `headers` может быть передано только с `Kafka.WriteOptions(include_headers=True)` (для совместимости с Kafka 1.x).
 
-Field `topic` should not be present in the dataframe, as it is passed to `DBWriter(target=...)`.
+Поле `topic` не должно присутствовать в DataFrame, так как оно передается в `DBWriter(target=...)`.
 
-Other fields, like `partition`, `offset`, `timestamp` are set by Kafka, and cannot be passed explicitly.
+Другие поля, такие как `partition`, `offset`, `timestamp`, устанавливаются Kafka и не могут быть явно переданы.
 
-## Value serialization
+## Сериализация значений
 
-To write `value` or `key` of other type than bytes (e.g. struct or integer), users have to serialize values manually.
+Для записи поля `value` или `key` типа, отличного от байтов (например, структуры или целого числа), пользователи должны сериализовать значения вручную.
 
-This could be done using following methods:
-  - [Avro.serialize_column][onetl.file.format.avro.Avro.serialize_column]
-  - [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column]
-  - [CSV.serialize_column ][onetl.file.format.csv.CSV.serialize_column]
+Это можно сделать с помощью следующих методов:
 
-## Examples
+- [Avro.serialize_column][onetl.file.format.avro.Avro.serialize_column]
+- [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column]
+- [CSV.serialize_column ][onetl.file.format.csv.CSV.serialize_column]
 
-Convert `value` to JSON string, and write to Kafka:
+## Примеры
 
-```python
-from onetl.connection import Kafka
-from onetl.db import DBWriter
-from onetl.file.format import JSON
+Преобразование `value` в строку JSON и запись в Kafka:
 
-df = ...  # original data is here
+    ```python
+        from onetl.connection import Kafka
+        from onetl.db import DBWriter
+        from onetl.file.format import JSON
 
-# serialize struct data as JSON
-json = JSON()
-write_df = df.select(
-    df.key,
-    json.serialize_column(df.value),
-)
+        df = ...  # исходные данные здесь
 
-# write data to Kafka
-kafka = Kafka(...)
+        # сериализация структурированных данных в JSON
+        json = JSON()
+        write_df = df.select(
+            df.key,
+            json.serialize_column(df.value),
+        )
 
-writer = DBWriter(
-    connection=kafka,
-    target="topic_name",
-)
-writer.run(write_df)
-```
+        # запись данных в Kafka
+        kafka = Kafka(...)
 
-## Options
+        writer = DBWriter(
+            connection=kafka,
+            target="topic_name",
+        )
+        writer.run(write_df)
+    ```
 
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.kafka.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: KafkaWriteOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
- -->
+## Параметры
 
 ::: onetl.connection.db_connection.kafka.options.KafkaWriteOptions
     options:

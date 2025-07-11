@@ -1,71 +1,69 @@
-# Prerequisites { #mongodb-prerequisites }
+# Предварительные требования { #mongodb-prerequisites }
 
-## Version Compatibility
+## Совместимость версий
 
-- MongoDB server versions:
-    - Officially declared: 4.0 or higher
-    - Actually tested: 4.0.0, 8.0.4
-- Spark versions: 3.2.x - 3.5.x
-- Java versions: 8 - 20
+- Версии сервера MongoDB:
+    - Официально заявленные: 4.0 или выше
+    - Фактически протестированные: 4.0.0, 8.0.4
+- Версии Spark: 3.2.x - 3.5.x
+- Версии Java: 8 - 20
 
-See [official documentation](https://www.mongodb.com/docs/spark-connector/).
+См. [официальную документацию](https://www.mongodb.com/docs/spark-connector/).
 
-## Installing PySpark
+## Установка PySpark
 
-To use MongoDB connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+Для использования коннектора MongoDB у вас должен быть установлен PySpark (или добавлен в `sys.path`) **ДО** создания экземпляра коннектора.
 
-See [installation instruction][install-spark] for more details.
+Подробности см. в [инструкции по установке][install-spark].
 
-## Connecting to MongoDB
+## Подключение к MongoDB
 
-### Connection host
+### Хост подключения
 
-It is possible to connect to MongoDB host by using either DNS name of host or it's IP address.
+Возможно подключение к хосту MongoDB как по DNS-имени хоста, так и по его IP-адресу.
 
-It is also possible to connect to MongoDB shared cluster:
+Также возможно подключение к общему кластеру MongoDB:
 
-```python
-mongo = MongoDB(
-    host="master.host.or.ip",
-    user="user",
-    password="*****",
-    database="target_database",
-    spark=spark,
-    extra={
-        # read data from secondary cluster node, switch to primary if not available
-        "readPreference": "secondaryPreferred",
-    },
-)
-```
+    ```python
+        mongo = MongoDB(
+            host="master.host.or.ip",
+            user="user",
+            password="*****",
+            database="target_database",
+            spark=spark,
+            extra={
+                # чтение данных с вторичного узла кластера, переключение на первичный, если вторичный недоступен
+                "readPreference": "secondaryPreferred",
+            },
+        )
+    ```
 
-Supported `readPreference` values are described in [official documentation](https://www.mongodb.com/docs/manual/core/read-preference/).
+Поддерживаемые значения `readPreference` описаны в [официальной документации](https://www.mongodb.com/docs/manual/core/read-preference/).
 
-### Connection port
+### Порт подключения
 
-Connection is usually performed to port `27017`. Port may differ for different MongoDB instances.
-Please ask your MongoDB administrator to provide required information.
+Подключение обычно выполняется к порту `27017`. Порт может отличаться для разных экземпляров MongoDB.
+Пожалуйста, уточните необходимую информацию у администратора MongoDB.
 
-### Required grants
+### Необходимые разрешения
 
-Ask your MongoDB cluster administrator to set following grants for a user,
-used for creating a connection:
+Попросите администратора кластера MongoDB установить следующие разрешения для пользователя, используемого для создания подключения:
 
-=== "Read + Write"
+=== "Чтение + Запись"
 
     ```js
-    // allow writing data to specific database
+    // разрешить запись данных в определенную базу данных
     db.grantRolesToUser("username", [{db: "somedb", role: "readWrite"}])
     ```
 
-=== "Read only"
+=== "Только чтение"
 
     ```js
-    // allow reading data from specific database
+    // разрешить чтение данных из определенной базы данных
     db.grantRolesToUser("username", [{db: "somedb", role: "read"}])
     ```
 
+См. также:
 
-See:
-  - [db.grantRolesToUser documentation](https://www.mongodb.com/docs/manual/reference/method/db.grantRolesToUser)
-  - [MongoDB builtin roles](https://www.mongodb.com/docs/manual/reference/built-in-roles)
+- [Документация по db.grantRolesToUser](https://www.mongodb.com/docs/manual/reference/method/db.grantRolesToUser)
+- [Встроенные роли MongoDB](https://www.mongodb.com/docs/manual/reference/built-in-roles)

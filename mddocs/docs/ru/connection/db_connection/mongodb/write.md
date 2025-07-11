@@ -1,48 +1,48 @@
-# Writing to MongoDB using `DBWriter` { #mongodb-write }
+# Запись данных в MongoDB с использованием `DBWriter` { #mongodb-write }
 
-For writing data to MongoDB, use [DBWriter][db-writer].
+Для записи данных в MongoDB используйте [DBWriter][db-writer].
 
 !!! warning
 
-    Please take into account [MongoDB types][mongodb-types]
+    Пожалуйста, учитывайте [типы данных MongoDB][mongodb-types]
 
-## Examples
+## Примеры
 
-```python
-from onetl.connection import MongoDB
-from onetl.db import DBWriter
+    ```python
+        from onetl.connection import MongoDB
+        from onetl.db import DBWriter
 
-mongodb = MongoDB(...)
+        mongodb = MongoDB(...)
 
-df = ...  # data is here
+        df = ...  # здесь находятся данные
 
-writer = DBWriter(
-    connection=mongodb,
-    target="schema.table",
-    options=MongoDB.WriteOptions(
-        if_exists="append",
-    ),
-)
+        writer = DBWriter(
+            connection=mongodb,
+            target="schema.table",
+            options=MongoDB.WriteOptions(
+                if_exists="append",
+            ),
+        )
 
-writer.run(df)
-```
+        writer.run(df)  
+    ```
 
-## Write options
+## Параметры записи
 
-Method above accepts [MongoDB.WriteOptions][onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions]
+Метод выше принимает [MongoDB.WriteOptions][onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions]
 
 <!-- 
 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mongodb.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mongodb.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MongoDBWriteOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MongoDBWriteOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
 
  -->
 

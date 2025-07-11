@@ -21,36 +21,35 @@ This method supports **any** query syntax supported by Hive, like:
 
 ## Examples
 
-```python
-from onetl.connection import Hive
+    ```python
+        from onetl.connection import Hive
 
-hive = Hive(...)
+        hive = Hive(...)
 
-hive.execute("DROP TABLE schema.table")
-hive.execute(
-    """
-    CREATE TABLE schema.table (
-        id NUMBER,
-        key VARCHAR,
-        value DOUBLE
-    )
-    PARTITION BY (business_date DATE)
-    STORED AS orc
-    """
-)
-```
+        hive.execute("DROP TABLE schema.table")
+        hive.execute(
+            """
+            CREATE TABLE schema.table (
+                id NUMBER,
+                key VARCHAR,
+                value DOUBLE
+            )
+            PARTITION BY (business_date DATE)
+            STORED AS orc
+            """
+        )
+    ```
 
 ### Details
 
-
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.hive.connection
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.hive.connection
+    ```
 
-```{eval-rst}
-.. automethod:: Hive.execute
-```
+    ```{eval-rst}
+    .. automethod:: Hive.execute
+    ```
  -->
 
 ::: onetl.connection.db_connection.hive.connection.Hive.execute

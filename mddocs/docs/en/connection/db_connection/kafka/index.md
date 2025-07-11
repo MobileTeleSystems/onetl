@@ -1,28 +1,28 @@
 # Kafka
 
-# Connection
+## Connection
 
 * [Prerequisites][kafka-prerequisites]
 * [Kafka Connection][kafka-connection]
 * [Kafka Troubleshooting][kafka-troubleshooting]
 
-# Protocols
+## Protocols
 
 * [Kafka PlaintextProtocol][kafka-plaintext-protocol]
 * [Kafka SSLProtocol][kafka-ssl-protocol]
 
-# Auth methods
+## Auth methods
 
 * [Kafka BasicAuth][kafka-basic-auth]
 * [Kafka KerberosAuth][kafka-kerberos-auth]
 * [Kafka ScramAuth][kafka-scram-auth]
 
-# Operations
+## Operations
 
 * [Reading from Kafka][kafka-read]
 * [Writing to Kafka][kafka-write]
 
-# For developers
+## For developers
 
 * [Kafka Auth][kafka-auth]
 * [Kafka Protocol][kafka-protocol]

@@ -1,17 +1,17 @@
 # Hive
 
-# Connection
+## Connection
 
 * [Prerequisites][hive-prerequisites]
 * [Hive Connection][hive-connection]
 
-# Operations
+## Operations
 
 * [Reading from Hive using `DBReader`][hive-read]
 * [Reading from Hive using `Hive.sql`][hive-sql]
 * [Writing to Hive using `DBWriter`][hive-write]
 * [Executing statements in Hive][hive-execute]
 
-# For developers
+## For developers
 
 * [Hive Slots][hive-slots]

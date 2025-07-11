@@ -1,4 +1,4 @@
-# FTP connection { #ftp }
+# Подключение к FTP { #ftp }
 
 <!-- 
 ```{eval-rst}

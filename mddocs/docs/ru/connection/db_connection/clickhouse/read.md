@@ -1,94 +1,92 @@
-# Reading from Clickhouse using `DBReader` { #clickhouse-read }
+# Чтение из Clickhouse с использованием `DBReader` { #clickhouse-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom queries, like `JOIN`.
+[DBReader][db-reader] поддерживает [стратегии][strategy] для инкрементального чтения данных, но не поддерживает пользовательские запросы, например, включающие `JOIN`.
 
 !!! warning
 
-    Please take into account [Сlickhouse types][clickhouse-types]
+    Пожалуйста, учитывайте [типы данных Сlickhouse][clickhouse-types]
 
-
-## Supported DBReader features
+## Поддерживаемые функции DBReader
 
 - ✅︎ `columns`
 - ✅︎ `where`
-- ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
-- ❌ `hint` (is not supported by Clickhouse)
+- ✅︎ `hwm`, поддерживаемые стратегии:
+  - ✅︎ [Snapshot][snapshot-strategy]
+  - ✅︎ [Incremental][incremental-strategy]
+  - ✅︎ [Snapshot batch][snapshot-batch-strategy]
+  - ✅︎ [Incremental batch][incremental-batch-strategy]
+- ❌ `hint` (не поддерживается Clickhouse)
 - ❌ `df_schema`
-- ✅︎ `options` (see [Clickhouse.ReadOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseReadOptions])
+- ✅︎ `options` (см. [Clickhouse.ReadOptions][onetl.connection.db_connection.clickhouse.options.ClickhouseReadOptions])
 
-## Examples
+## Примеры
 
-Snapshot strategy:
+### Стратегия Snapshot
 
-```python
-from onetl.connection import Clickhouse
-from onetl.db import DBReader
+    ```python
+    from onetl.connection import Clickhouse
+    from onetl.db import DBReader
 
-clickhouse = Clickhouse(...)
+    clickhouse = Clickhouse(...)
 
-reader = DBReader(
-    connection=clickhouse,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS String) value", "updated_dt"],
-    where="key = 'something'",
-    options=Clickhouse.ReadOptions(partitionColumn="id", numPartitions=10),
-)
-df = reader.run()
-```
-
-Incremental strategy:
-
-```python
-from onetl.connection import Clickhouse
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
-
-clickhouse = Clickhouse(...)
-
-reader = DBReader(
-    connection=clickhouse,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS String) value", "updated_dt"],
-    where="key = 'something'",
-    hwm=DBReader.AutoDetectHWM(name="clickhouse_hwm", expression="updated_dt"),
-    options=Clickhouse.ReadOptions(partitionColumn="id", numPartitions=10),
-)
-
-with IncrementalStrategy():
+    reader = DBReader(
+        connection=clickhouse,
+        source="schema.table",
+        columns=["id", "key", "CAST(value AS String) value", "updated_dt"],
+        where="key = 'something'",
+        options=Clickhouse.ReadOptions(partitionColumn="id", numPartitions=10),
+    )
     df = reader.run()
-```
+    ```
 
-## Recommendations
+### Стратегия Incremental
 
-### Select only required columns
+    ```python
+    from onetl.connection import Clickhouse
+    from onetl.db import DBReader
+    from onetl.strategy import IncrementalStrategy
 
-Instead of passing `"*"` in `DBReader(columns=[...])` prefer passing exact column names. This reduces the amount of data passed from Clickhouse to Spark.
+    clickhouse = Clickhouse(...)
 
-### Pay attention to `where` value
+    reader = DBReader(
+        connection=clickhouse,
+        source="schema.table",
+        columns=["id", "key", "CAST(value AS String) value", "updated_dt"],
+        where="key = 'something'",
+        hwm=DBReader.AutoDetectHWM(name="clickhouse_hwm", expression="updated_dt"),
+        options=Clickhouse.ReadOptions(partitionColumn="id", numPartitions=10),
+    )
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `DBReader(where="column = 'value'")` clause.
-This both reduces the amount of data send from Clickhouse to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+    with IncrementalStrategy():
+        df = reader.run()
+    ```
 
-## Options { #clickhouse-read-options }
+## Рекомендации
+
+### Выбирайте только необходимые столбцы
+
+Вместо передачи `"*"` в `DBReader(columns=[...])` предпочтительнее передавать точные имена столбцов. Это уменьшает объем данных, передаваемых из Clickhouse в Spark.
+
+### Обратите внимание на значение `where`
+
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')` передавайте соответствующее условие `DBReader(where="column = 'value'")`.
+Это не только уменьшает объем данных, передаваемых из Clickhouse в Spark, но и может улучшить производительность запроса.
+Особенно если есть индексы или в условии `where` используются столбцы партиционирования.
+
+## Опции { #clickhouse-read-options }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.clickhouse.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.clickhouse.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: ClickhouseReadOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: ClickhouseReadOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.clickhouse.options.ClickhouseReadOptions
@@ -96,5 +94,3 @@ Especially if there are indexes or partitions for columns used in `where` clause
         inherited_members: true
         heading_level: 3
         show_root_heading: true
-
-

@@ -1,4 +1,4 @@
-# MSSQL \<-> Spark type mapping { #mssql-types }
+# MSSQL <-> Spark type mapping { #mssql-types }
 
 !!! note
 
@@ -48,8 +48,7 @@ This is how MSSQL connector performs this:
 - Write DataFrame to created table as is.
 
 But some cases this may lead to using wrong column type. For example, Spark creates column of type `timestamp`
-which corresponds to MSSQL's type `timestamp(0)` (precision up to seconds)
-instead of more precise `timestamp(6)` (precision up to nanoseconds).
+which corresponds to MSSQL's type `timestamp(0)` (precision up to seconds) instead of more precise `timestamp(6)` (precision up to nanoseconds).
 This may lead to incidental precision loss, or sometimes data cannot be written to created table at all.
 
 So instead of relying on Spark to create tables:
@@ -153,16 +152,11 @@ See [official documentation](https://learn.microsoft.com/en-us/sql/t-sql/data-ty
     * [Spark DateType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
     * [Spark TimestampType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
 
-[^3]: MSSQL dialect for Spark generates DDL with type `datetime` which has precision up to milliseconds (`23:59:59.999`, 10{superscript}`-3` seconds).
-    Inserting data with microsecond and higher precision (`23:59:59.999999` .. `23.59:59.9999999`, 10{superscript}`-6` .. 10{superscript}`-7` seconds)
-    will lead to **throwing away microseconds**.
+[^3]: MSSQL dialect for Spark generates DDL with type `datetime` which has precision up to milliseconds (`23:59:59.999`, 10{superscript}`-3` seconds). Inserting data with microsecond and higher precision (`23:59:59.999999` .. `23.59:59.9999999`, 10{superscript}`-6` .. 10{superscript}`-7` seconds) will lead to **throwing away microseconds**.
 
-[^4]: MSSQL support timestamp up to 100s of nanoseconds precision (`23:59:59.9999999999`, 10{superscript}`-7` seconds),
-    but Spark `TimestampType()` supports datetime up to microseconds precision (`23:59:59.999999`, 10{superscript}`-6` seconds).
-    Last digit will be lost during read or write operations.
+[^4]: MSSQL support timestamp up to 100s of nanoseconds precision (`23:59:59.9999999999`, 10{superscript}`-7` seconds), but Spark `TimestampType()` supports datetime up to microseconds precision (`23:59:59.999999`, 10{superscript}`-6` seconds). Last digit will be lost during read or write operations.
 
-[^5]: `time` type is the same as `datetime2` with date `1970-01-01`. So instead of reading data from MSSQL like `23:59:59.999999`
-    it is actually read `1970-01-01 23:59:59.999999`, and vice versa.
+[^5]: `time` type is the same as `datetime2` with date `1970-01-01`. So instead of reading data from MSSQL like `23:59:59.999999` it is actually read `1970-01-01 23:59:59.999999`, and vice versa.
 
 ### String types
 
@@ -193,78 +187,77 @@ It is possible to explicitly cast column type using `DBReader(columns=...)` synt
 
 For example, you can use `CAST(column AS text)` to convert data to string representation on MSSQL side, and so it will be read as Spark's `StringType()`:
 
-```python
-from onetl.connection import MSSQL
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import MSSQL
+        from onetl.db import DBReader
 
-mssql = MSSQL(...)
+        mssql = MSSQL(...)
 
-DBReader(
-    connection=mssql,
-    columns=[
-        "id",
-        "supported_column",
-        "CAST(unsupported_column AS text) unsupported_column_str",
-    ],
-)
-df = reader.run()
+        DBReader(
+            connection=mssql,
+            columns=[
+                "id",
+                "supported_column",
+                "CAST(unsupported_column AS text) unsupported_column_str",
+            ],
+        )
+        df = reader.run()
 
-# cast column content to proper Spark type
-df = df.select(
-    df.id,
-    df.supported_column,
-    # explicit cast
-    df.unsupported_column_str.cast("integer").alias("parsed_integer"),
-)
-```
+        # cast column content to proper Spark type
+        df = df.select(
+            df.id,
+            df.supported_column,
+            # explicit cast
+            df.unsupported_column_str.cast("integer").alias("parsed_integer"),
+        )
+    ```
 
 ### `DBWriter`
 
-Convert dataframe column to JSON using [to_json](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html),
-and write it as `text` column in MSSQL:
+Convert dataframe column to JSON using [to_json](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html), and write it as `text` column in MSSQL:
 
-```python
-mssql.execute(
-    """
-    CREATE TABLE schema.target_tbl (
-        id bigint,
-        struct_column_json text -- any string type, actually
-    )
-    """,
-)
+    ```python
+        mssql.execute(
+            """
+            CREATE TABLE schema.target_tbl (
+                id bigint,
+                struct_column_json text -- any string type, actually
+            )
+            """,
+        )
 
-from pyspark.sql.functions import to_json
+        from pyspark.sql.functions import to_json
 
-df = df.select(
-    df.id,
-    to_json(df.struct_column).alias("struct_column_json"),
-)
+        df = df.select(
+            df.id,
+            to_json(df.struct_column).alias("struct_column_json"),
+        )
 
-writer.run(df)
-```
+        writer.run(df)
+    ```
 
 Then you can parse this column on MSSQL side - for example, by creating a view:
 
-```sql
-SELECT
-    id,
-    JSON_VALUE(struct_column_json, "$.nested.field") AS nested_field
-FROM target_tbl
-```
+    ```sql
+        SELECT
+            id,
+            JSON_VALUE(struct_column_json, "$.nested.field") AS nested_field
+        FROM target_tbl
+    ```
 
 Or by using [computed column](https://learn.microsoft.com/en-us/sql/relational-databases/tables/specify-computed-columns-in-a-table):
 
-```sql
-CREATE TABLE schema.target_table (
-    id bigint,
-    supported_column datetime2(6),
-    struct_column_json text, -- any string type, actually
-    -- computed column
-    nested_field AS (JSON_VALUE(struct_column_json, "$.nested.field"))
-    -- or persisted column
-    -- nested_field AS (JSON_VALUE(struct_column_json, "$.nested.field")) PERSISTED
-)
-```
+    ```sql
+        CREATE TABLE schema.target_table (
+            id bigint,
+            supported_column datetime2(6),
+            struct_column_json text, -- any string type, actually
+            -- computed column
+            nested_field AS (JSON_VALUE(struct_column_json, "$.nested.field"))
+            -- or persisted column
+            -- nested_field AS (JSON_VALUE(struct_column_json, "$.nested.field")) PERSISTED
+        )
+    ```
 
 By default, column value is calculated on every table read.
 Column marked as `PERSISTED` is calculated during insert, but this require additional space.

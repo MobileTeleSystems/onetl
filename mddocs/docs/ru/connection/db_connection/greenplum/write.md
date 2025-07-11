@@ -1,47 +1,46 @@
-# Writing to Greenplum using `DBWriter` { #greenplum-write }
+# Запись в Greenplum с использованием `DBWriter` { #greenplum-write }
 
-For writing data to Greenplum, use [DBWriter][db-writer] with [GreenplumWriteOptions][onetl.connection.db_connection.greenplum.options.GreenplumWriteOptions].
-
-!!! warning
-
-    Please take into account [Greenplum types][greenplum-types].
+Для записи данных в Greenplum используйте [DBWriter][db-writer] с [GreenplumWriteOptions][onetl.connection.db_connection.greenplum.options.GreenplumWriteOptions].
 
 !!! warning
 
-    It is always recommended to create table explicitly using [Greenplum.execute][greenplum-execute]
-    instead of relying on Spark's table DDL generation.
+    Пожалуйста, учитывайте [типы данных Greenplum][greenplum-types].
 
-    This is because Spark's DDL generator can create columns with different types than it is expected.
+!!! warning
 
-## Examples
+    Всегда рекомендуется создавать таблицу явно с помощью [Greenplum.execute][greenplum-execute] вместо того, чтобы полагаться на генерацию DDL таблицы Spark.
 
-```python
-from onetl.connection import Greenplum
-from onetl.db import DBWriter
+    Это связано с тем, что генератор DDL Spark может создавать столбцы с типами, отличающимися от ожидаемых.
 
-greenplum = Greenplum(...)
+## Примеры
 
-df = ...  # data is here
+    ```python
+    from onetl.connection import Greenplum
+    from onetl.db import DBWriter
 
-writer = DBWriter(
-    connection=greenplum,
-    target="schema.table",
-    options=Greenplum.WriteOptions(
-        if_exists="append",
-        # by default distribution is random
-        distributedBy="id",
-        # partitionBy is not supported
-    ),
-)
+    greenplum = Greenplum(...)
 
-writer.run(df)
-```
+    df = ...  # здесь находятся данные
 
-## Interaction schema
+    writer = DBWriter(
+        connection=greenplum,
+        target="schema.table",
+        options=Greenplum.WriteOptions(
+            if_exists="append",
+            # по умолчанию распределение случайное
+            distributedBy="id",
+            # partitionBy не поддерживается
+        ),
+    )
 
-High-level schema is described in [Greenplum prerequisites][greenplum-prerequisites]. You can find detailed interaction schema below.
+    writer.run(df) 
+    ```
 
-??? note "Spark <-> Greenplum interaction during DBWriter.run()"
+## Схема взаимодействия
+
+Высокоуровневая схема описана в [Предварительных требованиях Greenplum][greenplum-prerequisites]. Детальную схему взаимодействия вы можете найти ниже.
+
+??? note "Взаимодействие Spark <-> Greenplum во время DBWriter.run()"
 
     ```plantuml
 
@@ -209,20 +208,7 @@ High-level schema is described in [Greenplum prerequisites][greenplum-prerequisi
         deactivate A
     ```
 
-## Options
-
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.greenplum.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: GreenplumWriteOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
- -->
+## Опции
 
 ::: onetl.connection.db_connection.greenplum.options.GreenplumWriteOptions
     options:

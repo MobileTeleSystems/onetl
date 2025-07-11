@@ -34,18 +34,18 @@ This method supports **any** query syntax supported by MSSQL, like:
 
 #### Examples
 
-```python
-from onetl.connection import MSSQL
+    ```python
+        from onetl.connection import MSSQL
 
-mssql = MSSQL(...)
+        mssql = MSSQL(...)
 
-df = mssql.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=MSSQL.FetchOptions(queryTimeout=10),
-)
-mssql.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+        df = mssql.fetch(
+            "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+            options=MSSQL.FetchOptions(queryTimeout=10),
+        )
+        mssql.close()
+        value = df.collect()[0][0]  # get value from first row and first column
+    ```
 
 ### Use `MSSQL.execute`
 
@@ -70,46 +70,46 @@ This method supports **any** query syntax supported by MSSQL, like:
 
 #### Examples
 
-```python
-from onetl.connection import MSSQL
+    ```python
+        from onetl.connection import MSSQL
 
-mssql = MSSQL(...)
+        mssql = MSSQL(...)
 
-mssql.execute("DROP TABLE schema.table")
-mssql.execute(
-    """
-    CREATE TABLE schema.table (
-        id bigint GENERATED ALWAYS AS IDENTITY,
-        key VARCHAR2(4000),
-        value NUMBER
-    )
-    """,
-    options=MSSQL.ExecuteOptions(queryTimeout=10),
-)
-```
+        mssql.execute("DROP TABLE schema.table")
+        mssql.execute(
+            """
+            CREATE TABLE schema.table (
+                id bigint GENERATED ALWAYS AS IDENTITY,
+                key VARCHAR2(4000),
+                value NUMBER
+            )
+            """,
+            options=MSSQL.ExecuteOptions(queryTimeout=10),
+        )
+    ```
 
 ## Options
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mssql.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mssql.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MSSQLFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MSSQLFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MSSQLExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MSSQLExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.mssql.options.MSSQLFetchOptions

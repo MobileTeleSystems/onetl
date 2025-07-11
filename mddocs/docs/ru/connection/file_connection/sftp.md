@@ -1,4 +1,4 @@
-# SFTP connection { #sftp }
+# Подключение к SFTP { #sftp }
 
 
 <!-- 

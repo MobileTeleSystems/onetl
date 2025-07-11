@@ -1,4 +1,4 @@
-# Samba connection { #samba }
+# Подключение к Samba { #samba }
 
 <!-- 
 ```{eval-rst}

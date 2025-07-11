@@ -1,17 +1,17 @@
 # Hive
 
-# Connection
+## Подключение
 
-* [Prerequisites][hive-prerequisites]
-* [Hive Connection][hive-connection]
+* [Предварительные требования][hive-prerequisites]
+* [Подключение к Hive][hive-connection]
 
-# Operations
+## Операции
 
-* [Reading from Hive using `DBReader`][hive-read]
-* [Reading from Hive using `Hive.sql`][hive-sql]
-* [Writing to Hive using `DBWriter`][hive-write]
-* [Executing statements in Hive][hive-execute]
+* [Чтение из Hive с использованием `DBReader`][hive-read]
+* [Чтение из Hive с использованием `Hive.sql`][hive-sql]
+* [Запись в Hive с использованием `DBWriter`][hive-write]
+* [Выполнение предложений в Hive][hive-execute]
 
-# For developers
+## Для разработчиков
 
-* [Hive Slots][hive-slots]
+* [Слоты Hive][hive-slots]
