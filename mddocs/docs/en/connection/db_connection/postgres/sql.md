@@ -8,8 +8,7 @@
 
 !!! warning
 
-    Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside,
-    they can change data in your database.
+    Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside, they can change data in your database.
 
 ## Syntax support
 
@@ -21,30 +20,30 @@ Only queries with the following syntax are supported:
 
 ## Examples
 
-```python
-from onetl.connection import Postgres
+    ```python
+        from onetl.connection import Postgres
 
-postgres = Postgres(...)
-df = postgres.sql(
-    """
-    SELECT
-        id,
-        key,
-        CAST(value AS text) value,
-        updated_at
-    FROM
-        some.mytable
-    WHERE
-        key = 'something'
-    """,
-    options=Postgres.SQLOptions(
-        partitionColumn="id",
-        numPartitions=10,
-        lowerBound=0,
-        upperBound=1000,
-    ),
-)
-```
+        postgres = Postgres(...)
+        df = postgres.sql(
+            """
+            SELECT
+                id,
+                key,
+                CAST(value AS text) value,
+                updated_at
+            FROM
+                some.mytable
+            WHERE
+                key = 'something'
+            """,
+            options=Postgres.SQLOptions(
+                partitionColumn="id",
+                numPartitions=10,
+                lowerBound=0,
+                upperBound=1000,
+            ),
+        )
+    ```
 
 ## Recommendations
 
@@ -62,17 +61,17 @@ Especially if there are indexes or partitions for columns used in `where` clause
 ## Options { #postgres-sql-options }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.postgres.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.postgres.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: PostgresSQLOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: PostgresSQLOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.postgres.options.PostgresSQLOptions

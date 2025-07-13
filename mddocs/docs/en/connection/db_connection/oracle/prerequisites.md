@@ -37,19 +37,19 @@ It is possible to connect to database as another user without knowing this user 
 
 This can be enabled by granting user a special `CONNECT THROUGH` permission:
 
-```sql
-ALTER USER schema_owner GRANT CONNECT THROUGH proxy_user;
-```
+    ```sql
+        ALTER USER schema_owner GRANT CONNECT THROUGH proxy_user;
+    ```
 
 Then you can connect to Oracle using credentials of `proxy_user` but specify that you need permissions of `schema_owner`:
 
-```python
-oracle = Oracle(
-    ...,
-    user="proxy_user[schema_owner]",
-    password="proxy_user password",
-)
-```
+    ```python
+        oracle = Oracle(
+            ...,
+            user="proxy_user[schema_owner]",
+            password="proxy_user password",
+        )
+    ```
 
 See [official documentation](https://oracle-base.com/articles/misc/proxy-users-and-connect-through).
 
@@ -104,8 +104,9 @@ used for creating a connection:
     ```
 
 More details can be found in official documentation:
-  - [GRANT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/GRANT.html)
-  - [SELECT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html)
-  - [CREATE TABLE](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html)
-  - [INSERT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/INSERT.html)
-  - [TRUNCATE TABLE](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/TRUNCATE-TABLE.html)
+
+- [GRANT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/GRANT.html)
+- [SELECT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html)
+- [CREATE TABLE](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html)
+- [INSERT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/INSERT.html)
+- [TRUNCATE TABLE](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/TRUNCATE-TABLE.html)

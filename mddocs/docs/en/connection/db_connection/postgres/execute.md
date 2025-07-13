@@ -12,8 +12,7 @@ There are 2 ways to execute some statement in Postgres
 
 ### Use `Postgres.fetch`
 
-Use this method to execute some `SELECT` query which returns **small number or rows**, like reading
-Postgres config, or reading data from some reference table. Method returns Spark DataFrame.
+Use this method to execute some `SELECT` query which returns **small number or rows**, like reading Postgres config, or reading data from some reference table. Method returns Spark DataFrame.
 
 Method accepts [Postgres.FetchOptions][onetl.connection.db_connection.postgres.options.PostgresFetchOptions].
 
@@ -21,7 +20,7 @@ Connection opened using this method should be then closed with `connection.close
 
 !!! warning
 
-    Please take into account :ref:`postgres-types`.
+    Please take into account [Postgres types][postgres-types].
 
 #### Syntax support
 
@@ -33,18 +32,18 @@ This method supports **any** query syntax supported by Postgres, like:
 
 #### Examples
 
-```python
-from onetl.connection import Postgres
+    ```python
+        from onetl.connection import Postgres
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-df = postgres.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=Postgres.FetchOptions(queryTimeout=10),
-)
-postgres.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+        df = postgres.fetch(
+            "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+            options=Postgres.FetchOptions(queryTimeout=10),
+        )
+        postgres.close()
+        value = df.collect()[0][0]  # get value from first row and first column
+    ```
 
 ### Use `Postgres.execute`
 
@@ -69,43 +68,43 @@ This method supports **any** query syntax supported by Postgres, like:
 
 #### Examples
 
-```python
-from onetl.connection import Postgres
+    ```python
+        from onetl.connection import Postgres
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-postgres.execute("DROP TABLE schema.table")
-postgres.execute(
-    """
-    CREATE TABLE schema.table (
-        id bigint GENERATED ALWAYS AS IDENTITY,
-        key text,
-        value real
-    )
-    """,
-    options=Postgres.ExecuteOptions(queryTimeout=10),
-)
-```
+        postgres.execute("DROP TABLE schema.table")
+        postgres.execute(
+            """
+            CREATE TABLE schema.table (
+                id bigint GENERATED ALWAYS AS IDENTITY,
+                key text,
+                value real
+            )
+            """,
+            options=Postgres.ExecuteOptions(queryTimeout=10),
+        )
+    ```
 
 ## Options { #postgres-fetch-options }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.postgres.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.postgres.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: PostgresFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
+    ```{eval-rst}
+    .. autopydantic_model:: PostgresFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
 
-```
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: PostgresExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
+    ```{eval-rst}
+    .. autopydantic_model:: PostgresExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+    ```
  -->
 
 ::: onetl.connection.db_connection.postgres.options.PostgresFetchOptions

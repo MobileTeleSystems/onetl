@@ -1,54 +1,52 @@
-# Writing to Postgres using `DBWriter` { #postgres-write }
+# Запись в Postgres с использованием `DBWriter` { #postgres-write }
 
-For writing data to Postgres, use [DBWriter][db-writer].
-
-!!! warning
-
-    Please take into account [Postgres types][postgres-types]
+Для записи данных в Postgres используйте [DBWriter][db-writer].
 
 !!! warning
 
-    It is always recommended to create table explicitly using [Postgres.execute][postgres-execute]
-    instead of relying on Spark's table DDL generation.
+    Пожалуйста, учитывайте [типы данных Postgres][postgres-types]
 
-    This is because Spark's DDL generator can create columns with different precision and types than it is expected,
-    causing precision loss or other issues.
+!!! warning
 
-## Examples
+    Всегда рекомендуется создавать таблицу явно с помощью [Postgres.execute][postgres-execute] вместо того, чтобы полагаться на автоматическую генерацию DDL в Spark.
 
-```python
-from onetl.connection import Postgres
-from onetl.db import DBWriter
+    Это связано с тем, что генератор DDL в Spark может создавать столбцы с другой точностью и типами, чем ожидается, что приводит к потере точности или другим проблемам.
 
-postgres = Postgres(...)
+## Примеры
 
-df = ...  # data is here
+    ```python
+        from onetl.connection import Postgres
+        from onetl.db import DBWriter
 
-writer = DBWriter(
-    connection=postgres,
-    target="schema.table",
-    options=Postgres.WriteOptions(if_exists="append"),
-)
+        postgres = Postgres(...)
 
-writer.run(df)
-```
+        df = ...  # здесь данные
 
-## Options { #postgres-write-options }
+        writer = DBWriter(
+            connection=postgres,
+            target="schema.table",
+            options=Postgres.WriteOptions(if_exists="append"),
+        )
 
-Method above accepts [Postgres.WriteOptions][onetl.connection.db_connection.postgres.options.PostgresWriteOptions]
+        writer.run(df)
+    ```
+
+## Опции { #postgres-write-options }
+
+Метод выше принимает [Postgres.WriteOptions][onetl.connection.db_connection.postgres.options.PostgresWriteOptions]
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.postgres.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.postgres.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: PostgresWriteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: PostgresWriteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.postgres.options.PostgresWriteOptions

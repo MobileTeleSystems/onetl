@@ -1,57 +1,57 @@
-# Prerequisites { #teradata-prerequisites }
+# Предварительные требования { #teradata-prerequisites }
 
-## Version Compatibility
+## Совместимость версий
 
-- Teradata server versions:
-    - Officially declared: 16.10 - 20.0
-    - Actually tested: 16.10
-- Spark versions: 2.3.x - 3.5.x
-- Java versions: 8 - 20
+- Версии сервера Teradata:
+    - Официально заявленные: 16.10 - 20.0
+    - Фактически протестированные: 16.10
+- Версии Spark: 2.3.x - 3.5.x
+- Версии Java: 8 - 20
 
-See [official documentation](https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/platformMatrix.html).
+См. [официальную документацию](https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/platformMatrix.html).
 
-## Installing PySpark
+## Установка PySpark
 
-To use Teradata connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+Для использования коннектора Teradata необходимо установить PySpark (или добавить его в `sys.path`) **ДО** создания экземпляра коннектора.
 
-See [installation instruction][install-spark] for more details.
+См. [инструкцию по установке][install-spark] для получения дополнительной информации.
 
-## Connecting to Teradata
+## Подключение к Teradata
 
-### Connection host
+### Хост подключения
 
-It is possible to connect to Teradata by using either DNS name Parsing Engine (PE) host, or it's IP address.
+К Teradata можно подключиться, используя либо DNS-имя хоста Parsing Engine (PE), либо его IP-адрес.
 
-### Connection port
+### Порт подключения
 
-Connection is usually performed to port `1025`. Port may differ for different Teradata instances.
-Please ask your Teradata administrator to provide required information.
+Подключение обычно выполняется к порту `1025`. Порт может отличаться для разных экземпляров Teradata.
+Пожалуйста, обратитесь к администратору Teradata для получения необходимой информации.
 
-### Required grants
+### Необходимые разрешения
 
-Ask your Teradata cluster administrator to set following grants for a user,
-used for creating a connection:
+Попросите администратора кластера Teradata предоставить следующие разрешения для пользователя,
+используемого для создания подключения:
 
-=== "Read + Write"
+=== "Чтение + Запись"
 
     ```sql 
 
-        -- allow creating tables in the target schema
+        -- разрешение на создание таблиц в целевой схеме
         GRANT CREATE TABLE ON database TO username;
 
-        -- allow read & write access to specific table
+        -- разрешение на чтение и запись для конкретной таблицы
         GRANT SELECT, INSERT ON database.mytable TO username;
     ```
 
-=== "Read only"
+=== "Только чтение"
 
-    ```sql Read only
+    ```sql Только чтение
 
-        -- allow read access to specific table
+        -- разрешение на чтение конкретной таблицы
         GRANT SELECT ON database.mytable TO username;
     ```
 
-See:
-  - [Teradata access rights](https://www.dwhpro.com/teradata-access-rights/)
-  - [GRANT documentation](https://teradata.github.io/presto/docs/0.167-t/sql/grant.html)
+См. также:
+
+- [Права доступа Teradata](https://www.dwhpro.com/teradata-access-rights/)
+- [Документация по GRANT](https://teradata.github.io/presto/docs/0.167-t/sql/grant.html)

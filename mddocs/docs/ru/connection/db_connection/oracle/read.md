@@ -1,94 +1,81 @@
-# Reading from Oracle using `DBReader` { #oracle-read }
+# Чтение из Oracle с использованием `DBReader` { #oracle-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom queries, like `JOIN`.
+[DBReader][db-reader] поддерживает [стратегии][strategy] для инкрементального чтения данных, но не поддерживает пользовательские запросы, такие как `JOIN`.
 
 !!! warning
 
-    Please take into account [Oracle types][oracle-types]
+    Пожалуйста, учитывайте особенности [типов данных Oracle][oracle-types]
 
-## Supported DBReader features
+## Поддерживаемые функции DBReader
 
 - ✅︎ `columns`
 - ✅︎ `where`
-- ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
-- ✅︎ `hint` (see [official documentation](https://docs.oracle.com/cd/B10500_01/server.920/a96533/hintsref.htm))
+- ✅︎ `hwm`, поддерживаемые стратегии:
+  - ✅︎ [Snapshot][snapshot-strategy]
+  - ✅︎ [Incremental][incremental-strategy]
+  - ✅︎ [Snapshot batch][snapshot-batch-strategy]
+  - ✅︎ [Incremental batch][incremental-batch-strategy]
+- ✅︎ `hint` (см. [официальную документацию](https://docs.oracle.com/cd/B10500_01/server.920/a96533/hintsref.htm))
 - ❌ `df_schema`
-- ✅︎ `options` (see [Oracle.ReadOptions][onetl.connection.db_connection.oracle.options.OracleReadOptions])
+- ✅︎ `options` (см. [Oracle.ReadOptions][onetl.connection.db_connection.oracle.options.OracleReadOptions])
 
-## Examples
+## Примеры
 
-Snapshot strategy:
+Стратегия Snapshot:
 
-```python
-from onetl.connection import Oracle
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import Oracle
+        from onetl.db import DBReader
 
-oracle = Oracle(...)
+        oracle = Oracle(...)
 
-reader = DBReader(
-    connection=oracle,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS VARCHAR2(4000)) value", "updated_dt"],
-    where="key = 'something'",
-    hint="INDEX(schema.table key_index)",
-    options=Oracle.ReadOptions(partitionColumn="id", numPartitions=10),
-)
-df = reader.run()
-```
+        reader = DBReader(
+            connection=oracle,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS VARCHAR2(4000)) value", "updated_dt"],
+            where="key = 'something'",
+            hint="INDEX(schema.table key_index)",
+            options=Oracle.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
+        df = reader.run()
+    ```
 
-Incremental strategy:
+Стратегия Incremental:
 
-```python
-from onetl.connection import Oracle
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import Oracle
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-oracle = Oracle(...)
+        oracle = Oracle(...)
 
-reader = DBReader(
-    connection=oracle,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS VARCHAR2(4000)) value", "updated_dt"],
-    where="key = 'something'",
-    hint="INDEX(schema.table key_index)",
-    hwm=DBReader.AutoDetectHWM(name="oracle_hwm", expression="updated_dt"),
-    options=Oracle.ReadOptions(partitionColumn="id", numPartitions=10),
-)
+        reader = DBReader(
+            connection=oracle,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS VARCHAR2(4000)) value", "updated_dt"],
+            where="key = 'something'",
+            hint="INDEX(schema.table key_index)",
+            hwm=DBReader.AutoDetectHWM(name="oracle_hwm", expression="updated_dt"),
+            options=Oracle.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только необходимые столбцы
 
-Instead of passing `"*"` in `DBReader(columns=[...])` prefer passing exact column names. This reduces the amount of data passed from Oracle to Spark.
+Вместо использования `"*"` в `DBReader(columns=[...])` предпочтительнее указывать точные имена столбцов. Это уменьшает объем данных, передаваемых из Oracle в Spark.
 
-### Pay attention to `where` value
+### Обращайте внимание на значение `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `DBReader(where="column = 'value'")` clause.
-This both reduces the amount of data send from Oracle to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')` передавайте соответствующее условие `DBReader(where="column = 'value'")`.
+Это как уменьшает объем данных, передаваемых из Oracle в Spark, так и может повысить производительность запроса.
+Особенно, если существуют индексы или столбцы партиционирования, используемые в условии `where`.
 
-## Options
-
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.oracle.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: OracleReadOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
- -->
+## Опции
 
 ::: onetl.connection.db_connection.oracle.options.OracleReadOptions
     options:

@@ -8,8 +8,7 @@
 
 !!! warning
 
-    Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside,
-    they can change data in your database.
+    Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside, they can change data in your database.
 
 ## Syntax support
 
@@ -22,30 +21,30 @@ Only queries with the following syntax are supported:
 
 ## Examples
 
-```python
-from onetl.connection import Oracle
+    ```python
+        from onetl.connection import Oracle
 
-oracle = Oracle(...)
-df = oracle.sql(
-    """
-    SELECT
-        id,
-        key,
-        CAST(value AS VARCHAR2(4000)) value,
-        updated_at
-    FROM
-        some.mytable
-    WHERE
-        key = 'something'
-    """,
-    options=Oracle.SQLOptions(
-        partitionColumn="id",
-        numPartitions=10,
-        lowerBound=0,
-        upperBound=1000,
-    ),
-)
-```
+        oracle = Oracle(...)
+        df = oracle.sql(
+            """
+            SELECT
+                id,
+                key,
+                CAST(value AS VARCHAR2(4000)) value,
+                updated_at
+            FROM
+                some.mytable
+            WHERE
+                key = 'something'
+            """,
+            options=Oracle.SQLOptions(
+                partitionColumn="id",
+                numPartitions=10,
+                lowerBound=0,
+                upperBound=1000,
+            ),
+        )
+    ```
 
 ## Recommendations
 
@@ -63,17 +62,17 @@ Especially if there are indexes or partitions for columns used in `where` clause
 ## Options
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.oracle.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.oracle.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: OracleSQLOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: OracleSQLOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.oracle.options.OracleSQLOptions

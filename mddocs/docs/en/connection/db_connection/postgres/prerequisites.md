@@ -12,8 +12,7 @@ See [official documentation](https://jdbc.postgresql.org/).
 
 ## Installing PySpark
 
-To use Postgres connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+To use Postgres connector you should have PySpark installed (or injected to `sys.path`) **BEFORE** creating the connector instance.
 
 See [installation instruction][install-spark] for more details.
 
@@ -21,8 +20,7 @@ See [installation instruction][install-spark] for more details.
 
 ### Allowing connection to Postgres instance
 
-Ask your Postgres administrator to allow your user (and probably IP) to connect to instance,
-e.g. by updating `pg_hba.conf` file.
+Ask your Postgres administrator to allow your user (and probably IP) to connect to instance, e.g. by updating `pg_hba.conf` file.
 
 See [official documentation](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html).
 
@@ -40,8 +38,7 @@ Connecting to multiple nodes to perform load balancing, as well as automatic fai
 
 ### Required grants
 
-Ask your Postgres cluster administrator to set following grants for a user,
-used for creating a connection:
+Ask your Postgres cluster administrator to set following grants for a user, used for creating a connection:
 
 === "Read + Write"
 

@@ -1,7 +1,6 @@
 # Reading from Postgres using `DBReader` { #postgres-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom queries, like `JOIN`.
+[DBReader][db-reader] supports [strategy][strategy] for incremental data reading, but does not support custom queries, like `JOIN`.
 
 !!! warning
 
@@ -12,10 +11,10 @@ but does not support custom queries, like `JOIN`.
 - ✅︎ `columns`
 - ✅︎ `where`
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
+  - ✅︎ [Snapshot strategy][snapshot-strategy]
+  - ✅︎ [Incremental strategy][incremental-strategy]
+  - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
+  - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
 - ❌ `hint` (is not supported by Postgres)
 - ❌ `df_schema`
 - ✅︎ `options` (see [Postgres.ReadOptions][onetl.connection.db_connection.postgres.options.PostgresReadOptions])
@@ -24,43 +23,43 @@ but does not support custom queries, like `JOIN`.
 
 Snapshot strategy:
 
-```python
-from onetl.connection import Postgres
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import Postgres
+        from onetl.db import DBReader
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-reader = DBReader(
-    connection=postgres,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    options=Postgres.ReadOptions(partitionColumn="id", numPartitions=10),
-)
-df = reader.run()
-```
+        reader = DBReader(
+            connection=postgres,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            options=Postgres.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
+        df = reader.run()
+    ```
 
 Incremental strategy:
 
-```python
-from onetl.connection import Postgres
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import Postgres
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-reader = DBReader(
-    connection=postgres,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    hwm=DBReader.AutoDetectHWM(name="postgres_hwm", expression="updated_dt"),
-    options=Postgres.ReadOptions(partitionColumn="id", numPartitions=10),
-)
+        reader = DBReader(
+            connection=postgres,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            hwm=DBReader.AutoDetectHWM(name="postgres_hwm", expression="updated_dt"),
+            options=Postgres.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()
+    ```
 
 ## Recommendations
 
@@ -77,15 +76,15 @@ Especially if there are indexes or partitions for columns used in `where` clause
 ## Options { #postgres-read-options }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.postgres.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.postgres.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: PostgresReadOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
+    ```{eval-rst}
+    .. autopydantic_model:: PostgresReadOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+    ```
  -->
 
 ::: onetl.connection.db_connection.postgres.options.PostgresReadOptions

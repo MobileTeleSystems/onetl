@@ -1,15 +1,14 @@
-# Postgres connection
-
+# Подключание к Postgres
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.postgres.connection
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.postgres.connection
+    ```
 
-```{eval-rst}
-.. autoclass:: Postgres
-    :members: get_packages, check
-```
+    ```{eval-rst}
+    .. autoclass:: Postgres
+        :members: get_packages, check
+    ```
  -->
 
 ::: onetl.connection.db_connection.postgres.connection.Postgres

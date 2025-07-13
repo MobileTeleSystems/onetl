@@ -21,7 +21,7 @@ Connection opened using this method should be then closed with `connection.close
 
 !!! warning
 
-    Please take into account Oracle types[oracle-types].
+    Please take into account [Oracle types][oracle-types].
 
 #### Syntax support
 
@@ -35,18 +35,18 @@ This method supports **any** query syntax supported by Oracle, like:
 
 #### Examples
 
-```python
-from onetl.connection import Oracle
+    ```python
+        from onetl.connection import Oracle
 
-oracle = Oracle(...)
+        oracle = Oracle(...)
 
-df = oracle.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=Oracle.FetchOptions(queryTimeout=10),
-)
-oracle.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+        df = oracle.fetch(
+            "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+            options=Oracle.FetchOptions(queryTimeout=10),
+        )
+        oracle.close()
+        value = df.collect()[0][0]  # get value from first row and first column
+    ```
 
 ### Use `Oracle.execute`
 
@@ -71,55 +71,50 @@ This method supports **any** query syntax supported by Oracle, like:
 
 #### Examples
 
-```python
-from onetl.connection import Oracle
+    ```python
+        from onetl.connection import Oracle
 
-oracle = Oracle(...)
+        oracle = Oracle(...)
 
-oracle.execute("DROP TABLE schema.table")
-oracle.execute(
-    """
-    CREATE TABLE schema.table (
-        id bigint GENERATED ALWAYS AS IDENTITY,
-        key VARCHAR2(4000),
-        value NUMBER
-    )
-    """,
-    options=Oracle.ExecuteOptions(queryTimeout=10),
-)
-```
+        oracle.execute("DROP TABLE schema.table")
+        oracle.execute(
+            """
+            CREATE TABLE schema.table (
+                id bigint GENERATED ALWAYS AS IDENTITY,
+                key VARCHAR2(4000),
+                value NUMBER
+            )
+            """,
+            options=Oracle.ExecuteOptions(queryTimeout=10),
+        )
+    ```
 
 ## Options
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.oracle.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.oracle.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: OracleFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
+    ```{eval-rst}
+    .. autopydantic_model:: OracleFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
 
-```
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: OracleExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
+    ```{eval-rst}
+    .. autopydantic_model:: OracleExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+    ```
  -->
-
-### OracleFetchOptions { #oracle-fetch-options }
 
 ::: onetl.connection.db_connection.oracle.options.OracleFetchOptions
     options:
         inherited_members: true
         heading_level: 3
         show_root_heading: true
-
-
-### OracleExecuteOptions
 
 ::: onetl.connection.db_connection.oracle.options.OracleExecuteOptions
     options:

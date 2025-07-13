@@ -1,121 +1,109 @@
-# Writing to Teradata using `DBWriter` { #teradata-write }
+# Запись в Teradata с использованием `DBWriter` { #teradata-write }
 
-For writing data to Teradata, use [DBWriter][db-writer].
+Для записи данных в Teradata используйте [DBWriter][db-writer].
 
-!!! warning
+!!! warning "Предупреждение"
 
-    It is always recommended to create table explicitly using :ref:`Teradata.execute <teradata-execute>`
-    instead of relying on Spark's table DDL generation.
+    Всегда рекомендуется создавать таблицу явно с помощью [Teradata.execute][teradata-execute] вместо того, чтобы полагаться на автоматическую генерацию DDL в Spark.
 
-    This is because Spark's DDL generator can create columns with different precision and types than it is expected,
-    causing precision loss or other issues.
+    Это связано с тем, что генератор DDL в Spark может создавать столбцы с точностью и типами, отличными от ожидаемых, что может привести к потере точности и другим проблемам.
 
-## Examples
+## Примеры
 
-```python
-from onetl.connection import Teradata
-from onetl.db import DBWriter
+    ```python
+        from onetl.connection import Teradata
+        from onetl.db import DBWriter
 
-teradata = Teradata(
-    ...,
-    extra={"TYPE": "FASTLOAD", "TMODE": "TERA"},
-)
+        teradata = Teradata(
+            ...,
+            extra={"TYPE": "FASTLOAD", "TMODE": "TERA"},
+        )
 
-df = ...  # data is here
+        df = ...  # данные здесь
 
-writer = DBWriter(
-    connection=teradata,
-    target="database.table",
-    options=Teradata.WriteOptions(
-        if_exists="append",
-        # avoid creating SET table, use MULTISET
-        createTableOptions="NO PRIMARY INDEX",
-    ),
-)
+        writer = DBWriter(
+            connection=teradata,
+            target="database.table",
+            options=Teradata.WriteOptions(
+                if_exists="append",
+                # избегаем создания таблицы SET, используем MULTISET
+                createTableOptions="NO PRIMARY INDEX",
+            ),
+        )
 
-writer.run(df.repartition(1))
-```
+        writer.run(df.repartition(1))
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Number of connections
+### Количество соединений
 
-Teradata is not MVCC based, so write operations take exclusive lock on the entire table.
-So **it is impossible to write data to Teradata table in multiple parallel connections**, no exceptions.
+Teradata не основан на MVCC, поэтому операции записи блокируют всю таблицу эксклюзивно.
+Таким образом, **невозможно записывать данные в таблицу Teradata через несколько параллельных соединений**, без исключений.
 
-The only way to write to Teradata without making deadlocks is write dataframe with exactly 1 partition.
+Единственный способ записи в Teradata без создания взаимоблокировок - использовать датафрейм с ровно 1 разделом.
 
-It can be implemented using `df.repartition(1)`:
+Это можно реализовать с помощью `df.repartition(1)`:
 
-```python
-# do NOT use df.coalesce(1) as it can freeze
-writer.run(df.repartition(1))
-```
+    ```python
+        # НЕ используйте df.coalesce(1), так как это может привести к зависанию
+        writer.run(df.repartition(1))
+    ```
 
-This moves all the data to just one Spark worker, so it may consume a lot of RAM. It is usually require to increase `spark.executor.memory` to handle this.
+Это перемещает все данные на один рабочий узел Spark, что может потребовать много оперативной памяти. Обычно требуется увеличить параметр `spark.executor.memory` для обработки этого.
 
-Another way is to write all dataframe partitions one-by-one:
+Другой способ - записывать разделы датафрейма один за другим:
 
-```python
-from pyspark.sql.functions import spark_partition_id
+    ```python
+        from pyspark.sql.functions import spark_partition_id
 
-# get list of all partitions in the dataframe
-partitions = sorted(df.select(spark_partition_id()).distinct().collect())
+        # получаем список всех разделов в датафрейме
+        partitions = sorted(df.select(spark_partition_id()).distinct().collect())
 
-for partition in partitions:
-    # get only part of data within this exact partition
-    part_df = df.where(**partition.asDict()).coalesce(1)
+        for partition in partitions:
+            # получаем только часть данных в этом конкретном разделе
+            part_df = df.where(**partition.asDict()).coalesce(1)
 
-    writer.run(part_df)
-```
+            writer.run(part_df)
+    ```
 
-This require even data distribution for all partitions to avoid data skew and spikes of RAM consuming.
+Этот метод требует равномерного распределения данных по всем разделам, чтобы избежать перекоса данных и скачков потребления памяти.
 
-### Choosing connection type
+### Выбор типа соединения
 
-Teradata supports several [different connection types](https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/jdbcug_chapter_2.html#BABFGFAF):
-: - `TYPE=DEFAULT` - perform plain `INSERT` queries
-  - `TYPE=FASTLOAD` - uses special FastLoad protocol for insert queries
+Teradata поддерживает несколько [различных типов соединений](https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/jdbcug_chapter_2.html#BABFGFAF):
 
-It is always recommended to use `TYPE=FASTLOAD` because:
-: - It provides higher performance
-  - It properly handles inserting `NULL` values (`TYPE=DEFAULT` raises an exception)
+- `TYPE=DEFAULT` - выполняет обычные запросы `INSERT`
+- `TYPE=FASTLOAD` - использует специальный протокол FastLoad для запросов вставки
 
-But it can be used only during write, not read.
+Всегда рекомендуется использовать `TYPE=FASTLOAD`, потому что:
 
-### Choosing transaction mode
+- Он обеспечивает более высокую производительность
+- Он правильно обрабатывает вставку значений `NULL` (`TYPE=DEFAULT` вызывает исключение)
 
-Teradata supports [2 different transaction modes](https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/jdbcug_chapter_2.html#TMODESEC):
-: - `TMODE=ANSI`
-  - `TMODE=TERA`
+Однако его можно использовать только для записи, но не для чтения.
 
-Choosing one of the modes can alter connector behavior. For example:
-: - Inserting data which exceeds table column length, like insert `CHAR(25)` to column with type `CHAR(24)`:
-  - - `TMODE=ANSI` - raises exception
-  - - `TMODE=TERA` - truncates input string to 24 symbols
-  - Creating table using Spark:
-  - - `TMODE=ANSI` - creates `MULTISET` table
-  - - `TMODE=TERA` - creates `SET` table with `PRIMARY KEY` is a first column in dataframe.
-      This can lead to slower insert time, because each row will be checked against a unique index.
-      Fortunately, this can be disabled by passing custom `createTableOptions`.
+### Выбор режима транзакций
 
-## Options { #teradata-write-options }
+Teradata поддерживает [2 различных режима транзакций](https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/jdbcug_chapter_2.html#TMODESEC):
 
-Method above accepts [Teradata.WriteOptions][onetl.connection.db_connection.teradata.options.TeradataWriteOptions]
+- `TMODE=ANSI`
+- `TMODE=TERA`
 
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.teradata.options
-```
+Выбор одного из режимов может изменить поведение коннектора. Например:
 
-```{eval-rst}
-.. autopydantic_model:: TeradataWriteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
- -->
+- При вставке данных, превышающих длину столбца таблицы, например, вставка `CHAR(25)` в столбец с типом `CHAR(24)`:
+    - `TMODE=ANSI` - вызывает исключение
+    - `TMODE=TERA` - обрезает входную строку до 24 символов
+- При создании таблицы с помощью Spark:
+    - `TMODE=ANSI` - создает таблицу `MULTISET`
+    - `TMODE=TERA` - создает таблицу `SET` с `PRIMARY KEY` в качестве первого столбца датафрейма.
+      Это может привести к замедлению вставки, так как каждая строка будет проверяться на соответствие уникальному индексу.
+      К счастью, это можно отключить, передав пользовательские `createTableOptions`.
+
+## Опции { #teradata-write-options }
+
+Метод выше принимает [Teradata.WriteOptions][onetl.connection.db_connection.teradata.options.TeradataWriteOptions]
 
 ::: onetl.connection.db_connection.teradata.options.TeradataWriteOptions
     options:

@@ -1,80 +1,65 @@
-# Reading from Oracle using `Oracle.sql` { #oracle-sql }
+# Чтение из Oracle с использованием `Oracle.sql` { #oracle-sql }
 
-`Oracle.sql` allows passing custom SQL query, but does not support incremental strategies.
-
-!!! warning
-
-    Please take into account [Oracle types][oracle-types]
+`Oracle.sql` позволяет передавать пользовательский SQL-запрос, но не поддерживает инкрементальные стратегии.
 
 !!! warning
 
-    Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside,
-    they can change data in your database.
+    Пожалуйста, учитывайте [типы данных Oracle][oracle-types]
 
-## Syntax support
+!!! warning
 
-Only queries with the following syntax are supported:
+    Запрос выполняется в соединении с режимом **чтение-запись**, поэтому если вы вызываете функции/процедуры с DDL/DML-операторами внутри, они могут изменить данные в вашей базе данных.
+
+## Поддержка синтаксиса
+
+Поддерживаются только запросы со следующим синтаксисом:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
 - ❌ `SHOW ...`
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ❌ `SET ...; SELECT ...;` - множественные операторы не поддерживаются
 
-## Examples
+## Примеры
 
-```python
-from onetl.connection import Oracle
+    ```python
+        from onetl.connection import Oracle
 
-oracle = Oracle(...)
-df = oracle.sql(
-    """
-    SELECT
-        id,
-        key,
-        CAST(value AS VARCHAR2(4000)) value,
-        updated_at
-    FROM
-        some.mytable
-    WHERE
-        key = 'something'
-    """,
-    options=Oracle.SQLOptions(
-        partitionColumn="id",
-        numPartitions=10,
-        lowerBound=0,
-        upperBound=1000,
-    ),
-)
-```
+        oracle = Oracle(...)
+        df = oracle.sql(
+            """
+            SELECT
+                id,
+                key,
+                CAST(value AS VARCHAR2(4000)) value,
+                updated_at
+            FROM
+                some.mytable
+            WHERE
+                key = 'something'
+            """,
+            options=Oracle.SQLOptions(
+                partitionColumn="id",
+                numPartitions=10,
+                lowerBound=0,
+                upperBound=1000,
+            ),
+        )
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только необходимые столбцы
 
-Instead of passing `SELECT * FROM ...` prefer passing exact column names `SELECT col1, col2, ...`.
-This reduces the amount of data passed from Oracle to Spark.
+Вместо использования `SELECT * FROM ...` предпочтительнее указывать точные имена столбцов `SELECT col1, col2, ...`.
+Это уменьшает объем данных, передаваемых из Oracle в Spark.
 
-### Pay attention to `where` value
+### Обращайте внимание на условие `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `WHERE column = 'value'` clause.
-This both reduces the amount of data send from Oracle to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')` передавайте соответствующее условие `WHERE column = 'value'`.
+Это не только уменьшает объем данных, передаваемых из Oracle в Spark, но и может улучшить производительность запроса.
+Особенно, если есть индексы или столбцы партиционирования, используемые в условии `where`.
 
-## Options
-
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.oracle.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: OracleSQLOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
- -->
+## Опции
 
 ::: onetl.connection.db_connection.oracle.options.OracleSQLOptions
     options:

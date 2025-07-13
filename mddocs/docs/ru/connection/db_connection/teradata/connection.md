@@ -1,4 +1,4 @@
-# Teradata connection
+# Подключение к Teradata
 
 <!-- 
 ```{eval-rst}

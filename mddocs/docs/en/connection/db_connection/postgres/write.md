@@ -16,39 +16,39 @@ For writing data to Postgres, use [DBWriter][db-writer].
 
 ## Examples
 
-```python
-from onetl.connection import Postgres
-from onetl.db import DBWriter
+    ```python
+        from onetl.connection import Postgres
+        from onetl.db import DBWriter
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-df = ...  # data is here
+        df = ...  # data is here
 
-writer = DBWriter(
-    connection=postgres,
-    target="schema.table",
-    options=Postgres.WriteOptions(if_exists="append"),
-)
+        writer = DBWriter(
+            connection=postgres,
+            target="schema.table",
+            options=Postgres.WriteOptions(if_exists="append"),
+        )
 
-writer.run(df)
-```
+        writer.run(df)
+    ```
 
 ## Options { #postgres-write-options }
 
 Method above accepts [Postgres.WriteOptions][onetl.connection.db_connection.postgres.options.PostgresWriteOptions]
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.postgres.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.postgres.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: PostgresWriteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: PostgresWriteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.postgres.options.PostgresWriteOptions

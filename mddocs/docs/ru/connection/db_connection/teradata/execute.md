@@ -1,111 +1,109 @@
-# Executing statements in Teradata { #teradata-execute }
+# Выполнение запросов в Teradata { #teradata-execute }
 
 !!! warning
 
-    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+    Методы ниже **загружают все строки** возвращаемые из БД **в память драйвера Spark**, а затем конвертируют их в DataFrame.
 
-    Do **NOT** use them to read large amounts of data. Use [DBReader][teradata-read] or [Teradata.sql][teradata-sql] instead.
+    **НЕ** используйте их для чтения больших объемов данных. Используйте [DBReader][teradata-read] или [Teradata.sql][teradata-sql] вместо этого.
 
+## Как использовать
 
-## How to
+Есть 2 способа выполнить запрос в Teradata
 
-There are 2 ways to execute some statement in Teradata
+### Используйте `Teradata.fetch`
 
-### Use `Teradata.fetch`
+Используйте этот метод для выполнения запроса `SELECT`, который возвращает **небольшое количество строк**, например, для чтения конфигурации Teradata или данных из справочной таблицы. Метод возвращает Spark DataFrame.
 
-Use this method to execute some `SELECT` query which returns **small number or rows**, like reading
-Teradata config, or reading data from some reference table. Method returns Spark DataFrame.
+Метод принимает [Teradata.FetchOptions][onetl.connection.db_connection.teradata.options.TeradataFetchOptions].
 
-Method accepts [Teradata.FetchOptions][onetl.connection.db_connection.teradata.options.TeradataFetchOptions].
+Соединение, открытое с помощью этого метода, должно быть затем закрыто с помощью `connection.close()` или `with connection:`.
 
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+#### Поддержка синтаксиса
 
-#### Syntax support
-
-This method supports **any** query syntax supported by Teradata, like:
+Этот метод поддерживает **любой** синтаксис запросов, поддерживаемый Teradata, например:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
 - ✅︎ `SHOW ...`
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ❌ `SET ...; SELECT ...;` - множественные запросы не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import Teradata
+    ```python
+        from onetl.connection import Teradata
 
-teradata = Teradata(...)
+        teradata = Teradata(...)
 
-df = teradata.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=Teradata.FetchOptions(queryTimeout=10),
-)
-teradata.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+        df = teradata.fetch(
+            "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+            options=Teradata.FetchOptions(queryTimeout=10),
+        )
+        teradata.close()
+        value = df.collect()[0][0]  # получить значение из первой строки и первого столбца
+    ```
 
-### Use `Teradata.execute`
+### Используйте `Teradata.execute`
 
-Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
+Используйте этот метод для выполнения операций DDL и DML. Каждый вызов метода выполняет операцию в отдельной транзакции, а затем фиксирует ее.
 
-Method accepts [Teradata.ExecuteOptions][onetl.connection.db_connection.teradata.options.TeradataExecuteOptions].
+Метод принимает [Teradata.ExecuteOptions][onetl.connection.db_connection.teradata.options.TeradataExecuteOptions].
 
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+Соединение, открытое с помощью этого метода, должно быть затем закрыто с помощью `connection.close()` или `with connection:`.
 
-#### Syntax support
+#### Поддержка синтаксиса
 
-This method supports **any** query syntax supported by Teradata, like:
+Этот метод поддерживает **любой** синтаксис запросов, поддерживаемый Teradata, например:
 
-- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`, and so on
+- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`, и так далее
 - ✅︎ `ALTER ...`
-- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...`, and so on
-- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE`, and so on
-- ✅︎ `CALL procedure(arg1, arg2) ...` or `{call procedure(arg1, arg2)}` - special syntax for calling procedure
+- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...`, и так далее
+- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE`, и так далее
+- ✅︎ `CALL procedure(arg1, arg2) ...` или `{call procedure(arg1, arg2)}` - специальный синтаксис для вызова процедуры
 - ✅︎ `EXECUTE macro(arg1, arg2)`
 - ✅︎ `EXECUTE FUNCTION ...`
-- ✅︎ other statements not mentioned here
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ✅︎ другие запросы, не упомянутые здесь
+- ❌ `SET ...; SELECT ...;` - множественные запросы не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import Teradata
+    ```python
+        from onetl.connection import Teradata
 
-teradata = Teradata(...)
+        teradata = Teradata(...)
 
-teradata.execute("DROP TABLE database.table")
-teradata.execute(
-    """
-    CREATE MULTISET TABLE database.table AS (
-        id BIGINT,
-        key VARCHAR,
-        value REAL
-    )
-    NO PRIMARY INDEX
-    """,
-    options=Teradata.ExecuteOptions(queryTimeout=10),
-)
-```
+        teradata.execute("DROP TABLE database.table")
+        teradata.execute(
+            """
+            CREATE MULTISET TABLE database.table AS (
+                id BIGINT,
+                key VARCHAR,
+                value REAL
+            )
+            NO PRIMARY INDEX
+            """,
+            options=Teradata.ExecuteOptions(queryTimeout=10),
+        )
+    ```
 
-## Options { #teradata-fetch-options }
+## Опции { #teradata-fetch-options }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.teradata.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.teradata.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: TeradataFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
+    ```{eval-rst}
+    .. autopydantic_model:: TeradataFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
 
-```
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: TeradataExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
+    ```{eval-rst}
+    .. autopydantic_model:: TeradataExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+    ```
  -->
 
 ::: onetl.connection.db_connection.teradata.options.TeradataFetchOptions
@@ -113,7 +111,6 @@ teradata.execute(
         inherited_members: true
         heading_level: 3
         show_root_heading: true
-
 
 ::: onetl.connection.db_connection.teradata.options.TeradataExecuteOptions
     options:

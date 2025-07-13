@@ -1,76 +1,75 @@
-# Reading from Teradata using `Teradata.sql` { #teradata-sql }
+# Чтение из Teradata с использованием `Teradata.sql` { #teradata-sql }
 
-`Teradata.sql` allows passing custom SQL query, but does not support incremental strategies.
+`Teradata.sql` позволяет передавать пользовательский SQL запрос, но не поддерживает инкрементальные стратегии.
 
 !!! warning
 
-    Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside,
-    they can change data in your database.
+    Запрос выполняется в соединении с правами **чтения-записи**, поэтому если вы вызываете функции/процедуры, содержащие DDL/DML инструкции, они могут изменить данные в вашей базе данных.
 
-## Syntax support
+## Поддержка синтаксиса
 
-Only queries with the following syntax are supported:
+Поддерживаются только запросы со следующим синтаксисом:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
 - ❌ `SHOW ...`
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ❌ `SET ...; SELECT ...;` - множественные инструкции не поддерживаются
 
-## Examples
+## Примеры
 
-```python
-from onetl.connection import Teradata
+    ```python
+        from onetl.connection import Teradata
 
-teradata = Teradata(...)
-df = teradata.sql(
-    """
-    SELECT
-        id,
-        key,
-        CAST(value AS VARCHAR) AS value,
-        updated_at,
-        HASHAMP(HASHBUCKET(HASHROW(id))) MOD 10 AS part_column
-    FROM
-        database.mytable
-    WHERE
-        key = 'something'
-    """,
-    options=Teradata.SQLOptions(
-        partitionColumn="id",
-        numPartitions=10,
-        lowerBound=0,
-        upperBound=1000,
-    ),
-)
-```
+        teradata = Teradata(...)
+        df = teradata.sql(
+            """
+            SELECT
+                id,
+                key,
+                CAST(value AS VARCHAR) AS value,
+                updated_at,
+                HASHAMP(HASHBUCKET(HASHROW(id))) MOD 10 AS part_column
+            FROM
+                database.mytable
+            WHERE
+                key = 'something'
+            """,
+            options=Teradata.SQLOptions(
+                partitionColumn="id",
+                numPartitions=10,
+                lowerBound=0,
+                upperBound=1000,
+            ),
+        )
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только необходимые столбцы
 
-Instead of passing `SELECT * FROM ...` prefer passing exact column names `SELECT col1, col2, ...`.
-This reduces the amount of data passed from Teradata to Spark.
+Вместо использования `SELECT * FROM ...` предпочтительнее указывать точные имена столбцов `SELECT col1, col2, ...`.
+Это уменьшает объем данных, передаваемых из Teradata в Spark.
 
-### Pay attention to `where` value
+### Обращайте внимание на значения в условии `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `WHERE column = 'value'` clause.
-This both reduces the amount of data send from Teradata to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')` передавайте правильное условие `WHERE column = 'value'`.
+Это не только уменьшает объем данных, передаваемых из Teradata в Spark, но и может повысить производительность запроса.
+Особенно если существуют индексы или разделы для столбцов, используемых в условии `where`.
 
-## Options
+## Опции
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.teradata.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.teradata.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: TeradataSQLOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: TeradataSQLOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.teradata.options.TeradataSQLOptions

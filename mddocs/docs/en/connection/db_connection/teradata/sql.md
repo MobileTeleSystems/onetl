@@ -18,31 +18,31 @@ Only queries with the following syntax are supported:
 
 ## Examples
 
-```python
-from onetl.connection import Teradata
+    ```python
+        from onetl.connection import Teradata
 
-teradata = Teradata(...)
-df = teradata.sql(
-    """
-    SELECT
-        id,
-        key,
-        CAST(value AS VARCHAR) AS value,
-        updated_at,
-        HASHAMP(HASHBUCKET(HASHROW(id))) MOD 10 AS part_column
-    FROM
-        database.mytable
-    WHERE
-        key = 'something'
-    """,
-    options=Teradata.SQLOptions(
-        partitionColumn="id",
-        numPartitions=10,
-        lowerBound=0,
-        upperBound=1000,
-    ),
-)
-```
+        teradata = Teradata(...)
+        df = teradata.sql(
+            """
+            SELECT
+                id,
+                key,
+                CAST(value AS VARCHAR) AS value,
+                updated_at,
+                HASHAMP(HASHBUCKET(HASHROW(id))) MOD 10 AS part_column
+            FROM
+                database.mytable
+            WHERE
+                key = 'something'
+            """,
+            options=Teradata.SQLOptions(
+                partitionColumn="id",
+                numPartitions=10,
+                lowerBound=0,
+                upperBound=1000,
+            ),
+        )
+    ```
 
 ## Recommendations
 
@@ -60,17 +60,17 @@ Especially if there are indexes or partitions for columns used in `where` clause
 ## Options
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.teradata.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.teradata.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: TeradataSQLOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: TeradataSQLOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.teradata.options.TeradataSQLOptions

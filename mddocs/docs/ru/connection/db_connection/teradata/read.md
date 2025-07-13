@@ -1,120 +1,107 @@
-# Reading from Teradata using `DBReader` { #teradata-read }
+# Чтение из Teradata с использованием `DBReader` { #teradata-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom queries, like `JOIN`.
+[DBReader][db-reader] поддерживает [стратегии][strategy] для инкрементального чтения данных, но не поддерживает пользовательские запросы, такие как `JOIN`.
 
-## Supported DBReader features
+## Поддерживаемые функции DBReader
 
 - ✅︎ `columns`
 - ✅︎ `where`
-- ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
-- ❌ `hint` (is not supported by Teradata)
+- ✅︎ `hwm`, поддерживаемые стратегии:
+  - ✅︎ [Snapshot][snapshot-strategy]
+  - ✅︎ [Incremental][incremental-strategy]
+  - ✅︎ [Snapshot batch][snapshot-batch-strategy]
+  - ✅︎ [Incremental-batch][incremental-batch-strategy]
+- ❌ `hint` (не поддерживается Teradata)
 - ❌ `df_schema`
-- ✅︎ `options` (see [Teradata.ReadOptions][onetl.connection.db_connection.teradata.options.TeradataReadOptions])
+- ✅︎ `options` (см. [Teradata.ReadOptions][onetl.connection.db_connection.teradata.options.TeradataReadOptions])
 
-## Examples
+## Примеры
 
-Snapshot strategy:
+Стратегия Snapshot:
 
-```python
-from onetl.connection import Teradata
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import Teradata
+        from onetl.db import DBReader
 
-teradata = Teradata(...)
+        teradata = Teradata(...)
 
-reader = DBReader(
-    connection=teradata,
-    source="database.table",
-    columns=["id", "key", "CAST(value AS VARCHAR) value", "updated_dt"],
-    where="key = 'something'",
-    options=Teradata.ReadOptions(
-        partitioning_mode="hash",
-        partitionColumn="id",
-        numPartitions=10,
-    ),
-)
-df = reader.run()
-```
+        reader = DBReader(
+            connection=teradata,
+            source="database.table",
+            columns=["id", "key", "CAST(value AS VARCHAR) value", "updated_dt"],
+            where="key = 'something'",
+            options=Teradata.ReadOptions(
+                partitioning_mode="hash",
+                partitionColumn="id",
+                numPartitions=10,
+            ),
+        )
+        df = reader.run()
+    ```
 
-Incremental strategy:
+Стратегия Incremental:
 
-```python
-from onetl.connection import Teradata
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import Teradata
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-teradata = Teradata(...)
+        teradata = Teradata(...)
 
-reader = DBReader(
-    connection=teradata,
-    source="database.table",
-    columns=["id", "key", "CAST(value AS VARCHAR) value", "updated_dt"],
-    where="key = 'something'",
-    hwm=DBReader.AutoDetectHWM(name="teradata_hwm", expression="updated_dt"),
-    options=Teradata.ReadOptions(
-        partitioning_mode="hash",
-        partitionColumn="id",
-        numPartitions=10,
-    ),
-)
+        reader = DBReader(
+            connection=teradata,
+            source="database.table",
+            columns=["id", "key", "CAST(value AS VARCHAR) value", "updated_dt"],
+            where="key = 'something'",
+            hwm=DBReader.AutoDetectHWM(name="teradata_hwm", expression="updated_dt"),
+            options=Teradata.ReadOptions(
+                partitioning_mode="hash",
+                partitionColumn="id",
+                numPartitions=10,
+            ),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только необходимые столбцы
 
-Instead of passing `"*"` in `DBReader(columns=[...])` prefer passing exact column names. This reduces the amount of data passed from Teradata to Spark.
+Вместо передачи `"*"` в `DBReader(columns=[...])` предпочтительнее указывать точные имена столбцов. Это уменьшает объем данных, передаваемых из Teradata в Spark.
 
-### Pay attention to `where` value
+### Обращайте внимание на значение `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `DBReader(where="column = 'value'")` clause.
-This both reduces the amount of data send from Teradata to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')`, передавайте соответствующее условие `DBReader(where="column = 'value'")`.
+Это сокращает объем данных, отправляемых из Teradata в Spark, и может также улучшить производительность запроса.
+Особенно если существуют индексы или разделы для столбцов, используемых в условии `where`.
 
-### Read data in parallel
+### Читайте данные параллельно
 
-`DBReader` can read data in multiple parallel connections by passing `Teradata.ReadOptions(numPartitions=..., partitionColumn=...)`.
+`DBReader` может читать данные через несколько параллельных соединений, передавая `Teradata.ReadOptions(numPartitions=..., partitionColumn=...)`.
 
-In the example above, Spark opens 10 parallel connections, and data is evenly distributed between all these connections using expression
-`HASHAMP(HASHBUCKET(HASHROW({partition_column}))) MOD {num_partitions}`.
-This allows sending each Spark worker only some piece of data, reducing resource consumption.
-`partition_column` here can be table column of any type.
+В приведенном выше примере Spark открывает 10 параллельных соединений, и данные равномерно распределяются между всеми этими соединениями с использованием выражения `HASHAMP(HASHBUCKET(HASHROW({partition_column}))) MOD {num_partitions}`.
+Это позволяет отправлять каждому рабочему процессу Spark только часть данных, снижая потребление ресурсов.
+`partition_column` здесь может быть столбцом таблицы любого типа.
 
-It is also possible to use `partitioning_mode="mod"` or `partitioning_mode="range"`, but in this case
-`partition_column` have to be an integer, should not contain `NULL`, and values to be uniformly distributed.
-It is also less performant than `partitioning_mode="hash"` due to Teradata `HASHAMP` implementation.
+Также возможно использовать `partitioning_mode="mod"` или `partitioning_mode="range"`, но в этом случае
+`partition_column` должен быть целочисленным, не должен содержать `NULL`, и значения должны быть равномерно распределены.
+Это также менее производительно, чем `partitioning_mode="hash"` из-за реализации `HASHAMP` в Teradata.
 
-### Do **NOT** use `TYPE=FASTEXPORT`
+### НЕ используйте `TYPE=FASTEXPORT`
 
-Teradata supports several [different connection types](https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/jdbcug_chapter_2.html#BABFGFAF):
-: - `TYPE=DEFAULT` - perform plain `SELECT` queries
-  - `TYPE=FASTEXPORT` - uses special FastExport protocol for select queries
+Teradata поддерживает несколько [различных типов соединений](https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/jdbcug_chapter_2.html#BABFGFAF):
 
-But `TYPE=FASTEXPORT` uses exclusive lock on the source table, so it is impossible to use multiple Spark workers parallel data read.
-This leads to sending all the data to just one Spark worker, which is slow and takes a lot of RAM.
+- `TYPE=DEFAULT` - выполняет обычные запросы `SELECT`
+- `TYPE=FASTEXPORT` - использует специальный протокол FastExport для запросов выборки
 
-Prefer using `partitioning_mode="hash"` from example above.
+Но `TYPE=FASTEXPORT` использует эксклюзивную блокировку исходной таблицы, поэтому невозможно использовать параллельное чтение данных несколькими рабочими процессами Spark.
+Это приводит к отправке всех данных только одному рабочему процессу Spark, что медленно и потребляет много оперативной памяти.
 
-## Options { #teradata-read-options }
+Предпочтительнее использовать `partitioning_mode="hash"` из примера выше.
 
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.teradata.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: TeradataReadOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
- -->
+## Опции { #teradata-read-options }
 
 ::: onetl.connection.db_connection.teradata.options.TeradataReadOptions
     options:

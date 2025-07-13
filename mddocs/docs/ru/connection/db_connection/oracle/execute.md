@@ -1,125 +1,100 @@
-# Executing statements in Oracle { #oracle-execute }
+# Выполнение запросов в Oracle { #oracle-execute }
 
 !!! warning
 
-    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+    Методы, описанные ниже, **считывают все строки** из БД **в память драйвера Spark**, а затем преобразуют их в DataFrame.
 
-    Do **NOT** use them to read large amounts of data. Use [DBReader][oracle-read] or [Oracle.sql][oracle-sql] instead.
+    **НЕ** используйте их для чтения больших объемов данных. Вместо этого используйте [DBReader][oracle-read] или [Oracle.sql][oracle-sql].
 
-## How to
+## Как использовать
 
-There are 2 ways to execute some statement in Oracle
+Существует 2 способа выполнения запросов в Oracle
 
-### Use `Oracle.fetch`
+### Использование `Oracle.fetch`
 
-Use this method to execute some `SELECT` query which returns **small number or rows**, like reading
-Oracle config, or reading data from some reference table. Method returns Spark DataFrame.
+Используйте этот метод для выполнения запроса `SELECT`, который возвращает **небольшое количество строк**, например, для чтения конфигурации Oracle или данных из справочной таблицы. Метод возвращает Spark DataFrame.
 
-Method accepts [Oracle.FetchOptions][onetl.connection.db_connection.oracle.options.OracleFetchOptions].
+Метод принимает параметры [Oracle.FetchOptions][onetl.connection.db_connection.oracle.options.OracleFetchOptions].
 
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+Соединение, открытое с помощью этого метода, следует затем закрыть с помощью `connection.close()` или конструкции `with connection:`.
 
 !!! warning
 
-    Please take into account Oracle types[oracle-types].
+    Пожалуйста, учитывайте [типы данных Oracle][oracle-types].
 
-#### Syntax support
+#### Поддержка синтаксиса
 
-This method supports **any** query syntax supported by Oracle, like:
+Этот метод позволяет использовать **любой** синтаксис запросов, поддерживаемый Oracle, например:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
-- ✅︎ `SELECT func(arg1, arg2) FROM DUAL` - call function
+- ✅︎ `SELECT func(arg1, arg2) FROM DUAL` - вызов функции
 - ✅︎ `SHOW ...`
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ❌ `SET ...; SELECT ...;` - множественные операторы не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import Oracle
+    ```python
+        from onetl.connection import Oracle
 
-oracle = Oracle(...)
+        oracle = Oracle(...)
 
-df = oracle.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=Oracle.FetchOptions(queryTimeout=10),
-)
-oracle.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+        df = oracle.fetch(
+            "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+            options=Oracle.FetchOptions(queryTimeout=10),
+        )
+        oracle.close()
+        value = df.collect()[0][0]  # получение значения из первой строки и первого столбца
+    ```
 
-### Use `Oracle.execute`
+### Использование `Oracle.execute`
 
-Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
+Используйте этот метод для выполнения операций DDL и DML. Каждый вызов метода выполняет операцию в отдельной транзакции, а затем фиксирует её.
 
-Method accepts [Oracle.ExecuteOptions][onetl.connection.db_connection.oracle.options.OracleExecuteOptions].
+Метод принимает параметры [Oracle.ExecuteOptions][onetl.connection.db_connection.oracle.options.OracleExecuteOptions].
 
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+Соединение, открытое с помощью этого метода, следует затем закрыть с помощью `connection.close()` или конструкции `with connection:`.
 
-#### Syntax support
+#### Поддержка синтаксиса
 
-This method supports **any** query syntax supported by Oracle, like:
+Этот метод поддерживает **любой** синтаксис запросов, применимый в Oracle, например:
 
 - ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`
 - ✅︎ `ALTER ...`
-- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...`, and so on
-- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE`, and so on
-- ✅︎ `CALL procedure(arg1, arg2) ...` or `{call procedure(arg1, arg2)}` - special syntax for calling procedure
-- ✅︎ `DECLARE ... BEGIN ... END` - execute PL/SQL statement
-- ✅︎ other statements not mentioned here
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...` и так далее
+- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE` и так далее
+- ✅︎ `CALL procedure(arg1, arg2) ...` или `{call procedure(arg1, arg2)}` - специальный синтаксис для вызова процедуры
+- ✅︎ `DECLARE ... BEGIN ... END` - выполнение PL/SQL выражения
+- ✅︎ другие операторы, не упомянутые здесь
+- ❌ `SET ...; SELECT ...;` - множественные операторы не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import Oracle
+    ```python
+        from onetl.connection import Oracle
 
-oracle = Oracle(...)
+        oracle = Oracle(...)
 
-oracle.execute("DROP TABLE schema.table")
-oracle.execute(
-    """
-    CREATE TABLE schema.table (
-        id bigint GENERATED ALWAYS AS IDENTITY,
-        key VARCHAR2(4000),
-        value NUMBER
-    )
-    """,
-    options=Oracle.ExecuteOptions(queryTimeout=10),
-)
-```
+        oracle.execute("DROP TABLE schema.table")
+        oracle.execute(
+            """
+            CREATE TABLE schema.table (
+                id bigint GENERATED ALWAYS AS IDENTITY,
+                key VARCHAR2(4000),
+                value NUMBER
+            )
+            """,
+            options=Oracle.ExecuteOptions(queryTimeout=10),
+        )
+    ```
 
-## Options
-
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.oracle.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: OracleFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-
-```
-
-```{eval-rst}
-.. autopydantic_model:: OracleExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
- -->
-
-### OracleFetchOptions { #oracle-fetch-options }
+## Опции
 
 ::: onetl.connection.db_connection.oracle.options.OracleFetchOptions
     options:
         inherited_members: true
         heading_level: 3
         show_root_heading: true
-
-
-### OracleExecuteOptions
 
 ::: onetl.connection.db_connection.oracle.options.OracleExecuteOptions
     options:

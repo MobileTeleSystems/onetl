@@ -12,8 +12,7 @@ See [official documentation](https://teradata-docs.s3.amazonaws.com/doc/connecti
 
 ## Installing PySpark
 
-To use Teradata connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+To use Teradata connector you should have PySpark installed (or injected to `sys.path`) **BEFORE** creating the connector instance.
 
 See [installation instruction][install-spark] for more details.
 
@@ -53,5 +52,6 @@ used for creating a connection:
     ```
 
 See:
-  - [Teradata access rights](https://www.dwhpro.com/teradata-access-rights/)
-  - [GRANT documentation](https://teradata.github.io/presto/docs/0.167-t/sql/grant.html)
+
+- [Teradata access rights](https://www.dwhpro.com/teradata-access-rights/)
+- [GRANT documentation](https://teradata.github.io/presto/docs/0.167-t/sql/grant.html)

@@ -1,57 +1,57 @@
-# Postgres <-> Spark type mapping { #postgres-types }
+# Соответствие типов Postgres <-> Spark { #postgres-types }
 
 !!! note
 
-    The results below are valid for Spark 3.5.5, and may differ on other Spark versions.
+    Результаты ниже действительны для Spark 3.5.5 и могут отличаться в других версиях Spark.
 
-## Type detection & casting
+## Определение типов и приведение
 
-Spark's DataFrames always have a `schema` which is a list of columns with corresponding Spark types. All operations on a column are performed using column type.
+DataFrame в Spark всегда имеют `schema`, которая представляет собой список столбцов с соответствующими типами Spark. Все операции со столбцом выполняются с использованием типа столбца.
 
-### Reading from Postgres
+### Чтение из Postgres
 
-This is how Postgres connector performs this:
+Вот как коннектор Postgres выполняет это:
 
-- For each column in query result (`SELECT column1, column2, ... FROM table ...`) get column name and Postgres type.
-- Find corresponding `Postgres type (read)` → `Spark type` combination (see below) for each DataFrame column [^1]. If no combination is found, raise exception.
-- Create DataFrame from query with specific column names and Spark types.
+- Для каждого столбца в результате запроса (`SELECT column1, column2, ... FROM table ...`) получает имя столбца и тип Postgres.
+- Находит соответствующую комбинацию `Тип Postgres (чтение)` → `Тип Spark` (см. ниже) для каждого столбца DataFrame [^1]. Если комбинация не найдена, вызывает исключение.
+- Создает DataFrame из запроса с указанными именами столбцов и типами Spark.
 
-### Writing to some existing Postgres table
+### Запись в существующую таблицу Postgres
 
-This is how Postgres connector performs this:
+Коннектор Postgres выполняет это следующим образом:
 
-- Get names of columns in DataFrame. [^1]
-- Perform `SELECT * FROM table LIMIT 0` query.
-- Take only columns present in DataFrame (by name, case insensitive) [^2]. For each found column get Postgres type.
-- Find corresponding `Spark type` → `Postgres type (write)` combination (see below) for each DataFrame column. If no combination is found, raise exception.
-- If `Postgres type (write)` match `Postgres type (read)`, no additional casts will be performed, DataFrame column will be written to Postgres as is.
-- If `Postgres type (write)` does not match `Postgres type (read)`, DataFrame column will be casted to target column type **on Postgres side**.
-  For example, you can write column with text data to `int` column, if column contains valid integer values within supported value range and precision [^3].
+- Получает имена столбцов в DataFrame. [^1]
+- Выполняет запрос `SELECT * FROM table LIMIT 0`.
+- Выбирает только столбцы, присутствующие в DataFrame (по имени, без учета регистра) [^2]. Для каждого найденного столбца получает тип Postgres.
+- Находит соответствующую комбинацию `Тип Spark` → `Тип Postgres (запись)` (см. ниже) для каждого столбца DataFrame. Если комбинация не найдена, вызывает исключение.
+- Если `Тип Postgres (запись)` соответствует `Тип Postgres (чтение)`, дополнительные преобразования не выполняются, столбец DataFrame будет записан в Postgres как есть.
+- Если `Тип Postgres (запись)` не соответствует `Тип Postgres (чтение)`, столбец DataFrame будет приведен к целевому типу столбца **на стороне Postgres**.
+  Например, можно записать столбец с текстовыми данными в столбец `int`, если столбец содержит допустимые целочисленные значения в пределах поддерживаемого диапазона значений и точности [^3].
 
-[^1]: All Postgres types that doesn't have corresponding Java type are converted to `String`.
+[^1]: Все типы Postgres, которые не имеют соответствующего типа Java, преобразуются в `String`.
 
-[^2]: This allows to write data to tables with `DEFAULT` and `GENERATED` columns - if DataFrame has no such column, it will be populated by Postgres.
+[^2]: Это позволяет записывать данные в таблицы со столбцами `DEFAULT` и `GENERATED` - если в DataFrame нет такого столбца, он будет заполнен Postgres.
 
-[^3]: This is true only if either DataFrame column is a `StringType()`, or target column is `text` type.
+[^3]: Это верно, только если столбец DataFrame имеет тип `StringType()` или целевой столбец имеет тип `text`.
 
-    But other types cannot be silently converted, like `bytea -> bit(N)`. This requires explicit casting, see [Manual conversion to string].
+    Но другие типы не могут быть преобразованы автоматически, например, `bytea -> bit(N)`. Это требует явного приведения, см. [Ручное преобразование в строку].
 
-### Create new table using Spark
+### Создание новой таблицы с помощью Spark
 
 !!! warning
 
-    ABSOLUTELY NOT RECOMMENDED!
+    КАТЕГОРИЧЕСКИ НЕ РЕКОМЕНДУЕТСЯ!
 
-This is how Postgres connector performs this:
+Вот как коннектор Postgres выполняет это:
 
-- Find corresponding `Spark type` → `Postgres type (create)` combination (see below) for each DataFrame column. If no combination is found, raise exception.
-- Generate DDL for creating table in Postgres, like `CREATE TABLE (col1 ...)`, and run it.
-- Write DataFrame to created table as is.
+- Находит соответствующую комбинацию `Тип Spark` → `Тип Postgres (создание)` (см. ниже) для каждого столбца DataFrame. Если комбинация не найдена, вызывает исключение.
+- Генерирует DDL для создания таблицы в Postgres, например `CREATE TABLE (col1 ...)`, и выполняет его.
+- Записывает DataFrame в созданную таблицу как есть.
 
-But Postgres connector support only limited number of types and almost no custom clauses (like `PARTITION BY`, `INDEX`, etc).
-So instead of relying on Spark to create tables:
+Но коннектор Postgres поддерживает ограниченное количество типов и почти не поддерживает пользовательские выражения (такие как `PARTITION BY`, `INDEX` и т.д.).
+Поэтому вместо того, чтобы полагаться на Spark для создания таблиц:
 
-??? note "See example"
+??? note "Смотрите пример"
 
     ```python
 
@@ -66,56 +66,53 @@ So instead of relying on Spark to create tables:
     writer.run(df)
     ```
 
+Всегда предпочтительнее создавать таблицу с нужным DDL **ПЕРЕД ЗАПИСЬЮ ДАННЫХ**:
 
-Always prefer creating table with desired DDL **BEFORE WRITING DATA**:
-
-??? note "See example"
+??? note "Смотрите пример"
 
     ```python
-
-    postgres.execute(
-        """
-        CREATE TABLE public.table (
-            id bigint,
-            business_dt timestamp(6),
-            value json
+        postgres.execute(
+            """
+            CREATE TABLE public.table (
+                id bigint,
+                business_dt timestamp(6),
+                value json
+            )
+            PARTITION BY RANGE (Id)
+            """,
         )
-        PARTITION BY RANGE (Id)
-        """,
-    )
 
-    writer = DBWriter(
-        connection=postgres,
-        target="public.table",
-        options=Postgres.WriteOptions(if_exists="append"),
-    )
-    writer.run(df)
+        writer = DBWriter(
+            connection=postgres,
+            target="public.table",
+            options=Postgres.WriteOptions(if_exists="append"),
+        )
+        writer.run(df)
     ```
 
-See Postgres [CREATE TABLE](https://www.postgresql.org/docs/current/sql-createtable.html) documentation.
+См. документацию Postgres [CREATE TABLE](https://www.postgresql.org/docs/current/sql-createtable.html).
 
-## Supported types
+## Поддерживаемые типы
 
-### References
+### Ссылки
 
-See [List of Postgres types](https://www.postgresql.org/docs/current/datatype.html).
+См. [Список типов Postgres](https://www.postgresql.org/docs/current/datatype.html).
 
-Here you can find source code with type conversions:
+Здесь вы можете найти исходный код с преобразованиями типов:
 
 - [Postgres <-> JDBC](https://github.com/pgjdbc/pgjdbc/blob/REL42.6.0/pgjdbc/src/main/java/org/postgresql/jdbc/TypeInfoCache.java#L78-L112)
 - [JDBC -> Spark](https://github.com/apache/spark/blob/v3.5.5/sql/core/src/main/scala/org/apache/spark/sql/jdbc/PostgresDialect.scala#L52-L108)
 - [Spark -> JDBC](https://github.com/apache/spark/blob/v3.5.5/sql/core/src/main/scala/org/apache/spark/sql/jdbc/PostgresDialect.scala#L118-L132)
 
-### Numeric types
+### Числовые типы
 
-
-| Postgres type (read)           | Spark type                         | Postgres type (write)        | Postgres type (create)                        |
+| Тип Postgres (чтение)           | Тип Spark                         | Тип Postgres (запись)        | Тип Postgres (создание)                        |
 |--------------------------------|------------------------------------|------------------------------|-----------------------------------------------|
-| `decimal`                      | `DecimalType(P=38, S=18)`          | `decimal(P=38, S=18)`        | <br/><br/>`decimal` (unbounded) {: rowspan=3} |
+| `decimal`                      | `DecimalType(P=38, S=18)`          | `decimal(P=38, S=18)`        | <br/><br/>`decimal` (без ограничений) {: rowspan=3} |
 | `decimal(P=0..38)`             | `DecimalType(P=0..38, S=0)`        | `decimal(P=0..38, S=0)`      | &#8288 {: style="padding:0"}                  |
 | `decimal(P=0..38, S=0..38)`    | `DecimalType(P=0..38, S=0..38)`    | `decimal(P=0..38, S=0..38)`  | &#8288 {: style="padding:0"}                  |
-| `decimal(P=39.., S=0..)`       | unsupported [^4]                   |                              |                                               |
-| `decimal(P=.., S=..-1)`        | unsupported [^5]                   |                              |                                               |
+| `decimal(P=39.., S=0..)`       | не поддерживается [^4]                   |                              |                                               |
+| `decimal(P=.., S=..-1)`        | не поддерживается [^5]                   |                              |                                               |
 | `real`                         | `FloatType()`                      | `real`                       | `real`                                        |
 | `double precision`             | `DoubleType()`                     | `double precision`           | `double precision`                            |
 | `smallint`                     | `ShortType()`                      | `smallint`                   | `smallint`                                    |
@@ -128,234 +125,232 @@ Here you can find source code with type conversions:
 | `numrange`                     |  &#8288 {: style="padding:0"}      | &#8288 {: style="padding:0"} | &#8288 {: style="padding:0"}                  |
 | `int2vector`                   |  &#8288 {: style="padding:0"}      | &#8288 {: style="padding:0"} | &#8288 {: style="padding:0"}                  |
 
-[^4]: Postgres support decimal types with unlimited precision.
+[^4]: Postgres поддерживает типы decimal с неограниченной точностью.
 
-    But Spark's `DecimalType(P, S)` supports maximum `P=38` (128 bit). It is impossible to read, write or operate with values of larger precision,
-    this leads to an exception.
+    Но `DecimalType(P, S)` в Spark поддерживает максимум `P=38` (128 бит). Невозможно читать, записывать или работать со значениями большей точности,
+    это приводит к ошибке.
 
-[^5]: Postgres support decimal types with negative scale, like `decimal(38, -10)`. Spark doesn't.
+[^5]: Postgres поддерживает типы decimal с отрицательным масштабом, например `decimal(38, -10)`. Spark - нет.
 
-### Temporal types
+### Временные типы
 
-
-| Postgres type (read)               | Spark type                   | Postgres type (write) | Postgres type (create)  |
+| Тип Postgres (чтение)               | Тип Spark                   | Тип Postgres (запись) | Тип Postgres (создание)  |
 |------------------------------------|------------------------------|-----------------------|-------------------------|
 | `date`                           | `DateType()`               | `date`              | `date`                |
-| `time`<br/>`time(0..6)`<br/>`time with time zone`<br/>`time(0..6) with time zone` | <br/>`TimestampType()`,<br/>with time format quirks [^6]        | <br/><br/>`timestamp(6)`      | <br/><br/>`timestamp(6)`        |
+| `time`<br/>`time(0..6)`<br/>`time with time zone`<br/>`time(0..6) with time zone` | <br/>`TimestampType()`,<br/>с особенностями форматирования времени [^6]        | <br/><br/>`timestamp(6)`      | <br/><br/>`timestamp(6)`        |
 | `timestamp`<br/>`timestamp(0..6)`<br/>`timestamp with time zone`<br/>`timestamp(0..6) with time zone`  | <br/><br/>`TimestampType()`          | <br/><br/>`timestamp(6)`      | <br/><br/>`timestamp(6)`        |
 | `-`                              | `TimestampNTZType()`       | `timestamp(6)`      | `timestamp(6)`        |
-| `interval` of any precision      | `StringType()` [^1]        | `text`              | `text`                |
-| `-`                              | `DayTimeIntervalType()`    | unsupported           | unsupported             |
-| `-`                              | `YearMonthIntervalType()`  | unsupported           | unsupported             |
+| `interval` любой точности      | `StringType()` [^1]        | `text`              | `text`                |
+| `-`                              | `DayTimeIntervalType()`    | не поддерживается           | не поддерживается             |
+| `-`                              | `YearMonthIntervalType()`  | не поддерживается           | не поддерживается             |
 | `daterange`<br/>`tsrange`<br/>`tstzrange`                      | <br/>`StringType()` [^1]        | <br/><br/>`text`              | <br/><br/>`text`                |
 
-!!! warning
+!!! warning "Предупреждение"
 
-    Note that types in Postgres and Spark have different value ranges:
+    Обратите внимание, что типы в Postgres и Spark имеют разные диапазоны значений:
 
     
-    | Postgres type | Min value                       | Max value                        | Spark type          | Min value                      | Max value                      |
+    | Тип Postgres | Минимальное значение                       | Максимальное значение                        | Тип Spark          | Минимальное значение                      | Максимальное значение                      |
     |---------------|---------------------------------|----------------------------------|---------------------|--------------------------------|--------------------------------|
     | `date`      | `-4713-01-01`                 | `5874897-01-01`                | `DateType()`      | `0001-01-01`                 | `9999-12-31`                 |
     | `timestamp` | `-4713-01-01 00:00:00.000000` | `294276-12-31 23:59:59.999999` | <br/><br/>`TimestampType()` {: rowspan=2} | <br/><br/>`0001-01-01 00:00:00.000000` {: rowspan=2} | <br/><br/>`9999-12-31 23:59:59.999999` {: rowspan=2} |
     | `time`      | `00:00:00.000000`             | `24:00:00.000000`              | &#8288 {: style="padding:0"}   |  &#8288 {: style="padding:0"}      |  &#8288 {: style="padding:0"}     |
 
 
-    So not all of values can be read from Postgres to Spark.
+    Таким образом, не все значения могут быть прочитаны из Postgres в Spark.
 
-    References:
+    Ссылки:
 
-    * [Postgres date/time types documentation](https://www.postgresql.org/docs/current/datatype-datetime.html)
-    * [Spark DateType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
-    * [Spark TimestampType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
+    * [Документация по типам даты/времени Postgres](https://www.postgresql.org/docs/current/datatype-datetime.html)
+    * [Документация по DateType в Spark](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
+    * [Документация по TimestampType в Spark](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
 
-[^6]: `time` type is the same as `timestamp` with date `1970-01-01`. So instead of reading data from Postgres like `23:59:59`
-    it is actually read `1970-01-01 23:59:59`, and vice versa.
+[^6]: Тип `time` аналогичен `timestamp` с датой `1970-01-01`. Поэтому вместо чтения данных из Postgres как `23:59:59`
+    фактически читается `1970-01-01 23:59:59`, и наоборот.
 
-### String types
+### Строковые типы
 
-
-| Postgres type (read)        | Spark type            | Postgres type (write) | Postgres type (create)  |
+| Тип Postgres (чтение)        | Тип Spark            | Тип Postgres (запись) | Тип Postgres (создание)  |
 |-----------------------------|-----------------------|-----------------------|-------------------------|
 | `character`<br/>`character(N)`<br/>`character varying`<br/>`character varying(N)`<br/>`text`<br/>`json`<br/>`jsonb`<br/>`xml`               | <br/><br/><br/><br/>`StringType()`      | <br/><br/><br/><br/><br/>`text` {: rowspan=2}              | <br/><br/><br/><br/><br/>`text` {: rowspan=2}               |
 | `CREATE TYPE ... AS ENUM`<br/>`tsvector`<br/>`tsquery` | <br/>`StringType()`[^1] |   &#8288 {: style="padding:0"}    |    &#8288 {: style="padding:0"}    |
-| `-`                       | `CharType()`        | `unsupported`       | `unsupported`         |
-| `-`                       | `VarcharType()`     | `unsupported`       | `unsupported`         |
+| `-`                       | `CharType()`        | `не поддерживается`       | `не поддерживается`         |
+| `-`                       | `VarcharType()`     | `не поддерживается`       | `не поддерживается`         |
 
-### Binary types
+### Бинарные типы
 
-| Postgres type (read)     | Spark type            | Postgres type (write)       | Postgres type (create)  |
+| Тип Postgres (чтение)     | Тип Spark            | Тип Postgres (запись)       | Тип Postgres (создание)  |
 |--------------------------|-----------------------|-----------------------------|-------------------------|
 | `boolean`              | `BooleanType()`     | `boolean`                 | `boolean`             |
-| `bit`<br/>`bit(N=1)`                  | `BooleanType()`      | `bool`,<br/>**cannot insert data** [^3]                   | `bool`                |
-| `bit(N=2..)`           | `ByteType()`        | `bytea`,<br/>**cannot insert data** [^3]                  | `bytea`               |
+| `bit`<br/>`bit(N=1)`                  | `BooleanType()`      | `bool`,<br/>**невозможно вставить данные** [^3]                   | `bool`                |
+| `bit(N=2..)`           | `ByteType()`        | `bytea`,<br/>**невозможно вставить данные** [^3]                  | `bytea`               |
 | `bit varying`<br/> `bit varying(N)`         | `StringType()` [^1] | `text`                    | `text`                |
 | `bytea`                | `BinaryType()`      | `bytea`                   | `bytea`               |
 
-### Struct types
+### Структурные типы
 
-| Postgres type (read)           | Spark type            | Postgres type (write) | Postgres type (create)  |
+| Тип Postgres (чтение)           | Тип Spark            | Тип Postgres (запись) | Тип Postgres (создание)  |
 |--------------------------------|-----------------------|-----------------------|-------------------------|
 | `T[]`                        | `ArrayType(T)`      | `T[]`               | `T[]`                 |
-| `T[][]`                      | unsupported           |                       |                         |
+| `T[][]`                      | не поддерживается           |                       |                         |
 | `CREATE TYPE sometype (...)` | `StringType()` [^1] | `text`              | `text`                |
-| `-`                          | `StructType()`<br/> `MapType()`     | unsupported           |                         |
+| `-`                          | `StructType()`<br/> `MapType()`     | не поддерживается           |                         |
 
-### Network types
+### Сетевые типы
 
-| Postgres type (read) | Spark type            | Postgres type (write) | Postgres type (create)  |
+| Тип Postgres (чтение) | Тип Spark            | Тип Postgres (запись) | Тип Postgres (создание)  |
 |----------------------|-----------------------|-----------------------|-------------------------|
 | `cidr`<br/>`inet`<br/>`macaddr`<br/>`macaddr8`             | `StringType()` [^1] | <br/><br/>`text`              | <br/><br/>`text`                |
 
-### Geo types
+### Географические типы
 
-| Postgres type (read) | Spark type            | Postgres type (write) | Postgres type (create)  |
+| Тип Postgres (чтение) | Тип Spark            | Тип Postgres (запись) | Тип Postgres (создание)  |
 |----------------------|-----------------------|-----------------------|-------------------------|
 | `circle`<br/>`box`<br/>`line`<br/>`lseg`<br/>`path`<br/>`point`<br/>`polygon`           | <br/><br/><br/>`StringType()` [^1] | <br/><br/><br/>`text`              | <br/><br/><br/>`text`                |
 
-## Explicit type cast
+## Явное приведение типов
 
 ### `DBReader`
 
-It is possible to explicitly cast column of unsupported type using `DBReader(columns=...)` syntax.
+Можно явно привести столбец неподдерживаемого типа с помощью синтаксиса `DBReader(columns=...)`.
 
-For example, you can use `CAST(column AS text)` to convert data to string representation on Postgres side, and so it will be read as Spark's `StringType()`.
+Например, вы можете использовать `CAST(column AS text)` для преобразования данных в строковое представление на стороне Postgres, и тогда они будут прочитаны как `StringType()` в Spark.
 
-It is also possible to use [to_json](https://www.postgresql.org/docs/current/functions-json.html) Postgres function to convert column of any type to string representation, and then parse this column on Spark side you can use the [JSON.parse_column][onetl.file.format.json.JSON.parse_column] method:
+Также возможно использовать функцию [to_json](https://www.postgresql.org/docs/current/functions-json.html) в Postgres для преобразования столбца любого типа в строковое представление, а затем разобрать этот столбец на стороне Spark с помощью метода [JSON.parse_column][onetl.file.format.json.JSON.parse_column]:
 
-```python
-from pyspark.sql.types import IntegerType
+    ```python
+        from pyspark.sql.types import IntegerType
 
-from onetl.connection import Postgres
-from onetl.db import DBReader
-from onetl.file.format import JSON
+        from onetl.connection import Postgres
+        from onetl.db import DBReader
+        from onetl.file.format import JSON
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-DBReader(
-    connection=postgres,
-    columns=[
-        "id",
-        "supported_column",
-        "CAST(unsupported_column AS text) unsupported_column_str",
-        # or
-        "to_json(unsupported_column) array_column_json",
-    ],
-)
-df = reader.run()
+        DBReader(
+            connection=postgres,
+            columns=[
+                "id",
+                "supported_column",
+                "CAST(unsupported_column AS text) unsupported_column_str",
+                # или
+                "to_json(unsupported_column) array_column_json",
+            ],
+        )
+        df = reader.run()
 
-json_schema = StructType(
-    [
-        StructField("id", IntegerType(), nullable=True),
-        StructField("name", StringType(), nullable=True),
-        ...,
-    ]
-)
-df = df.select(
-    df.id,
-    df.supported_column,
-    # explicit cast
-    df.unsupported_column_str.cast("integer").alias("parsed_integer"),
-    JSON().parse_column("array_column_json", json_schema).alias("json_string"),
-)
-```
+        json_schema = StructType(
+            [
+                StructField("id", IntegerType(), nullable=True),
+                StructField("name", StringType(), nullable=True),
+                ...,
+            ]
+        )
+        df = df.select(
+            df.id,
+            df.supported_column,
+            # явное приведение
+            df.unsupported_column_str.cast("integer").alias("parsed_integer"),
+            JSON().parse_column("array_column_json", json_schema).alias("json_string"),
+        )
+    ```
 
 ### `DBWriter`
 
-It is always possible to convert data on the Spark side to a string, and then write it to a text column in a Postgres table.
+Всегда возможно преобразовать данные на стороне Spark в строку, а затем записать их в текстовый столбец в таблице Postgres.
 
-#### Using JSON.serialize_column
+#### Использование JSON.serialize_column
 
-You can use the [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column] method for data serialization:
+Вы можете использовать метод [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column] для сериализации данных:
 
-```python
-from onetl.file.format import JSON
-from pyspark.sql.functions import col
+    ```python
+        from onetl.file.format import JSON
+        from pyspark.sql.functions import col
 
-from onetl.connection import Postgres
-from onetl.db import DBWriter
+        from onetl.connection import Postgres
+        from onetl.db import DBWriter
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-postgres.execute(
-    """
-    CREATE TABLE schema.target_table (
-        id int,
-        supported_column timestamp,
-        array_column_json jsonb -- any column type, actually
-    )
-    """,
-)
+        postgres.execute(
+            """
+            CREATE TABLE schema.target_table (
+                id int,
+                supported_column timestamp,
+                array_column_json jsonb -- любой тип столбца на самом деле
+            )
+            """,
+        )
 
-write_df = df.select(
-    df.id,
-    df.supported_column,
-    JSON().serialize_column(df.unsupported_column).alias("array_column_json"),
-)
+        write_df = df.select(
+            df.id,
+            df.supported_column,
+            JSON().serialize_column(df.unsupported_column).alias("array_column_json"),
+        )
 
-writer = DBWriter(
-    connection=postgres,
-    target="schema.target_table",
-)
-writer.run(write_df)
-```
+        writer = DBWriter(
+            connection=postgres,
+            target="schema.target_table",
+        )
+        writer.run(write_df)
+    ```
 
-Then you can parse this column on the Postgres side (for example, by creating a view):
+Затем вы можете разобрать этот столбец на стороне Postgres (например, создав представление):
 
-```sql
-SELECT
-    id,
-    supported_column,
-    array_column_json->'0' AS array_item_0
-FROM
-    schema.target_table
-```
+    ```sql
+        SELECT
+            id,
+            supported_column,
+            array_column_json->'0' AS array_item_0
+        FROM
+            schema.target_table
+    ```
 
-To avoid casting the value on every table read you can use [GENERATED ALWAYS STORED](https://www.postgresql.org/docs/current/ddl-generated-columns.html) column, but this requires 2x space (for original and parsed value).
+Чтобы избежать приведения значения при каждом чтении таблицы, вы можете использовать столбец [GENERATED ALWAYS STORED](https://www.postgresql.org/docs/current/ddl-generated-columns.html), но это требует в 2 раза больше места (для исходного и разобранного значения).
 
-#### Manual conversion to string
+#### Ручное преобразование в строку
 
-Postgres connector also supports conversion text value directly to target column type, if this value has a proper format.
+Коннектор Postgres также поддерживает прямое преобразование текстового значения в целевой тип столбца, если это значение имеет правильный формат.
 
-For example, you can write data like `[123, 345]` to `int8range` type because Postgres allows cast `'[123, 345]'::int8range'`:
+Например, вы можете записать данные вида `[123, 345]` в тип `int8range`, поскольку Postgres позволяет выполнить приведение `'[123, 345]'::int8range'`:
 
-```python
-from pyspark.sql.ftypes import StringType
-from pyspark.sql.functions import udf
+    ```python
+        from pyspark.sql.ftypes import StringType
+        from pyspark.sql.functions import udf
 
-from onetl.connection import Postgres
-from onetl.db import DBReader
+        from onetl.connection import Postgres
+        from onetl.db import DBReader
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-postgres.execute(
-    """
-    CREATE TABLE schema.target_table (
-        id int,
-        range_column int8range -- any column type, actually
-    )
-    """,
-)
-
-
-@udf(returnType=StringType())
-def array_to_range(value: tuple):
-    """This UDF allows to convert tuple[start, end] to Postgres' range format"""
-    start, end = value
-    return f"[{start},{end}]"
+        postgres.execute(
+            """
+            CREATE TABLE schema.target_table (
+                id int,
+                range_column int8range -- любой тип столбца на самом деле
+            )
+            """,
+        )
 
 
-write_df = df.select(
-    df.id,
-    array_to_range(df.range_column).alias("range_column"),
-)
+        @udf(returnType=StringType())
+        def array_to_range(value: tuple):
+            """Эта UDF позволяет преобразовать tuple[start, end] в формат диапазона Postgres"""
+            start, end = value
+            return f"[{start},{end}]"
 
-writer = DBWriter(
-    connection=postgres,
-    target="schema.target_table",
-)
-writer.run(write_df)
-```
 
-This can be tricky to implement and may lead to longer write process.
-But this does not require extra space on Postgres side, and allows to avoid explicit value cast on every table read.
+        write_df = df.select(
+            df.id,
+            array_to_range(df.range_column).alias("range_column"),
+        )
+
+        writer = DBWriter(
+            connection=postgres,
+            target="schema.target_table",
+        )
+        writer.run(write_df)
+    ```
+
+Это может быть сложно реализовать и может привести к более длительному процессу записи.
+Но это не требует дополнительного места на стороне Postgres и позволяет избежать явного приведения значения при каждом чтении таблицы.

@@ -1,13 +1,13 @@
 # Teradata
 
-## Connection
+## Подключение
 
-* [Prerequisites][teradata-prerequisites]
-* [Teradata connection][teradata-connection]
+* [Предварительные требования][teradata-prerequisites]
+* [Подключение к Teradata][teradata-connection]
 
-## Operations
+## Операции
 
-* [Reading from Teradata using `DBReader`][teradata-read]
-* [Reading from Teradata using `Teradata.sql`][teradata-sql]
-* [Writing to Teradata using `DBWriter`][teradata-write]
-* [Executing statements in Teradata][teradata-execute]
+* [Чтение из Teradata с использованием `DBReader`][teradata-read]
+* [Чтение из Teradata с использованием `Teradata.sql`][teradata-sql]
+* [Запись в Teradata с использованием `DBWriter`][teradata-write]
+* [Выполнение запросов в Teradata][teradata-execute]

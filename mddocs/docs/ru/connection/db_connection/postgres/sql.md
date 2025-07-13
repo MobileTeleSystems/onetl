@@ -1,79 +1,64 @@
-# Reading from Postgres using `Postgres.sql` { #postgres-sql }
+# Чтение из Postgres с использованием `Postgres.sql` { #postgres-sql }
 
-`Postgres.sql` allows passing custom SQL query, but does not support incremental strategies.
-
-!!! warning
-
-    Please take into account [Postgres types][postgres-types]
+`Postgres.sql` позволяет передавать пользовательский SQL-запрос, но не поддерживает инкрементальные стратегии.
 
 !!! warning
 
-    Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside,
-    they can change data in your database.
+    Пожалуйста, учитывайте [типы данных Postgres][postgres-types]
 
-## Syntax support
+!!! warning
 
-Only queries with the following syntax are supported:
+    Запрос выполняется в соединении с режимом **чтение-запись**, поэтому если вы вызываете функции/процедуры с DDL/DML-операторами внутри, они могут изменить данные в вашей базе данных.
+
+## Поддержка синтаксиса
+
+Поддерживаются только запросы со следующим синтаксисом:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ❌ `SET ...; SELECT ...;` - несколько операторов не поддерживаются
 
-## Examples
+## Примеры
 
-```python
-from onetl.connection import Postgres
+    ```python
+        from onetl.connection import Postgres
 
-postgres = Postgres(...)
-df = postgres.sql(
-    """
-    SELECT
-        id,
-        key,
-        CAST(value AS text) value,
-        updated_at
-    FROM
-        some.mytable
-    WHERE
-        key = 'something'
-    """,
-    options=Postgres.SQLOptions(
-        partitionColumn="id",
-        numPartitions=10,
-        lowerBound=0,
-        upperBound=1000,
-    ),
-)
-```
+        postgres = Postgres(...)
+        df = postgres.sql(
+            """
+            SELECT
+                id,
+                key,
+                CAST(value AS text) value,
+                updated_at
+            FROM
+                some.mytable
+            WHERE
+                key = 'something'
+            """,
+            options=Postgres.SQLOptions(
+                partitionColumn="id",
+                numPartitions=10,
+                lowerBound=0,
+                upperBound=1000,
+            ),
+        )
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только необходимые столбцы
 
-Instead of passing `SELECT * FROM ...` prefer passing exact column names `SELECT col1, col2, ...`.
-This reduces the amount of data passed from Postgres to Spark.
+Вместо использования `SELECT * FROM ...` предпочтительнее указывать точные имена столбцов `SELECT col1, col2, ...`.
+Это уменьшает объем данных, передаваемых из Postgres в Spark.
 
-### Pay attention to `where` value
+### Обращайте внимание на значения в условии `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `WHERE column = 'value'` clause.
-This both reduces the amount of data send from Postgres to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')` передавайте соответствующее условие `WHERE column = 'value'`.
+Это не только уменьшает объем данных, передаваемых из Postgres в Spark, но также может улучшить производительность запроса.
+Особенно если для столбцов, используемых в условии `where`, есть индексы или секционирование.
 
-## Options { #postgres-sql-options }
-
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.postgres.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: PostgresSQLOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
- -->
+## Опции { #postgres-sql-options }
 
 ::: onetl.connection.db_connection.postgres.options.PostgresSQLOptions
     options:

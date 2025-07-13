@@ -1,54 +1,52 @@
-# Writing to Oracle using `DBWriter` { #oracle-write }
+# Запись в Oracle с помощью `DBWriter` { #oracle-write }
 
-For writing data to Oracle, use [DBWriter][db-writer].
-
-!!! warning
-
-    Please take into account [Oracle types][oracle-types]
+Для записи данных в Oracle используйте [DBWriter][db-writer].
 
 !!! warning
 
-    It is always recommended to create table explicitly using [Oracle.execute][oracle-execute]
-    instead of relying on Spark's table DDL generation.
+    Пожалуйста, учитывайте [типы данных Oracle][oracle-types]
 
-    This is because Spark's DDL generator can create columns with different precision and types than it is expected,
-    causing precision loss or other issues.
+!!! warning
 
-## Examples
+    Всегда рекомендуется создавать таблицу явно с помощью [Oracle.execute][oracle-execute] вместо того, чтобы полагаться на автоматическую генерацию DDL в Spark.
 
-```python
-from onetl.connection import Oracle
-from onetl.db import DBWriter
+    Это связано с тем, что генератор DDL в Spark может создавать столбцы с другой точностью и типами, чем ожидается, что приводит к потере точности или другим проблемам.
 
-oracle = Oracle(...)
+## Примеры
 
-df = ...  # data is here
+    ```python
+        from onetl.connection import Oracle
+        from onetl.db import DBWriter
 
-writer = DBWriter(
-    connection=oracle,
-    target="schema.table",
-    options=Oracle.WriteOptions(if_exists="append"),
-)
+        oracle = Oracle(...)
 
-writer.run(df)
-```
+        df = ...  # здесь находятся данные
 
-## Options
+        writer = DBWriter(
+            connection=oracle,
+            target="schema.table",
+            options=Oracle.WriteOptions(if_exists="append"),
+        )
 
-Method above accepts [OracleWriteOptions][onetl.connection.db_connection.oracle.options.OracleWriteOptions]
+        writer.run(df)
+    ```
+
+## Параметры
+
+Вышеуказанный метод принимает [OracleWriteOptions][onetl.connection.db_connection.oracle.options.OracleWriteOptions]
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.oracle.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.oracle.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: OracleWriteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: OracleWriteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.oracle.options.OracleWriteOptions

@@ -1,17 +1,17 @@
 # Postgres
 
-## Connection
+## Подключение
 
-* [Prerequisites][postgres-prerequisites]
-* [Postgres connection][postgres-connection]
+* [Предварительные требования][postgres-prerequisites]
+* [Подключение к Postgres][postgres-connection]
 
-## Operations
+## Операции
 
-* [Reading from Postgres using `DBReader`][postgres-read]
-* [Reading from Postgres using `Postgres.sql`][postgres-sql]
-* [Writing to Postgres using `DBWriter`][postgres-write]
-* [Executing statements in Postgres][postgres-execute]
+* [Чтение из Postgres с использованием `DBReader`][postgres-read]
+* [Чтение из Postgres с использованием `Postgres.sql`][postgres-sql]
+* [Запись в Postgres с использованием `DBWriter`][postgres-write]
+* [Выполнение операторов в Postgres][postgres-execute]
 
-## Troubleshooting
+## Устранение неполадок
 
-* [Postgres <-> Spark type mapping][postgres-types]
+* [Сопоставление типов данных Postgres <-> Spark][postgres-types]

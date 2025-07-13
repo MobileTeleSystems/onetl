@@ -1,17 +1,17 @@
 # Oracle
 
-## Connection
+## Подключение
 
-* [Prerequisites][oracle-prerequisites]
-* [Oracle connection][oracle-connection]
+* [Предварительные условия][oracle-prerequisites]
+* [Подключение к Oracle][oracle-connection]
 
-## Operations
+## Операции
 
-* [Reading from Oracle using `DBReader`][oracle-read]
-* [Reading from Oracle using `Oracle.sql`][oracle-sql]
-* [Writing to Oracle using `DBWriter`][oracle-write]
-* [Executing statements in Oracle][oracle-execute]
+* [Чтение из Oracle с использованием `DBReader`][oracle-read]
+* [Чтение из Oracle с использованием `Oracle.sql`][oracle-sql]
+* [Запись в Oracle с использованием `DBWriter`][oracle-write]
+* [Выполнение операторов в Oracle][oracle-execute]
 
-## Troubleshooting
+## Устранение неполадок
 
-* [Oracle <-> Spark type mapping][oracle-types]
+* [Сопоставление типов Oracle <-> Spark][oracle-types]

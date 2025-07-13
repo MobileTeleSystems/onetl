@@ -1,111 +1,110 @@
-# Executing statements in Postgres { #postgres-execute }
+# Выполнение операторов в Postgres { #postgres-execute }
 
 !!! warning
 
-    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
+    Методы ниже **считывают все строки**, возвращаемые из БД, **в память драйвера Spark**, а затем преобразуют их в DataFrame.
 
-    Do **NOT** use them to read large amounts of data. Use [DBReader][postgres-read] or [Postgres.sql][postgres-sql] instead.
+    **НЕ** используйте их для чтения больших объемов данных. Вместо этого используйте [DBReader][postgres-read] или [Postgres.sql][postgres-sql].
 
-## How to
+## Как использовать
 
-There are 2 ways to execute some statement in Postgres
+Существует 2 способа выполнения операторов в Postgres
 
-### Use `Postgres.fetch`
+### Использование `Postgres.fetch`
 
-Use this method to execute some `SELECT` query which returns **small number or rows**, like reading
-Postgres config, or reading data from some reference table. Method returns Spark DataFrame.
+Используйте этот метод для выполнения запроса `SELECT`, который возвращает **небольшое количество строк**, например, для чтения конфигурации Postgres или данных из справочной таблицы. Метод возвращает Spark DataFrame.
 
-Method accepts [Postgres.FetchOptions][onetl.connection.db_connection.postgres.options.PostgresFetchOptions].
+Метод принимает [Postgres.FetchOptions][onetl.connection.db_connection.postgres.options.PostgresFetchOptions].
 
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+Соединение, открытое с помощью этого метода, следует затем закрыть с помощью `connection.close()` или `with connection:`.
 
 !!! warning
 
-    Please take into account :ref:`postgres-types`.
+    Пожалуйста, учитывайте [типы данных Postgres][postgres-types].
 
-#### Syntax support
+#### Поддержка синтаксиса
 
-This method supports **any** query syntax supported by Postgres, like:
+Этот метод поддерживает **любой** синтаксис запросов, поддерживаемый Postgres, например:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ❌ `SET ...; SELECT ...;` - множественные операторы не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import Postgres
+    ```python
+        from onetl.connection import Postgres
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-df = postgres.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=Postgres.FetchOptions(queryTimeout=10),
-)
-postgres.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+        df = postgres.fetch(
+            "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+            options=Postgres.FetchOptions(queryTimeout=10),
+        )
+        postgres.close()
+        value = df.collect()[0][0]  # получить значение из первой строки и первого столбца
+    ```
 
-### Use `Postgres.execute`
+### Использование `Postgres.execute`
 
-Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
+Используйте этот метод для выполнения операций DDL и DML. Каждый вызов метода выполняет операцию в отдельной транзакции, а затем фиксирует её.
 
-Method accepts [Postgres.ExecuteOptions][onetl.connection.db_connection.postgres.options.PostgresExecuteOptions].
+Метод принимает [Postgres.ExecuteOptions][onetl.connection.db_connection.postgres.options.PostgresExecuteOptions].
 
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+Соединение, открытое с помощью этого метода, следует затем закрыть с помощью `connection.close()` или `with connection:`.
 
-#### Syntax support
+#### Поддержка синтаксиса
 
-This method supports **any** query syntax supported by Postgres, like:
+Этот метод поддерживает **любой** синтаксис запросов, поддерживаемый Postgres, например:
 
-- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`, and so on
+- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...` и так далее
 - ✅︎ `ALTER ...`
-- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...`, and so on
-- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE`, and so on
+- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...` и так далее
+- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, `TRUNCATE TABLE` и так далее
 - ✅︎ `CALL procedure(arg1, arg2) ...`
-- ✅︎ `SELECT func(arg1, arg2)` or `{call func(arg1, arg2)}` - special syntax for calling functions
-- ✅︎ other statements not mentioned here
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ✅︎ `SELECT func(arg1, arg2)` или `{call func(arg1, arg2)}` - специальный синтаксис для вызова функций
+- ✅︎ другие операторы, не упомянутые здесь
+- ❌ `SET ...; SELECT ...;` - множественные операторы не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import Postgres
+    ```python
+        from onetl.connection import Postgres
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-postgres.execute("DROP TABLE schema.table")
-postgres.execute(
-    """
-    CREATE TABLE schema.table (
-        id bigint GENERATED ALWAYS AS IDENTITY,
-        key text,
-        value real
-    )
-    """,
-    options=Postgres.ExecuteOptions(queryTimeout=10),
-)
-```
+        postgres.execute("DROP TABLE schema.table")
+        postgres.execute(
+            """
+            CREATE TABLE schema.table (
+                id bigint GENERATED ALWAYS AS IDENTITY,
+                key text,
+                value real
+            )
+            """,
+            options=Postgres.ExecuteOptions(queryTimeout=10),
+        )
+    ```
 
-## Options { #postgres-fetch-options }
+## Параметры { #postgres-fetch-options }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.postgres.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.postgres.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: PostgresFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
+    ```{eval-rst}
+    .. autopydantic_model:: PostgresFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
 
-```
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: PostgresExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
+    ```{eval-rst}
+    .. autopydantic_model:: PostgresExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+    ```
  -->
 
 ::: onetl.connection.db_connection.postgres.options.PostgresFetchOptions

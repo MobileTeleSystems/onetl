@@ -1,71 +1,68 @@
-# Prerequisites { #postgres-prerequisites }
+# Предварительные требования { #postgres-prerequisites }
 
-## Version Compatibility
+## Совместимость версий
 
-- PostgreSQL server versions:
-    - Officially declared: 8.2 - 17
-    - Actually tested: 9.4.26, 17.3
-- Spark versions: 2.3.x - 3.5.x
-- Java versions: 8 - 20
+- Версии сервера PostgreSQL:
+    - Официально заявленные: 8.2 - 17
+    - Фактически протестированные: 9.4.26, 17.3
+- Версии Spark: 2.3.x - 3.5.x
+- Версии Java: 8 - 20
 
-See [official documentation](https://jdbc.postgresql.org/).
+См. [официальную документацию](https://jdbc.postgresql.org/).
 
-## Installing PySpark
+## Установка PySpark
 
-To use Postgres connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+Для использования коннектора Postgres у вас должен быть установлен PySpark (или добавлен в `sys.path`) **ДО** создания экземпляра коннектора.
 
-See [installation instruction][install-spark] for more details.
+См. [инструкцию по установке][install-spark] для получения дополнительной информации.
 
-## Connecting to Postgres
+## Подключение к Postgres
 
-### Allowing connection to Postgres instance
+### Разрешение подключения к экземпляру Postgres
 
-Ask your Postgres administrator to allow your user (and probably IP) to connect to instance,
-e.g. by updating `pg_hba.conf` file.
+Попросите вашего администратора Postgres разрешить вашему пользователю (и, возможно, IP) подключаться к экземпляру, например, путем обновления файла `pg_hba.conf`.
 
-See [official documentation](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html).
+См. [официальную документацию](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html).
 
-### Connection port
+### Порт подключения
 
-Connection is usually performed to port 5432. Port may differ for different Postgres instances.
-Please ask your Postgres administrator to provide required information.
+Подключение обычно выполняется к порту 5432. Порт может отличаться для разных экземпляров Postgres.
+Пожалуйста, обратитесь к администратору Postgres для получения необходимой информации.
 
-### Connection host
+### Хост подключения
 
-It is possible to connect to Postgres by using either DNS name of host or it's IP address.
+Подключение к Postgres возможно как с использованием DNS-имени хоста, так и его IP-адреса.
 
-If you're using Postgres cluster, it is currently possible to connect only to **one specific node**.
-Connecting to multiple nodes to perform load balancing, as well as automatic failover to new master/replica are not supported.
+Если вы используете кластер Postgres, в настоящее время возможно подключение только к **одному конкретному узлу**.
+Подключение к нескольким узлам для балансировки нагрузки, а также автоматическое переключение на новый мастер/реплику не поддерживаются.
 
-### Required grants
+### Необходимые разрешения
 
-Ask your Postgres cluster administrator to set following grants for a user,
-used for creating a connection:
+Попросите администратора кластера Postgres установить следующие разрешения для пользователя, используемого для создания подключения:
 
-=== "Read + Write"
+=== "Чтение + Запись"
 
     ```sql
 
-        -- allow creating tables in specific schema
+        -- разрешить создание таблиц в определенной схеме
         GRANT USAGE, CREATE ON SCHEMA myschema TO username;
 
-        -- allow read & write access to specific table
+        -- разрешить доступ на чтение и запись к определенной таблице
         GRANT SELECT, INSERT ON myschema.mytable TO username;
 
-        -- only if if_exists="replace_entire_table" is used:
+        -- только если используется if_exists="replace_entire_table":
         GRANT TRUNCATE ON myschema.mytable TO username;
     ```
 
-=== "Read only"
+=== "Только чтение"
 
     ```sql
 
-        -- allow creating tables in specific schema
+        -- разрешить доступ к определенной схеме
         GRANT USAGE ON SCHEMA myschema TO username;
 
-        -- allow read access to specific table
+        -- разрешить доступ на чтение к определенной таблице
         GRANT SELECT ON myschema.mytable TO username;
     ```
 
-More details can be found in [official documentation](https://www.postgresql.org/docs/current/sql-grant.html).
+Более подробную информацию можно найти в [официальной документации](https://www.postgresql.org/docs/current/sql-grant.html).

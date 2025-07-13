@@ -1,111 +1,111 @@
-# Prerequisites { #oracle-prerequisites }
+# Предварительные требования { #oracle-prerequisites }
 
-## Version Compatibility
+## Совместимость версий
 
-- Oracle Server versions:
-    - Officially declared: 19c, 21c, 23ai
-    - Actually tested: 11.2, 23.5
-- Spark versions: 2.3.x - 3.5.x
-- Java versions: 8 - 20
+- Версии Oracle Server:
+    - Официально заявленные: 19c, 21c, 23ai
+    - Фактически протестированные: 11.2, 23.5
+- Версии Spark: 2.3.x - 3.5.x
+- Версии Java: 8 - 20
 
-See [official documentation](https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html).
+См. [официальную документацию](https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html).
 
-## Installing PySpark
+## Установка PySpark
 
-To use Oracle connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+Для использования коннектора Oracle необходимо установить PySpark (или добавить его в `sys.path`) **ДО** создания экземпляра коннектора.
 
-See [installation instruction][install-spark] for more details.
+См. [инструкцию по установке][install-spark] для получения более подробной информации.
 
-## Connecting to Oracle
+## Подключение к Oracle
 
-### Connection port
+### Порт подключения
 
-Connection is usually performed to port 1521. Port may differ for different Oracle instances.
-Please ask your Oracle administrator to provide required information.
+Подключение обычно выполняется к порту 1521. Порт может отличаться для разных экземпляров Oracle.
+Пожалуйста, обратитесь к вашему администратору Oracle для получения необходимой информации.
 
-### Connection host
+### Хост подключения
 
-It is possible to connect to Oracle by using either DNS name of host or it's IP address.
+Подключение к Oracle возможно как по DNS-имени хоста, так и по его IP-адресу.
 
-If you're using Oracle cluster, it is currently possible to connect only to **one specific node**.
-Connecting to multiple nodes to perform load balancing, as well as automatic failover to new master/replica are not supported.
+Если вы используете кластер Oracle, в настоящее время возможно подключение только к **одному конкретному узлу**.
+Подключение к нескольким узлам для балансировки нагрузки, а также автоматическое переключение на новый мастер/реплику не поддерживаются.
 
-### Connect as proxy user
+### Подключение через прокси-пользователя
 
-It is possible to connect to database as another user without knowing this user password.
+Возможно подключение к базе данных от имени другого пользователя без знания его пароля.
 
-This can be enabled by granting user a special `CONNECT THROUGH` permission:
+Это можно включить, предоставив пользователю специальное разрешение `CONNECT THROUGH`:
 
-```sql
-ALTER USER schema_owner GRANT CONNECT THROUGH proxy_user;
-```
+    ```sql
+        ALTER USER schema_owner GRANT CONNECT THROUGH proxy_user;
+    ```
 
-Then you can connect to Oracle using credentials of `proxy_user` but specify that you need permissions of `schema_owner`:
+Затем вы можете подключиться к Oracle, используя учетные данные `proxy_user`, но указать, что вам нужны разрешения `schema_owner`:
 
-```python
-oracle = Oracle(
-    ...,
-    user="proxy_user[schema_owner]",
-    password="proxy_user password",
-)
-```
+    ```python
+        oracle = Oracle(
+            ...,
+            user="proxy_user[schema_owner]",
+            password="пароль proxy_user",
+        )
+    ```
 
-See [official documentation](https://oracle-base.com/articles/misc/proxy-users-and-connect-through).
+См. [официальную документацию](https://oracle-base.com/articles/misc/proxy-users-and-connect-through).
 
-### Required grants
+### Необходимые разрешения
 
-Ask your Oracle cluster administrator to set following grants for a user,
-used for creating a connection:
+Попросите администратора вашего кластера Oracle установить следующие разрешения для пользователя,
+используемого для создания соединения:
 
-=== "Read + Write (schema is owned by user)"
+=== "Чтение + Запись (схема принадлежит пользователю)"
 
     ```sql 
 
-        -- allow user to log in
+        -- разрешить пользователю входить в систему
         GRANT CREATE SESSION TO username;
 
-        -- allow creating tables in user schema
+        -- разрешить создание таблиц в схеме пользователя
         GRANT CREATE TABLE TO username;
 
-        -- allow read & write access to specific table
+        -- разрешить доступ на чтение и запись к конкретной таблице
         GRANT SELECT, INSERT ON username.mytable TO username;
     ```
 
-=== "Read + Write (schema is not owned by user)"
+=== "Чтение + Запись (схема не принадлежит пользователю)"
 
     ```sql 
 
-        -- allow user to log in
+        -- разрешить пользователю входить в систему
         GRANT CREATE SESSION TO username;
 
-        -- allow creating tables in any schema,
-        -- as Oracle does not support specifying exact schema name
+        -- разрешить создание таблиц в любой схеме,
+        -- так как Oracle не поддерживает указание точного имени схемы
         GRANT CREATE ANY TABLE TO username;
 
-        -- allow read & write access to specific table
+        -- разрешить доступ на чтение и запись к конкретной таблице
         GRANT SELECT, INSERT ON someschema.mytable TO username;
 
-        -- only if if_exists="replace_entire_table" is used:
-        -- allow dropping/truncating tables in any schema,
-        -- as Oracle does not support specifying exact schema name
+        -- только если используется if_exists="replace_entire_table":
+        -- разрешить удаление/очистку таблиц в любой схеме,
+        -- так как Oracle не поддерживает указание точного имени схемы
         GRANT DROP ANY TABLE TO username;
     ```
 
-=== "Read only"
+=== "Только чтение"
 
     ```sql 
 
-        -- allow user to log in
+        -- разрешить пользователю входить в систему
         GRANT CREATE SESSION TO username;
 
-        -- allow read access to specific table
+        -- разрешить доступ на чтение к конкретной таблице
         GRANT SELECT ON someschema.mytable TO username;
     ```
 
-More details can be found in official documentation:
-  - [GRANT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/GRANT.html)
-  - [SELECT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html)
-  - [CREATE TABLE](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html)
-  - [INSERT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/INSERT.html)
-  - [TRUNCATE TABLE](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/TRUNCATE-TABLE.html)
+Более подробную информацию можно найти в официальной документации:
+
+- [GRANT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/GRANT.html)
+- [SELECT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html)
+- [CREATE TABLE](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/SELECT.html)
+- [INSERT](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/INSERT.html)
+- [TRUNCATE TABLE](https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/TRUNCATE-TABLE.html)

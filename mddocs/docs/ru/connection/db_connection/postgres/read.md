@@ -1,92 +1,79 @@
-# Reading from Postgres using `DBReader` { #postgres-read }
+# Чтение из Postgres с использованием `DBReader` { #postgres-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom queries, like `JOIN`.
+[DBReader][db-reader] поддерживает [стратегии][strategy] для инкрементального чтения данных, но не поддерживает пользовательские запросы, такие как `JOIN`.
 
 !!! warning
 
-    Please take into account [Postgres types][postgres-types]
+    Пожалуйста, учитывайте [типы данных Postgres][postgres-types]
 
-## Supported DBReader features
+## Поддерживаемые функции DBReader
 
 - ✅︎ `columns`
 - ✅︎ `where`
-- ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
-- ❌ `hint` (is not supported by Postgres)
+- ✅︎ `hwm`, поддерживаемые стратегии:
+  - ✅︎ [Snapshot][snapshot-strategy]
+  - ✅︎ [Incremental][incremental-strategy]
+  - ✅︎ [Snapshot batch][snapshot-batch-strategy]
+  - ✅︎ [Incremental batch][incremental-batch-strategy]
+- ❌ `hint` (не поддерживается Postgres)
 - ❌ `df_schema`
-- ✅︎ `options` (see [Postgres.ReadOptions][onetl.connection.db_connection.postgres.options.PostgresReadOptions])
+- ✅︎ `options` (см. [Postgres.ReadOptions][onetl.connection.db_connection.postgres.options.PostgresReadOptions])
 
-## Examples
+## Примеры
 
-Snapshot strategy:
+Стратегия Snapshot:
 
-```python
-from onetl.connection import Postgres
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import Postgres
+        from onetl.db import DBReader
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-reader = DBReader(
-    connection=postgres,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    options=Postgres.ReadOptions(partitionColumn="id", numPartitions=10),
-)
-df = reader.run()
-```
+        reader = DBReader(
+            connection=postgres,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            options=Postgres.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
+        df = reader.run()
+    ```
 
-Incremental strategy:
+Стратегия Incremental:
 
-```python
-from onetl.connection import Postgres
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import Postgres
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-postgres = Postgres(...)
+        postgres = Postgres(...)
 
-reader = DBReader(
-    connection=postgres,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    hwm=DBReader.AutoDetectHWM(name="postgres_hwm", expression="updated_dt"),
-    options=Postgres.ReadOptions(partitionColumn="id", numPartitions=10),
-)
+        reader = DBReader(
+            connection=postgres,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            hwm=DBReader.AutoDetectHWM(name="postgres_hwm", expression="updated_dt"),
+            options=Postgres.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только требуемые столбцы
 
-Instead of passing `"*"` in `DBReader(columns=[...])` prefer passing exact column names. This reduces the amount of data passed from Postgres to Spark.
+Вместо передачи `"*"` в `DBReader(columns=[...])` предпочтительнее передавать точные имена столбцов. Это уменьшает объем данных, передаваемых из Postgres в Spark.
 
-### Pay attention to `where` value
+### Обратите внимание на значение `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `DBReader(where="column = 'value'")` clause.
-This both reduces the amount of data send from Postgres to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')` передавайте правильное условие `DBReader(where="column = 'value'")`.
+Это не только уменьшает объем данных, отправляемых из Postgres в Spark, но и может улучшить производительность запроса.
+Особенно если существуют индексы или секции для столбцов, используемых в условии `where`.
 
-## Options { #postgres-read-options }
-
-<!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.postgres.options
-```
-
-```{eval-rst}
-.. autopydantic_model:: PostgresReadOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
- -->
+## Опции { #postgres-read-options }
 
 ::: onetl.connection.db_connection.postgres.options.PostgresReadOptions
     options:

@@ -1,4 +1,4 @@
-# Oracle connection { #oracle-connection }
+# Подключение к Oracle { #oracle-connection }
 
 <!-- 
 ```{eval-rst}

@@ -6,15 +6,13 @@
 
     Do **NOT** use them to read large amounts of data. Use [DBReader][teradata-read] or [Teradata.sql][teradata-sql] instead.
 
-
 ## How to
 
 There are 2 ways to execute some statement in Teradata
 
 ### Use `Teradata.fetch`
 
-Use this method to execute some `SELECT` query which returns **small number or rows**, like reading
-Teradata config, or reading data from some reference table. Method returns Spark DataFrame.
+Use this method to execute some `SELECT` query which returns **small number or rows**, like reading Teradata config, or reading data from some reference table. Method returns Spark DataFrame.
 
 Method accepts [Teradata.FetchOptions][onetl.connection.db_connection.teradata.options.TeradataFetchOptions].
 
@@ -31,18 +29,18 @@ This method supports **any** query syntax supported by Teradata, like:
 
 #### Examples
 
-```python
-from onetl.connection import Teradata
+    ```python
+        from onetl.connection import Teradata
 
-teradata = Teradata(...)
+        teradata = Teradata(...)
 
-df = teradata.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=Teradata.FetchOptions(queryTimeout=10),
-)
-teradata.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+        df = teradata.fetch(
+            "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+            options=Teradata.FetchOptions(queryTimeout=10),
+        )
+        teradata.close()
+        value = df.collect()[0][0]  # get value from first row and first column
+    ```
 
 ### Use `Teradata.execute`
 
@@ -68,44 +66,44 @@ This method supports **any** query syntax supported by Teradata, like:
 
 #### Examples
 
-```python
-from onetl.connection import Teradata
+    ```python
+        from onetl.connection import Teradata
 
-teradata = Teradata(...)
+        teradata = Teradata(...)
 
-teradata.execute("DROP TABLE database.table")
-teradata.execute(
-    """
-    CREATE MULTISET TABLE database.table AS (
-        id BIGINT,
-        key VARCHAR,
-        value REAL
-    )
-    NO PRIMARY INDEX
-    """,
-    options=Teradata.ExecuteOptions(queryTimeout=10),
-)
-```
+        teradata.execute("DROP TABLE database.table")
+        teradata.execute(
+            """
+            CREATE MULTISET TABLE database.table AS (
+                id BIGINT,
+                key VARCHAR,
+                value REAL
+            )
+            NO PRIMARY INDEX
+            """,
+            options=Teradata.ExecuteOptions(queryTimeout=10),
+        )
+    ```
 
 ## Options { #teradata-fetch-options }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.teradata.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.teradata.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: TeradataFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
+    ```{eval-rst}
+    .. autopydantic_model:: TeradataFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
 
-```
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: TeradataExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
+    ```{eval-rst}
+    .. autopydantic_model:: TeradataExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+    ```
  -->
 
 ::: onetl.connection.db_connection.teradata.options.TeradataFetchOptions
@@ -113,7 +111,6 @@ teradata.execute(
         inherited_members: true
         heading_level: 3
         show_root_heading: true
-
 
 ::: onetl.connection.db_connection.teradata.options.TeradataExecuteOptions
     options:
