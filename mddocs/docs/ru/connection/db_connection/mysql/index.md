@@ -1,17 +1,17 @@
 # MySQL
 
-# Connection
+## Подключение
 
-* [Prerequisites][mysql-prerequisites]
-* [MySQL connection][mysql-connection]
+* [Предварительные условия][mysql-prerequisites]
+* [Подключение к MySQL][mysql-connection]
 
-# Operations
+## Операции
 
-* [Reading from MySQL using `DBReader`][mysql-read]
-* [Reading from MySQL using `MySQL.sql`][mysql-sql]
-* [Writing to MySQL using `DBWriter`][mysql-write]
-* [Executing statements in MySQL][mysql-execute]
+* [Чтение из MySQL с помощью `DBReader`][mysql-read]
+* [Чтение из MySQL с помощью `MySQL.sql`][mysql-sql]
+* [Запись в MySQL с помощью `DBWriter`][mysql-write]
+* [Выполнение предложений в MySQL][mysql-execute]
 
-# Troubleshooting
+## Решение проблем
 
-* [MySQL <-> Spark type mapping][mysql-types]
+* [Переключение типов MySQL <-> Spark][mysql-types]

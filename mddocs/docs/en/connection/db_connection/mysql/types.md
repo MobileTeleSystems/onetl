@@ -86,7 +86,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
             target="myschema.target_tbl",
             options=MySQL.WriteOptions(if_exists="append"),
         )
-        writer.run(df)
+        writer.run(df)  
     ```
 
 ### References
@@ -149,11 +149,9 @@ See [official documentation](https://dev.mysql.com/doc/refman/en/data-types.html
     * [Spark DateType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
     * [Spark TimestampType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
 
-[^3]: MySQL dialect generates DDL with MySQL type `timestamp` which is alias for `timestamp(0)` with precision up to seconds (`23:59:59`).
-    Inserting data with microseconds precision (`23:59:59.999999`) will lead to **throwing away microseconds**.
+[^3]: MySQL dialect generates DDL with MySQL type `timestamp` which is alias for `timestamp(0)` with precision up to seconds (`23:59:59`). Inserting data with microseconds precision (`23:59:59.999999`) will lead to **throwing away microseconds**.
 
-[^4]: `time` type is the same as `timestamp` with date `1970-01-01`. So instead of reading data from MySQL like `23:59:59`
-    it is actually read `1970-01-01 23:59:59`, and vice versa.
+[^4]: `time` type is the same as `timestamp` with date `1970-01-01`. So instead of reading data from MySQL like `23:59:59` it is actually read `1970-01-01 23:59:59`, and vice versa.
 
 ### String types
 
@@ -183,87 +181,87 @@ For example, you can use `CAST(column AS text)` to convert data to string repres
 
 It is also possible to use [JSON_OBJECT](https://dev.mysql.com/doc/refman/en/json.html) MySQL function and parse JSON columns in MySQL with the [JSON.parse_column][onetl.file.format.json.JSON.parse_column] method.
 
-```python
-from pyspark.sql.types import IntegerType, StructType, StructField
+    ```python
+        from pyspark.sql.types import IntegerType, StructType, StructField
 
-from onetl.connection import MySQL
-from onetl.db import DBReader
-from onetl.file.format import JSON
+        from onetl.connection import MySQL
+        from onetl.db import DBReader
+        from onetl.file.format import JSON
 
-mysql = MySQL(...)
+        mysql = MySQL(...)
 
-DBReader(
-    connection=mysql,
-    columns=[
-        "id",
-        "supported_column",
-        "CAST(unsupported_column AS text) unsupported_column_str",
-        # or
-        "JSON_OBJECT('key', value_column) json_column",
-    ],
-)
-df = reader.run()
+        DBReader(
+            connection=mysql,
+            columns=[
+                "id",
+                "supported_column",
+                "CAST(unsupported_column AS text) unsupported_column_str",
+                # or
+                "JSON_OBJECT('key', value_column) json_column",
+            ],
+        )
+        df = reader.run()
 
-json_scheme = StructType([StructField("key", IntegerType())])
+        json_scheme = StructType([StructField("key", IntegerType())])
 
-df = df.select(
-    df.id,
-    df.supported_column,
-    # explicit cast
-    df.unsupported_column_str.cast("integer").alias("parsed_integer"),
-    JSON().parse_column("json_column", json_scheme).alias("struct_column"),
-)
-```
+        df = df.select(
+            df.id,
+            df.supported_column,
+            # explicit cast
+            df.unsupported_column_str.cast("integer").alias("parsed_integer"),
+            JSON().parse_column("json_column", json_scheme).alias("struct_column"),
+        )  
+    ```
 
 ### `DBWriter`
 
 To write JSON data to a `json` or `text` column in a MySQL table, use the [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column] method.
 
-```python
-from onetl.connection import MySQL
-from onetl.db import DBWriter
-from onetl.file.format import JSON
+    ```python
+        from onetl.connection import MySQL
+        from onetl.db import DBWriter
+        from onetl.file.format import JSON
 
-mysql.execute(
-    """
-    CREATE TABLE schema.target_tbl (
-        id bigint,
-        array_column_json json -- any string type, actually
-    )
-    ENGINE = InnoDB
-    """,
-)
+        mysql.execute(
+            """
+            CREATE TABLE schema.target_tbl (
+                id bigint,
+                array_column_json json -- any string type, actually
+            )
+            ENGINE = InnoDB
+            """,
+        )
 
-df = df.select(
-    df.id,
-    JSON().serialize_column(df.array_column).alias("array_column_json"),
-)
+        df = df.select(
+            df.id,
+            JSON().serialize_column(df.array_column).alias("array_column_json"),
+        )
 
-writer.run(df)
-```
+        writer.run(df)  
+    ```
 
 Then you can parse this column on MySQL side - for example, by creating a view:
 
-```sql
-SELECT
-    id,
-    array_column_json->"$[0]" AS array_item
-FROM target_tbl
-```
+    ```sql
+        SELECT
+            id,
+            array_column_json->"$[0]" AS array_item
+        FROM target_tbl
+    ```
 
 Or by using [GENERATED column](https://dev.mysql.com/doc/refman/en/create-table-generated-columns.html):
 
-```sql
-CREATE TABLE schema.target_table (
-    id bigint,
-    supported_column timestamp,
-    array_column_json json, -- any string type, actually
-    -- virtual column
-    array_item_0 GENERATED ALWAYS AS (array_column_json->"$[0]")) VIRTUAL
-    -- or stired column
-    -- array_item_0 GENERATED ALWAYS AS (array_column_json->"$[0]")) STORED
-)
-```
+    ```sql
+        CREATE TABLE schema.target_table (
+            id bigint,
+            supported_column timestamp,
+            array_column_json json, -- any string type, actually
+            -- virtual column
+            array_item_0 GENERATED ALWAYS AS (array_column_json->"$[0]")) VIRTUAL
+            -- or stired column
+            -- array_item_0 GENERATED ALWAYS AS (array_column_json->"$[0]")) STORED
+        )
+    ```
 
 `VIRTUAL` column value is calculated on every table read.
 `STORED` column value is calculated during insert, but this require additional space.

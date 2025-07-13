@@ -1,55 +1,52 @@
-# MySQL <-> Spark type mapping { #mysql-types }
+# Сопоставление типов MySQL <-> Spark { #mysql-types }
 
 !!! note
 
-    The results below are valid for Spark 3.5.5, and may differ on other Spark versions.
+    Результаты ниже действительны для Spark 3.5.5 и могут отличаться в других версиях Spark.
 
-## Type detection & casting
+## Определение типов и приведение
 
-Spark's DataFrames always have a `schema` which is a list of columns with corresponding Spark types. All operations on a column are performed using column type.
+DataFrame в Spark всегда имеют `schema`, которая представляет собой список столбцов с соответствующими типами Spark. Все операции со столбцом выполняются с использованием типа столбца.
 
-### Reading from MySQL
+### Чтение из MySQL
 
-This is how MySQL connector performs this:
+Вот как коннектор MySQL выполняет это:
 
-- For each column in query result (`SELECT column1, column2, ... FROM table ...`) get column name and MySQL type.
-- Find corresponding `MySQL type (read)` → `Spark type` combination (see below) for each DataFrame column. If no combination is found, raise exception.
-- Create DataFrame from query with specific column names and Spark types.
+- Для каждого столбца в результате запроса (`SELECT column1, column2, ... FROM table ...`) получает имя столбца и тип MySQL.
+- Находит соответствующую комбинацию `MySQL тип (чтение)` → `Spark тип` (см. ниже) для каждого столбца DataFrame. Если комбинация не найдена, вызывает исключение.
+- Создает DataFrame из запроса с определенными именами столбцов и типами Spark.
 
-### Writing to some existing MySQL table
+### Запись в существующую таблицу MySQL
 
-This is how MySQL connector performs this:
+Вот как коннектор MySQL выполняет это:
 
-- Get names of columns in DataFrame. [^1]
-- Perform `SELECT * FROM table LIMIT 0` query.
-- Take only columns present in DataFrame (by name, case insensitive). For each found column get MySQL type.
-- Find corresponding `Spark type` → `MySQL type (write)` combination (see below) for each DataFrame column. If no combination is found, raise exception.
-- If `MySQL type (write)` match `MySQL type (read)`, no additional casts will be performed, DataFrame column will be written to MySQL as is.
-- If `MySQL type (write)` does not match `MySQL type (read)`, DataFrame column will be casted to target column type **on MySQL side**. For example, you can write column with text data to `int` column, if column contains valid integer values within supported value range and precision.
+- Получает имена столбцов в DataFrame. [^1]
+- Выполняет запрос `SELECT * FROM table LIMIT 0`.
+- Выбирает только столбцы, присутствующие в DataFrame (по имени, без учета регистра). Для каждого найденного столбца получает тип MySQL.
+- Находит соответствующую комбинацию `Spark тип` → `MySQL тип (запись)` (см. ниже) для каждого столбца DataFrame. Если комбинация не найдена, вызывает исключение.
+- Если `MySQL тип (запись)` соответствует `MySQL тип (чтение)`, дополнительные приведения не выполняются, столбец DataFrame будет записан в MySQL как есть.
+- Если `MySQL тип (запись)` не соответствует `MySQL тип (чтение)`, столбец DataFrame будет приведен к целевому типу столбца **на стороне MySQL**. Например, вы можете записать столбец с текстовыми данными в столбец `int`, если столбец содержит допустимые целочисленные значения в пределах поддерживаемого диапазона значений и точности.
 
-[^1]: This allows to write data to tables with `DEFAULT` and `GENERATED` columns - if DataFrame has no such column,
-    it will be populated by MySQL.
+[^1]: Это позволяет записывать данные в таблицы со столбцами `DEFAULT` и `GENERATED` - если в DataFrame нет такого столбца, он будет заполнен MySQL.
 
-### Create new table using Spark
+### Создание новой таблицы с помощью Spark
 
 !!! warning
 
-    ABSOLUTELY NOT RECOMMENDED!
+    АБСОЛЮТНО НЕ РЕКОМЕНДУЕТСЯ!
 
-This is how MySQL connector performs this:
+Вот как коннектор MySQL выполняет это:
 
-- Find corresponding `Spark type` → `MySQL type (create)` combination (see below) for each DataFrame column. If no combination is found, raise exception.
-- Generate DDL for creating table in MySQL, like `CREATE TABLE (col1 ...)`, and run it.
-- Write DataFrame to created table as is.
+- Находит соответствующую комбинацию `Spark тип` → `MySQL тип (создание)` (см. ниже) для каждого столбца DataFrame. Если комбинация не найдена, вызывает исключение.
+- Генерирует DDL для создания таблицы в MySQL, например `CREATE TABLE (col1 ...)`, и запускает его.
+- Записывает DataFrame в созданную таблицу как есть.
 
-But some cases this may lead to using wrong column type. For example, Spark creates column of type `timestamp`
-which corresponds to MySQL type `timestamp(0)` (precision up to seconds)
-instead of more precise `timestamp(6)` (precision up to nanoseconds).
-This may lead to incidental precision loss, or sometimes data cannot be written to created table at all.
+Но в некоторых случаях это может привести к использованию неправильного типа столбца. Например, Spark создает столбец типа `timestamp`, который соответствует типу MySQL `timestamp(0)` (точность до секунд) вместо более точного `timestamp(6)` (точность до наносекунд).
+Это может привести к случайной потере точности, или иногда данные вообще не могут быть записаны в созданную таблицу.
 
-So instead of relying on Spark to create tables:
+Поэтому вместо того, чтобы полагаться на Spark для создания таблиц:
 
-??? note "See example"
+??? note "Смотрите пример"
 
     ```python
 
@@ -64,9 +61,9 @@ So instead of relying on Spark to create tables:
         writer.run(df)
     ```
 
-Always prefer creating tables with specific types **BEFORE WRITING DATA**:
+Всегда предпочтительнее создавать таблицы с конкретными типами **ДО ЗАПИСИ ДАННЫХ**:
 
-??? note "See example"
+??? note "Смотрите пример"
 
     ```python
 
@@ -75,7 +72,7 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
             CREATE TABLE schema.table (
                 id bigint,
                 key text,
-                value timestamp(6) -- specific type and precision
+                value timestamp(6) -- конкретный тип и точность
             )
             ENGINE = InnoDB
             """,
@@ -86,184 +83,182 @@ Always prefer creating tables with specific types **BEFORE WRITING DATA**:
             target="myschema.target_tbl",
             options=MySQL.WriteOptions(if_exists="append"),
         )
-        writer.run(df)
+        writer.run(df)  
     ```
 
-### References
+### Ссылки
 
-Here you can find source code with type conversions:
+Здесь вы можете найти исходный код с преобразованиями типов:
 
 - [MySQL -> JDBC](https://github.com/mysql/mysql-connector-j/blob/8.0.33/src/main/core-api/java/com/mysql/cj/MysqlType.java#L44-L623)
 - [JDBC -> Spark](https://github.com/apache/spark/blob/v3.5.5/sql/core/src/main/scala/org/apache/spark/sql/jdbc/MySQLDialect.scala#L104-L132)
 - [Spark -> JDBC](https://github.com/apache/spark/blob/v3.5.5/sql/core/src/main/scala/org/apache/spark/sql/jdbc/MySQLDialect.scala#L204-L211)
 - [JDBC -> MySQL](https://github.com/mysql/mysql-connector-j/blob/8.0.33/src/main/core-api/java/com/mysql/cj/MysqlType.java#L625-L867)
 
-## Supported types
+## Поддерживаемые типы
 
-See [official documentation](https://dev.mysql.com/doc/refman/en/data-types.html)
+См. [официальную документацию](https://dev.mysql.com/doc/refman/en/data-types.html)
 
-### Numeric types
+### Числовые типы
 
-| MySQL type (read)             | Spark type                        | MySQL type (write)            | MySQL type (create)           |
+| MySQL тип (чтение)            | Spark тип                        | MySQL тип (запись)            | MySQL тип (создание)           |
 |-------------------------------|-----------------------------------|-------------------------------|-------------------------------|
 | `decimal`                   | `DecimalType(P=10, S=0)`        | `decimal(P=10, S=0)`        | `decimal(P=10, S=0)`        |
 | `decimal(P=0..38)`          | `DecimalType(P=0..38, S=0)`     | `decimal(P=0..38, S=0)`     | `decimal(P=0..38, S=0)`     |
 | `decimal(P=0..38, S=0..30)` | `DecimalType(P=0..38, S=0..30)` | `decimal(P=0..38, S=0..30)` | `decimal(P=0..38, S=0..30)` |
-| `decimal(P=39..65, S=...)`  | unsupported [^2]                  |                               |                               |
+| `decimal(P=39..65, S=...)`  | не поддерживается [^2]                  |                               |                               |
 | `float`<br/>`double`                     | `DoubleType()`                  | `double`                    | `double`                    |
 | `tinyint`<br/>`smallint`<br/>`mediumint`<br/>`int`                   | <br/><br/>`IntegerType()`                 | <br/><br/>`int`                       | <br/><br/>`int`                       |
 | `bigint`                    | `LongType()`                    | `bigint`                    | `bigint`                    |
 
-[^2]: MySQL support decimal types with precision `P` up to 65.
+[^2]: MySQL поддерживает десятичные типы с точностью `P` до 65.
 
-    But Spark's `DecimalType(P, S)` supports maximum `P=38`. It is impossible to read, write or operate with values of larger precision,
-    this leads to an exception.
+    Но `DecimalType(P, S)` в Spark поддерживает максимум `P=38`. Невозможно читать, записывать или работать со значениями большей точности,
+    это приводит к исключению.
 
-### Temporal types
+### Временные типы
 
-| MySQL type (read)                 | Spark type                           | MySQL type (write)                | MySQL type (create)           |
+| MySQL тип (чтение)                 | Spark тип                           | MySQL тип (запись)                | MySQL тип (создание)           |
 |-----------------------------------|--------------------------------------|-----------------------------------|-------------------------------|
 | `year`<br/>`date`                          | `DateType()`                       | `date`                          | `date`                      |
-| `datetime`, seconds<br/>`timestamp`, seconds<br/>`datetime(0)`, seconds<br/>`timestamp(0)`, seconds             | <br/><br/>`TimestampType()`, microseconds    | <br/><br/>`timestamp(6)`, microseconds    | <br/><br/>`timestamp(0)`, seconds     |
-| `datetime(3)`, milliseconds<br/>`timestamp(3)`, milliseconds<br/>`datetime(6)`, microseconds<br/>`timestamp(6)`, microseconds     | <br/><br/>`TimestampType()`, microseconds    | <br/><br/>`timestamp(6)`, microseconds    | <br/><br/>`timestamp(0)`, seconds, **precision loss** [^3],   |
-| `time`, seconds<br/>`time(0)`, seconds                 | `TimestampType()`, microseconds, with time format quirks [^4]  | `timestamp(6)`, microseconds    | `timestamp(0)`, seconds     |
-| `time(3)`, milliseconds<br/>`time(6)`, microseconds         | `TimestampType()`, microseconds, with time format quirks [^4]    | `timestamp(6)`, microseconds    | `timestamp(0)`, seconds, **precision loss** [^3],   |
+| `datetime`, секунды<br/>`timestamp`, секунды<br/>`datetime(0)`, секунды<br/>`timestamp(0)`, секунды             | <br/><br/>`TimestampType()`, микросекунды    | <br/><br/>`timestamp(6)`, микросекунды    | <br/><br/>`timestamp(0)`, секунды     |
+| `datetime(3)`, миллисекунды<br/>`timestamp(3)`, миллисекунды<br/>`datetime(6)`, микросекунды<br/>`timestamp(6)`, микросекунды     | <br/><br/>`TimestampType()`, микросекунды    | <br/><br/>`timestamp(6)`, микросекунды    | <br/><br/>`timestamp(0)`, секунды, **потеря точности** [^3],   |
+| `time`, секунды<br/>`time(0)`, секунды                 | `TimestampType()`, микросекунды, с особенностями формата времени [^4]  | `timestamp(6)`, микросекунды    | `timestamp(0)`, секунды     |
+| `time(3)`, миллисекунды<br/>`time(6)`, микросекунды         | `TimestampType()`, микросекунды, с особенностями формата времени [^4]    | `timestamp(6)`, микросекунды    | `timestamp(0)`, секунды, **потеря точности** [^3],   |
 
 !!! warning
 
-    Note that types in MySQL and Spark have different value ranges:
+    Обратите внимание, что типы в MySQL и Spark имеют разные диапазоны значений:
 
     
-    | MySQL type    | Min value                      | Max value                      | Spark type          | Min value                      | Max value                      |
+    | MySQL тип    | Минимальное значение                      | Максимальное значение                      | Spark тип          | Минимальное значение                      | Максимальное значение                      |
     |---------------|--------------------------------|--------------------------------|---------------------|--------------------------------|--------------------------------|
     | `year`<br/>`date`      | `1901`<br/>`1000-01-01`                       | `2155`<br/>`9999-12-31`                       | `DateType()`      | `0001-01-01`                 | `9999-12-31`                 |
     | `datetime`<br/>`timestamp`<br/>`time`  | `1000-01-01 00:00:00.000000`<br/>`1970-01-01 00:00:01.000000`<br/>`-838:59:59.000000` | `9999-12-31 23:59:59.499999`<br/>`9999-12-31 23:59:59.499999`<br/>`838:59:59.000000` | `TimestampType()` | `0001-01-01 00:00:00.000000` | `9999-12-31 23:59:59.999999` |
 
-    So Spark can read all the values from MySQL, but not all of values in Spark DataFrame can be written to MySQL.
+    Таким образом, Spark может прочитать все значения из MySQL, но не все значения в DataFrame Spark могут быть записаны в MySQL.
 
-    References:
+    Ссылки:
 
-    * [MySQL year documentation](https://dev.mysql.com/doc/refman/en/year.html)
-    * [MySQL date, datetime & timestamp documentation](https://dev.mysql.com/doc/refman/en/datetime.html)
-    * [MySQL time documentation](https://dev.mysql.com/doc/refman/en/time.html)
-    * [Spark DateType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
-    * [Spark TimestampType documentation](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
+    * [Документация MySQL year](https://dev.mysql.com/doc/refman/en/year.html)
+    * [Документация MySQL date, datetime и timestamp](https://dev.mysql.com/doc/refman/en/datetime.html)
+    * [Документация MySQL time](https://dev.mysql.com/doc/refman/en/time.html)
+    * [Документация Spark DateType](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/DateType.html)
+    * [Документация Spark TimestampType](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/types/TimestampType.html)
 
-[^3]: MySQL dialect generates DDL with MySQL type `timestamp` which is alias for `timestamp(0)` with precision up to seconds (`23:59:59`).
-    Inserting data with microseconds precision (`23:59:59.999999`) will lead to **throwing away microseconds**.
+[^3]: Диалект MySQL генерирует DDL с типом MySQL `timestamp`, который является псевдонимом для `timestamp(0)` с точностью до секунд (`23:59:59`). Вставка данных с точностью до микросекунд (`23:59:59.999999`) приведет к **отбрасыванию микросекунд**.
 
-[^4]: `time` type is the same as `timestamp` with date `1970-01-01`. So instead of reading data from MySQL like `23:59:59`
-    it is actually read `1970-01-01 23:59:59`, and vice versa.
+[^4]: Тип `time` такой же, как `timestamp` с датой `1970-01-01`. Поэтому вместо чтения данных из MySQL вида `23:59:59` фактически читается `1970-01-01 23:59:59`, и наоборот.
 
-### String types
+### Строковые типы
 
-| MySQL type (read)             | Spark type       | MySQL type (write) | MySQL type (create) |
+| MySQL тип (чтение)             | Spark тип       | MySQL тип (запись) | MySQL тип (создание) |
 |-------------------------------|------------------|--------------------|---------------------|
 | `char`<br/>`char(N)`<br/>`varchar(N)`<br/>`mediumtext`<br/>`text`<br/>`longtext`<br/>`json`<br/>`enum("val1", "val2", ...)`<br/>`set("val1", "val2", ...)`  | <br/><br/><br/><br/>`StringType()` | <br/><br/><br/><br/>`longtext`       | <br/><br/><br/><br/>`longtext`        |
 
-### Binary types
+### Бинарные типы
 
-| MySQL type (read) | Spark type       | MySQL type (write) | MySQL type (create) |
+| MySQL тип (чтение) | Spark тип       | MySQL тип (запись) | MySQL тип (создание) |
 |-------------------|------------------|--------------------|---------------------|
 | `binary`<br/>`binary(N)`<br/>`varbinary(N)`<br/>`mediumblob`<br/>`blob`<br/>`longblob`        | <br/><br/><br/>`BinaryType()` | <br/><br/><br/>`blob`           | <br/><br/><br/>`blob`            |
 
-### Geometry types
+### Геометрические типы
 
-| MySQL type (read)      | Spark type       | MySQL type (write) | MySQL type (create) |
+| MySQL тип (чтение)      | Spark тип       | MySQL тип (запись) | MySQL тип (создание) |
 |------------------------|------------------|--------------------|---------------------|
 | `point`<br/>`linestring`<br/>`polygon`<br/>`geometry`<br/>`multipoint`<br/>`multilinestring`<br/>`multipolygon`<br/>`geometrycollection`              | <br/><br/><br/><br/>`BinaryType()` | <br/><br/><br/><br/>`blob`           | <br/><br/><br/><br/>`blob`            |
 
-## Explicit type cast
+## Явное приведение типов
 
 ### `DBReader`
 
-It is possible to explicitly cast column type using `DBReader(columns=...)` syntax.
+Возможно явно приводить тип столбца, используя синтаксис `DBReader(columns=...)`.
 
-For example, you can use `CAST(column AS text)` to convert data to string representation on MySQL side, and so it will be read as Spark's `StringType()`.
+Например, вы можете использовать `CAST(column AS text)` для преобразования данных в строковое представление на стороне MySQL, и тогда они будут прочитаны как `StringType()` в Spark.
 
-It is also possible to use [JSON_OBJECT](https://dev.mysql.com/doc/refman/en/json.html) MySQL function and parse JSON columns in MySQL with the [JSON.parse_column][onetl.file.format.json.JSON.parse_column] method.
+Также возможно использовать функцию MySQL [JSON_OBJECT](https://dev.mysql.com/doc/refman/en/json.html) и парсить JSON-столбцы в MySQL с помощью метода [JSON.parse_column][onetl.file.format.json.JSON.parse_column].
 
-```python
-from pyspark.sql.types import IntegerType, StructType, StructField
+    ```python
+        from pyspark.sql.types import IntegerType, StructType, StructField
 
-from onetl.connection import MySQL
-from onetl.db import DBReader
-from onetl.file.format import JSON
+        from onetl.connection import MySQL
+        from onetl.db import DBReader
+        from onetl.file.format import JSON
 
-mysql = MySQL(...)
+        mysql = MySQL(...)
 
-DBReader(
-    connection=mysql,
-    columns=[
-        "id",
-        "supported_column",
-        "CAST(unsupported_column AS text) unsupported_column_str",
-        # or
-        "JSON_OBJECT('key', value_column) json_column",
-    ],
-)
-df = reader.run()
+        DBReader(
+            connection=mysql,
+            columns=[
+                "id",
+                "supported_column",
+                "CAST(unsupported_column AS text) unsupported_column_str",
+                # или
+                "JSON_OBJECT('key', value_column) json_column",
+            ],
+        )
+        df = reader.run()
 
-json_scheme = StructType([StructField("key", IntegerType())])
+        json_scheme = StructType([StructField("key", IntegerType())])
 
-df = df.select(
-    df.id,
-    df.supported_column,
-    # explicit cast
-    df.unsupported_column_str.cast("integer").alias("parsed_integer"),
-    JSON().parse_column("json_column", json_scheme).alias("struct_column"),
-)
-```
+        df = df.select(
+            df.id,
+            df.supported_column,
+            # явное приведение
+            df.unsupported_column_str.cast("integer").alias("parsed_integer"),
+            JSON().parse_column("json_column", json_scheme).alias("struct_column"),
+        )  
+    ```
 
 ### `DBWriter`
 
-To write JSON data to a `json` or `text` column in a MySQL table, use the [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column] method.
+Для записи данных JSON в столбец `json` или `text` в таблице MySQL используйте метод [JSON.serialize_column][onetl.file.format.json.JSON.serialize_column].
 
-```python
-from onetl.connection import MySQL
-from onetl.db import DBWriter
-from onetl.file.format import JSON
+    ```python
+        from onetl.connection import MySQL
+        from onetl.db import DBWriter
+        from onetl.file.format import JSON
 
-mysql.execute(
-    """
-    CREATE TABLE schema.target_tbl (
-        id bigint,
-        array_column_json json -- any string type, actually
-    )
-    ENGINE = InnoDB
-    """,
-)
+        mysql.execute(
+            """
+            CREATE TABLE schema.target_tbl (
+                id bigint,
+                array_column_json json -- на самом деле, любой строковый тип
+            )
+            ENGINE = InnoDB
+            """,
+        )
 
-df = df.select(
-    df.id,
-    JSON().serialize_column(df.array_column).alias("array_column_json"),
-)
+        df = df.select(
+            df.id,
+            JSON().serialize_column(df.array_column).alias("array_column_json"),
+        )
 
-writer.run(df)
-```
+        writer.run(df)  
+    ```
 
-Then you can parse this column on MySQL side - for example, by creating a view:
+Затем вы можете парсить этот столбец на стороне MySQL - например, создав представление:
 
-```sql
-SELECT
-    id,
-    array_column_json->"$[0]" AS array_item
-FROM target_tbl
-```
+    ```sql
+        SELECT
+            id,
+            array_column_json->"$[0]" AS array_item
+        FROM target_tbl
+    ```
 
-Or by using [GENERATED column](https://dev.mysql.com/doc/refman/en/create-table-generated-columns.html):
+Или используя [GENERATED column](https://dev.mysql.com/doc/refman/en/create-table-generated-columns.html):
 
-```sql
-CREATE TABLE schema.target_table (
-    id bigint,
-    supported_column timestamp,
-    array_column_json json, -- any string type, actually
-    -- virtual column
-    array_item_0 GENERATED ALWAYS AS (array_column_json->"$[0]")) VIRTUAL
-    -- or stired column
-    -- array_item_0 GENERATED ALWAYS AS (array_column_json->"$[0]")) STORED
-)
-```
+    ```sql
+        CREATE TABLE schema.target_table (
+            id bigint,
+            supported_column timestamp,
+            array_column_json json, -- на самом деле, любой строковый тип
+            -- виртуальный столбец
+            array_item_0 GENERATED ALWAYS AS (array_column_json->"$[0]")) VIRTUAL
+            -- или сохраняемый столбец
+            -- array_item_0 GENERATED ALWAYS AS (array_column_json->"$[0]")) STORED
+        )
+    ```
 
-`VIRTUAL` column value is calculated on every table read.
-`STORED` column value is calculated during insert, but this require additional space.
+Значение столбца `VIRTUAL` вычисляется при каждом чтении таблицы.
+Значение столбца `STORED` вычисляется при вставке, но это требует дополнительного пространства.

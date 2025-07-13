@@ -1,58 +1,56 @@
-# Writing to MySQL using `DBWriter` { #mysql-write }
+# Запись в MySQL с использованием `DBWriter` { #mysql-write }
 
-For writing data to MySQL, use [DBWriter][db-writer].
-
-!!! warning::
-
-    Please take into account [MySQL types][mysql-types]
+Для записи данных в MySQL используйте [DBWriter][db-writer].
 
 !!! warning
 
-    It is always recommended to create table explicitly using [MySQL.execute][mysql-execute]
-    instead of relying on Spark's table DDL generation.
+    Пожалуйста, учитывайте [типы данных MySQL][mysql-types]
 
-    This is because Spark's DDL generator can create columns with different precision and types than it is expected,
-    causing precision loss or other issues.
+!!! warning
 
-## Examples
+    Всегда рекомендуется создавать таблицу явно с помощью [MySQL.execute][mysql-execute] вместо того, чтобы полагаться на автоматическую генерацию DDL в Spark.
 
-```python
-from onetl.connection import MySQL
-from onetl.db import DBWriter
+    Это связано с тем, что генератор DDL в Spark может создавать колонки с другой точностью и типами данных, чем ожидается, что приводит к потере точности или другим проблемам.
 
-mysql = MySQL(...)
+## Примеры
 
-df = ...  # data is here
+    ```python
+        from onetl.connection import MySQL
+        from onetl.db import DBWriter
 
-writer = DBWriter(
-    connection=mysql,
-    target="schema.table",
-    options=MySQL.WriteOptions(
-        if_exists="append",
-        # ENGINE is required by MySQL
-        createTableOptions="ENGINE = MergeTree() ORDER BY id",
-    ),
-)
+        mysql = MySQL(...)
 
-writer.run(df)
-```
+        df = ...  # здесь данные
 
-## Options
+        writer = DBWriter(
+            connection=mysql,
+            target="schema.table",
+            options=MySQL.WriteOptions(
+                if_exists="append",
+                # ENGINE обязателен для MySQL
+                createTableOptions="ENGINE = MergeTree() ORDER BY id",
+            ),
+        )
 
-Method above accepts [MySQL.WriteOptions][onetl.connection.db_connection.mysql.options.MySQLWriteOptions]
+        writer.run(df)   
+    ```
+
+## Опции
+
+Метод выше принимает [MySQL.WriteOptions][onetl.connection.db_connection.mysql.options.MySQLWriteOptions]
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mysql.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mysql.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MySQLWriteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MySQLWriteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.mysql.options.MySQLWriteOptions

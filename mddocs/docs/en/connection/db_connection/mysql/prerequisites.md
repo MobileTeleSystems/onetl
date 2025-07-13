@@ -12,8 +12,7 @@ See [official documentation](https://dev.mysql.com/doc/connector-j/en/connector-
 
 ## Installing PySpark
 
-To use MySQL connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+To use MySQL connector you should have PySpark installed (or injected to `sys.path`) BEFORE creating the connector instance.
 
 See [installation instruction][install-spark] for more details.
 
@@ -33,8 +32,7 @@ Please ask your MySQL administrator to provide required information.
 
 ### Required grants
 
-Ask your MySQL cluster administrator to set following grants for a user,
-used for creating a connection:
+Ask your MySQL cluster administrator to set following grants for a user, used for creating a connection:
 
 === "Read + Write"
 

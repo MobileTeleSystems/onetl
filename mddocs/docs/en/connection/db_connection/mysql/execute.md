@@ -1,6 +1,6 @@
 # Executing statements in MySQL { #mysql-execute }
 
-!!! warning::
+!!! warning
 
     Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
 
@@ -12,8 +12,7 @@ There are 2 ways to execute some statement in MySQL
 
 ### Use `MySQL.fetch`
 
-Use this method to perform some `SELECT` query which returns **small number or rows**, like reading
-MySQL config, or reading data from some reference table. Method returns Spark DataFrame.
+Use this method to perform some `SELECT` query which returns **small number or rows**, like reading MySQL config, or reading data from some reference table. Method returns Spark DataFrame.
 
 Method accepts [MySQL.FetchOptions][onetl.connection.db_connection.mysql.options.MySQLFetchOptions].
 
@@ -35,18 +34,18 @@ This method supports **any** query syntax supported by MySQL, like:
 
 #### Examples
 
-```python
-from onetl.connection import MySQL
+    ```python
+        from onetl.connection import MySQL
 
-mysql = MySQL(...)
+        mysql = MySQL(...)
 
-df = mysql.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=MySQL.FetchOptions(queryTimeout=10),
-)
-mysql.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+        df = mysql.fetch(
+            "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+            options=MySQL.FetchOptions(queryTimeout=10),
+        )
+        mysql.close()
+        value = df.collect()[0][0]  # get value from first row and first column
+    ```
 
 ### Use `MySQL.execute`
 
@@ -70,44 +69,44 @@ This method supports **any** query syntax supported by MySQL, like:
 
 #### Examples
 
-```python
-from onetl.connection import MySQL
+    ```python
+        from onetl.connection import MySQL
 
-mysql = MySQL(...)
+        mysql = MySQL(...)
 
-mysql.execute("DROP TABLE schema.table")
-mysql.execute(
-    """
-    CREATE TABLE schema.table (
-        id bigint,
-        key text,
-        value float
-    )
-    ENGINE = InnoDB
-    """,
-    options=MySQL.ExecuteOptions(queryTimeout=10),
-)
-```
+        mysql.execute("DROP TABLE schema.table")
+        mysql.execute(
+            """
+            CREATE TABLE schema.table (
+                id bigint,
+                key text,
+                value float
+            )
+            ENGINE = InnoDB
+            """,
+            options=MySQL.ExecuteOptions(queryTimeout=10),
+        )
+    ```
 
 ## Options
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mysql.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mysql.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MySQLFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
+    ```{eval-rst}
+    .. autopydantic_model:: MySQLFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
 
-```
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MySQLExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MySQLExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+    ```
  -->
 
 ::: onetl.connection.db_connection.mysql.options.MySQLFetchOptions

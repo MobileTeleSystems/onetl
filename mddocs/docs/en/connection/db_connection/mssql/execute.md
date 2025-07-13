@@ -12,8 +12,7 @@ There are 2 ways to execute some statement in MSSQL
 
 ### Use `MSSQL.fetch`
 
-Use this method to perform some `SELECT` query which returns **small number or rows**, like reading
-MSSQL config, or reading data from some reference table. Method returns Spark DataFrame.
+Use this method to perform some `SELECT` query which returns **small number or rows**, like reading MSSQL config, or reading data from some reference table. Method returns Spark DataFrame.
 
 Method accepts [MSSQL.FetchOptions][onetl.connection.db_connection.mssql.options.MSSQLFetchOptions].
 

@@ -1,7 +1,6 @@
 # Reading from MySQL using `DBReader` { #mysql-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom queries, like `JOIN`.
+[DBReader][db-reader] supports [strategy][strategy] for incremental data reading, but does not support custom queries, like `JOIN`.
 
 !!! warning
 
@@ -24,45 +23,45 @@ but does not support custom queries, like `JOIN`.
 
 Snapshot strategy:
 
-```python
-from onetl.connection import MySQL
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import MySQL
+        from onetl.db import DBReader
 
-mysql = MySQL(...)
+        mysql = MySQL(...)
 
-reader = DBReader(
-    connection=mysql,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    hint="SKIP_SCAN(schema.table key_index)",
-    options=MySQL.ReadOptions(partitionColumn="id", numPartitions=10),
-)
-df = reader.run()
-```
+        reader = DBReader(
+            connection=mysql,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            hint="SKIP_SCAN(schema.table key_index)",
+            options=MySQL.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
+        df = reader.run()   
+    ```
 
 Incremental strategy:
 
-```python
-from onetl.connection import MySQL
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import MySQL
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-mysql = MySQL(...)
+        mysql = MySQL(...)
 
-reader = DBReader(
-    connection=mysql,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    hint="SKIP_SCAN(schema.table key_index)",
-    hwm=DBReader.AutoDetectHWM(name="mysql_hwm", expression="updated_dt"),
-    options=MySQL.ReadOptions(partitionColumn="id", numPartitions=10),
-)
+        reader = DBReader(
+            connection=mysql,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            hint="SKIP_SCAN(schema.table key_index)",
+            hwm=DBReader.AutoDetectHWM(name="mysql_hwm", expression="updated_dt"),
+            options=MySQL.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()  
+    ```
 
 ## Recommendations
 
@@ -79,15 +78,15 @@ Especially if there are indexes for columns used in `where` clause.
 ## Options
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mysql.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mysql.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MySQLReadOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MySQLReadOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+    ```
  -->
 
 ::: onetl.connection.db_connection.mysql.options.MySQLReadOptions

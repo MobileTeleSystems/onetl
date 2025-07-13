@@ -1,113 +1,112 @@
-# Executing statements in MySQL { #mysql-execute }
-
-!!! warning::
-
-    Methods below **read all the rows** returned from DB **to Spark driver memory**, and then convert them to DataFrame.
-
-    Do **NOT** use them to read large amounts of data. Use [DBReader][mysql-read] or [MySQL.sql][mysql-sql] instead.
-
-## How to
-
-There are 2 ways to execute some statement in MySQL
-
-### Use `MySQL.fetch`
-
-Use this method to perform some `SELECT` query which returns **small number or rows**, like reading
-MySQL config, or reading data from some reference table. Method returns Spark DataFrame.
-
-Method accepts [MySQL.FetchOptions][onetl.connection.db_connection.mysql.options.MySQLFetchOptions].
-
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+# Выполнение предложений в MySQL { #mysql-execute }
 
 !!! warning
 
-    Please take into account [MySQL types][mysql-types].
+    Методы ниже **читают все строки**, возвращенные из БД **в память драйвера Spark**, и затем преобразуют их в DataFrame.
 
-#### Syntax support
+    **НЕ** используйте их для чтения **большого количества данных**. Используйте [DBReader][mysql-read] или [MySQL.sql][mysql-sql] вместо этого.
 
-This method supports **any** query syntax supported by MySQL, like:
+## Как это сделать
+
+Есть 2 способа выполнить некоторый запрос в MySQL
+
+### Использование `MySQL.fetch`
+
+Используйте этот метод для выполнения некоторого `SELECT` запроса, который возвращает **малое количество строк**, например, чтение MySQL конфигурации или чтение данных из некоторой справочной таблицы. Метод возвращает Spark DataFrame.
+
+Метод принимает [MySQL.FetchOptions][onetl.connection.db_connection.mysql.options.MySQLFetchOptions].
+
+Подключение, открытый с помощью этого метода, должно быть затем закрыто с помощью `connection.close()` или `with connection:`.
+
+!!! warning
+
+    Пожалуйста, учитывайте [типы MySQL][mysql-types].
+
+#### Поддержка синтаксиса
+
+Этот метод поддерживает **любой** синтаксис запроса, поддерживаемый MySQL, например:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
-- ✅︎ `SELECT func(arg1, arg2)` or `{?= call func(arg1, arg2)}` - special syntax for calling function
+- ✅︎ `SELECT func(arg1, arg2)` или `{?= call func(arg1, arg2)}` - специальный синтаксис для вызова функции
 - ✅︎ `SHOW ...`
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ❌ `SET ...; SELECT ...;` - несколько запросов не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import MySQL
+    ```python
+        от onetl.connection import MySQL
 
-mysql = MySQL(...)
+        mysql = MySQL(...)
 
-df = mysql.fetch(
-    "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
-    options=MySQL.FetchOptions(queryTimeout=10),
-)
-mysql.close()
-value = df.collect()[0][0]  # get value from first row and first column
-```
+        df = mysql.fetch(
+            "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
+            options=MySQL.FetchOptions(queryTimeout=10),
+        )
+        mysql.close()
+        значение = df.collect()[0][0]  # получить значение из первой строки и первой колонки
+    ```
 
-### Use `MySQL.execute`
+### Использование `MySQL.execute`
 
-Use this method to execute DDL and DML operations. Each method call runs operation in a separated transaction, and then commits it.
+Используйте этот метод для выполнения DDL и DML операций. Каждый вызов метода выполняет операцию в отдельной транзакции и затем коммитит ее.
 
-Method accepts [MySQL.ExecuteOptions][onetl.connection.db_connection.mysql.options.MySQLExecuteOptions].
+Метод принимает [MySQL.ExecuteOptions][onetl.connection.db_connection.mysql.options.MySQLExecuteOptions].
 
-Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
+Подключение, открытое с помощью этого метода, должно быть затем закрыто с помощью `connection.close()` или `with connection:`.
 
-#### Syntax support
+#### Поддержка синтаксиса
 
-This method supports **any** query syntax supported by MySQL, like:
+Этот метод поддерживает **любой** синтаксис запроса, поддерживаемый MySQL, например:
 
-- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`, and so on
+- ✅︎ `CREATE TABLE ...`, `CREATE VIEW ...`, и так далее
 - ✅︎ `ALTER ...`
-- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...`, and so on
-- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, and so on
-- ✅︎ `CALL procedure(arg1, arg2) ...` or `{call procedure(arg1, arg2)}` - special syntax for calling procedure
-- ✅︎ other statements not mentioned here
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ✅︎ `INSERT INTO ... SELECT ...`, `UPDATE ...`, `DELETE ...`, и так далее
+- ✅︎ `DROP TABLE ...`, `DROP VIEW ...`, и так далее
+- ✅︎ `CALL procedure(arg1, arg2) ...` или `{call procedure(arg1, arg2)}` - специальный синтаксис для вызова процедуры
+- ✅︎ другие запросы, не упомянутые здесь
+- ❌ `SET ...; SELECT ...;` - несколько запросов не поддерживаются
 
-#### Examples
+#### Примеры
 
-```python
-from onetl.connection import MySQL
+    ```python
+        от onetl.connection import MySQL
 
-mysql = MySQL(...)
+        mysql = MySQL(...)
 
-mysql.execute("DROP TABLE schema.table")
-mysql.execute(
-    """
-    CREATE TABLE schema.table (
-        id bigint,
-        key text,
-        value float
-    )
-    ENGINE = InnoDB
-    """,
-    options=MySQL.ExecuteOptions(queryTimeout=10),
-)
-```
+        mysql.execute("DROP TABLE schema.table")
+        mysql.execute(
+            """
+            CREATE TABLE schema.table (
+                id bigint,
+                key text,
+                value float
+            )
+            ENGINE = InnoDB
+            """,
+            options=MySQL.ExecuteOptions(queryTimeout=10),
+        )
+    ```
 
-## Options
+## Настройки
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mysql.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mysql.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MySQLFetchOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
+    ```{eval-rst}
+    .. autopydantic_model:: MySQLFetchOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
 
-```
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MySQLExecuteOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MySQLExecuteOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+    ```
  -->
 
 ::: onetl.connection.db_connection.mysql.options.MySQLFetchOptions

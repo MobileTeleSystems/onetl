@@ -1,93 +1,92 @@
-# Reading from MySQL using `DBReader` { #mysql-read }
+# Чтение из MySQL с использованием `DBReader` { #mysql-read }
 
-[DBReader][db-reader] supports [strategy][strategy] for incremental data reading,
-but does not support custom queries, like `JOIN`.
+[DBReader][db-reader] поддерживает [стратегии][strategy] для инкрементального чтения данных, но не поддерживает нестандартные запросы, такие как `JOIN`.
 
 !!! warning
 
-    Please take into account [MySQL types][mysql-types]
+    Обратите внимание на [типы данных MySQL][mysql-types]
 
-## Supported DBReader features
+## Поддерживаемые функции DBReader
 
 - ✅︎ `columns`
 - ✅︎ `where`
-- ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy]
-- - ✅︎ [Incremental strategy][incremental-strategy]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
-- ✅︎ `hint` (see [official documentation](https://dev.mysql.com/doc/refman/en/optimizer-hints.html))
+- ✅︎ `hwm`, поддерживаемые стратегии:
+  - ✅︎ [Snapshot][snapshot-strategy]
+  - ✅︎ [Incremental][incremental-strategy]
+  - ✅︎ [Snapshot batch][snapshot-batch-strategy]
+  - ✅︎ [Incremental batch][incremental-batch-strategy]
+- ✅︎ `hint` (см. [официальную документацию](https://dev.mysql.com/doc/refman/en/optimizer-hints.html))
 - ❌ `df_schema`
-- ✅︎ `options` (see [MySQL.ReadOptions][onetl.connection.db_connection.mysql.options.MySQLReadOptions])
+- ✅︎ `options` (см. [MySQL.ReadOptions][onetl.connection.db_connection.mysql.options.MySQLReadOptions])
 
-## Examples
+## Примеры
 
-Snapshot strategy:
+Стратегия Snapshot:
 
-```python
-from onetl.connection import MySQL
-from onetl.db import DBReader
+    ```python
+        from onetl.connection import MySQL
+        from onetl.db import DBReader
 
-mysql = MySQL(...)
+        mysql = MySQL(...)
 
-reader = DBReader(
-    connection=mysql,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    hint="SKIP_SCAN(schema.table key_index)",
-    options=MySQL.ReadOptions(partitionColumn="id", numPartitions=10),
-)
-df = reader.run()
-```
+        reader = DBReader(
+            connection=mysql,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            hint="SKIP_SCAN(schema.table key_index)",
+            options=MySQL.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
+        df = reader.run()   
+    ```
 
-Incremental strategy:
+Стратегия Incremental:
 
-```python
-from onetl.connection import MySQL
-from onetl.db import DBReader
-from onetl.strategy import IncrementalStrategy
+    ```python
+        from onetl.connection import MySQL
+        from onetl.db import DBReader
+        from onetl.strategy import IncrementalStrategy
 
-mysql = MySQL(...)
+        mysql = MySQL(...)
 
-reader = DBReader(
-    connection=mysql,
-    source="schema.table",
-    columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
-    where="key = 'something'",
-    hint="SKIP_SCAN(schema.table key_index)",
-    hwm=DBReader.AutoDetectHWM(name="mysql_hwm", expression="updated_dt"),
-    options=MySQL.ReadOptions(partitionColumn="id", numPartitions=10),
-)
+        reader = DBReader(
+            connection=mysql,
+            source="schema.table",
+            columns=["id", "key", "CAST(value AS text) value", "updated_dt"],
+            where="key = 'something'",
+            hint="SKIP_SCAN(schema.table key_index)",
+            hwm=DBReader.AutoDetectHWM(name="mysql_hwm", expression="updated_dt"),
+            options=MySQL.ReadOptions(partitionColumn="id", numPartitions=10),
+        )
 
-with IncrementalStrategy():
-    df = reader.run()
-```
+        with IncrementalStrategy():
+            df = reader.run()  
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только необходимые столбцы
 
-Instead of passing `"*"` in `DBReader(columns=[...])` prefer passing exact column names. This reduces the amount of data passed from Oracle to Spark.
+Вместо передачи `"*"` в `DBReader(columns=[...])` предпочтительно передавать точные имена столбцов. Это уменьшает объем данных, передаваемых из Oracle в Spark.
 
-### Pay attention to `where` value
+### Обратите внимание на значение `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `DBReader(where="column = 'value'")` clause.
-This both reduces the amount of data send from Oracle to Spark, and may also improve performance of the query.
-Especially if there are indexes for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с использованием `df.filter(df.column == 'value')`, передайте соответствующее выражение `DBReader(where="column = 'value'")`.
+Это не только уменьшает объем передаваемых данных из Oracle в Spark, но и может улучшить производительность запроса.
+Особенно если для столбцов, используемых в условии `where`, существуют индексы.
 
-## Options
+## Опции
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mysql.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mysql.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MySQLReadOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MySQLReadOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+    ```
  -->
 
 ::: onetl.connection.db_connection.mysql.options.MySQLReadOptions

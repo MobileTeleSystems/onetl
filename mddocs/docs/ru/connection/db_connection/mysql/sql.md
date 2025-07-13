@@ -1,79 +1,78 @@
-# Reading from MySQL using `MySQL.sql` { #mysql-sql }
+# Чтение из MySQL с помощью `MySQL.sql` { #mysql-sql }
 
-`MySQL.sql` allows passing custom SQL query, but does not support incremental strategies.
-
-!!! warning
-
-    Please take into account [MySQL types][mysql-types]
+`MySQL.sql` позволяет передавать пользовательский SQL-запрос, но не поддерживает инкрементальные стратегии.
 
 !!! warning
 
-    Statement is executed in **read-write** connection, so if you're calling some functions/procedures with DDL/DML statements inside,
-    they can change data in your database.
+    Пожалуйста, учитывайте [MySQL типы][mysql-types]
 
-## Syntax support
+!!! warning
 
-Only queries with the following syntax are supported:
+    Оператор выполняется в соединении **read-write**, поэтому если вы вызываете какие-то функции/процедуры с DDL/DML операторами внутри, они могут изменить данные в вашей базе данных.
+
+## Поддержка синтаксиса
+
+Поддерживаются только запросы со следующим синтаксисом:
 
 - ✅︎ `SELECT ... FROM ...`
 - ✅︎ `WITH alias AS (...) SELECT ...`
 - ❌ `SHOW ...`
-- ❌ `SET ...; SELECT ...;` - multiple statements not supported
+- ❌ `SET ...; SELECT ...;` - несколько операторов не поддерживается
 
-## Examples
+## Примеры
 
-```python
-from onetl.connection import MySQL
+    ```python
+        from onetl.connection import MySQL
 
-mysql = MySQL(...)
-df = mysql.sql(
-    """
-    SELECT
-        id,
-        key,
-        CAST(value AS text) value,
-        updated_at
-    FROM
-        some.mytable
-    WHERE
-        key = 'something'
-    """,
-    options=MySQL.SQLOptions(
-        partitionColumn="id",
-        numPartitions=10,
-        lowerBound=0,
-        upperBound=1000,
-    ),
-)
-```
+        mysql = MySQL(...)
+        df = mysql.sql(
+            """
+            SELECT
+                id,
+                key,
+                CAST(value AS text) value,
+                updated_at
+            FROM
+                some.mytable
+            WHERE
+                key = 'something'
+            """,
+            options=MySQL.SQLOptions(
+                partitionColumn="id",
+                numPartitions=10,
+                lowerBound=0,
+                upperBound=1000,
+            ),
+        )
+    ```
 
-## Recommendations
+## Рекомендации
 
-### Select only required columns
+### Выбирайте только необходимые столбцы
 
-Instead of passing `SELECT * FROM ...` prefer passing exact column names `SELECT col1, col2, ...`.
-This reduces the amount of data passed from MySQL to Spark.
+Вместо передачи `SELECT * FROM ...` предпочитайте указывать точные имена столбцов `SELECT col1, col2, ...`.
+Это уменьшает количество данных, передаваемых из MySQL в Spark.
 
-### Pay attention to `where` value
+### Обратите внимание на значение `where`
 
-Instead of filtering data on Spark side using `df.filter(df.column == 'value')` pass proper `WHERE column = 'value'` clause.
-This both reduces the amount of data send from MySQL to Spark, and may also improve performance of the query.
-Especially if there are indexes or partitions for columns used in `where` clause.
+Вместо фильтрации данных на стороне Spark с помощью `df.filter(df.column == 'value')` указывайте соответствующее условие `WHERE column = 'value'`.
+Это уменьшает объем данных, отправляемых из MySQL в Spark, а также может улучшить производительность запроса.
+Особенно если существуют индексы или в условии `where`, используются столбцы партиционирования.
 
-## Options
+## Опции
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.connection.db_connection.mysql.options
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.connection.db_connection.mysql.options
+    ```
 
-```{eval-rst}
-.. autopydantic_model:: MySQLSQLOptions
-    :inherited-members: GenericOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
-```
+    ```{eval-rst}
+    .. autopydantic_model:: MySQLSQLOptions
+        :inherited-members: GenericOptions
+        :member-order: bysource
+        :model-show-field-summary: false
+        :field-show-constraints: false
+    ```
  -->
 
 ::: onetl.connection.db_connection.mysql.options.MySQLSQLOptions

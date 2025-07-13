@@ -1,61 +1,59 @@
-# Prerequisites { #mysql-prerequisites }
+# Предварительные условия { #mysql-prerequisites }
 
-## Version Compatibility
+## Совместимость версий
 
-- MySQL server versions:
-    - Officially declared: 8.0 - 9.2
-    - Actually tested: 5.7.13, 9.2.0
-- Spark versions: 2.3.x - 3.5.x
-- Java versions: 8 - 20
+- Версии MySQL сервера:
+    - Официально объявленные: 8.0 - 9.2
+    - Фактически протестированные: 5.7.13, 9.2.0
+- Версии Spark: 2.3.x - 3.5.x
+- Версии Java: 8 - 20
 
-See [official documentation](https://dev.mysql.com/doc/connector-j/en/connector-j-versions.html).
+См. [официальную документацию](https://dev.mysql.com/doc/connector-j/en/connector-j-versions.html).
 
-## Installing PySpark
+## Установка PySpark
 
-To use MySQL connector you should have PySpark installed (or injected to `sys.path`)
-BEFORE creating the connector instance.
+Чтобы использовать MySQL коннектор, у вас должен быть установлен PySpark (или добавлен в `sys.path`) **ДО** создания экземпляра коннектора.
 
-See [installation instruction][install-spark] for more details.
+См. [инструкцию по установке][install-spark] для получения более подробной информации.
 
-## Connecting to MySQL
+## Подключение к MySQL
 
-### Connection host
+### Хост подключения
 
-It is possible to connect to MySQL by using either DNS name of host or it's IP address.
+Возможно подключение к MySQL, используя либо DNS-имя хоста, либо его IP-адрес.
 
-If you're using MySQL cluster, it is currently possible to connect only to **one specific node**.
-Connecting to multiple nodes to perform load balancing, as well as automatic failover to new master/replica are not supported.
+Если вы используете кластер MySQL, в текущий момент возможно подключение только к **одному конкретному узлу**.
+Подключение к нескольким узлам для выполнения балансировки нагрузки, а также автоматическое переключение на новый мастер/реплику не поддерживаются.
 
-### Connection port
+### Порт подключения
 
-Connection is usually performed to port 3306. Port may differ for different MySQL instances.
-Please ask your MySQL administrator to provide required information.
+Подключение обычно осуществляется к порту 3306. Порт может отличаться для разных экземпляров MySQL.
+Пожалуйста, попросите вашего администратора MySQL предоставить необходимую информацию.
 
-### Required grants
+### Необходимые привилегии
 
-Ask your MySQL cluster administrator to set following grants for a user,
-used for creating a connection:
+Попросите вашего администратора кластера MySQL установить следующие привилегии для пользователя, используемого для создания подключения:
 
-=== "Read + Write"
+=== "Чтение + Запись"
 
     ```sql 
 
-        -- allow creating tables in the target schema
+        -- разрешить создание таблиц в целевой схеме
         GRANT CREATE ON myschema.* TO username@'192.168.1.%';
 
-        -- allow read & write access to specific table
+        -- разрешить доступ на чтение и запись к определенной таблице
         GRANT SELECT, INSERT ON myschema.mytable TO username@'192.168.1.%';
     ```
 
-=== "Read only"
+=== "Только чтение"
 
-    ```sql Read only
+    ```sql Только чтение
 
-        -- allow read access to specific table
+        -- разрешить доступ на чтение к определенной таблице
         GRANT SELECT ON myschema.mytable TO username@'192.168.1.%';
     ```
 
-In example above `'192.168.1.%''` is a network subnet `192.168.1.0 - 192.168.1.255`
-where Spark driver and executors are running. To allow connecting user from any IP, use `'%'` (not secure!).
+В приведенном примере `'192.168.1.%''` является подсетью `192.168.1.0 - 192.168.1.255`
+где работают драйвер и исполнители Spark. Чтобы разрешить подключение пользователю с любого IP, используйте `'%'` (небезопасно!).
 
-More details can be found in [official documentation](https://dev.mysql.com/doc/refman/en/grant.html).
+Более подробную информацию можно найти в [официальной документации](https://dev.mysql.com/doc/refman/en/grant.html).
