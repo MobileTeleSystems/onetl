@@ -1,7 +1,7 @@
-# File classes
+# Классы для операций с файлами
 
 * [File Downloader][file-downloader]
 * [File Uploader][file-uploader]
 * [File Mover][file-mover]
-* [File Filters][file-filters]
-* [File Limits][file-limits]
+* [Фильтры для файлов][file-filters]
+* [Лимиты для файлов][file-limits]

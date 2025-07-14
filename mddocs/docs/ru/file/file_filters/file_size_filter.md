@@ -1,14 +1,14 @@
-# FileSizeRange { #file-size-range }
+# Фильтр по размеру файлов { #file-size-range }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.file.filter.file_size
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.file.filter.file_size
+    ```
 
-```{eval-rst}
-.. autoclass:: FileSizeRange
-    :members: match
-``` 
+    ```{eval-rst}
+    .. autoclass:: FileSizeRange
+        :members: match
+    ``` 
 -->
 
 ::: onetl.file.filter.file_size.FileSizeRange

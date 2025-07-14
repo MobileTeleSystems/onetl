@@ -1,15 +1,15 @@
-# File limits
+# Лимиты для файлов { #file-limits }
 
-* [MaxFilesCount][max-files-count]
-* [TotalFilesSize][total-files-size]
+* [Лимит на максимальное количество файлов][max-files-count]
+* [Лимит на суммарный размер файлов][total-files-size]
 
-# Legacy
+## Устаревшее
 
-* [File Limit [legacy]][file-limit]
+* [File Limit (устарело)][file-limit]
 
-# For developers
+## Для разработчиков
 
-* [Base interface][file-limits-base]
-* [limits_stop_at][limits-stop-at]
-* [limits_reached][limits-reached]
-* [reset_limits][reset-limits]
+* [Базовый интерфейс][file-limits-base]
+* [Проверка достижения лимита по опреденному пути][limits-stop-at]
+* [Проверка достижения любого лимита][limits-reached]
+* [Сброс лимитов][reset-limits]

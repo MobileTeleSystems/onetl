@@ -1,16 +1,16 @@
 # File Filters
 
-* [Glob](glob.md)
-* [Regexp](regexp.md)
-* [ExcludeDir](exclude_dir.md)
-* [FileSizeRange](file_size_filter.md)
-* [FileModifiedTime](file_mtime_filter.md)
+* [Glob][glob]
+* [Regexp][regexp]
+* [ExcludeDir][exclude-dir-filter]
+* [FileSizeRange][file-size-range]
+* [FileModifiedTime][file-modified-time]
 
-# Legacy
+## Legacy
 
-* [File Filter (legacy)](file_filter.md)
+* [File Filter (legacy)][file-filter]
 
-# For developers
+## For developers
 
-* [Base interface](base.md)
-* [match_all_filters](match_all_filters.md)
+* [Base interface][base-file-filter]
+* [match_all_filters][match-all-filters]

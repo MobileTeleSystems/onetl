@@ -1,23 +1,23 @@
 # File Downloader { #file-downloader-0 }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.file.file_downloader.file_downloader
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.file.file_downloader.file_downloader
+    ```
 
-```{eval-rst}
-.. autosummary::
+    ```{eval-rst}
+    .. autosummary::
 
-    FileDownloader
-    FileDownloader.run
-    FileDownloader.view_files
-```
+        FileDownloader
+        FileDownloader.run
+        FileDownloader.view_files
+    ```
 
-```{eval-rst}
-.. autoclass:: FileDownloader
-    :members: run, view_files
-    :member-order: bysource
-``` 
+    ```{eval-rst}
+    .. autoclass:: FileDownloader
+        :members: run, view_files
+        :member-order: bysource
+    ``` 
 -->
 
 ::: onetl.file.file_downloader.file_downloader.FileDownloader

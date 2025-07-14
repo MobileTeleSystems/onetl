@@ -1,14 +1,14 @@
-# File Limit (legacy) { #file-limit }
+# File Limit (устарело) { #file-limit }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.core.file_limit.file_limit
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.core.file_limit.file_limit
+    ```
 
-```{eval-rst}
-.. autoclass:: FileLimit
-    :members: reset, stops_at, is_reached
-``` 
+    ```{eval-rst}
+    .. autoclass:: FileLimit
+        :members: reset, stops_at, is_reached
+    ``` 
 -->
 
 ::: onetl.core.file_limit.file_limit.FileLimit

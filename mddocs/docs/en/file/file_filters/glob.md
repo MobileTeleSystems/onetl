@@ -1,14 +1,14 @@
 # Glob { #glob-filter }
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.file.filter.glob
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.file.filter.glob
+    ```
 
-```{eval-rst}
-.. autoclass:: Glob
-    :members: match
-``` 
+    ```{eval-rst}
+    .. autoclass:: Glob
+        :members: match
+    ``` 
 -->
 
 ::: onetl.file.filter.glob.Glob

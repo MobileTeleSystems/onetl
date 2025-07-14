@@ -3,11 +3,11 @@
 * [MaxFilesCount][max-files-count]
 * [TotalFilesSize][total-files-size]
 
-# Legacy
+## Legacy
 
 * [File Limit [legacy]][file-limit]
 
-# For developers
+## For developers
 
 * [Base interface][file-limits-base]
 * [limits_stop_at][limits-stop-at]
