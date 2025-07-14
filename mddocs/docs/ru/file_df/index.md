@@ -1,5 +1,5 @@
-# File DataFrame classes
+# Классы чтения и записи файлов в DataFrame
 
 * [FileDF Reader][filedf-reader]
 * [FileDF Writer][filedf-writer]
-* [File Formats][file-formats]
+* [Форматы файлов][file-formats]

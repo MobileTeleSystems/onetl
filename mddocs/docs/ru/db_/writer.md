@@ -1,23 +1,22 @@
 # DB Writer
 
 <!-- 
-```{eval-rst}
-.. currentmodule:: onetl.db.db_writer.db_writer
-```
+    ```{eval-rst}
+    .. currentmodule:: onetl.db.db_writer.db_writer
+    ```
 
-```{eval-rst}
-.. autosummary::
+    ```{eval-rst}
+    .. autosummary::
 
-    DBWriter
-    DBWriter.run
-```
+        DBWriter
+        DBWriter.run
+    ```
 
-```{eval-rst}
-.. autoclass:: DBWriter
-    :members: run
-``` 
+    ```{eval-rst}
+    .. autoclass:: DBWriter
+        :members: run
+    ``` 
 -->
-
 
 ::: onetl.db.db_writer.db_writer.DBWriter
     options:

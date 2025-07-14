@@ -1,4 +1,4 @@
-# File formats
+# Форматы файлов
 
 * [Avro][avro-file-format]
 * [CSV][csv-file-format]
@@ -9,6 +9,6 @@
 * [Parquet][parquet-file-format]
 * [XML][xml-file-format]
 
-# For developers
+## Для разработчиков
 
-* [Base interface][base-file-format]
+* [Базовый интерфейс][base-file-format]
