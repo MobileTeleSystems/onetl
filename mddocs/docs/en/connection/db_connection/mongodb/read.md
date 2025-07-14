@@ -11,10 +11,10 @@
 - ❌ `columns` (for now, all document fields are read)
 - ✅︎ `where` (passed to `{"$match": ...}` aggregation pipeline)
 - ✅︎ `hwm`, supported strategies:
-  - ✅︎ [Snapshot strategy][snapshot-strategy]
-  - ✅︎ [Incremental strategy][incremental-strategy]
-  - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-  - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
+  - ✅︎ [Snapshot strategy][snapshot-strategy-0]
+  - ✅︎ [Incremental strategy][incremental-strategy-0]
+  - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy-0]
+  - ✅︎ [Incremental batch strategy][incremental-batch-strategy-0]
   - Note that `expression` field of HWM can only be a field name, not a custom expression
 - ✅︎ `hint` (see [official documentation](https://www.mongodb.com/docs/v5.0/reference/operator/meta/hint/))
 - ✅︎ `df_schema` (mandatory)

@@ -11,10 +11,10 @@
 - ✅︎ `columns`
 - ✅︎ `where`
 - ✅︎ `hwm`, supported strategies:
-  - ✅︎ [Snapshot strategy][snapshot-strategy]
-  - ✅︎ [Incremental strategy][incremental-strategy]
-  - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy]
-  - ✅︎ [Incremental batch strategy][incremental-batch-strategy]
+  - ✅︎ [Snapshot strategy][snapshot-strategy-0]
+  - ✅︎ [Incremental strategy][incremental-strategy-0]
+  - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy-0]
+  - ✅︎ [Incremental batch strategy][incremental-batch-strategy-0]
 - ❌ `hint` (is not supported by Postgres)
 - ❌ `df_schema`
 - ✅︎ `options` (see [Postgres.ReadOptions][onetl.connection.db_connection.postgres.options.PostgresReadOptions])

@@ -12,6 +12,6 @@
 * [Writing to Oracle using `DBWriter`][oracle-write]
 * [Executing statements in Oracle][oracle-execute]
 
-## Troubleshooting
+## Troubleshooting { #oracle-troubleshooting }
 
 * [Oracle <-> Spark type mapping][oracle-types]

@@ -1,4 +1,4 @@
-# Glob { #glob-filter }
+# Glob { #glob }
 
 <!-- 
     ```{eval-rst}

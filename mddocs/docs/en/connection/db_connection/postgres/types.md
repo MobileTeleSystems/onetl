@@ -208,7 +208,7 @@ Here you can find source code with type conversions:
 |----------------------|-----------------------|-----------------------|-------------------------|
 | `circle`<br/>`box`<br/>`line`<br/>`lseg`<br/>`path`<br/>`point`<br/>`polygon`           | <br/><br/><br/>`StringType()` [^1] | <br/><br/><br/>`text`              | <br/><br/><br/>`text`                |
 
-## Explicit type cast
+## Explicit type cast { #postgres-explicit-type-cast }
 
 ### `DBReader`
 

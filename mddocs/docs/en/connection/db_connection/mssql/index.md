@@ -12,6 +12,6 @@
 * [Writing to MSSQL using `DBWriter`][mssql-write]
 * [Executing statements in MSSQL][mssql-execute]
 
-## Troubleshooting
+## Troubleshooting { #mssql-troubleshooting }
 
 * [MSSQL <-> Spark type mapping][mssql-types]

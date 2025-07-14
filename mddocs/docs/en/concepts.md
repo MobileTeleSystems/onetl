@@ -302,10 +302,10 @@ More information about `options` could be found on [`DBConnection`][db-connectio
 
 onETL have several builtin strategies for reading data:
 
-1. [Snapshot strategy][snapshot-strategy] (default strategy)
-2. [Incremental strategy][incremental-strategy]
-3. [Snapshot batch strategy][snapshot-batch-strategy]
-4. [Incremental batch strategy][incremental-batch-strategy]
+1. [Snapshot strategy][snapshot-strategy-0] (default strategy)
+2. [Incremental strategy][incremental-strategy-0]
+3. [Snapshot batch strategy][snapshot-batch-strategy-0]
+4. [Incremental batch strategy][incremental-batch-strategy-0]
 
 For example, an incremental strategy allows you to get only new data from the table:
 

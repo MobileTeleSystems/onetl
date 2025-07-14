@@ -11,6 +11,6 @@
 * [Reading from MongoDB using `MongoDB.pipeline`][mongodb-pipeline]
 * [Writing to MongoDB using `DBWriter`][mongodb-write]
 
-## Troubleshooting
+## Troubleshooting { #mongodb-troubleshooting }
 
 * [MongoDB <-> Spark type mapping][mongodb-types]

@@ -179,7 +179,7 @@ See [official documentation](https://learn.microsoft.com/en-us/sql/t-sql/data-ty
 | `sql_variant`           | unsupported      |                    |                     |
 | `sysname`<br/> `uniqueidentifier`              | `StringType()` | `nvarchar`       | `nvarchar`        |
 
-## Explicit type cast
+## Explicit type cast { #mssql-explicit-type-cast }
 
 ### `DBReader`
 

@@ -171,7 +171,7 @@ See [official documentation](https://dev.mysql.com/doc/refman/en/data-types.html
 |------------------------|------------------|--------------------|---------------------|
 | `point`<br/>`linestring`<br/>`polygon`<br/>`geometry`<br/>`multipoint`<br/>`multilinestring`<br/>`multipolygon`<br/>`geometrycollection`              | <br/><br/><br/><br/>`BinaryType()` | <br/><br/><br/><br/>`blob`           | <br/><br/><br/><br/>`blob`            |
 
-## Explicit type cast
+## Explicit type cast { #mysql-explicit-type-cast }
 
 ### `DBReader`
 

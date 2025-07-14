@@ -168,7 +168,7 @@ Here you can find source code with type conversions:
 | `ROWID`<br/>`UROWID`<br/>`UROWID(N)`          | <br/>`StringType()`  | <br/>`CLOB`            | <br/>`CLOB`             |
 | `ANYTYPE`<br/>`ANYDATA`<br/>`ANYDATASET`        | <br/>unsupported       |                     |                      |
 
-## Explicit type cast
+## Explicit type cast { #oracle-explicit-type-cast }
 
 ### `DBReader`
 

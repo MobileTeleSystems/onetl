@@ -12,6 +12,6 @@
 * [Writing to Clickhouse using `DBWriter`][clickhouse-write]
 * [Executing statements in Clickhouse][clickhouse-execute]
 
-## Troubleshooting
+## Troubleshooting { #clickhouse-troubleshooting }
 
 * [Clickhouse <-> Spark type mapping][clickhouse-types]

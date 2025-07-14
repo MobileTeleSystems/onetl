@@ -250,7 +250,7 @@ This dialect does not have type conversion between some types, like Clickhouse `
 
 The is a way to avoid this - just cast everything to `String`.
 
-## Explicit type cast
+## Explicit type cast { #clickhouse-explicit-type-cast }
 
 ### `DBReader`
 

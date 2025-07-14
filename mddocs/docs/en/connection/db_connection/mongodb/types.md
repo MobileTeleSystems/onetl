@@ -150,7 +150,7 @@ Note: fields of deprecated MongoDB type `Symbol` are excluded during read.
 | `Null`<br/>`Undefined`            | `NullType()`                                          | `Null`                              |
 | `DBRef`           | `StructType([$ref: StringType(), $id: StringType()])` | `Object[$ref: String, $id: String]` |
 
-## Explicit type cast
+## Explicit type cast { #mongodb-explicit-type-cast }
 
 ### `DBReader`
 

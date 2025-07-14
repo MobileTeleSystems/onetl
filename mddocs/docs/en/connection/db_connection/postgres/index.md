@@ -12,6 +12,6 @@
 * [Writing to Postgres using `DBWriter`][postgres-write]
 * [Executing statements in Postgres][postgres-execute]
 
-## Troubleshooting
+## Troubleshooting { #postgres-troubleshooting }
 
 * [Postgres <-> Spark type mapping][postgres-types]

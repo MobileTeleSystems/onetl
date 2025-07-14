@@ -12,6 +12,6 @@
 * [Writing to MySQL using `DBWriter`][mysql-write]
 * [Executing statements in MySQL][mysql-execute]
 
-## Troubleshooting
+## Troubleshooting { #mysql-troubleshooting }
 
 * [MySQL <-> Spark type mapping][mysql-types]
