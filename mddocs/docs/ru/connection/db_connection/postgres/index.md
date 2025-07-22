@@ -1,4 +1,4 @@
-# Postgres
+# Postgres { #postgres-connection }
 
 ## Подключение
 

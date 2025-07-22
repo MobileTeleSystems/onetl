@@ -1,4 +1,4 @@
-# Подключение к Clickhouse
+# Подключение к Clickhouse { #clickhouse-connection }
 
 
 <!-- 

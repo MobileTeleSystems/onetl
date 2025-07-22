@@ -1,4 +1,4 @@
-# Spark на S3
+# Spark на S3  { #spark-s3 }
 
 * [Предварительные условия][spark-s3-prerequisites]
 * [Подключение][spark-s3-connection]

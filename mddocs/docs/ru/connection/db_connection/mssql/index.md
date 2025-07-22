@@ -1,4 +1,4 @@
-# MSSQL
+# MSSQL { #mssql-connection }
 
 ## Подключение
 

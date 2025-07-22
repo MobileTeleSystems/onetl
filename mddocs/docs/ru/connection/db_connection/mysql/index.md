@@ -1,4 +1,4 @@
-# MySQL
+# MySQL { #mysql-connection }
 
 ## Подключение
 

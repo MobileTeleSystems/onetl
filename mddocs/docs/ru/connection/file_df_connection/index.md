@@ -1,4 +1,4 @@
-# Подключения к файлам как DataFrame
+# Подключения к файлам как DataFrame { #file-dataframe-connections }
 
 * [Spark на локальной файловой системе][spark-local-fs]
 * [Spark на HDFS][spark-hdfs]

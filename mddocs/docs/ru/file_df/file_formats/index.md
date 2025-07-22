@@ -1,4 +1,4 @@
-# Форматы файлов
+# Форматы файлов { #file-formats }
 
 * [Avro][avro-file-format]
 * [CSV][csv-file-format]

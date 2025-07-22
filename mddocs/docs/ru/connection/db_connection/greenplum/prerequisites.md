@@ -35,7 +35,7 @@
     Если вы загружаете пакет в приватный репозиторий пакетов, используйте `groupId=io.pivotal` и `artifactoryId=greenplum-spark_2.12`
     (`2.12` - это версия Scala), чтобы дать загруженному пакету правильное имя.
 
-## Подключение к Greenplum
+## Подключение к Greenplum { #greenplum-connection-0 }
 
 ### Схема взаимодействия
 
@@ -123,7 +123,7 @@
 
 - Установка [num_partitions][onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.num_partitions] и [partition_column][onetl.connection.db_connection.greenplum.options.GreenplumReadOptions.partition_column] (не рекомендуется).
 
-### Разрешение подключения к мастеру Greenplum
+### Разрешение подключения к мастеру Greenplum { #greenplum-master }
 
 Попросите администратора вашего кластера Greenplum разрешить вашему пользователю подключаться к мастер-узлу Greenplum, например, обновив файл `pg_hba.conf`.
 

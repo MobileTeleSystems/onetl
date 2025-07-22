@@ -1,4 +1,4 @@
-# Teradata
+# Подключение к Teradata { #teradata-connection }
 
 ## Подключение
 

@@ -2,7 +2,7 @@
 
 !!! note
 
-    Общее руководство: [Устранение неполадок][troubleshooting-main].
+    Общее руководство: [Устранение неполадок][troubleshooting].
 
 Подробнее:
 
@@ -233,7 +233,7 @@ spark_s3 = SparkS3(
 
 Но это **НЕ** рекомендуется.
 
-#### Доступ к S3 без поддержки стиля доступа на основе домена
+#### Доступ к S3 без поддержки стиля доступа на основе домена { #s3-0 }
 
 ```text
 Caused by: java.net.UnknownHostException: my-bucket.s3provider.com
@@ -252,7 +252,7 @@ spark_s3 = SparkS3(
 )
 ```
 
-## Медленная или нестабильная запись в S3
+## Медленная или нестабильная запись в S3 { #s3-1 }
 
 Hadoop AWS позволяет использовать различные стратегии записи для различных реализаций S3, в зависимости
 от списка поддерживаемых сервером функций.
@@ -347,7 +347,7 @@ WARN AbstractS3ACommitterFactory: Using standard FileOutputCommitter to commit w
 
 - [directory.marker.retention="keep"](https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/directory_markers.html)
 
-## Медленное чтение из S3
+## Медленное чтение из S3  { #s3-2 }
 
 Пожалуйста, прочитайте следующую документацию:
 

@@ -1,4 +1,4 @@
-# Слоты Spark HDFS
+# Слоты Spark HDFS { #spark-hdfs-slots }
 
 <!-- 
 ```{eval-rst}

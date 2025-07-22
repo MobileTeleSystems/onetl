@@ -1,4 +1,4 @@
-# Troubleshooting { #troubleshooting-main }
+# Troubleshooting { #troubleshooting }
 
 In case of error please follow instructions below:
 

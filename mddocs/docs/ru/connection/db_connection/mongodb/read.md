@@ -11,10 +11,10 @@
 - ❌ `columns` (на данный момент читаются все поля документа)
 - ✅︎ `where` (передается в пайплайн агрегации `{"$match": ...}`)
 - ✅︎ `hwm`, поддерживаемые стратегии:
-  - ✅︎ [Snapshot][snapshot-strategy]
-  - ✅︎ [Incremental][incremental-strategy]
-  - ✅︎ [Snapshot batch][snapshot-batch-strategy]
-  - ✅︎ [Incremental][incremental-batch-strategy]
+  - ✅︎ [Snapshot][snapshot-strategy-0]
+  - ✅︎ [Incremental][incremental-strategy-0]
+  - ✅︎ [Snapshot batch][snapshot-batch-strategy-0]
+  - ✅︎ [Incremental batch][incremental-batch-strategy-0]
   - Обратите внимание, что поле `expression` для HWM может быть только именем поля, а не пользовательским выражением
 - ✅︎ `hint` (см. [официальную документацию](https://www.mongodb.com/docs/v5.0/reference/operator/meta/hint/))
 - ✅︎ `df_schema` (обязательно)
