@@ -2,8 +2,7 @@
 
 ## What are hooks?
 
-Hook mechanism is a part of onETL which allows to inject some additional behavior into
-existing methods of (almost) any class.
+Hook mechanism is a part of onETL which allows to inject some additional behavior into existing methods of (almost) any class.
 
 ### Features
 
@@ -13,20 +12,20 @@ Hooks mechanism allows to:
 - Access, modify or replace method call result (but NOT input arguments)
 - Wrap method calls with a context manager and catch raised exceptions
 
-Hooks can be placed into {ref}`plugins`, allowing to modify onETL behavior by installing some additional package.
+Hooks can be placed into [`plugins`][plugins], allowing to modify onETL behavior by installing some additional package.
 
 ### Limitations
 
 - Hooks can be bound to methods of a class only (not functions).
-- Only methods decorated with {ref}`slot-decorator` implement hooks mechanism. These class and methods are marked as {{ support_hooks }}.
+- Only methods decorated with [`slot-decorator`][slot-decorator] implement hooks mechanism. These class and methods are marked as `support_hooks`.
 - Hooks can be bound to public methods only.
 
 ## Terms
 
-- {ref}`slot-decorator` - method of a class with a special decorator
+- [`slot-decorator`][slot-decorator] - method of a class with a special decorator
 - `Callback` - function which implements some additional logic which modifies slot behavior
-- {ref}`hook-decorator` - wrapper around callback which stores hook state, priority and some useful methods
-- `Hooks mechanism` - calling `Slot()` will call all enabled hooks which are bound to the slot. Implemented by {ref}`support-hooks-decorator`.
+- [`hook-decorator`][hook-decorator] - wrapper around callback which stores hook state, priority and some useful methods
+- `Hooks mechanism` - calling `Slot()` will call all enabled hooks which are bound to the slot. Implemented by [`support-hooks-decorator`][support-hooks-decorator].
 
 ## How to implement hooks?
 
@@ -72,7 +71,7 @@ class MyClass:
         return self.data, arg
 ```
 
-- Add {ref}`slot-decorator` to the method:
+- Add [`slot-decorator`][slot-decorator] to the method:
 
 ```python
 from onetl.hooks import support_hooks, slot, hook
@@ -102,7 +101,7 @@ class MyClass:
         return arg
 ```
 
-- Add {ref}`support-hooks-decorator` to the class:
+- Add [`support-hooks-decorator`][support-hooks-decorator] to the class:
 
 ```python
 from onetl.hooks import support_hooks, slot, hook
@@ -126,8 +125,7 @@ def callback(self, arg):
     print(self.data, arg)
 ```
 
-It should have signature *compatible* with `MyClass.method`. *Compatible* does not mean *exactly the same* -
-for example, you can rename positional arguments:
+It should have signature *compatible* with `MyClass.method`. *Compatible* does not mean *exactly the same* - for example, you can rename positional arguments:
 
 ```python
 def callback(obj, arg):
@@ -141,30 +139,24 @@ def callback(obj, *args, **kwargs):
     print(obj.data, args, kwargs)
 ```
 
-There is also an argument `method_name` which has a special meaning -
-the method name which the callback is bound to is passed into this argument:
+There is also an argument `method_name` which has a special meaning - the method name which the callback is bound to is passed into this argument:
 
 ```python
 def callback(obj, *args, method_name: str, **kwargs):
     print(obj.data, args, method_name, kwargs)
 ```
 
-```{eval-rst}
-.. note::
+!!! note
 
     `method_name` should always be a keyword argument, **NOT** positional.
-```
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    If callback signature is not compatible with slot signature, an exception will be raised,
-    but **ONLY** while slot is called.
-```
+    If callback signature is not compatible with slot signature, an exception will be raised, but **ONLY** while slot is called.
 
 #### Define a hook
 
-Add {ref}`hook-decorator` to create a hook from your callback:
+Add [`hook-decorator`][hook-decorator] to create a hook from your callback:
 
 ```python
 @hook
@@ -172,8 +164,7 @@ def callback(obj, arg):
     print(obj.data, arg)
 ```
 
-You can pass more options to the `@hook` decorator, like state or priority.
-See decorator documentation for more details.
+You can pass more options to the `@hook` decorator, like state or priority. See decorator documentation for more details.
 
 #### Bind hook to the slot
 
@@ -240,8 +231,7 @@ class ContextManager:
 
 Context manager is entered while calling the `Slot()`, and exited then the call is finished.
 
-If present, method `process_result` has a special meaning -
-it can receive `MyClass.method` call result, and also modify/replace it:
+If present, method `process_result` has a special meaning - it can receive `MyClass.method` call result, and also modify/replace it:
 
 ```python
 @hook
@@ -281,8 +271,7 @@ def callback(obj, arg):
     # this is called after original method body
 ```
 
-It is converted to a context manager, in the same manner as
-[contextlib.contextmanager](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager).
+It is converted to a context manager, in the same manner as [contextlib.contextmanager](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager).
 
 Generator body can be wrapped with `try..except..finally` to catch exceptions:
 
@@ -304,7 +293,7 @@ def callback(obj, arg):
 
 There is also a special syntax which allows generator to access and modify/replace method call result:
 
-```
+```python
 @hook
 def callback(obj, arg):
     original_result = yield  # method is called here
@@ -384,29 +373,24 @@ def callback(obj, arg):
 
 Hooks are executed in the following order:
 
-1. Parent class slot + {obj}`FIRST <onetl.hooks.hook.HookPriority.FIRST>`
-2. Inherited class slot + {obj}`FIRST <onetl.hooks.hook.HookPriority.FIRST>`
-3. Parent class slot + {obj}`NORMAL <onetl.hooks.hook.HookPriority.NORMAL>`
-4. Inherited class slot + {obj}`NORMAL <onetl.hooks.hook.HookPriority.NORMAL>`
-5. Parent class slot + {obj}`LAST <onetl.hooks.hook.HookPriority.LAST>`
-6. Inherited class slot + {obj}`LAST <onetl.hooks.hook.HookPriority.LAST>`
+1. Parent class slot + [`FIRST`][onetl.hooks.hook.HookPriority.FIRST]
+2. Inherited class slot + [`FIRST`][onetl.hooks.hook.HookPriority.FIRST]
+3. Parent class slot + [`NORMAL`][onetl.hooks.hook.HookPriority.NORMAL]
+4. Inherited class slot + [`NORMAL`][onetl.hooks.hook.HookPriority.NORMAL]
+5. Parent class slot + [`LAST`][onetl.hooks.hook.HookPriority.LAST]
+6. Inherited class slot + [`LAST`][onetl.hooks.hook.HookPriority.LAST]
 
 Hooks with the same priority and inheritance will be executed in the same order they were registered (`Slot.bind` call).
 
-```{eval-rst}
-.. note::
+!!! note
 
-    Calls of `super()` inside inherited class methods does not trigger hooks call.
-    Hooks are triggered only if method is called explicitly.
+    Calls of `super()` inside inherited class methods does not trigger hooks call. Hooks are triggered only if method is called explicitly.
 
     This allow to wrap with a hook the entire slot call without influencing its internal logic.
 
-```
-
 ### Hook types
 
-Here are several examples of using hooks. These types are not exceptional, they can be mixed - for example,
-hook can both modify method result and catch exceptions.
+Here are several examples of using hooks. These types are not exceptional, they can be mixed - for example, hook can both modify method result and catch exceptions.
 
 #### Before hook
 
@@ -426,8 +410,7 @@ def before2(obj, arg):
     return None  # return None is the same as no return statement
 ```
 
-Executed before calling the original method wrapped by `@slot`.
-If hook raises an exception, method will not be called at all.
+Executed before calling the original method wrapped by `@slot`. If hook raises an exception, method will not be called at all.
 
 #### After hook
 
@@ -453,10 +436,9 @@ If original method raises an exception, the block of code after `yield` will not
 
 Can be used for catching and handling some exceptions, or to determine that there was no exception during slot call:
 
-```{eval-rst}
-.. tabs::
+=== Generator syntax
 
-  .. code-tab:: py Generator syntax
+    ```python 
 
       # This is just the same as using @contextlib.contextmanager
 
@@ -469,8 +451,10 @@ Can be used for catching and handling some exceptions, or to determine that ther
               magic(e)
           finally:
               finalizer()
+    ```
+=== Context manager syntax
 
-  .. code-tab:: py Context manager syntax
+    ```python 
 
       @hook
       class ContextManager:
@@ -492,23 +476,20 @@ Can be used for catching and handling some exceptions, or to determine that ther
                   print(self.obj, self.arg)
               finalizer()
               return result
-```
+    ```
 
-```{eval-rst}
-.. note::
+!!! note
 
-    Contexts are exited in the reverse order of the hook calls.
-    So if some hook raised an exception, it will be passed into the previous hook, not the next one.
+    Contexts are exited in the reverse order of the hook calls. So if some hook raised an exception, it will be passed into the previous hook, not the next one.
 
-    It is recommended to specify the proper priority for the hook, e.g. :obj:`FIRST <onetl.hooks.hook.HookPriority.FIRST>`
-```
+    It is recommended to specify the proper priority for the hook, e.g. [`FIRST`][onetl.hooks.hook.HookPriority.FIRST]
 
 #### Replacing result hook
 
 Replaces the output result of the original method.
 
 Can be used for delegating some implementation details for third-party extensions.
-See {ref}`hive` and {ref}`hdfs` as an example.
+See [`hive`][hive] and [`hdfs`][hdfs] as an example.
 
 ```python
 @hook
@@ -524,30 +505,29 @@ def replace2(obj, arg):
     yield arg + 10  # same as above
 ```
 
-```{eval-rst}
-.. note::
+!!! note
 
     If there are multiple hooks bound to the same slot, the result of last hook will be used.
-    It is recommended to specify the proper priority for the hook, e.g. :obj:`LAST <onetl.hooks.hook.HookPriority.LAST>`
-
-```
+    It is recommended to specify the proper priority for the hook, e.g. [`LAST`][onetl.hooks.hook.HookPriority.LAST]
 
 #### Accessing result hook
 
 Can access output result of the original method and inspect or validate it:
 
-```{eval-rst}
-.. tabs::
+=== Generator syntax
 
-    .. code-tab:: py Generator syntax
+    ```python 
 
         @hook
         def access_result(obj, arg):
             result = yield  # original method is called here, and result can be used in the hook
             print(result)
             yield  # does not modify result
+    ```
 
-    .. code-tab:: py Context manager syntax
+=== Context manager syntax
+
+    ```python 
 
         @hook
         class ModifiesResult:
@@ -568,23 +548,24 @@ Can access output result of the original method and inspect or validate it:
             def __exit__(self, exc_type, exc_value, traceback):
                 return False
 
-```
+    ```
 
 #### Modifying result hook
 
 Can access output result of the original method, and return the modified one:
 
-```{eval-rst}
-.. tabs::
+=== Generator syntax
 
-    .. code-tab:: py Generator syntax
+    ```python
 
         @hook
         def modifies_result(obj, arg):
             result = yield  # original method is called here, and result can be used in the hook
             yield result + 10  # modify output result. None values are ignored
+    ```
+=== Context manager syntax
 
-    .. code-tab:: py Context manager syntax
+    ```python
 
         @hook
         class ModifiesResult:
@@ -604,15 +585,12 @@ Can access output result of the original method, and return the modified one:
 
             def __exit__(self, exc_type, exc_value, traceback):
                 return False
-```
+    ```
 
-```{eval-rst}
-.. note::
+!!! note
 
     If there are multiple hooks bound to the same slot, the result of last hook will be used.
-    It is recommended to specify the proper priority for the hook, e.g. :obj:`LAST <onetl.hooks.hook.HookPriority.LAST>`
-
-```
+    It is recommended to specify the proper priority for the hook, e.g. [`LAST`][onetl.hooks.hook.HookPriority.LAST]
 
 ## How to enable/disable hooks?
 
@@ -620,39 +598,34 @@ You can enable/disable/temporary disable hooks on 4 different levels:
 
 - Manage global hooks state (level 1):
 
-  > - {obj}`onetl.hooks.hooks_state.stop_all_hooks`
-  > - {obj}`onetl.hooks.hooks_state.resume_all_hooks`
-  > - {obj}`onetl.hooks.hooks_state.skip_all_hooks`
+  - [`onetl.hooks.hooks_state.stop_all_hooks`][onetl.hooks.hooks_state.stop_all_hooks]
+  - [`onetl.hooks.hooks_state.resume_all_hooks`][onetl.hooks.hooks_state.resume_all_hooks]
+  - [`onetl.hooks.hooks_state.skip_all_hooks`][onetl.hooks.hooks_state.skip_all_hooks]
 
 - Manage all hooks bound to a specific class (level 2):
 
-  > - {obj}`onetl.hooks.support_hooks.suspend_hooks`
-  > - {obj}`onetl.hooks.support_hooks.resume_hooks`
-  > - {obj}`onetl.hooks.support_hooks.skip_hooks`
+  - [`onetl.hooks.support_hooks.suspend_hooks`][onetl.hooks.support_hooks.suspend_hooks]
+  - [`onetl.hooks.support_hooks.resume_hooks`][onetl.hooks.support_hooks.resume_hooks]
+  - [`onetl.hooks.support_hooks.skip_hooks`][onetl.hooks.support_hooks.skip_hooks]
 
 - Manage all hooks bound to a specific slot (level 3):
 
-  > - {obj}`onetl.hooks.slot.Slot.suspend_hooks`
-  > - {obj}`onetl.hooks.slot.Slot.resume_hooks`
-  > - {obj}`onetl.hooks.slot.Slot.skip_hooks`
+  - [`onetl.hooks.slot.Slot.suspend_hooks`][onetl.hooks.slot.Slot.suspend_hooks]
+  - [`onetl.hooks.slot.Slot.resume_hooks`][onetl.hooks.slot.Slot.resume_hooks]
+  - [`onetl.hooks.slot.Slot.skip_hooks`][onetl.hooks.slot.Slot.skip_hooks]
 
 - Manage state of a specific hook (level 4):
 
-  > - {obj}`onetl.hooks.hook.Hook.enable`
-  > - {obj}`onetl.hooks.hook.Hook.disable`
+  - [`onetl.hooks.hook.Hook.enable`][onetl.hooks.hook.Hook.enable]
+  - [`onetl.hooks.hook.Hook.disable`][onetl.hooks.hook.Hook.disable]
 
 More details in the documentation above.
 
-```{eval-rst}
-.. note::
+!!! note
 
     All of these levels are independent.
 
-    Calling `stop` on the level 1 has higher priority than level 2, and so on.
-    But calling `resume` on the level 1 does not automatically resume hooks stopped in the level 2,
-    they should be resumed explicitly.
-
-```
+    Calling `stop` on the level 1 has higher priority than level 2, and so on. But calling `resume` on the level 1 does not automatically resume hooks stopped in the level 2, they should be resumed explicitly.
 
 ## How to see logs of the hook mechanism?
 
@@ -678,7 +651,7 @@ from onetl.logs import NOTICE, setup_logging
 setup_logging(level=NOTICE)
 ```
 
-```
+```text
 NOTICE  |Hooks| 2 hooks registered for 'MyClass.method'
 NOTICE  |Hooks| Calling hook 'mymodule.callback1' (1/2)
 NOTICE  |Hooks| Hook is finished with returning non-None result

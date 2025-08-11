@@ -1,10 +1,9 @@
-# Hooks
+# Хуки
 
-:octicons-versions-16: **version added 0.6.0**
+:octicons-versions-16: **добавлено в версии 0.6.0**
 
-
-* [High level design][hooks-design]
-* [@hook decorator][hook-decorator]
-* [@slot decorator][slot-decorator]
-* [@support_hooks decorator][support-hooks]
-* [Hooks global state][global-state]
+* [Высокоуровневый дизайн][hooks-design]
+* [Декоратор @hook][hook-decorator]
+* [Декоратор @slot][slot-decorator]
+* [Декоратор @support_hooks][support-hooks]
+* [Глобальное состояние хуков][global-state]

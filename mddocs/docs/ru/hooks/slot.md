@@ -1,4 +1,4 @@
-# `@slot` decorator { #slot-decorator }
+# Декоратор `@slot` { #slot-decorator }
 
 <!-- 
 ```{eval-rst}

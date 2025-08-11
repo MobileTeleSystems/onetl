@@ -1,4 +1,4 @@
-# YAML HWM Store { #yaml-hwm-store }
+# Хранилище HWM в формате YAML { #yaml-hwm-store }
 
 <!-- 
 ```{eval-rst}

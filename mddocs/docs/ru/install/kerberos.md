@@ -1,4 +1,4 @@
-# Kerberos support { #install-kerberos }
+# Поддержка Kerberos { #install-kerberos }
 
 <!-- 
 ```{eval-rst}

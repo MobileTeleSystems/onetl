@@ -1,4 +1,4 @@
-# How to install { #install }
+# Установка { #install }
 
 ----8<----
 ../mddocs/docs/en/minimal_install.md
@@ -6,10 +6,10 @@
 
 ## Installation in details
 
-## How to install
+## Как установить
 
-* [How to install][install]
+* [Установка][install]
 * [Spark][install-spark]
-* [File connections][install-files]
-* [Kerberos support][install-kerberos]
-* [Full bundle][install-full]
+* [Файловые подключения][install-files]
+* [Поддержка Kerberos][install-kerberos]
+* [Полная установка][install-full]

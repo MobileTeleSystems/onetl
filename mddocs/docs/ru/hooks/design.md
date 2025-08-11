@@ -1,67 +1,66 @@
-# High level design { #hooks-design }
+# Высокоуровневый дизайн { #hooks-design }
 
-## What are hooks?
+## Что такое хуки?
 
-Hook mechanism is a part of onETL which allows to inject some additional behavior into
-existing methods of (almost) any class.
+Механизм хуков — это часть onETL, которая позволяет внедрять дополнительное поведение в существующие методы (почти) любого класса.
 
-### Features
+### Возможности
 
-Hooks mechanism allows to:
+Механизм хуков позволяет:
 
-- Inspect and validate input arguments and output results of method call
-- Access, modify or replace method call result (but NOT input arguments)
-- Wrap method calls with a context manager and catch raised exceptions
+- Проверять и валидировать входные аргументы и результаты вызова метода
+- Получать доступ, изменять или заменять результат вызова метода (но НЕ входные аргументы)
+- Оборачивать вызовы методов контекстным менеджером и перехватывать возникающие исключения
 
-Hooks can be placed into {ref}`plugins`, allowing to modify onETL behavior by installing some additional package.
+Хуки можно размещать в [плагинах][plugins], что позволяет изменять поведение onETL путем установки дополнительных пакетов.
 
-### Limitations
+### Ограничения
 
-- Hooks can be bound to methods of a class only (not functions).
-- Only methods decorated with {ref}`slot-decorator` implement hooks mechanism. These class and methods are marked as {{ support_hooks }}.
-- Hooks can be bound to public methods only.
+- Хуки могут быть привязаны только к методам класса (не к функциям).
+- Только методы, декорированные с помощью [`slot-decorator`][slot-decorator], реализуют механизм хуков. Такие классы и методы помечены как `support_hooks`.
+- Хуки могут быть привязаны только к публичным методам.
 
-## Terms
+## Термины
 
-- {ref}`slot-decorator` - method of a class with a special decorator
-- `Callback` - function which implements some additional logic which modifies slot behavior
-- {ref}`hook-decorator` - wrapper around callback which stores hook state, priority and some useful methods
-- `Hooks mechanism` - calling `Slot()` will call all enabled hooks which are bound to the slot. Implemented by {ref}`support-hooks-decorator`.
+- [`slot-decorator`][slot-decorator] - метод класса со специальным декоратором
+- `Callback` - функция, которая реализует дополнительную логику, изменяющую поведение слота
+- [`hook-decorator`][hook-decorator] - обертка вокруг функции обратного вызова, которая хранит состояние хука, приоритет и некоторые полезные методы
+- `Механизм хуков` - вызов `Slot()` вызовет все включенные хуки, привязанные к слоту. Реализовано через [`support-hooks-decorator`][support-hooks-decorator].
 
-## How to implement hooks?
+## Как реализовать хуки?
 
-### TL;DR
+### Краткое руководство
 
 ```python
 from onetl.hooks import support_hooks, slot, hook
 
 
-@support_hooks  # enabling hook mechanism for the class
+@support_hooks  # включение механизма хуков для класса
 class MyClass:
     def __init__(self, data):
         self.data = data
 
-    # this is slot
+    # это слот
     @slot
     def method(self, arg):
         pass
 
 
-@MyClass.method.bind  # bound hook to the slot
-@hook  # this is hook
-def callback(obj, arg):  # this is callback
+@MyClass.method.bind  # привязка хука к слоту
+@hook  # это хук
+def callback(obj, arg):  # это функция обратного вызова
     print(obj.data, arg)
 
 
 obj = MyClass(1)
-obj.method(2)  # will call callback(obj, 1)
+obj.method(2)  # вызовет callback(obj, 1)
 
-# prints "1 2"
+# выведет "1 2"
 ```
 
-#### Define a slot
+#### Определение слота
 
-- Create a class with a method:
+- Создайте класс с методом:
 
 ```python
 class MyClass:
@@ -72,7 +71,7 @@ class MyClass:
         return self.data, arg
 ```
 
-- Add {ref}`slot-decorator` to the method:
+- Добавьте декоратор [`slot-decorator`][slot-decorator] к методу:
 
 ```python
 from onetl.hooks import support_hooks, slot, hook
@@ -84,7 +83,7 @@ class MyClass:
         return self.data, arg
 ```
 
-If method has other decorators like `@classmethod` or `@staticmethod`, `@slot` should be placed on the top:
+Если метод имеет другие декораторы, такие как `@classmethod` или `@staticmethod`, `@slot` должен быть размещен сверху:
 
 ```python
 from onetl.hooks import support_hooks, slot, hook
@@ -102,7 +101,7 @@ class MyClass:
         return arg
 ```
 
-- Add {ref}`support-hooks-decorator` to the class:
+- Добавьте декоратор [`support-hooks-decorator`][support-hooks-decorator] к классу:
 
 ```python
 from onetl.hooks import support_hooks, slot, hook
@@ -115,56 +114,49 @@ class MyClass:
         return self.data, arg
 ```
 
-Slot is created.
+Слот создан.
 
-#### Define a callback
+#### Определение функции обратного вызова
 
-Define some function (a.k.a callback):
+Определите некоторую функцию (т.е. callback):
 
 ```python
 def callback(self, arg):
     print(self.data, arg)
 ```
 
-It should have signature *compatible* with `MyClass.method`. *Compatible* does not mean *exactly the same* -
-for example, you can rename positional arguments:
+Она должна иметь сигнатуру, *совместимую* с `MyClass.method`. *Совместимая* не означает *в точности такую же* - например, вы можете переименовать позиционные аргументы:
 
 ```python
 def callback(obj, arg):
     print(obj.data, arg)
 ```
 
-Use `*args` and `**kwargs` to omit arguments you don't care about:
+Используйте `*args` и `**kwargs` для пропуска аргументов, которые вам не важны:
 
 ```python
 def callback(obj, *args, **kwargs):
     print(obj.data, args, kwargs)
 ```
 
-There is also an argument `method_name` which has a special meaning -
-the method name which the callback is bound to is passed into this argument:
+Также есть аргумент `method_name`, который имеет специальное значение - имя метода, к которому привязана функция обратного вызова, передается в этот аргумент:
 
 ```python
 def callback(obj, *args, method_name: str, **kwargs):
     print(obj.data, args, method_name, kwargs)
 ```
 
-```{eval-rst}
-.. note::
+!!! note
 
-    `method_name` should always be a keyword argument, **NOT** positional.
-```
+    `method_name` всегда должен быть именованным аргументом, а **НЕ** позиционным.
 
-```{eval-rst}
-.. warning::
+!!! warning
 
-    If callback signature is not compatible with slot signature, an exception will be raised,
-    but **ONLY** while slot is called.
-```
+    Если сигнатура callback несовместима с сигнатурой слота, будет вызвано исключение, но **ТОЛЬКО** при вызове слота.
 
-#### Define a hook
+#### Определение хука
 
-Add {ref}`hook-decorator` to create a hook from your callback:
+Добавьте декоратор [`hook-decorator`][hook-decorator] для создания хука из вашей функции обратного вызова:
 
 ```python
 @hook
@@ -172,12 +164,12 @@ def callback(obj, arg):
     print(obj.data, arg)
 ```
 
-You can pass more options to the `@hook` decorator, like state or priority.
-See decorator documentation for more details.
+Вы можете передать больше опций декоратору `@hook`, такие как состояние или приоритет.
+Подробнее смотрите в документации декоратора.
 
-#### Bind hook to the slot
+#### Привязка хука к слоту
 
-Use `Slot.bind` method to bind hook to the slot:
+Используйте метод `Slot.bind` для привязки хука к слоту:
 
 ```python
 @MyClass.method.bind
@@ -186,40 +178,40 @@ def callback(obj, arg):
     print(obj, arg)
 ```
 
-You can bind more than one hook to the same slot, and bind same hook to multiple slots:
+Вы можете привязать более одного хука к одному слоту, и привязать один и тот же хук к нескольким слотам:
 
 ```python
 @MyClass.method1.bind
 @MyClass.method2.bind
 @hook
 def callback1(obj, arg):
-    "Will be called by both MyClass.method1 and MyClass.method2"
+    "Будет вызван как MyClass.method1, так и MyClass.method2"
 
 
 @MyClass.method1.bind
 @hook
 def callback2(obj, arg):
-    "Will be called by MyClass.method1 too"
+    "Также будет вызван MyClass.method1"
 ```
 
-## How hooks are called?
+## Как вызываются хуки?
 
-### General
+### Общая информация
 
-Just call the method decorated by `@slot` to trigger the hook:
+Просто вызовите метод, декорированный `@slot`, чтобы активировать хук:
 
 ```python
 obj = MyClass(1)
-obj.method(2)  # will call callback(obj, 2)
+obj.method(2)  # вызовет callback(obj, 2)
 
-# prints "1 2"
+# выведет "1 2"
 ```
 
-There are some special callback types that has a slightly different behavior.
+Есть некоторые специальные типы обратных вызовов, которые имеют несколько иное поведение.
 
-### Context managers
+### Контекстные менеджеры
 
-`@hook` decorator can be placed on a context manager class:
+Декоратор `@hook` может быть размещен на классе контекстного менеджера:
 
 ```python
 @hook
@@ -229,19 +221,18 @@ class ContextManager:
         self.arg = arg
 
     def __enter__(self):
-        # do something on enter
+        # делаем что-то при входе
         print(obj.data, arg)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        # do something on exit
+        # делаем что-то при выходе
         return False
 ```
 
-Context manager is entered while calling the `Slot()`, and exited then the call is finished.
+Контекстный менеджер входит при вызове `Slot()` и выходит, когда вызов завершается.
 
-If present, method `process_result` has a special meaning -
-it can receive `MyClass.method` call result, and also modify/replace it:
+Если присутствует, метод `process_result` имеет особое значение - он может получать результат вызова `MyClass.method`, а также изменять/заменять его:
 
 ```python
 @hook
@@ -251,40 +242,40 @@ class ContextManager:
         self.arg = arg
 
     def __enter__(self):
-        # do something on enter
+        # делаем что-то при входе
         print(obj.data, arg)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        # do something on exit
+        # делаем что-то при выходе
         return False
 
     def process_result(self, result):
-        # do something with method call result
+        # делаем что-то с результатом вызова метода
         return modified(result)
 ```
 
-See examples below for more information.
+Смотрите примеры ниже для получения дополнительной информации.
 
-### Generator function
+### Функция-генератор
 
-`@hook` decorator can be placed on a generator function:
+Декоратор `@hook` может быть размещен на функции-генераторе:
 
 ```python
 @hook
 def callback(obj, arg):
     print(obj.data, arg)
-    # this is called before original method body
+    # вызывается до тела оригинального метода
 
-    yield  # method is called here
+    yield  # метод вызывается здесь
 
-    # this is called after original method body
+    # вызывается после тела оригинального метода
 ```
 
-It is converted to a context manager, in the same manner as
+Он преобразуется в контекстный менеджер, аналогично
 [contextlib.contextmanager](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager).
 
-Generator body can be wrapped with `try..except..finally` to catch exceptions:
+Тело генератора может быть обернуто в `try..except..finally` для перехвата исключений:
 
 ```python
 @hook
@@ -292,77 +283,77 @@ def callback(obj, arg):
     print(obj.data, arg)
 
     try:
-        # this is called before original method body
+        # вызывается до тела оригинального метода
 
-        yield  # method is called here
+        yield  # метод вызывается здесь
     except Exception as e:
         process_exception(a)
     finally:
-        # this is called after original method body
+        # вызывается после тела оригинального метода
         finalizer()
 ```
 
-There is also a special syntax which allows generator to access and modify/replace method call result:
+Существует также специальный синтаксис, который позволяет генератору получать доступ и изменять/заменять результат вызова метода:
 
-```
+```python
 @hook
 def callback(obj, arg):
-    original_result = yield  # method is called here
+    original_result = yield  # метод вызывается здесь
 
     new_result = do_something(original_result)
 
-    yield new_result  # modify/replace the result
+    yield new_result  # изменить/заменить результат
 ```
 
-### Calling hooks in details
+### Вызов хуков подробно
 
-- The callback will be called with the same arguments as the original method.
+- Функция обратного вызова будет вызвана с теми же аргументами, что и оригинальный метод.
 
-  - If slot is a regular method:
+  - Если слот является обычным методом:
 
     ```python
     callback_result = callback(self, *args, **kwargs)
     ```
 
-    Here `self` is a class instance (`obj`).
+    Здесь `self` — это экземпляр класса (`obj`).
 
-  - If slot is a class method:
+  - Если слот является методом класса:
 
     ```python
     callback_result = callback(cls, *args, **kwargs)
     ```
 
-    Here `cls` is the class itself (`MyClass`).
+    Здесь `cls` — это сам класс (`MyClass`).
 
-  - If slot is a static method:
+  - Если слот является статическим методом:
 
     ```python
     callback_result = callback(*args, **kwargs)
     ```
 
-    Neither object not class are passed to the callback in this case.
+    В этом случае в функцию обратного вызова не передается ни объект, ни класс.
 
-- If `callback_result` is a context manager, enter the context. Context manager can catch all the exceptions raised.
+- Если `callback_result` является контекстным менеджером, войдите в контекст. Контекстный менеджер может перехватывать все вызванные исключения.
 
-  > If there are multiple hooks bound the the slot, every context manager will be entered.
+  > Если к слоту привязано несколько хуков, каждый контекстный менеджер будет введен.
 
-- Then call the original method wrapped by `@slot`:
+- Затем вызовите оригинальный метод, обернутый `@slot`:
 
   ```python
   original_result = method(*args, **kwargs)
   ```
 
-- Process `original_result`:
+- Обработайте `original_result`:
 
-  - If `callback_result` object has method `process_result`, or is a generator wrapped with `@hook`, call it:
+  - Если объект `callback_result` имеет метод `process_result` или является генератором, обернутым `@hook`, вызовите его:
 
     ```python
     new_result = callback_result.process_result(original_result)
     ```
 
-  - Otherwise set `new_result = callback_result`.
+  - В противном случае установите `new_result = callback_result`.
 
-  - If there are multiple hooks bound the the method, pass `new_result` through the chain:
+  - Если к методу привязано несколько хуков, пропустите `new_result` через цепочку:
 
     ```python
     new_result = callback1_result.process_result(original_result)
@@ -370,108 +361,102 @@ def callback(obj, arg):
     new_result = callback3_result.process_result(new_result or original_result)
     ```
 
-- Finally return:
+- Наконец, верните:
 
   ```python
   return new_result or original_result
   ```
 
-  All `None` values are ignored on every step above.
+  Все значения `None` игнорируются на каждом этапе выше.
 
-- Exit all the context managers entered during the slot call.
+- Выход из всех контекстных менеджеров, введенных во время вызова слота.
 
-### Hooks priority
+### Приоритет хуков
 
-Hooks are executed in the following order:
+Хуки выполняются в следующем порядке:
 
-1. Parent class slot + {obj}`FIRST <onetl.hooks.hook.HookPriority.FIRST>`
-2. Inherited class slot + {obj}`FIRST <onetl.hooks.hook.HookPriority.FIRST>`
-3. Parent class slot + {obj}`NORMAL <onetl.hooks.hook.HookPriority.NORMAL>`
-4. Inherited class slot + {obj}`NORMAL <onetl.hooks.hook.HookPriority.NORMAL>`
-5. Parent class slot + {obj}`LAST <onetl.hooks.hook.HookPriority.LAST>`
-6. Inherited class slot + {obj}`LAST <onetl.hooks.hook.HookPriority.LAST>`
+1. Слот родительского класса + [`FIRST`][onetl.hooks.hook.HookPriority.FIRST]
+2. Слот унаследованного класса + [`FIRST`][onetl.hooks.hook.HookPriority.FIRST]
+3. Слот родительского класса + [`NORMAL`][onetl.hooks.hook.HookPriority.NORMAL]
+4. Слот унаследованного класса + [`NORMAL`][onetl.hooks.hook.HookPriority.NORMAL]
+5. Слот родительского класса + [`LAST`][onetl.hooks.hook.HookPriority.LAST]
+6. Слот унаследованного класса + [`LAST`][onetl.hooks.hook.HookPriority.LAST]
 
-Hooks with the same priority and inheritance will be executed in the same order they were registered (`Slot.bind` call).
+Хуки с одинаковым приоритетом и наследованием будут выполняться в том же порядке, в котором они были зарегистрированы (вызов `Slot.bind`).
 
-```{eval-rst}
-.. note::
+!!! note
 
-    Calls of `super()` inside inherited class methods does not trigger hooks call.
-    Hooks are triggered only if method is called explicitly.
+    Вызовы `super()` внутри методов унаследованного класса не вызывают вызов хуков. Хуки вызываются только при явном вызове метода.
 
-    This allow to wrap with a hook the entire slot call without influencing its internal logic.
+    Это позволяет обернуть хуком весь вызов слота, не влияя на его внутреннюю логику.
 
-```
+### Типы хуков
 
-### Hook types
+Вот несколько примеров использования хуков. Эти типы не являются исключительными, их можно смешивать — например, хук может как изменять результат метода, так и перехватывать исключения.
 
-Here are several examples of using hooks. These types are not exceptional, they can be mixed - for example,
-hook can both modify method result and catch exceptions.
+#### Хук до (Before hook)
 
-#### Before hook
-
-Can be used for inspecting or validating input args of the original function:
+Может использоваться для проверки или валидации входных аргументов оригинальной функции:
 
 ```python
 @hook
 def before1(obj, arg):
     print(obj, arg)
-    # original method is called after exiting this function
+    # оригинальный метод вызывается после выхода из этой функции
 
 
 @hook
 def before2(obj, arg):
     if arg == 1:
-        raise ValueError("arg=1 is not allowed")
-    return None  # return None is the same as no return statement
+        raise ValueError("arg=1 не разрешен")
+    return None  # возврат None то же самое, что и отсутствие оператора return
 ```
 
-Executed before calling the original method wrapped by `@slot`.
-If hook raises an exception, method will not be called at all.
+Выполняется перед вызовом оригинального метода, обернутого `@slot`. Если хук вызывает исключение, метод вообще не будет вызван.
 
-#### After hook
+#### Хук после (After hook)
 
-Can be used for performing some actions after original method was successfully executed:
+Может использоваться для выполнения некоторых действий после успешного выполнения оригинального метода:
 
 ```python
 @hook
 def after1(obj, arg):
-    yield  # original method is called here
+    yield  # оригинальный метод вызывается здесь
     print(obj, arg)
 
 
 @hook
 def after2(obj, arg):
-    yield None  # yielding None is the same as empty yield
+    yield None  # yield None то же самое, что и пустой yield
     if arg == 1:
-        raise ValueError("arg=1 is not allowed")
+        raise ValueError("arg=1 не разрешен")
 ```
 
-If original method raises an exception, the block of code after `yield` will not be called.
+Если оригинальный метод вызывает исключение, блок кода после `yield` не будет вызван.
 
-#### Context hook
+#### Контекстный хук (Context hook)
 
-Can be used for catching and handling some exceptions, or to determine that there was no exception during slot call:
+Может использоваться для перехвата и обработки некоторых исключений или для определения того, что во время вызова слота не было исключения:
 
-```{eval-rst}
-.. tabs::
+=== Синтаксис генератора
 
-  .. code-tab:: py Generator syntax
-
-      # This is just the same as using @contextlib.contextmanager
+    ```python
+      # Это то же самое, что и использование @contextlib.contextmanager
 
       @hook
       def context_generator(obj, arg):
           try:
-              yield  # original method is called here
-              print(obj, arg)  # <-- this line will not be called if method raised an exception
+              yield  # оригинальный метод вызывается здесь
+              print(obj, arg)  # <-- эта строка не будет вызвана, если метод вызвал исключение
           except SomeException as e:
               magic(e)
           finally:
               finalizer()
+    ```
 
-  .. code-tab:: py Context manager syntax
+=== Синтаксис контекстного менеджера
 
+    ```python
       @hook
       class ContextManager:
           def __init__(self, obj, args):
@@ -481,73 +466,69 @@ Can be used for catching and handling some exceptions, or to determine that ther
           def __enter__(self):
               return self
 
-          # original method is called between __enter__ and __exit__
+          # оригинальный метод вызывается между __enter__ и __exit__
 
           def __exit__(self, exc_type, exc_value, traceback):
               result = False
               if exc_type is not None and isinstance(exc_value, SomeException):
                   magic(exc_value)
-                  result = True  # suppress exception
+                  result = True  # подавить исключение
               else:
                   print(self.obj, self.arg)
               finalizer()
               return result
-```
+    ```
 
-```{eval-rst}
-.. note::
+!!! note
 
-    Contexts are exited in the reverse order of the hook calls.
-    So if some hook raised an exception, it will be passed into the previous hook, not the next one.
+    Контексты выходят в обратном порядке вызовов хуков. Таким образом, если какой-то хук вызвал исключение, оно будет передано в предыдущий хук, а не в следующий.
 
-    It is recommended to specify the proper priority for the hook, e.g. :obj:`FIRST <onetl.hooks.hook.HookPriority.FIRST>`
-```
+    Рекомендуется указывать правильный приоритет для хука, например [`FIRST`][onetl.hooks.hook.HookPriority.FIRST]
 
-#### Replacing result hook
+#### Хук замены результата (Replacing result hook)
 
-Replaces the output result of the original method.
+Заменяет выходной результат оригинального метода.
 
-Can be used for delegating some implementation details for third-party extensions.
-See {ref}`hive` and {ref}`hdfs` as an example.
+Может использоваться для делегирования некоторых деталей реализации сторонним расширениям.
+См. [`hive`][hive] и [`hdfs`][hdfs] в качестве примера.
 
 ```python
 @hook
 def replace1(obj, arg):
-    result = arg + 10  # any non-None return result
+    result = arg + 10  # любой не None результат
 
-    # original method call result is ignored, output will always be arg + 10
+    # результат вызова оригинального метода игнорируется, выход всегда будет arg + 10
     return result
 
 
 @hook
 def replace2(obj, arg):
-    yield arg + 10  # same as above
+    yield arg + 10  # то же, что и выше
 ```
 
-```{eval-rst}
-.. note::
+!!! note
 
-    If there are multiple hooks bound to the same slot, the result of last hook will be used.
-    It is recommended to specify the proper priority for the hook, e.g. :obj:`LAST <onetl.hooks.hook.HookPriority.LAST>`
+    Если к одному слоту привязано несколько хуков, будет использоваться результат последнего хука.
+    Рекомендуется указывать правильный приоритет для хука, например [`LAST`][onetl.hooks.hook.HookPriority.LAST]
 
-```
+#### Хук доступа к результату (Accessing result hook)
 
-#### Accessing result hook
+Может получать доступ к выходному результату оригинального метода и проверять или валидировать его:
 
-Can access output result of the original method and inspect or validate it:
+=== Синтаксис генератора
 
-```{eval-rst}
-.. tabs::
-
-    .. code-tab:: py Generator syntax
+    ```python
 
         @hook
         def access_result(obj, arg):
-            result = yield  # original method is called here, and result can be used in the hook
+            result = yield  # оригинальный метод вызывается здесь, и результат может использоваться в хуке
             print(result)
-            yield  # does not modify result
+            yield  # не изменяет результат
+    ```
 
-    .. code-tab:: py Context manager syntax
+=== Синтаксис контекстного менеджера
+
+    ```python
 
         @hook
         class ModifiesResult:
@@ -558,33 +539,35 @@ Can access output result of the original method and inspect or validate it:
             def __enter__(self):
                 return self
 
-            # original method is called between __enter__ and __exit__
-            # result is passed into process_result method of context manager, if present
+            # оригинальный метод вызывается между __enter__ и __exit__
+            # результат передается в метод process_result контекстного менеджера, если он есть
 
             def process_result(self, result):
-                print(result)  # result can be used in the hook
-                return None  # does not modify result. same as no return statement in the method
+                print(result)  # результат может использоваться в хуке
+                return None  # не изменяет результат. то же самое, что и отсутствие оператора return в методе
 
             def __exit__(self, exc_type, exc_value, traceback):
                 return False
 
-```
+    ```
 
-#### Modifying result hook
+#### Хук изменения результата (Modifying result hook)
 
-Can access output result of the original method, and return the modified one:
+Может получать доступ к выходному результату оригинального метода и возвращать измененный:
 
-```{eval-rst}
-.. tabs::
+=== Синтаксис генератора
 
-    .. code-tab:: py Generator syntax
+    ```python 
 
         @hook
         def modifies_result(obj, arg):
-            result = yield  # original method is called here, and result can be used in the hook
-            yield result + 10  # modify output result. None values are ignored
+            result = yield  # оригинальный метод вызывается здесь, и результат может использоваться в хуке
+            yield result + 10  # изменить выходной результат. Значения None игнорируются
+    ```
 
-    .. code-tab:: py Context manager syntax
+=== Синтаксис контекстного менеджера
+
+    ```python 
 
         @hook
         class ModifiesResult:
@@ -595,68 +578,62 @@ Can access output result of the original method, and return the modified one:
             def __enter__(self):
                 return self
 
-            # original method is called between __enter__ and __exit__
-            # result is passed into process_result method of context manager, if present
+            # оригинальный метод вызывается между __enter__ и __exit__
+            # результат передается в метод process_result контекстного менеджера, если он есть
 
             def process_result(self, result):
-                print(result)  # result can be used in the hook
-                return result + 10  # modify output result. None values are ignored
+                print(result)  # результат может использоваться в хуке
+                return result + 10  # изменить выходной результат. Значения None игнорируются
 
             def __exit__(self, exc_type, exc_value, traceback):
                 return False
-```
+    ```
 
-```{eval-rst}
-.. note::
+!!! note
 
-    If there are multiple hooks bound to the same slot, the result of last hook will be used.
-    It is recommended to specify the proper priority for the hook, e.g. :obj:`LAST <onetl.hooks.hook.HookPriority.LAST>`
+    Если к одному слоту привязано несколько хуков, будет использоваться результат последнего хука.
+    Рекомендуется указывать правильный приоритет для хука, например [`LAST`][onetl.hooks.hook.HookPriority.LAST]
 
-```
+## Как включить/отключить хуки?
 
-## How to enable/disable hooks?
+Вы можете включить/отключить/временно отключить хуки на 4 разных уровнях:
 
-You can enable/disable/temporary disable hooks on 4 different levels:
+- Управление глобальным состоянием хуков (уровень 1):
 
-- Manage global hooks state (level 1):
+  - [`onetl.hooks.hooks_state.stop_all_hooks`][onetl.hooks.hooks_state.stop_all_hooks]
+  - [`onetl.hooks.hooks_state.resume_all_hooks`][onetl.hooks.hooks_state.resume_all_hooks]
+  - [`onetl.hooks.hooks_state.skip_all_hooks`][onetl.hooks.hooks_state.skip_all_hooks]
 
-  > - {obj}`onetl.hooks.hooks_state.stop_all_hooks`
-  > - {obj}`onetl.hooks.hooks_state.resume_all_hooks`
-  > - {obj}`onetl.hooks.hooks_state.skip_all_hooks`
+- Управление всеми хуками, привязанными к конкретному классу (уровень 2):
 
-- Manage all hooks bound to a specific class (level 2):
+  - [`onetl.hooks.support_hooks.suspend_hooks`][onetl.hooks.support_hooks.suspend_hooks]
+  - [`onetl.hooks.support_hooks.resume_hooks`][onetl.hooks.support_hooks.resume_hooks]
+  - [`onetl.hooks.support_hooks.skip_hooks`][onetl.hooks.support_hooks.skip_hooks]
 
-  > - {obj}`onetl.hooks.support_hooks.suspend_hooks`
-  > - {obj}`onetl.hooks.support_hooks.resume_hooks`
-  > - {obj}`onetl.hooks.support_hooks.skip_hooks`
+- Управление всеми хуками, привязанными к конкретному слоту (уровень 3):
 
-- Manage all hooks bound to a specific slot (level 3):
+  - [`onetl.hooks.slot.Slot.suspend_hooks`][onetl.hooks.slot.Slot.suspend_hooks]
+  - [`onetl.hooks.slot.Slot.resume_hooks`][onetl.hooks.slot.Slot.resume_hooks]
+  - [`onetl.hooks.slot.Slot.skip_hooks`][onetl.hooks.slot.Slot.skip_hooks]
 
-  > - {obj}`onetl.hooks.slot.Slot.suspend_hooks`
-  > - {obj}`onetl.hooks.slot.Slot.resume_hooks`
-  > - {obj}`onetl.hooks.slot.Slot.skip_hooks`
+- Управление состоянием конкретного хука (уровень 4):
 
-- Manage state of a specific hook (level 4):
+  - [`onetl.hooks.hook.Hook.enable`][onetl.hooks.hook.Hook.enable]
+  - [`onetl.hooks.hook.Hook.disable`][onetl.hooks.hook.Hook.disable]
 
-  > - {obj}`onetl.hooks.hook.Hook.enable`
-  > - {obj}`onetl.hooks.hook.Hook.disable`
+Подробнее см. в документации выше.
 
-More details in the documentation above.
+!!! note
 
-```{eval-rst}
-.. note::
+    Все эти уровни независимы.
 
-    All of these levels are independent.
+    Вызов `stop` на уровне 1 имеет более высокий приоритет, чем уровень 2, и так далее.
+    Но вызов `resume` на уровне 1 не возобновляет автоматически хуки, остановленные на уровне 2,
+    их нужно возобновлять явно.
 
-    Calling `stop` on the level 1 has higher priority than level 2, and so on.
-    But calling `resume` on the level 1 does not automatically resume hooks stopped in the level 2,
-    they should be resumed explicitly.
+## Как увидеть логи механизма хуков?
 
-```
-
-## How to see logs of the hook mechanism?
-
-Hooks registration emits logs with `DEBUG` level:
+Регистрация хуков выводит логи с уровнем `DEBUG`:
 
 ```python
 from onetl.logs import setup_logging
@@ -670,7 +647,7 @@ DEBUG  |onETL| Registered hook 'mymodule.callback2' for 'MyClass.method' (enable
 DEBUG  |onETL| Registered hook 'mymodule.callback3' for 'MyClass.method' (enabled=False, priority=HookPriority.NORMAL)
 ```
 
-But most of logs are emitted with even lower level `NOTICE`, to make output less verbose:
+Но большая часть логов выводится с еще более низким уровнем `NOTICE`, чтобы сделать вывод менее подробным:
 
 ```python
 from onetl.logs import NOTICE, setup_logging
@@ -678,7 +655,7 @@ from onetl.logs import NOTICE, setup_logging
 setup_logging(level=NOTICE)
 ```
 
-```
+```text
 NOTICE  |Hooks| 2 hooks registered for 'MyClass.method'
 NOTICE  |Hooks| Calling hook 'mymodule.callback1' (1/2)
 NOTICE  |Hooks| Hook is finished with returning non-None result

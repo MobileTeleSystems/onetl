@@ -1,4 +1,4 @@
-# `@support_hooks` decorator { #support-hooks }
+# Декортаор `@support_hooks` { #support-hooks }
 
 <!-- 
 ```{eval-rst}

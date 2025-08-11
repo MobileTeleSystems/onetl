@@ -1,4 +1,4 @@
-# Hooks global state { #global-state }
+# Глобальное состояние хуков { #global-state }
 
 <!-- 
 ```{eval-rst}

@@ -1,4 +1,4 @@
-# `@hook` decorator { #hook-decorator }
+# Декоратор`@hook` { #hook-decorator }
 
 <!-- 
 ```{eval-rst}

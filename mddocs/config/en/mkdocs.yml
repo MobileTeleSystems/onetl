@@ -42,6 +42,8 @@ extra:                                              # Language Selection
   ci_status_badge: "[![Github Actions - latest CI build status](https://github.com/MobileTeleSystems/onetl/workflows/Tests/badge.svg)](https://github.com/MobileTeleSystems/onetl/actions)"
   precommit_badge: "[![pre-commit.ci Status](https://results.pre-commit.ci/badge/github/MobileTeleSystems/onetl/develop.svg)](https://results.pre-commit.ci/latest/github/MobileTeleSystems/onetl/develop)"
   test_cov_badge: "[![Test coverage - percent](https://codecov.io/gh/MobileTeleSystems/onetl/branch/develop/graph/badge.svg?token=RIO8URKNZJ)](https://codecov.io/gh/MobileTeleSystems/onetl)"
+  etl_entities_link: "[`etl-entities`](https://github.com/MobileTeleSystems/etl-entities)"
+  
   alternate:
 
       # Switch to English
