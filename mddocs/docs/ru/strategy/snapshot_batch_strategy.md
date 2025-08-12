@@ -1,4 +1,4 @@
-# Snapshot Batch Strategy { #snapshot-batch-strategy-0 }
+# Стратегия Snapshot Batch { #snapshot-batch-strategy-0 }
 
 <!-- 
     ```{eval-rst}

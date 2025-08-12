@@ -8,10 +8,7 @@
 ```
  -->
 
-
-All DB connection classes (`Clickhouse`, `Greenplum`, `Hive` and others)
-and all FileDF connection classes (`SparkHDFS`, `SparkLocalFS`, `SparkS3`)
-require Spark to be installed.
+All DB connection classes (`Clickhouse`, `Greenplum`, `Hive` and others) and all FileDF connection classes (`SparkHDFS`, `SparkLocalFS`, `SparkS3`) require Spark to be installed.
 
 ## Installing Java
 
@@ -109,7 +106,7 @@ The most simple solution, but this requires to store raw `.jar` files somewhere 
 - (For `spark.submit.deployMode=cluster`) place downloaded files to HDFS or deploy to any HTTP web server serving static files. See [official documentation](https://spark.apache.org/docs/latest/submitting-applications.html#advanced-dependency-management) for more details.
 - Create Spark session with passing `.jar` absolute file path to `spark.jars` Spark config option:
 
-=== "for spark.submit.deployMode=client (default)"
+=== spark.submit.deployMode=client (default)
 
     ```python 
 
@@ -123,7 +120,7 @@ The most simple solution, but this requires to store raw `.jar` files somewhere 
         )
     ```
 
-=== "for spark.submit.deployMode=cluster"
+=== spark.submit.deployMode=cluster
 
     ```python 
 
@@ -142,8 +139,7 @@ The most simple solution, but this requires to store raw `.jar` files somewhere 
 
 !!! note
 
-    In this case Spark still will try to fetch packages from the internet, so if you don't have internet access,
-    Spark session will be created with significant delay because of all attempts to fetch packages.
+    In this case Spark still will try to fetch packages from the internet, so if you don't have internet access, Spark session will be created with significant delay because of all attempts to fetch packages.
 
 Can be used if you have access both to public repos (like Maven) and a private Artifactory/Nexus repo.
 
@@ -180,7 +176,7 @@ Same as above, but can be used even if there is no network access to public repo
 - Pass `ivysettings.xml` absolute path to `spark.jars.ivySettings` Spark config option.
 - Create Spark session with passing package name to `spark.jars.packages` Spark config option:
 
-=== "ivysettings-all-packages-uploaded-to-nexus.xml"
+=== ivysettings-all-packages-uploaded-to-nexus.xml
 
     ```xml 
         <ivysettings>
@@ -198,7 +194,7 @@ Same as above, but can be used even if there is no network access to public repo
         </ivysettings>
     ```
 
-=== "ivysettings-private-packages-in-nexus-public-in-maven.xml"
+=== ivysettings-private-packages-in-nexus-public-in-maven.xml
 
     ```xml 
         <ivysettings>
@@ -220,7 +216,7 @@ Same as above, but can be used even if there is no network access to public repo
         </ivysettings>
     ```
 
-=== "ivysettings-private-packages-in-nexus-public-fetched-using-proxy-repo.xml"
+=== ivysettings-private-packages-in-nexus-public-fetched-using-proxy-repo.xml
 
     ```xml 
         <ivysettings>
@@ -242,7 +238,7 @@ Same as above, but can be used even if there is no network access to public repo
         </ivysettings>
     ```
 
-=== "ivysettings-nexus-with-auth-required.xml"
+=== ivysettings-nexus-with-auth-required.xml
 
     ```xml 
         <ivysettings>
@@ -313,8 +309,7 @@ spark = (
 
 !!! note
 
-    Package file should be placed on all hosts/containers Spark is running,
-    both driver and all executors.
+    Package file should be placed on all hosts/containers Spark is running, both driver and all executors.
 
     Usually this is used only with either:
         * `spark.master=local` (driver and executors are running on the same host),
@@ -337,8 +332,7 @@ spark = SparkSession.builder.config("spark.app.name", "onetl").getOrCreate()
 
 !!! note
 
-    Package file should be placed on all hosts/containers Spark is running,
-    both driver and all executors.
+    Package file should be placed on all hosts/containers Spark is running, both driver and all executors.
 
     Usually this is used only with either:
         * `spark.master=local` (driver and executors are running on the same host),

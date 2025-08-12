@@ -8,12 +8,9 @@
 ```
  -->
 
+Все классы соединений БД (`Clickhouse`, `Greenplum`, `Hive` и другие) и все классы соединений FileDF (`SparkHDFS`, `SparkLocalFS`, `SparkS3`) требуют установки Spark.
 
-All DB connection classes (`Clickhouse`, `Greenplum`, `Hive` and others)
-and all FileDF connection classes (`SparkHDFS`, `SparkLocalFS`, `SparkS3`)
-require Spark to be installed.
-
-## Installing Java
+## Установка Java
 
 <!-- 
 ```{eval-rst}
@@ -23,7 +20,7 @@ require Spark to be installed.
 ```
  -->
 
-Firstly, you should install JDK. The exact installation instruction depends on your OS, here are some examples:
+В первую очередь следует установить JDK. Точная инструкция по установке зависит от вашей ОС, вот некоторые примеры:
 
 ```bash
 yum install java-1.8.0-openjdk-devel  # CentOS 7 + Spark 2
@@ -31,18 +28,18 @@ dnf install java-11-openjdk-devel  # CentOS 8 + Spark 3
 apt-get install openjdk-11-jdk  # Debian-based + Spark 3
 ```
 
-### Compatibility matrix { #spark-compatibility-matrix }
+### Матрица совместимости { #spark-compatibility-matrix }
 
 | Spark                                                     | Python     | Java       |   Scala |
 |-----------------------------------------------------------|------------|------------|---------|
-| [2.3.x](https://spark.apache.org/docs/2.3.1/#downloading) | 3.7 only   | 8 only     |    2.11 |
-| [2.4.x](https://spark.apache.org/docs/2.4.8/#downloading) | 3.7 only   | 8 only     |    2.11 |
+| [2.3.x](https://spark.apache.org/docs/2.3.1/#downloading) | только 3.7 | только 8   |    2.11 |
+| [2.4.x](https://spark.apache.org/docs/2.4.8/#downloading) | только 3.7 | только 8   |    2.11 |
 | [3.2.x](https://spark.apache.org/docs/3.2.4/#downloading) | 3.7 - 3.10 | 8u201 - 11 |    2.12 |
 | [3.3.x](https://spark.apache.org/docs/3.3.4/#downloading) | 3.7 - 3.12 | 8u201 - 17 |    2.12 |
 | [3.4.x](https://spark.apache.org/docs/3.4.4/#downloading) | 3.7 - 3.12 | 8u362 - 20 |    2.12 |
 | [3.5.x](https://spark.apache.org/docs/3.5.5/#downloading) | 3.8 - 3.13 | 8u371 - 20 |    2.12 |
 
-## Installing PySpark
+## Установка PySpark
 
 <!-- 
 ```{eval-rst}
@@ -52,30 +49,29 @@ apt-get install openjdk-11-jdk  # Debian-based + Spark 3
 ```
  -->
 
-Then you should install PySpark via passing `spark` to `extras`:
+Затем нужно установить PySpark, передав `spark` в `extras`:
 
 ```bash
-pip install onetl[spark]  # install latest PySpark
+pip install onetl[spark]  # установить последнюю версию PySpark
 ```
 
-or install PySpark explicitly:
+или установить PySpark явно:
 
 ```bash
-pip install onetl pyspark==3.5.5  # install a specific PySpark version
+pip install onetl pyspark==3.5.5  # установить конкретную версию PySpark
 ```
 
-or inject PySpark to `sys.path` in some other way BEFORE creating a class instance.
-**Otherwise connection object cannot be created.**
+или внедрить PySpark в `sys.path` каким-либо другим способом ДО создания экземпляра класса. **В противном случае объект соединения не может быть создан.**
 
-## Injecting Java packages { #java-packages }
+## Внедрение Java-пакетов { #java-packages }
 
-Some DB and FileDF connection classes require specific packages to be inserted to `CLASSPATH` of Spark session,
-like JDBC drivers.
+Некоторые классы соединений БД и FileDF требуют внедрения определенных пакетов в `CLASSPATH` сессии Spark,
+например, JDBC драйверов.
 
-This is usually done by setting up `spark.jars.packages` option while creating Spark session:
+Обычно это делается путем настройки опции `spark.jars.packages` при создании сессии Spark:
 
 ```python
-# here is a list of packages to be downloaded:
+# вот список пакетов для загрузки:
 maven_packages = (
     Greenplum.get_packages(spark_version="3.2")
     + MySQL.get_packages()
@@ -89,33 +85,32 @@ spark = (
 )
 ```
 
-Spark automatically resolves package and all its dependencies, download them and inject to Spark session
-(both driver and all executors).
+Spark автоматически разрешает пакет и все его зависимости, загружает их и внедряет в сессию Spark (как драйвер, так и все исполнители).
 
-This requires internet access, because package metadata and `.jar` files are fetched from [Maven Repository](https://mvnrepository.com/).
+Это требует доступа к интернету, поскольку метаданные пакетов и файлы `.jar` загружаются из [Maven Repository](https://mvnrepository.com/).
 
-But sometimes it is required to:
+Но иногда требуется:
 
-- Install package without direct internet access (isolated network)
-- Install package which is not available in Maven
+- Установить пакет без прямого доступа к интернету (изолированная сеть)
+- Установить пакет, который недоступен в Maven
 
-There are several ways to do that.
+Существует несколько способов сделать это.
 
-### Using `spark.jars`
+### Использование `spark.jars`
 
-The most simple solution, but this requires to store raw `.jar` files somewhere on filesystem or web server.
+Самое простое решение, но это требует хранения файлов `.jar` где-то в файловой системе или на веб-сервере.
 
-- Download `package.jar` files (it's usually something like `some-package_1.0.0.jar`). Local file name does not matter, but it should be unique.
-- (For `spark.submit.deployMode=cluster`) place downloaded files to HDFS or deploy to any HTTP web server serving static files. See [official documentation](https://spark.apache.org/docs/latest/submitting-applications.html#advanced-dependency-management) for more details.
-- Create Spark session with passing `.jar` absolute file path to `spark.jars` Spark config option:
+- Загрузите файлы `package.jar` (обычно это что-то вроде `some-package_1.0.0.jar`). Локальное имя файла не имеет значения, но оно должно быть уникальным.
+- (Для `spark.submit.deployMode=cluster`) поместите загруженные файлы в HDFS или разверните их на любом HTTP-веб-сервере, обслуживающем статические файлы. Смотрите [официальную документацию](https://spark.apache.org/docs/latest/submitting-applications.html#advanced-dependency-management) для получения более подробной информации.
+- Создайте сессию Spark, передав абсолютный путь к файлу `.jar` в опцию конфигурации Spark `spark.jars`:
 
-=== "for spark.submit.deployMode=client (default)"
+=== spark.submit.deployMode=client (по умолчанию)
 
     ```python 
 
         jar_files = ["/path/to/package.jar"]
 
-        # do not pass spark.jars.packages
+        # не передавайте spark.jars.packages
         spark = (
             SparkSession.builder.config("spark.app.name", "onetl")
             .config("spark.jars", ",".join(jar_files))
@@ -123,14 +118,14 @@ The most simple solution, but this requires to store raw `.jar` files somewhere 
         )
     ```
 
-=== "for spark.submit.deployMode=cluster"
+=== spark.submit.deployMode=cluster
 
     ```python 
 
-        # you can also pass URLs like http://domain.com/path/to/downloadable/package.jar
+        # вы также можете передавать URL-адреса, например http://domain.com/path/to/downloadable/package.jar
         jar_files = ["hdfs:///path/to/package.jar"]
 
-        # do not pass spark.jars.packages
+        # не передавайте spark.jars.packages
         spark = (
             SparkSession.builder.config("spark.app.name", "onetl")
             .config("spark.jars", ",".join(jar_files))
@@ -138,20 +133,19 @@ The most simple solution, but this requires to store raw `.jar` files somewhere 
         )
     ```
 
-### Using `spark.jars.repositories`
+### Использование `spark.jars.repositories`
 
-!!! note
+!!! note "Примечание"
 
-    In this case Spark still will try to fetch packages from the internet, so if you don't have internet access,
-    Spark session will be created with significant delay because of all attempts to fetch packages.
+    В этом случае Spark все равно будет пытаться получить пакеты из интернета, поэтому если у вас нет доступа к интернету, сессия Spark будет создана со значительной задержкой из-за всех попыток получить пакеты.
 
-Can be used if you have access both to public repos (like Maven) and a private Artifactory/Nexus repo.
+Может использоваться, если у вас есть доступ как к публичным репозиториям (таким как Maven), так и к приватному репозиторию Artifactory/Nexus.
 
-- Setup private Maven repository in [JFrog Artifactory](https://jfrog.com/artifactory/) or [Sonatype Nexus](https://www.sonatype.com/products/sonatype-nexus-repository).
-- Download `package.jar` file (it's usually something like `some-package_1.0.0.jar`). Local file name does not matter.
-- Upload `package.jar` file to private repository (with same `groupId` and `artifactoryId` as in source package in Maven).
-- Pass repo URL to `spark.jars.repositories` Spark config option.
-- Create Spark session with passing Package name to `spark.jars.packages` Spark config option:
+- Настройте приватный репозиторий Maven в [JFrog Artifactory](https://jfrog.com/artifactory/) или [Sonatype Nexus](https://www.sonatype.com/products/sonatype-nexus-repository).
+- Загрузите файл `package.jar` (обычно это что-то вроде `some-package_1.0.0.jar`). Локальное имя файла не имеет значения.
+- Загрузите файл `package.jar` в приватный репозиторий (с теми же `groupId` и `artifactoryId`, что и в исходном пакете в Maven).
+- Передайте URL репозитория в опцию конфигурации Spark `spark.jars.repositories`.
+- Создайте сессию Spark, передав имя пакета в опцию конфигурации Spark `spark.jars.packages`:
 
 ```python
 maven_packages = (
@@ -168,73 +162,73 @@ spark = (
 )
 ```
 
-### Using `spark.jars.ivySettings`
+### Использование `spark.jars.ivySettings`
 
-Same as above, but can be used even if there is no network access to public repos like Maven.
+То же самое, что и выше, но может использоваться даже при отсутствии сетевого доступа к публичным репозиториям, таким как Maven.
 
-- Setup private Maven repository in [JFrog Artifactory](https://jfrog.com/artifactory/) or [Sonatype Nexus](https://www.sonatype.com/products/sonatype-nexus-repository).
-- Download `package.jar` file (it's usually something like `some-package_1.0.0.jar`). Local file name does not matter.
-- Upload `package.jar` file to [private repository](https://help.sonatype.com/repomanager3/nexus-repository-administration/repository-management#RepositoryManagement-HostedRepository) (with same `groupId` and `artifactoryId` as in source package in Maven).
-- Create `ivysettings.xml` file (see below).
-- Add here a resolver with repository URL (and credentials, if required).
-- Pass `ivysettings.xml` absolute path to `spark.jars.ivySettings` Spark config option.
-- Create Spark session with passing package name to `spark.jars.packages` Spark config option:
+- Настройте приватный репозиторий Maven в [JFrog Artifactory](https://jfrog.com/artifactory/) или [Sonatype Nexus](https://www.sonatype.com/products/sonatype-nexus-repository).
+- Загрузите файл `package.jar` (обычно это что-то вроде `some-package_1.0.0.jar`). Локальное имя файла не имеет значения.
+- Загрузите файл `package.jar` в [приватный репозиторий](https://help.sonatype.com/repomanager3/nexus-repository-administration/repository-management#RepositoryManagement-HostedRepository) (с теми же `groupId` и `artifactoryId`, что и в исходном пакете в Maven).
+- Создайте файл `ivysettings.xml` (см. ниже).
+- Добавьте сюда resolver с URL репозитория (и учетными данными, если требуется).
+- Передайте абсолютный путь к `ivysettings.xml` в опцию конфигурации Spark `spark.jars.ivySettings`.
+- Создайте сессию Spark, передав имя пакета в опцию конфигурации Spark `spark.jars.packages`:
 
-=== "ivysettings-all-packages-uploaded-to-nexus.xml"
+=== ivysettings-all-packages-uploaded-to-nexus.xml
 
     ```xml 
         <ivysettings>
             <settings defaultResolver="main"/>
             <resolvers>
                 <chain name="main" returnFirst="true">
-                    <!-- Use Maven cache -->
+                    <!-- Использовать кэш Maven -->
                     <ibiblio name="local-maven-cache" m2compatible="true" root="file://${user.home}/.m2/repository"/>
-                    <!-- Use -/.ivy2/jars/*.jar files -->
+                    <!-- Использовать файлы -/.ivy2/jars/*.jar -->
                     <ibiblio name="local-ivy2-cache" m2compatible="false" root="file://${user.home}/.ivy2/jars"/>
-                    <!-- Download all packages from own Nexus instance -->
+                    <!-- Загрузить все пакеты из собственного экземпляра Nexus -->
                     <ibiblio name="nexus-private" m2compatible="true" root="http://nexus.mydomain.com/private-repo/" />
                 </chain>
             </resolvers>
         </ivysettings>
     ```
 
-=== "ivysettings-private-packages-in-nexus-public-in-maven.xml"
+=== ivysettings-private-packages-in-nexus-public-in-maven.xml
 
     ```xml 
         <ivysettings>
             <settings defaultResolver="main"/>
             <resolvers>
                 <chain name="main" returnFirst="true">
-                    <!-- Use Maven cache -->
+                    <!-- Использовать кэш Maven -->
                     <ibiblio name="local-maven-cache" m2compatible="true" root="file://${user.home}/.m2/repository"/>
-                    <!-- Use -/.ivy2/jars/*.jar files -->
+                    <!-- Использовать файлы -/.ivy2/jars/*.jar -->
                     <ibiblio name="local-ivy2-cache" m2compatible="false" root="file://${user.home}/.ivy2/jars"/>
-                    <!-- Download private packages from own Nexus instance -->
+                    <!-- Загрузить приватные пакеты из собственного экземпляра Nexus -->
                     <ibiblio name="nexus-private" m2compatible="true" root="http://nexus.mydomain.com/private-repo/" />
-                    <!-- Download other packages from Maven -->
+                    <!-- Загрузить другие пакеты из Maven -->
                     <ibiblio name="central" m2compatible="true" />
-                    <!-- Download other packages from SparkPackages -->
+                    <!-- Загрузить другие пакеты из SparkPackages -->
                     <ibiblio name="spark-packages" m2compatible="true" root="https://repos.spark-packages.org/" />
                 </chain>
             </resolvers>
         </ivysettings>
     ```
 
-=== "ivysettings-private-packages-in-nexus-public-fetched-using-proxy-repo.xml"
+=== ivysettings-private-packages-in-nexus-public-fetched-using-proxy-repo.xml
 
     ```xml 
         <ivysettings>
             <settings defaultResolver="main"/>
             <resolvers>
                 <chain name="main" returnFirst="true">
-                    <!-- Use Maven cache -->
+                    <!-- Использовать кэш Maven -->
                     <ibiblio name="local-maven-cache" m2compatible="true" root="file://${user.home}/.m2/repository"/>
-                    <!-- Use -/.ivy2/jars/*.jar files -->
+                    <!-- Использовать файлы -/.ivy2/jars/*.jar -->
                     <ibiblio name="local-ivy2-cache" m2compatible="false" root="file://${user.home}/.ivy2/jars"/>
-                    <!-- Download private packages from own Nexus instance -->
+                    <!-- Загрузить приватные пакеты из собственного экземпляра Nexus -->
                     <ibiblio name="nexus-private" m2compatible="true" root="http://nexus.mydomain.com/private-repo/" />
-                    <!-- Download public packages from same Nexus instance using Proxy Repo
-                    See https://help.sonatype.com/repomanager3/nexus-repository-administration/repository-management#RepositoryManagement-ProxyRepository
+                    <!-- Загрузить публичные пакеты из того же экземпляра Nexus, используя Proxy Repo
+                    См. https://help.sonatype.com/repomanager3/nexus-repository-administration/repository-management#RepositoryManagement-ProxyRepository
                     -->
                     <ibiblio name="nexus-proxy" m2compatible="true" root="http://nexus.mydomain.com/proxy-repo/" />
                 </chain>
@@ -242,28 +236,28 @@ Same as above, but can be used even if there is no network access to public repo
         </ivysettings>
     ```
 
-=== "ivysettings-nexus-with-auth-required.xml"
+=== ivysettings-nexus-with-auth-required.xml
 
     ```xml 
         <ivysettings>
             <settings defaultResolver="main"/>
             <properties environment="env"/>
-            <!-- use environment variables NEXUS_USER and NEXUS_PASSWORD as credentials to auth in Nexus -->
+            <!-- использовать переменные окружения NEXUS_USER и NEXUS_PASSWORD как учетные данные для аутентификации в Nexus -->
             <property name="repo.username" value="${env.NEXUS_USER}"/>
             <property name="repo.pass" value="${env.NEXUS_PASSWORD}"/>
-            <!-- realm value is described
-            - here https://stackoverflow.com/a/38019000
-            - here https://github.com/sonatype/nexus-book-examples/blob/master/ant-ivy/simple-project/ivysettings.xml
-            - here https://support.sonatype.com/hc/en-us/articles/213465388-How-do-I-configure-my-Ivy-build-to-deploy-artifacts-to-Nexus-Repository-2-
+            <!-- значение realm описано
+            - здесь https://stackoverflow.com/a/38019000
+            - здесь https://github.com/sonatype/nexus-book-examples/blob/master/ant-ivy/simple-project/ivysettings.xml
+            - здесь https://support.sonatype.com/hc/en-us/articles/213465388-How-do-I-configure-my-Ivy-build-to-deploy-artifacts-to-Nexus-Repository-2-
             -->
             <credentials host="nexus.mydomain.com" username="${repo.username}" passwd="${repo.pass}" realm="Sonatype Nexus Repository Manager" />
             <resolvers>
                 <chain name="main" returnFirst="true">
-                    <!-- Use Maven cache -->
+                    <!-- Использовать кэш Maven -->
                     <ibiblio name="local-maven-cache" m2compatible="true" root="file://${user.home}/.m2/repository"/>
-                    <!-- Use -/.ivy2/jars/*.jar files -->
+                    <!-- Использовать файлы -/.ivy2/jars/*.jar -->
                     <ibiblio name="local-ivy2-cache" m2compatible="false" root="file://${user.home}/.ivy2/jars"/>
-                    <!-- Download all packages from own Nexus instance, using credentials for domain above -->
+                    <!-- Загрузить все пакеты из собственного экземпляра Nexus, используя учетные данные для домена выше -->
                     <ibiblio name="nexus-private" m2compatible="true" root="http://nexus.mydomain.com/private-repo/" />
                 </chain>
             </resolvers>
@@ -287,13 +281,13 @@ spark = (
 )
 ```
 
-### Place `.jar` file to `-/.ivy2/jars/`
+### Поместить файл `.jar` в `-/.ivy2/jars/`
 
-Can be used to pass already downloaded file to Ivy, and skip resolving package from Maven.
+Может использоваться для передачи уже загруженного файла в Ivy и пропуска разрешения пакета из Maven.
 
-- Download `package.jar` file (it's usually something like `some-package_1.0.0.jar`). Local file name does not matter, but it should be unique.
-- Move it to `-/.ivy2/jars/` folder.
-- Create Spark session with passing package name to `spark.jars.packages` Spark config option:
+- Загрузите файл `package.jar` (обычно это что-то вроде `some-package_1.0.0.jar`). Локальное имя файла не имеет значения, но оно должно быть уникальным.
+- Переместите его в папку `-/.ivy2/jars/`.
+- Создайте сессию Spark, передав имя пакета в опцию конфигурации Spark `spark.jars.packages`:
 
 ```python
 maven_packages = (
@@ -309,55 +303,53 @@ spark = (
 )
 ```
 
-### Place `.jar` file to Spark jars folder
+### Поместить файл `.jar` в папку jars Spark
 
-!!! note
+!!! note "Примечание"
 
-    Package file should be placed on all hosts/containers Spark is running,
-    both driver and all executors.
+    Файл пакета должен быть размещен на всех хостах/контейнерах, где работает Spark, как на драйвере, так и на всех экзекуторах.
 
-    Usually this is used only with either:
-        * `spark.master=local` (driver and executors are running on the same host),
-        * `spark.master=k8s://...` (`.jar` files are added to image or to volume mounted to all pods).
+    Обычно это используется только с:
+        * `spark.master=local` (драйвер и исполнители работают на одном хосте),
+        * `spark.master=k8s://...` (файлы `.jar` добавляются в образ или в том, подключенный ко всем подам).
 
-Can be used to embed `.jar` files to a default Spark classpath.
+Может использоваться для встраивания файлов `.jar` в путь классов Spark по умолчанию.
 
-- Download `package.jar` file (it's usually something like `some-package_1.0.0.jar`). Local file name does not matter, but it should be unique.
-- Move it to `$SPARK_HOME/jars/` folder, e.g. `^/.local/lib/python3.7/site-packages/pyspark/jars/` or `/opt/spark/3.2.3/jars/`.
-- Create Spark session **WITHOUT** passing Package name to `spark.jars.packages`
+- Загрузите файл `package.jar` (обычно это что-то вроде `some-package_1.0.0.jar`). Локальное имя файла не имеет значения, но оно должно быть уникальным.
+- Переместите его в папку `$SPARK_HOME/jars/`, например, `^/.local/lib/python3.7/site-packages/pyspark/jars/` или `/opt/spark/3.2.3/jars/`.
+- Создайте сессию Spark **БЕЗ** передачи имени пакета в `spark.jars.packages`
 
 ```python
-# no need to set spark.jars.packages or any other spark.jars.* option
-# all jars already present in CLASSPATH, and loaded automatically
+# нет необходимости устанавливать spark.jars.packages или любую другую опцию spark.jars.*
+# все jars уже присутствуют в CLASSPATH и загружаются автоматически
 
 spark = SparkSession.builder.config("spark.app.name", "onetl").getOrCreate()
 ```
 
-### Manually adding `.jar` files to `CLASSPATH`
+### Ручное добавление файлов `.jar` в `CLASSPATH`
 
-!!! note
+!!! note "Примечание"
 
-    Package file should be placed on all hosts/containers Spark is running,
-    both driver and all executors.
+    Файл пакета должен быть размещен на всех хостах/контейнерах, где работает Spark, как на драйвере, так и на всех экзекуторах.
 
-    Usually this is used only with either:
-        * `spark.master=local` (driver and executors are running on the same host),
-        * `spark.master=k8s://...` (`.jar` files are added to image or to volume mounted to all pods).
+    Обычно это используется только с:
+        * `spark.master=local` (драйвер и исполнители работают на одном хосте),
+        * `spark.master=k8s://...` (файлы `.jar` добавляются в образ или в том, подключенный ко всем подам).
 
-Can be used to embed `.jar` files to a default Java classpath.
+Может использоваться для встраивания файлов `.jar` в путь классов Java по умолчанию.
 
-- Download `package.jar` file (it's usually something like `some-package_1.0.0.jar`). Local file name does not matter.
-- Set environment variable `CLASSPATH` to `/path/to/package.jar`. You can set multiple file paths
-- Create Spark session **WITHOUT** passing Package name to `spark.jars.packages`
+- Загрузите файл `package.jar` (обычно это что-то вроде `some-package_1.0.0.jar`). Локальное имя файла не имеет значения.
+- Установите переменную окружения `CLASSPATH` на `/path/to/package.jar`. Вы можете установить несколько путей к файлам
+- Создайте сессию Spark **БЕЗ** передачи имени пакета в `spark.jars.packages`
 
 ```python
-# no need to set spark.jars.packages or any other spark.jars.* option
-# all jars already present in CLASSPATH, and loaded automatically
+# нет необходимости устанавливать spark.jars.packages или любую другую опцию spark.jars.*
+# все jars уже присутствуют в CLASSPATH и загружаются автоматически
 
 import os
 
 jar_files = ["/path/to/package.jar"]
-# different delimiters for Windows and Linux
+# разные разделители для Windows и Linux
 delimiter = ";" if os.name == "nt" else ":"
 spark = (
     SparkSession.builder.config("spark.app.name", "onetl")

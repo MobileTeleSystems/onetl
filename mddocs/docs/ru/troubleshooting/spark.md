@@ -1,49 +1,45 @@
-# Spark Troubleshooting { #troubleshooting-spark }
+# Решение проблем со Spark { #troubleshooting-spark }
 
-## Restarting Spark session
+## Перезапуск сессии Spark
 
-Sometimes it is required to stop current Spark session and start a new one, e.g. to add some .jar packages, or change session config.
-But PySpark not only starts Spark session, but also starts Java virtual machine (JVM) process in the background,
-which. So calling `sparkSession.stop()` [does not shutdown JVM](https://issues.apache.org/jira/browse/SPARK-47740),
-and this can cause some issue.
+Иногда требуется остановить текущую сессию Spark и запустить новую, например, чтобы добавить некоторые .jar пакеты или изменить конфигурацию сессии. Но PySpark не только запускает сессию Spark, но и запускает процесс виртуальной машины Java (JVM) в фоновом режиме. Поэтому вызов `sparkSession.stop()` [не завершает работу JVM](https://issues.apache.org/jira/browse/SPARK-47740), и это может вызвать некоторые проблемы.
 
-Also apart from JVM properties, stopping Spark session does not clear Spark context, which is a global object. So new
-Spark sessions are created using the same context object, and thus using the same Spark config options.
+Кроме того, помимо свойств JVM, остановка сессии Spark не очищает контекст Spark, который является глобальным объектом. Таким образом, новые сессии Spark создаются с использованием того же объекта контекста и, следовательно, с использованием тех же параметров конфигурации Spark.
 
-To properly stop Spark session, it is **required** to:
-\* Stop Spark session by calling `sparkSession.stop()`.
-\* **STOP PYTHON INTERPRETER**, e.g. by calling `sys.exit()`.
-\* Start new Python interpreter.
-\* Start new Spark session with config options you need.
+Для правильной остановки сессии Spark **необходимо**:
 
-Skipping some of these steps can lead to issues with creating new Spark session.
+* Остановить сессию Spark, вызвав `sparkSession.stop()`.
+* **ОСТАНОВИТЬ ИНТЕРПРЕТАТОР PYTHON**, например, вызвав `sys.exit()`.
+* Запустить новый интерпретатор Python.
+* Запустить новую сессию Spark с нужными параметрами конфигурации.
 
-## Driver log level
+Пропуск некоторых из этих шагов может привести к проблемам с созданием новой сессии Spark.
 
-Default logging level for Spark session is `WARN`. To show more verbose logs, use:
+## Уровень логирования драйвера
+
+Уровень логирования по умолчанию для сессии Spark - `WARN`. Чтобы показать более подробные логи, используйте:
 
 ```python
 spark.sparkContext.setLogLevel("INFO")
 ```
 
-or increase verbosity even more:
+или увеличьте подробность ещё больше:
 
 ```python
 spark.sparkContext.setLogLevel("DEBUG")
 ```
 
-After getting all information you need, you can return back the previous log level:
+После получения всей необходимой информации вы можете вернуться к предыдущему уровню логирования:
 
 ```python
 spark.sparkContext.setLogLevel("WARN")
 ```
 
-## Executors log level
+## Уровень логирования исполнителей
 
-`sparkContext.setLogLevel` changes only log level of Spark session on Spark **driver**.
-To make Spark executor logs more verbose, perform following steps:
+`sparkContext.setLogLevel` изменяет только уровень логирования сессии Spark на **драйвере** Spark. Чтобы сделать логи исполнителей Spark более подробными, выполните следующие шаги:
 
-- Create `log4j.properties` file with content like this:
+- Создайте файл `log4j.properties` со следующим содержимым:
 
   ```jproperties
   log4j.rootCategory=DEBUG, console
@@ -54,7 +50,7 @@ To make Spark executor logs more verbose, perform following steps:
   log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n
   ```
 
-- Stop existing Spark session and create a new one with following options:
+- Остановите существующую сессию Spark и создайте новую со следующими параметрами:
 
   ```python
   from pyspark.sql import SparkSession
@@ -63,11 +59,10 @@ To make Spark executor logs more verbose, perform following steps:
       SparkSesion.builder.config("spark.files", "file:log4j.properties").config(
           "spark.executor.extraJavaOptions", "-Dlog4j.configuration=file:log4j.properties"
       )
-      # you can apply the same logging settings to Spark driver, by uncommenting the line below
+      # вы можете применить те же настройки логирования к драйверу Spark, раскомментировав строку ниже
       # .config("spark.driver.extraJavaOptions", "-Dlog4j.configuration=file:log4j.properties")
       .getOrCreate()
   )
   ```
 
-Each Spark executor will receive a copy of `log4j.properties` file during start, and load it to change own log level.
-Same approach can be used for Spark driver as well, to investigate issue when Spark session cannot properly start.
+Каждый исполнитель Spark получит копию файла `log4j.properties` при запуске и загрузит его для изменения собственного уровня логирования. Тот же подход может быть использован и для драйвера Spark, чтобы исследовать проблему, когда сессия Spark не может правильно запуститься.

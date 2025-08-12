@@ -2,19 +2,16 @@
 
 ## Restarting Spark session
 
-Sometimes it is required to stop current Spark session and start a new one, e.g. to add some .jar packages, or change session config.
-But PySpark not only starts Spark session, but also starts Java virtual machine (JVM) process in the background,
-which. So calling `sparkSession.stop()` [does not shutdown JVM](https://issues.apache.org/jira/browse/SPARK-47740),
-and this can cause some issue.
+Sometimes it is required to stop current Spark session and start a new one, e.g. to add some .jar packages, or change session config. But PySpark not only starts Spark session, but also starts Java virtual machine (JVM) process in the background, which. So calling `sparkSession.stop()` [does not shutdown JVM](https://issues.apache.org/jira/browse/SPARK-47740), and this can cause some issue.
 
-Also apart from JVM properties, stopping Spark session does not clear Spark context, which is a global object. So new
-Spark sessions are created using the same context object, and thus using the same Spark config options.
+Also apart from JVM properties, stopping Spark session does not clear Spark context, which is a global object. So new Spark sessions are created using the same context object, and thus using the same Spark config options.
 
 To properly stop Spark session, it is **required** to:
-\* Stop Spark session by calling `sparkSession.stop()`.
-\* **STOP PYTHON INTERPRETER**, e.g. by calling `sys.exit()`.
-\* Start new Python interpreter.
-\* Start new Spark session with config options you need.
+
+* Stop Spark session by calling `sparkSession.stop()`.
+* **STOP PYTHON INTERPRETER**, e.g. by calling `sys.exit()`.
+* Start new Python interpreter.
+* Start new Spark session with config options you need.
 
 Skipping some of these steps can lead to issues with creating new Spark session.
 
@@ -40,8 +37,7 @@ spark.sparkContext.setLogLevel("WARN")
 
 ## Executors log level
 
-`sparkContext.setLogLevel` changes only log level of Spark session on Spark **driver**.
-To make Spark executor logs more verbose, perform following steps:
+`sparkContext.setLogLevel` changes only log level of Spark session on Spark **driver**. To make Spark executor logs more verbose, perform following steps:
 
 - Create `log4j.properties` file with content like this:
 
@@ -69,5 +65,4 @@ To make Spark executor logs more verbose, perform following steps:
   )
   ```
 
-Each Spark executor will receive a copy of `log4j.properties` file during start, and load it to change own log level.
-Same approach can be used for Spark driver as well, to investigate issue when Spark session cannot properly start.
+Each Spark executor will receive a copy of `log4j.properties` file during start, and load it to change own log level. Same approach can be used for Spark driver as well, to investigate issue when Spark session cannot properly start.

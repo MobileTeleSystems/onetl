@@ -14,5 +14,4 @@ In case of error please follow instructions below:
 - Search for known [issues](https://github.com/MobileTeleSystems/onetl/issues), or create a new one.
 - Always use the most resent versions of onETL, PySpark and connector packages, [compatible with your environment][install-spark].
 
-
 * [spark][troubleshooting-spark]

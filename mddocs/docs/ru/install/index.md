@@ -4,7 +4,7 @@
 ../mddocs/docs/en/minimal_install.md
 ----8<----
 
-## Installation in details
+## Установка подробно
 
 ## Как установить
 

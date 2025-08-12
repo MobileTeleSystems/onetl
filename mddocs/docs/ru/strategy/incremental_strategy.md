@@ -1,4 +1,4 @@
-# Incremental Strategy { #incremental-strategy-0 }
+# Стратегия Incremental { #incremental-strategy-0 }
 
 <!-- 
     ```{eval-rst}
