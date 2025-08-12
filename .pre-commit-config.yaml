@@ -19,8 +19,6 @@ repos:
       - id: end-of-file-fixer
         exclude: ^(.*/VERSION|tests/resources/.*/.*)$
       - id: fix-byte-order-marker
-      - id: fix-encoding-pragma
-        args: [--remove]
       - id: name-tests-test
         files: ^tests/(tests_integration|tests_unit)/.*\.py$
         args: [--django]
