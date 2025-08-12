@@ -330,6 +330,8 @@ class DBReader(FrozenModel):
 
     @validator("columns", always=True, pre=True)
     def validate_columns(cls, value: str | list[str] | None, values: dict) -> list[str] | None:
+        if "connection" not in values:
+            return value  # type: ignore[return-value]
         connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_columns(value)
 

@@ -175,6 +175,8 @@ class FileDFWriter(FrozenModel):
 
     @validator("target_path", pre=True)
     def _validate_target_path(cls, target_path, values):
+        if "connection" not in values:
+            return target_path
         connection: BaseFileDFConnection = values["connection"]
         return connection.path_from_string(target_path)
 
