@@ -93,8 +93,8 @@ Teradata supports [2 different transaction modes](https://teradata-docs.s3.amazo
 Choosing one of the modes can alter connector behavior. For example:
 
 - Inserting data which exceeds table column length, like insert `CHAR(25)` to column with type `CHAR(24)`:
-    - `TMODE=ANSI` - raises exception
-    - `TMODE=TERA` - truncates input string to 24 symbols
+  - `TMODE=ANSI` - raises exception
+  - `TMODE=TERA` - truncates input string to 24 symbols
 
     Creating table using Spark:
 

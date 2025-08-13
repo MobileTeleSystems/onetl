@@ -1,4 +1,4 @@
-# Clickhouse \<-> Spark type mapping { #clickhouse-types }
+# Clickhouse <-> Spark type mapping { #clickhouse-types }
 
 !!! note
 

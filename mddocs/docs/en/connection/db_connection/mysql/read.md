@@ -11,10 +11,10 @@
 - ✅︎ `columns`
 - ✅︎ `where`
 - ✅︎ `hwm`, supported strategies:
-- - ✅︎ [Snapshot strategy][snapshot-strategy-0]
-- - ✅︎ [Incremental strategy][incremental-strategy-0]
-- - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy-0]
-- - ✅︎ [Incremental batch strategy][incremental-batch-strategy-0]
+  - ✅︎ [Snapshot strategy][snapshot-strategy-0]
+  - ✅︎ [Incremental strategy][incremental-strategy-0]
+  - ✅︎ [Snapshot batch strategy][snapshot-batch-strategy-0]
+  - ✅︎ [Incremental batch strategy][incremental-batch-strategy-0]
 - ✅︎ `hint` (see [official documentation](https://dev.mysql.com/doc/refman/en/optimizer-hints.html))
 - ❌ `df_schema`
 - ✅︎ `options` (see [MySQL.ReadOptions][onetl.connection.db_connection.mysql.options.MySQLReadOptions])

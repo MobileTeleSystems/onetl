@@ -23,7 +23,7 @@ Connection opened using this method should be then closed with `connection.close
 
     `Greenplum.fetch` is implemented using Postgres JDBC connection, so types are handled a bit differently than in `DBReader`. See [Postgres types][postgres-types].
 
-#### Syntax support
+#### Syntax support in `Greenplum.fetch`
 
 This method supports **any** query syntax supported by Greenplum, like:
 
@@ -32,7 +32,7 @@ This method supports **any** query syntax supported by Greenplum, like:
 - ✅︎ `SELECT func(arg1, arg2)` or `{call func(arg1, arg2)}` - special syntax for calling functions
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `Greenplum.fetch`
 
     ```python
     from onetl.connection import Greenplum
@@ -56,7 +56,7 @@ Method accepts [Greenplum.ExecuteOptions][onetl.connection.db_connection.greenpl
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-#### Syntax support
+#### Syntax support in `Greenplum.execute`
 
 This method supports **any** query syntax supported by Greenplum, like:
 
@@ -69,7 +69,7 @@ This method supports **any** query syntax supported by Greenplum, like:
 - ✅︎ other statements not mentioned here
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `Greenplum.execute`
 
     ```python
     from onetl.connection import Greenplum

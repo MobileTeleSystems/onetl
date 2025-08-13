@@ -168,15 +168,15 @@ Resulting logs will look like this
 
 You can also change number of retries performed by both libraries using `extra` parameter:
 
-```python
-spark_s3 = SparkS3(
-    ...,
-    extra={
-        "attempts.maximum": 1,
-        "retry.limit": 1,
-    },
-)
-```
+    ```python
+    spark_s3 = SparkS3(
+        ...,
+        extra={
+            "attempts.maximum": 1,
+            "retry.limit": 1,
+        },
+    )
+    ```
 
 So accessing S3 will fail almost immediately if there is any error.
 
@@ -184,9 +184,9 @@ So accessing S3 will fail almost immediately if there is any error.
 
 #### No network access
 
-```text
-Caused by: java.net.ConnectException: Connection refused
-```
+    ```text
+    Caused by: java.net.ConnectException: Connection refused
+    ```
 
 Mostly caused by:
 
@@ -196,63 +196,63 @@ Mostly caused by:
 
 #### Using HTTPS protocol for HTTP port
 
-```text
-Caused by: javax.net.ssl.SSLException: Unsupported or unrecognized SSL message
-```
+    ```text
+    Caused by: javax.net.ssl.SSLException: Unsupported or unrecognized SSL message
+    ```
 
 By default, SparkS3 uses HTTPS protocol for connection.
 If you change port number, this does not lead to changing protocol:
 
-```python
-spark_s3 = SparkS3(host="s3provider.com", port=8080, ...)
-```
+    ```python
+    spark_s3 = SparkS3(host="s3provider.com", port=8080, ...)
+    ```
 
 You should pass protocol explicitly:
 
-```python
-spark_s3 = SparkS3(host="s3provider.com", port=8080, protocol="http", ...)
-```
+    ```python
+    spark_s3 = SparkS3(host="s3provider.com", port=8080, protocol="http", ...)
+    ```
 
 #### SSL certificate is self-signed
 
-```text
-sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
-```
+    ```text
+    sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+    ```
 
 To connect to HTTPS port with self-signed certificate, you should
 [add certificate chain to Java TrustedStore](https://stackoverflow.com/questions/373295/digital-certificate-how-to-import-cer-file-in-to-truststore-file-using).
 
 Another option is to disable SSL check:
 
-```python
-spark_s3 = SparkS3(
-    ...,
-    extra={
-        "connection.ssl.enabled": False,
-    },
-)
-```
+    ```python
+    spark_s3 = SparkS3(
+        ...,
+        extra={
+            "connection.ssl.enabled": False,
+        },
+    )
+    ```
 
 But is is **NOT** recommended.
 
 #### Accessing S3 without domain-style access style support
 
-```text
-Caused by: java.net.UnknownHostException: my-bucket.s3provider.com
-```
+    ```text
+    Caused by: java.net.UnknownHostException: my-bucket.s3provider.com
+    ```
 
 To use path-style access, use option below:
 
-```python
-spark_s3 = SparkS3(
-    host="s3provider.com",
-    bucket="my-bucket",
-    ...,
-    extra={
-        "path.style.access": True,
-    },
-)
-```
+    ```python
+    spark_s3 = SparkS3(
+        host="s3provider.com",
+        bucket="my-bucket",
+        ...,
+        extra={
+            "path.style.access": True,
+        },
+    )
+    ```
 
 ## Slow or unstable writing to S3
 
@@ -271,9 +271,9 @@ There are [different types of committers](https://hadoop.apache.org/docs/stable/
 
 This committer is quite slow and unstable, so it is not recommended to use:
 
-```text
-WARN AbstractS3ACommitterFactory: Using standard FileOutputCommitter to commit work. This is slow and potentially unsafe.
-```
+    ```text
+    WARN AbstractS3ACommitterFactory: Using standard FileOutputCommitter to commit work. This is slow and potentially unsafe.
+    ```
 
 This is caused by the fact it creates files in the temp directory on remote filesystem, and after all of them are written successfully,
 they are moved to target directory on same remote filesystem.

@@ -1,6 +1,5 @@
 # SFTP connection { #sftp }
 
-
 <!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.file_connection.sftp

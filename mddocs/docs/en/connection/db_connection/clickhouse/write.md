@@ -15,7 +15,6 @@ For writing data to Clickhouse, use [DBWriter][db-writer].
     This is because Spark's DDL generator can create columns with different precision and types than it is expected,
     causing precision loss or other issues.
 
-
 ## Examples
 
 ```python

@@ -43,11 +43,12 @@ writer.run(write_df)
 ### Use column-based write formats
 
 Prefer these write formats:
-  - [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html) (**default**)
-  - [Parquet](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html)
-  - [Iceberg](https://iceberg.apache.org/spark-quickstart/)
-  - [Hudi](https://hudi.apache.org/docs/quick-start-guide/)
-  - [Delta](https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake)
+
+- [ORC](https://spark.apache.org/docs/latest/sql-data-sources-orc.html) (**default**)
+- [Parquet](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html)
+- [Iceberg](https://iceberg.apache.org/spark-quickstart/)
+- [Hudi](https://hudi.apache.org/docs/quick-start-guide/)
+- [Delta](https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake)
 
 !!! warning
     When using `DBWriter`, the default spark data format configured in `spark.sql.sources.default` is ignored, as  `Hive.WriteOptions(format=...)` default value is explicitly set to `orc`.
@@ -76,11 +77,12 @@ For example, dataframe with content like this:
 | US              | 2024-01-03          | 5678         | 3464574567  |
 
 With `partitionBy=["country", "business_dt"]` data will be stored as files in the following subfolders:
-  - `/country=RU/business_date=2024-01-01/`
-  - `/country=RU/business_date=2024-01-02/`
-  - `/country=US/business_date=2024-01-01/`
-  - `/country=US/business_date=2024-01-02/`
-  - `/country=US/business_date=2024-01-03/`
+
+- `/country=RU/business_date=2024-01-01/`
+- `/country=RU/business_date=2024-01-02/`
+- `/country=US/business_date=2024-01-01/`
+- `/country=US/business_date=2024-01-02/`
+- `/country=US/business_date=2024-01-03/`
 
 A separated subdirectory is created for each distinct combination of column values in the dataframe.
 
@@ -163,7 +165,6 @@ If `df.repartition(N, repartition_columns...)` is used in combination with `df.s
 then `sort_columns` should start with `repartition_columns` or be equal to it.
 
 ## Options
-
 
 <!-- 
 ```{eval-rst}

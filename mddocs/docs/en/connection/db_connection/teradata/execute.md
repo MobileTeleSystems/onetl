@@ -18,7 +18,7 @@ Method accepts [Teradata.FetchOptions][onetl.connection.db_connection.teradata.o
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-#### Syntax support
+#### Syntax support in `Teradata.fetch`
 
 This method supports **any** query syntax supported by Teradata, like:
 
@@ -27,7 +27,7 @@ This method supports **any** query syntax supported by Teradata, like:
 - ✅︎ `SHOW ...`
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `Teradata.fetch`
 
     ```python
         from onetl.connection import Teradata
@@ -50,7 +50,7 @@ Method accepts [Teradata.ExecuteOptions][onetl.connection.db_connection.teradata
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-#### Syntax support
+#### Syntax support in `Teradata.execute`
 
 This method supports **any** query syntax supported by Teradata, like:
 
@@ -64,7 +64,7 @@ This method supports **any** query syntax supported by Teradata, like:
 - ✅︎ other statements not mentioned here
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `Teradata.execute`
 
     ```python
         from onetl.connection import Teradata

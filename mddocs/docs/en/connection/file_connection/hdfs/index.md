@@ -1,9 +1,9 @@
 # HDFS
 
-# Connection
+## Connection
 
 * [HDFS connection][hdfs-connection]
 
-# For developers
+## For developers
 
 * [HDFS Slots][hdfs-slots]

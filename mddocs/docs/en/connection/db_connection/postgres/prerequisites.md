@@ -3,8 +3,8 @@
 ## Version Compatibility
 
 - PostgreSQL server versions:
-    - Officially declared: 8.2 - 17
-    - Actually tested: 9.4.26, 17.3
+  - Officially declared: 8.2 - 17
+  - Actually tested: 9.4.26, 17.3
 - Spark versions: 2.3.x - 3.5.x
 - Java versions: 8 - 20
 

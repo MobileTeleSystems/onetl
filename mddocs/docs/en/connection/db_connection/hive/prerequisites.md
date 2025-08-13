@@ -10,8 +10,8 @@
 ## Version Compatibility
 
 - Hive Metastore version:
-    - Officially declared: 0.12 - 3.1.3 (may require to add proper .jar file explicitly)
-    - Actually tested: 1.2.100, 2.3.10, 3.1.3
+  - Officially declared: 0.12 - 3.1.3 (may require to add proper .jar file explicitly)
+  - Actually tested: 1.2.100, 2.3.10, 3.1.3
 - Spark versions: 2.3.x - 3.5.x
 - Java versions: 8 - 20
 

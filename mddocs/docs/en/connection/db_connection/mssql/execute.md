@@ -22,7 +22,7 @@ Connection opened using this method should be then closed with `connection.close
 
     Please take into account [MSSQL types][mssql-types].
 
-#### Syntax support
+#### Syntax support in `MSSQL.fetch`
 
 This method supports **any** query syntax supported by MSSQL, like:
 
@@ -31,7 +31,7 @@ This method supports **any** query syntax supported by MSSQL, like:
 - ✅︎ `SELECT func(arg1, arg2) FROM DUAL` - call function
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `MSSQL.fetch`
 
     ```python
         from onetl.connection import MSSQL
@@ -54,7 +54,7 @@ Method accepts [MSSQL.ExecuteOptions][onetl.connection.db_connection.mssql.optio
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-#### Syntax support
+#### Syntax support in `MSSQL.execute`
 
 This method supports **any** query syntax supported by MSSQL, like:
 
@@ -67,7 +67,7 @@ This method supports **any** query syntax supported by MSSQL, like:
 - ✅︎ other statements not mentioned here
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `MSSQL.execute`
 
     ```python
         from onetl.connection import MSSQL

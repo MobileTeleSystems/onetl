@@ -21,4 +21,3 @@
         extensions:
             - griffe_sphinx
             - griffe_pydantic: {schema: false}
-

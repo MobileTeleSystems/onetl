@@ -23,7 +23,7 @@ Connection opened using this method should be then closed with `connection.close
 
     Please take into account [Clickhouse types][clickhouse-types].
 
-#### Syntax support
+#### Syntax support in `Clickhouse.fetch`
 
 This method supports **any** query syntax supported by Clickhouse, like:
 
@@ -33,7 +33,7 @@ This method supports **any** query syntax supported by Clickhouse, like:
 - ✅︎ `SHOW ...`
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `Clickhouse.fetch`
 
     ```python
     from onetl.connection import Clickhouse
@@ -56,7 +56,7 @@ Method accepts [Clickhouse.ExecuteOptions][onetl.connection.db_connection.clickh
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-#### Syntax support
+#### Syntax support in `Clickhouse.execute`
 
 This method supports **any** query syntax supported by Clickhouse, like:
 
@@ -67,7 +67,7 @@ This method supports **any** query syntax supported by Clickhouse, like:
 - ✅︎ other statements not mentioned here
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `Clickhouse.execute`
 
     ```python
     from onetl.connection import Clickhouse

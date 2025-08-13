@@ -22,7 +22,7 @@ Connection opened using this method should be then closed with `connection.close
 
     Please take into account [Postgres types][postgres-types].
 
-#### Syntax support
+#### Syntax support in `Postgres.fetch`
 
 This method supports **any** query syntax supported by Postgres, like:
 
@@ -30,7 +30,7 @@ This method supports **any** query syntax supported by Postgres, like:
 - ✅︎ `WITH alias AS (...) SELECT ...`
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `Postgres.fetch`
 
     ```python
         from onetl.connection import Postgres
@@ -53,7 +53,7 @@ Method accepts [Postgres.ExecuteOptions][onetl.connection.db_connection.postgres
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-#### Syntax support
+#### Syntax support in `Postgres.execute`
 
 This method supports **any** query syntax supported by Postgres, like:
 
@@ -66,7 +66,7 @@ This method supports **any** query syntax supported by Postgres, like:
 - ✅︎ other statements not mentioned here
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `Postgres.execute`
 
     ```python
         from onetl.connection import Postgres

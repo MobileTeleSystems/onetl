@@ -22,7 +22,7 @@ Connection opened using this method should be then closed with `connection.close
 
     Please take into account [MySQL types][mysql-types].
 
-#### Syntax support
+#### Syntax support for `MySQL.fetch`
 
 This method supports **any** query syntax supported by MySQL, like:
 
@@ -32,7 +32,7 @@ This method supports **any** query syntax supported by MySQL, like:
 - ✅︎ `SHOW ...`
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples in `MySQL.fetch`
 
     ```python
         from onetl.connection import MySQL
@@ -55,7 +55,7 @@ Method accepts [MySQL.ExecuteOptions][onetl.connection.db_connection.mysql.optio
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-#### Syntax support
+#### Syntax support in `MySQL.execute`
 
 This method supports **any** query syntax supported by MySQL, like:
 
@@ -67,7 +67,7 @@ This method supports **any** query syntax supported by MySQL, like:
 - ✅︎ other statements not mentioned here
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `MySQL.execute`
 
     ```python
         from onetl.connection import MySQL

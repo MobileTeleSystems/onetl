@@ -26,8 +26,9 @@ You should set `path.style.access` to `True` or `False`, to choose the preferred
 ### Authentication
 
 Different S3 instances can use different authentication methods, like:
-: - `access_key + secret_key` (or username + password)
-  - `access_key + secret_key + session_token`
+
+- `access_key + secret_key` (or username + password)
+- `access_key + secret_key + session_token`
 
 Usually these are just passed to SparkS3 constructor:
 

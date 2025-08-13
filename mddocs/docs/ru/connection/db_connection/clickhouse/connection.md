@@ -1,6 +1,5 @@
 # Подключение к Clickhouse { #clickhouse-connection }
 
-
 <!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.clickhouse.connection

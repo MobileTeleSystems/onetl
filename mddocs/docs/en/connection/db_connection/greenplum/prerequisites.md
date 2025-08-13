@@ -3,8 +3,8 @@
 ## Version Compatibility
 
 - Greenplum server versions:
-    - Officially declared: 5.x, 6.x, and 7.x (which requires `Greenplum.get_packages(package_version="2.3.0")` or higher)
-    - Actually tested: 6.23, 7.0
+  - Officially declared: 5.x, 6.x, and 7.x (which requires `Greenplum.get_packages(package_version="2.3.0")` or higher)
+  - Actually tested: 6.23, 7.0
 - Spark versions: 2.3.x - 3.2.x (Spark 3.3+ is not supported yet)
 - Java versions: 8 - 11
 
@@ -146,11 +146,11 @@ More details can be found in [official documentation](https://docs.vmware.com/en
 
 ### Set connection port
 
-#### Spark with `master=k8s`
+#### Connection port for Spark with `master=k8s`
 
 Please follow [the official documentation](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/configure.html#k8scfg)
 
-#### Spark with `master=yarn` or `master=local`
+#### Connection port for Spark with `master=yarn` or `master=local`
 
 To read data from Greenplum using Spark, following ports should be opened in firewall between Spark and Greenplum:
 
@@ -186,17 +186,17 @@ To read data from Greenplum using Spark, following ports should be opened in fir
 
 More details can be found in official documentation:
 
-  - [port requirements](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/sys_reqs.html#network-port-requirements)
-  - [format of server.port value](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html#server.port)
-  - [port troubleshooting](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/troubleshooting.html#port-errors)
+- [port requirements](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/sys_reqs.html#network-port-requirements)
+- [format of server.port value](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html#server.port)
+- [port troubleshooting](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/troubleshooting.html#port-errors)
 
 ### Set connection host
 
-#### Spark with `master=k8s`
+#### Connection host for Spark with `master=k8s`
 
 Please follow [the official documentation](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/configure.html#k8scfg)
 
-#### Spark with `master=local`
+#### Connection host for Spark with `master=local`
 
 By default, Greenplum connector tries to resolve IP of current host, and then pass it as `gpfdist` URL to Greenplum segment.
 This may fail in some cases.
@@ -256,7 +256,7 @@ There are 2 ways to fix that:
 
   So Greenplum connector will properly resolve host IP.
 
-#### Spark with `master=yarn`
+#### Connection host for Spark with `master=yarn`
 
 The same issue with resolving IP address can occur on Hadoop cluster node, but it's tricky to fix, because each node has a different IP.
 

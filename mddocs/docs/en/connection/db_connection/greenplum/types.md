@@ -100,6 +100,7 @@ See Greenplum [CREATE TABLE](https://docs.vmware.com/en/VMware-Greenplum/7/green
 ## Supported types
 
 See:
+
 - [official connector documentation](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-sparkreference-datatype_mapping.html)
 - [list of Greenplum types](https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-data_types.html)
 

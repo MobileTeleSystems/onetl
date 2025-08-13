@@ -23,7 +23,7 @@ Connection opened using this method should be then closed with `connection.close
 
     Please take into account [Oracle types][oracle-types].
 
-#### Syntax support
+#### Syntax support in `Oracle.fetch`
 
 This method supports **any** query syntax supported by Oracle, like:
 
@@ -33,7 +33,7 @@ This method supports **any** query syntax supported by Oracle, like:
 - ✅︎ `SHOW ...`
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `Oracle.fetch`
 
     ```python
         from onetl.connection import Oracle
@@ -56,7 +56,7 @@ Method accepts [Oracle.ExecuteOptions][onetl.connection.db_connection.oracle.opt
 
 Connection opened using this method should be then closed with `connection.close()` or `with connection:`.
 
-#### Syntax support
+#### Syntax support in `Oracle.execute`
 
 This method supports **any** query syntax supported by Oracle, like:
 
@@ -69,7 +69,7 @@ This method supports **any** query syntax supported by Oracle, like:
 - ✅︎ other statements not mentioned here
 - ❌ `SET ...; SELECT ...;` - multiple statements not supported
 
-#### Examples
+#### Examples for `Oracle.execute`
 
     ```python
         from onetl.connection import Oracle

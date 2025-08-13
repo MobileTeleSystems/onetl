@@ -166,15 +166,15 @@ Hadoop AWS основан на библиотеке AWS SDK, которая та
 
 Вы также можете изменить количество повторных попыток, выполняемых обеими библиотеками, используя параметр `extra`:
 
-```python
-spark_s3 = SparkS3(
-    ...,
-    extra={
-        "attempts.maximum": 1,
-        "retry.limit": 1,
-    },
-)
-```
+    ```python
+    spark_s3 = SparkS3(
+        ...,
+        extra={
+            "attempts.maximum": 1,
+            "retry.limit": 1,
+        },
+    )
+    ```
 
 Таким образом, доступ к S3 завершится почти сразу, если возникнет какая-либо ошибка.
 
@@ -182,9 +182,9 @@ spark_s3 = SparkS3(
 
 #### Нет доступа к сети
 
-```text
-Caused by: java.net.ConnectException: Connection refused
-```
+    ```text
+    Caused by: java.net.ConnectException: Connection refused
+    ```
 
 В основном вызвано:
 
@@ -194,63 +194,63 @@ Caused by: java.net.ConnectException: Connection refused
 
 #### Использование протокола HTTPS для порта HTTP
 
-```text
-Caused by: javax.net.ssl.SSLException: Unsupported or unrecognized SSL message
-```
+    ```text
+    Caused by: javax.net.ssl.SSLException: Unsupported or unrecognized SSL message
+    ```
 
 По умолчанию SparkS3 использует протокол HTTPS для подключения.
 Если вы измените номер порта, это не приведет к изменению протокола:
 
-```python
-spark_s3 = SparkS3(host="s3provider.com", port=8080, ...)
-```
+    ```python
+    spark_s3 = SparkS3(host="s3provider.com", port=8080, ...)
+    ```
 
 Вы должны явно передать протокол:
 
-```python
-spark_s3 = SparkS3(host="s3provider.com", port=8080, protocol="http", ...)
-```
+    ```python
+    spark_s3 = SparkS3(host="s3provider.com", port=8080, protocol="http", ...)
+    ```
 
 #### SSL-сертификат является самоподписанным
 
-```text
-sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
-```
+    ```text
+    sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+    ```
 
 Чтобы подключиться к порту HTTPS с самоподписанным сертификатом, вы должны
 [добавить цепочку сертификатов в Java TrustedStore](https://stackoverflow.com/questions/373295/digital-certificate-how-to-import-cer-file-in-to-truststore-file-using).
 
 Другой вариант - отключить проверку SSL:
 
-```python
-spark_s3 = SparkS3(
-    ...,
-    extra={
-        "connection.ssl.enabled": False,
-    },
-)
-```
+    ```python
+    spark_s3 = SparkS3(
+        ...,
+        extra={
+            "connection.ssl.enabled": False,
+        },
+    )
+    ```
 
 Но это **НЕ** рекомендуется.
 
 #### Доступ к S3 без поддержки стиля доступа на основе домена { #s3-0 }
 
-```text
-Caused by: java.net.UnknownHostException: my-bucket.s3provider.com
-```
+    ```text
+    Caused by: java.net.UnknownHostException: my-bucket.s3provider.com
+    ```
 
 Чтобы использовать стиль доступа на основе пути, используйте опцию ниже:
 
-```python
-spark_s3 = SparkS3(
-    host="s3provider.com",
-    bucket="my-bucket",
-    ...,
-    extra={
-        "path.style.access": True,
-    },
-)
-```
+    ```python
+    spark_s3 = SparkS3(
+        host="s3provider.com",
+        bucket="my-bucket",
+        ...,
+        extra={
+            "path.style.access": True,
+        },
+    )
+    ```
 
 ## Медленная или нестабильная запись в S3 { #s3-1 }
 
@@ -269,9 +269,9 @@ Hadoop AWS позволяет использовать различные стр
 
 Этот коммиттер довольно медленный и нестабильный, поэтому его не рекомендуется использовать:
 
-```text
-WARN AbstractS3ACommitterFactory: Using standard FileOutputCommitter to commit work. This is slow and potentially unsafe.
-```
+    ```text
+    WARN AbstractS3ACommitterFactory: Using standard FileOutputCommitter to commit work. This is slow and potentially unsafe.
+    ```
 
 Это вызвано тем, что он создает файлы во временном каталоге в удаленной файловой системе, и после того, как все они будут успешно записаны,
 они перемещаются в целевой каталог в той же удаленной файловой системе.

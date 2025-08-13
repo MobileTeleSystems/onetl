@@ -3,8 +3,8 @@
 ## Version Compatibility
 
 - SQL Server versions:
-    - Officially declared: 2016 - 2022
-    - Actually tested: 2017, 2022
+  - Officially declared: 2016 - 2022
+  - Actually tested: 2017, 2022
 - Spark versions: 2.3.x - 3.5.x
 - Java versions: 8 - 20
 

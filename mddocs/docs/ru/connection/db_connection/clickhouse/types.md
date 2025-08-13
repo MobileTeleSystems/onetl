@@ -343,5 +343,4 @@ DataFrame со следующими типами Spark не могут быть 
 
 !!! warning
 
-    Колонки [EPHEMERAL](https://clickhouse.com/docs/en/sql-reference/statements/create/table#ephemeral) не поддерживаются Spark,
-    поскольку их нельзя выбрать для определения типа целевой колонки.
+    Колонки [EPHEMERAL](https://clickhouse.com/docs/en/sql-reference/statements/create/table#ephemeral) не поддерживаются Spark, поскольку их нельзя выбрать для определения типа целевой колонки.

@@ -1,6 +1,5 @@
 # Postgres connection
 
-
 <!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.db_connection.postgres.connection

@@ -10,6 +10,6 @@
   * [Подключение][spark-s3-connection]
   * [Устранение неполадок][spark-s3-troubleshooting]
 
-# Для разработчиков
+## Для разработчиков
 
 * [Базовый интерфейс][base-file-df-connection]

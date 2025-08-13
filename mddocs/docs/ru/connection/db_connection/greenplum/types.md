@@ -100,6 +100,7 @@ DataFrame в Spark всегда имеют `schema`, которая предст
 ## Поддерживаемые типы
 
 См.:
+
 - [официальную документацию коннектора](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-sparkreference-datatype_mapping.html)
 - [список типов Greenplum](https://docs.vmware.com/en/VMware-Greenplum/7/greenplum-database/ref_guide-data_types.html)
 

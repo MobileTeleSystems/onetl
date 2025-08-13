@@ -1,6 +1,5 @@
 # Spark HDFS Slots
 
-
 <!-- 
 ```{eval-rst}
 .. currentmodule:: onetl.connection.file_df_connection.spark_hdfs.slots

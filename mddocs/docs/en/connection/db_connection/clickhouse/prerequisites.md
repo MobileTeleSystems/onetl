@@ -3,8 +3,8 @@
 ## Version Compatibility
 
 - Clickhouse server versions:
-    - Officially declared: 22.8 or higher
-    - Actually tested: 21.1, 25.1
+  - Officially declared: 22.8 or higher
+  - Actually tested: 21.1, 25.1
 - Spark versions: 2.3.x - 3.5.x
 - Java versions: 8 - 20
 
@@ -50,7 +50,6 @@ See [official documentation](https://clickhouse.com/docs/en/integrations/java#co
 
 Ask your Clickhouse cluster administrator to set following grants for a user,
 used for creating a connection:
-
 
 === "Read + Write"
 
