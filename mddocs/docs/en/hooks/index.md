@@ -5,5 +5,5 @@
 * [High level design][hooks-design]
 * [@hook decorator][hook-decorator]
 * [@slot decorator][slot-decorator]
-* [@support_hooks decorator][support-hooks]
+* [@support_hooks decorator][support-hooks-decorator]
 * [Hooks global state][global-state]
