@@ -4,7 +4,7 @@ Here you can find detailed documentation about each one of the onETL concepts an
 
 ## Connection
 
-### Basics
+### Connection basics
 
 onETL is used to pull and push data into other systems, and so it has a first-class `Connection` concept for storing credentials that are used to communicate with external systems.
 
@@ -24,7 +24,7 @@ sftp = SFTP(
 
 All connection types are inherited from the parent class `BaseConnection`.
 
-### Class diagram
+### Connection class diagram
 
 ```mermaid
 classDiagram
@@ -211,8 +211,8 @@ To manipulate data you can use classes:
 
 Extract and load classes have a `options` parameter, which has a special meaning:
 
-> - all other parameters - *WHAT* we extract / *WHERE* we load to
-> - `options` parameter - *HOW* we extract/load data
+* all other parameters - *WHAT* we extract / *WHERE* we load to
+* `options` parameter - *HOW* we extract/load data
 
 ```python
 db_reader = DBReader(
@@ -297,7 +297,6 @@ file_df_writer = FileDFWriter(
 
 More information about `options` could be found on [`DBConnection`][db-connections] and [`FileDownloader`][file-downloader-0] / [`FileUploader`][file-uploader-0] / [`FileMover`][file-mover-0] / [`FileDFReader`][filedf-reader-0] / [`FileDFWriter`][filedf-writer-0] documentation.
 
-
 ### Read Strategies
 
 onETL have several builtin strategies for reading data:
@@ -363,8 +362,8 @@ like `mkdir`, `remove_file`, `get_table_schema`, and so on.
 
 High-level operations, like
 
-  * [`strategy`][strategy] support
-  * Handling metadata push/pull
-  * Handling different options, like `if_exists="replace_file"` in case of file download/upload
+* [`strategy`][strategy] support
+* Handling metadata push/pull
+* Handling different options, like `if_exists="replace_file"` in case of file download/upload
 
 is moved to a separate class which calls the connection object methods to perform some complex logic.

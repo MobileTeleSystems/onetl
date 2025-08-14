@@ -26,7 +26,6 @@ Python ETL/ELT library powered by [Apache Spark](https://spark.apache.org/) & ot
 
 ## Supported storages
 
-
 | Type               | Storage      | Powered by                                                                                                              |
 |--------------------|--------------|-------------------------------------------------------------------------------------------------------------------------|
 | Database {: rowspan=5} | Clickhouse<br/>MSSQL<br/>MySQL<br/>Postgres<br/>Oracle<br/>Teradata   | <br/><br/>Apache Spark [JDBC Data Source](https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html)                      |

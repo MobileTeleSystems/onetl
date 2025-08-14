@@ -141,27 +141,30 @@ docker-compose --profile all down -v
 
 #### Without docker-compose
 
-#### WARNING
-To run HDFS tests locally you should add the following line to your `/etc/hosts` (file path depends on OS):
+!!! warning
 
-```default
-# HDFS server returns container hostname as connection address, causing error in DNS resolution
-127.0.0.1 hdfs
-```
+    To run HDFS tests locally you should add the following line to your `/etc/hosts` (file path depends on OS):
 
-#### NOTE
-To run Oracle tests you need to install [Oracle instantclient](https://www.oracle.com/database/technologies/instant-client.html),
-and pass its path to `ONETL_ORA_CLIENT_PATH` and `LD_LIBRARY_PATH` environment variables,
-e.g. `ONETL_ORA_CLIENT_PATH=/path/to/client64/lib`.
+    ```default
+    # HDFS server returns container hostname as connection address, causing error in DNS resolution
+    127.0.0.1 hdfs
+    ```
 
-It may also require to add the same path into `LD_LIBRARY_PATH` environment variable
+!!! note
 
-#### NOTE
-To run Greenplum tests, you should:
+    To run Oracle tests you need to install [Oracle instantclient](https://www.oracle.com/database/technologies/instant-client.html),
+    and pass its path to `ONETL_ORA_CLIENT_PATH` and `LD_LIBRARY_PATH` environment variables,
+    e.g. `ONETL_ORA_CLIENT_PATH=/path/to/client64/lib`.
 
-* Download [VMware Greenplum connector for Spark][greenplum-prerequisites]
-* Either move it to `~/.ivy2/jars/`, or pass file path to `CLASSPATH`
-* Set environment variable `ONETL_GP_PACKAGE_VERSION=local`.
+    It may also require to add the same path into `LD_LIBRARY_PATH` environment variable
+
+!!! note
+
+    To run Greenplum tests, you should:
+
+    * Download [VMware Greenplum connector for Spark][greenplum-prerequisites]
+    * Either move it to `~/.ivy2/jars/`, or pass file path to `CLASSPATH`
+    * Set environment variable `ONETL_GP_PACKAGE_VERSION=local`.
 
 Start all containers with dependencies:
 
@@ -273,12 +276,12 @@ and the suffix.
 In general the name will follow `<pr_number>.<category>.rst` pattern,
 where the categories are:
 
-- `feature`: Any new feature
-- `bugfix`: A bug fix
-- `improvement`: An improvement
-- `doc`: A change to the documentation
-- `dependency`: Dependency-related changes
-- `misc`: Changes internal to the repo like CI, test and build changes
+* `feature`: Any new feature
+* `bugfix`: A bug fix
+* `improvement`: An improvement
+* `doc`: A change to the documentation
+* `dependency`: Dependency-related changes
+* `misc`: Changes internal to the repo like CI, test and build changes
 
 A pull request may have more than one of these components, for example
 a code change may introduce a new feature that deprecates an old

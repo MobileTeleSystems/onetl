@@ -7,5 +7,6 @@ pip install onetl[all]
 pip install onetl[spark,files,kerberos]
 ```
 
-#### WARNING
-This method consumes a lot of disk space, and requires for Java & Kerberos libraries to be installed into your OS.
+!!! warning
+
+    This method consumes a lot of disk space, and requires for Java & Kerberos libraries to be installed into your OS.

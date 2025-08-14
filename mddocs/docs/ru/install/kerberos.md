@@ -9,5 +9,5 @@
  -->
 
 ----8<----
-../mddocs/docs/en/kerberos_install.md
+../mddocs/docs/ru/kerberos_install.md
 ----8<----

@@ -9,6 +9,6 @@
 * [Parquet][parquet-file-format]
 * [XML][xml-file-format]
 
-# For developers
+## For developers
 
 * [Base interface][base-file-format]

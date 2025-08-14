@@ -12,8 +12,9 @@ It can be installed via:
 pip install onetl
 ```
 
-#### WARNING
-This method does NOT include any connections.
+!!! warning
 
-This method is recommended for use in third-party libraries which require for `onetl` to be installed,
-but do not use its connection classes.
+    This method does NOT include any connections.
+
+    This method is recommended for use in third-party libraries which require for `onetl` to be installed,
+    but do not use its connection classes.

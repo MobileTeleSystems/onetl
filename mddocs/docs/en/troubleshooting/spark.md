@@ -39,7 +39,7 @@ spark.sparkContext.setLogLevel("WARN")
 
 `sparkContext.setLogLevel` changes only log level of Spark session on Spark **driver**. To make Spark executor logs more verbose, perform following steps:
 
-- Create `log4j.properties` file with content like this:
+* Create `log4j.properties` file with content like this:
 
   ```jproperties
   log4j.rootCategory=DEBUG, console
@@ -50,7 +50,7 @@ spark.sparkContext.setLogLevel("WARN")
   log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n
   ```
 
-- Stop existing Spark session and create a new one with following options:
+* Stop existing Spark session and create a new one with following options:
 
   ```python
   from pyspark.sql import SparkSession

@@ -28,7 +28,6 @@ Python ETL/ELT библиотека, основанная на [Apache Spark](ht
 
 ## Поддерживаемые хранилища
 
-
 | Тип               | Хранилище      | На базе                                                                                                              |
 |--------------------|--------------|-------------------------------------------------------------------------------------------------------------------------|
 | База данных {: rowspan=5} | Clickhouse<br/>MSSQL<br/>MySQL<br/>Postgres<br/>Oracle<br/>Teradata   | <br/><br/>Apache Spark [JDBC Data Source](https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html)                      |

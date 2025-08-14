@@ -1,7 +1,7 @@
 # Установка { #install }
 
 ----8<----
-../mddocs/docs/en/minimal_install.md
+../mddocs/docs/ru/minimal_install.md
 ----8<----
 
 ## Установка подробно

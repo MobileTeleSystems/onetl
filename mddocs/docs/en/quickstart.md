@@ -52,7 +52,6 @@ pip install onetl
     This method is recommended for use in third-party libraries which require for `onetl` to be installed,
     but do not use its connection classes.
 
-
 ### With DB and FileDF connections
 
 <!-- (spark-install)= -->
@@ -171,7 +170,6 @@ pip install onetl[spark,files,kerberos]
 !!! warning
 
     This method consumes a lot of disk space, and requires for Java & Kerberos libraries to be installed into your OS.
-
 
 <!-- (quick-start)= -->
 

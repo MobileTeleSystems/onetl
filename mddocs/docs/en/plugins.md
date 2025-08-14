@@ -2,7 +2,6 @@
 
 :octicons-versions-16: **version added 0.6.0**
 
-
 ## What are plugins?
 
 ### Terms

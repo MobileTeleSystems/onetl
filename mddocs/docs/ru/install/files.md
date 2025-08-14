@@ -9,5 +9,5 @@
  -->
 
 ----8<----
-../mddocs/docs/en/files_install.md
+../mddocs/docs/ru/files_install.md
 ----8<----

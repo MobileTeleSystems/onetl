@@ -8,5 +8,5 @@
  -->
 
 ----8<----
-../mddocs/docs/en/full_install.md
+../mddocs/docs/ru/full_install.md
 ----8<----

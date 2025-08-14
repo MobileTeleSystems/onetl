@@ -39,7 +39,7 @@ spark.sparkContext.setLogLevel("WARN")
 
 `sparkContext.setLogLevel` изменяет только уровень логирования сессии Spark на **драйвере** Spark. Чтобы сделать логи исполнителей Spark более подробными, выполните следующие шаги:
 
-- Создайте файл `log4j.properties` со следующим содержимым:
+* Создайте файл `log4j.properties` со следующим содержимым:
 
   ```jproperties
   log4j.rootCategory=DEBUG, console
@@ -50,7 +50,7 @@ spark.sparkContext.setLogLevel("WARN")
   log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n
   ```
 
-- Остановите существующую сессию Spark и создайте новую со следующими параметрами:
+* Остановите существующую сессию Spark и создайте новую со следующими параметрами:
 
   ```python
   from pyspark.sql import SparkSession
