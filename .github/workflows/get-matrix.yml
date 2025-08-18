@@ -75,7 +75,7 @@ jobs:
       matrix-webdav: ${{ toJson(fromJson(steps.matrix-webdav.outputs.result)[steps.key-webdav.outputs.key]) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 2
 
