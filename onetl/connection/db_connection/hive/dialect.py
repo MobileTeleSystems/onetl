@@ -8,13 +8,13 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportColumns,
     SupportHintStr,
     SupportHWMExpressionStr,
-    SupportNameWithSchemaOnly,
+    SupportNameWithMultipleParts,
     SupportWhereStr,
 )
 
 
 class HiveDialect(  # noqa: WPS215
-    SupportNameWithSchemaOnly,
+    SupportNameWithMultipleParts,
     SupportColumns,
     NotSupportDFSchema,
     SupportWhereStr,

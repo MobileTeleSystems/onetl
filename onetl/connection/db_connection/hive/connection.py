@@ -466,7 +466,7 @@ class Hive(DBConnection):
         # Do not use SELECT * FROM table, because it may fail if users have no permissions,
         # or Hive Metastore is overloaded.
         # Also we ignore VIEW's as they are not insertable.
-        schema, table = name.split(".", maxsplit=1)
+        schema, table = name.rsplit(".", maxsplit=1)
         query = f"SHOW TABLES IN {schema} LIKE '{table}'"
 
         log.debug("|%s| Executing SQL query:", self.__class__.__name__)
@@ -549,7 +549,7 @@ class Hive(DBConnection):
             else:
                 writer = writer.option(method, value)
 
-        # deserialize passed OCR(), Parquet(), CSV(), etc. file formats
+        # deserialize passed ORC(), Parquet(), CSV(), etc. file formats
         if isinstance(write_options.format, BaseWritableFileFormat):
             writer = write_options.format.apply_to_writer(writer)
         elif isinstance(write_options.format, str):

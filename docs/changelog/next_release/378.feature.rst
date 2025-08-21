@@ -1,0 +1,1 @@
+- Added support for Iceberg format without explicit options

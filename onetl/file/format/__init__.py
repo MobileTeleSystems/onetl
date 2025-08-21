@@ -3,6 +3,7 @@
 from onetl.file.format.avro import Avro
 from onetl.file.format.csv import CSV
 from onetl.file.format.excel import Excel
+from onetl.file.format.iceberg import Iceberg
 from onetl.file.format.json import JSON
 from onetl.file.format.jsonline import JSONLine
 from onetl.file.format.orc import ORC
@@ -13,6 +14,7 @@ __all__ = [
     "Avro",
     "CSV",
     "Excel",
+    "Iceberg",
     "JSON",
     "JSONLine",
     "ORC",
