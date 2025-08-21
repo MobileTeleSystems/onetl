@@ -27,6 +27,9 @@ from onetl.connection.db_connection.dialect_mixins.support_hwm_expression_str im
 from onetl.connection.db_connection.dialect_mixins.support_name_any import (
     SupportNameAny,
 )
+from onetl.connection.db_connection.dialect_mixins.support_name_with_catalog_and_schema import (
+    SupportNameWithMultipleParts,
+)
 from onetl.connection.db_connection.dialect_mixins.support_name_with_schema_only import (
     SupportNameWithSchemaOnly,
 )
