@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 from onetl._metrics.recorder import SparkMetricsRecorder
-from onetl._util.spark import get_spark_version
 from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import CSV, JSON
 
@@ -89,13 +88,8 @@ def test_spark_metrics_recorder_file_df_reader_no_data_after_filter(
         time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
         metrics = recorder.metrics()
 
-        spark_version = get_spark_version(spark)
-        if spark_version.major >= 3:
-            # Spark 3.0 does not include skipped rows to metrics
-            assert not metrics.input.read_rows
-        else:
-            # Spark 2.0 does
-            assert metrics.input.read_rows
+        # Spark does not include skipped rows to metrics
+        assert not metrics.input.read_rows
 
 
 def test_spark_metrics_recorder_file_df_reader_error(

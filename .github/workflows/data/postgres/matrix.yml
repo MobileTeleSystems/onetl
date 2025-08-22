@@ -1,15 +1,15 @@
-min: &min
+3_2_x: &3_2_x
   # Min supported version by JDBC driver is 8.2, but it is too ancient to be used by anyone in real life
   postgres-version: 9.4.26-alpine
-  spark-version: 2.3.1
+  spark-version: 3.2.4
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-22.04
 
-max: &max
+3_5_x: &3_5_x
   postgres-version: 17.3-alpine
-  spark-version: 3.5.5
+  spark-version: 3.5.6
   pydantic-version: 2
   python-version: '3.13'
   java-version: 20
@@ -24,6 +24,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small: [*max]
-  full: [*min, *max]
-  nightly: [*min, *latest]
+  small: [*3_5_x]
+  full: [*3_2_x, *3_5_x]
+  nightly: [*latest]

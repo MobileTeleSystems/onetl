@@ -5,11 +5,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 try:
-    from pydantic.v1 import Field, validator
+    from pydantic.v1 import Field
 except (ImportError, AttributeError):
-    from pydantic import Field, validator  # type: ignore[no-redef, assignment]
+    from pydantic import Field  # type: ignore[no-redef, assignment]
 
-from onetl._util.spark import get_pyspark_version
 from onetl.base import FileDFReadOptions
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
@@ -67,10 +66,3 @@ class FileDFReaderOptions(FileDFReadOptions, GenericOptions):
         """
         options = self.dict(by_alias=True, exclude_none=True)
         return reader.options(**options)
-
-    @validator("recursive")
-    def _validate_spark_version(cls, value):
-        pyspark_version = get_pyspark_version()
-        if pyspark_version.major < 3:
-            raise RuntimeError(f"Option `recursive` can be used only in Spark 3+, got {pyspark_version}")
-        return value

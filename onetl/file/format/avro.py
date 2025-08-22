@@ -84,7 +84,7 @@ class Avro(ReadWriteFileFormat):
             from onetl.file.format import Avro
 
             # Create Spark session with Avro package loaded
-            maven_packages = Avro.get_packages(spark_version="3.5.5")
+            maven_packages = Avro.get_packages(spark_version="3.5.6")
             spark = (
                 SparkSession.builder.appName("spark-app-name")
                 .config("spark.jars.packages", ",".join(maven_packages))
@@ -285,19 +285,13 @@ class Avro(ReadWriteFileFormat):
 
             from onetl.file.format import Avro
 
-            Avro.get_packages(spark_version="3.5.5")
-            Avro.get_packages(spark_version="3.5.5", scala_version="2.12")
+            Avro.get_packages(spark_version="3.5.6")
+            Avro.get_packages(spark_version="3.5.6", scala_version="2.12")
 
         """
 
         spark_ver = Version(spark_version).min_digits(3)
-        if spark_ver < Version("2.4"):
-            raise ValueError(f"Spark version should be at least 2.4, got {spark_version}")
-
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
-        if scala_ver < Version("2.11"):
-            raise ValueError(f"Scala version should be at least 2.11, got {scala_ver.format('{0}.{1}')}")
-
         return [f"org.apache.spark:spark-avro_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}"]
 
     @slot
@@ -307,14 +301,12 @@ class Avro(ReadWriteFileFormat):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark)
+            spark_version = get_spark_version(spark).format("{0}.{1}.{2}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=self.__class__.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
 
     @slot
@@ -420,7 +412,6 @@ class Avro(ReadWriteFileFormat):
 
         spark = SparkSession._instantiatedSession  # noqa: WPS437
         self.check_if_supported(spark)
-        self._check_spark_version_for_serialization(spark)
         self._check_unsupported_parse_options()
 
         from pyspark.sql.avro.functions import from_avro
@@ -518,7 +509,6 @@ class Avro(ReadWriteFileFormat):
 
         spark = SparkSession._instantiatedSession  # noqa: WPS437
         self.check_if_supported(spark)
-        self._check_spark_version_for_serialization(spark)
         self._check_unsupported_serialization_options()
 
         from pyspark.sql.avro.functions import to_avro
@@ -569,16 +559,6 @@ class Avro(ReadWriteFileFormat):
         if schema_dict and schema_url:
             raise ValueError("Parameters `avroSchema` and `avroSchemaUrl` are mutually exclusive.")
         return values
-
-    def _check_spark_version_for_serialization(self, spark: SparkSession):
-        spark_version = get_spark_version(spark)
-        if spark_version.major < 3:
-            class_name = self.__class__.__name__
-            error_msg = (
-                f"`{class_name}.parse_column` or `{class_name}.serialize_column` are available "
-                f"only since Spark 3.x, but got {spark_version}."
-            )
-            raise ValueError(error_msg)
 
     def _get_schema_json(self) -> str:
         if self.schema_dict:

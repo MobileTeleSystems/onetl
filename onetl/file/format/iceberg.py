@@ -94,7 +94,7 @@ class Iceberg(ReadWriteFileFormat):
         """
         Get package names to be downloaded by Spark. |support_hooks|
 
-        See `Maven package index <https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-spark>`
+        See `Maven package index <https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-spark>`_
         for all available packages.
 
         .. versionadded:: 0.14.0
@@ -105,7 +105,7 @@ class Iceberg(ReadWriteFileFormat):
             Iceberg package version in format ``major.minor.patch``.
 
         spark_version : str
-            Spark version in format ``major.minor.patch``.
+            Spark version in format ``major.minor``.
 
         scala_version : str, optional
             Scala version in format ``major.minor``.
@@ -120,11 +120,7 @@ class Iceberg(ReadWriteFileFormat):
 
         version = Version(package_version).min_digits(3)
         spark_ver = Version(spark_version).min_digits(2)
-
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
-        if scala_ver < Version("2.11"):
-            raise ValueError(f"Scala version must be at least 2.11, got {scala_ver.format('{0}.{1}')}")
-
         return [
             f"org.apache.iceberg:iceberg-spark-runtime-{spark_ver.format('{0}.{1}')}_{scala_ver.format('{0}.{1}')}:{version}",
         ]
@@ -136,14 +132,12 @@ class Iceberg(ReadWriteFileFormat):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark)
+            spark_version = get_spark_version(spark).format("{0}.{1}.{2}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=self.__class__.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
 
     def __repr__(self):

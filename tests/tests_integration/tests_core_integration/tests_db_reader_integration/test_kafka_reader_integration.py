@@ -5,7 +5,6 @@ try:
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
-from onetl._util.spark import get_spark_version
 from onetl.connection import Kafka
 from onetl.db import DBReader
 
@@ -120,9 +119,6 @@ def test_kafka_reader_columns_and_types_without_headers(spark, processing, kafka
 
 
 def test_kafka_reader_columns_and_types_with_headers(spark, processing, kafka_schema_with_headers, kafka_topic):
-    if get_spark_version(spark).major < 3:
-        pytest.skip("Spark 3.x or later is required to write/read 'headers' from Kafka messages")
-
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
@@ -162,9 +158,6 @@ def test_kafka_reader_topic_does_not_exist(spark, processing):
 
 @pytest.mark.parametrize("group_id_option", ["group.id", "groupIdPrefix"])
 def test_kafka_reader_with_group_id(group_id_option, spark, processing, kafka_dataframe_schema, kafka_topic):
-    if get_spark_version(spark).major < 3:
-        pytest.skip("Spark 3.x or later is required to pass group.id")
-
     first_span = processing.create_pandas_df(min_id=0, max_id=100)
     processing.insert_pandas_df_into_topic(first_span, kafka_topic)
 

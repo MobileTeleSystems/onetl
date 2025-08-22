@@ -2,25 +2,20 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-from collections.abc import Iterator
-from contextlib import contextmanager, nullcontext
 from enum import Enum
-from typing import TYPE_CHECKING, ContextManager, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Iterable, List, Optional, Union
 
 try:
     from pydantic.v1 import Field, root_validator
 except (ImportError, AttributeError):
     from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
 
-from onetl._util.spark import inject_spark_param
 from onetl.base import FileDFWriteOptions
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrameWriter
-
-PARTITION_OVERWRITE_MODE_PARAM = "spark.sql.sources.partitionOverwriteMode"
 
 
 class FileDFExistBehavior(str, Enum):
@@ -62,6 +57,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
 
     class Config:
         extra = "allow"
+        prohibited_options = frozenset(("partitionOverwriteMode",))
 
     if_exists: FileDFExistBehavior = FileDFExistBehavior.APPEND
     """Behavior for existing target directory.
@@ -127,8 +123,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
         * ``replace_overlapping_partitions``
             If partitions from dataframe already exist in directory structure, they will be overwritten.
 
-            Same as Spark's ``df.write.mode("overwrite").save()`` +
-            ``spark.sql.sources.partitionOverwriteMode=dynamic``.
+            Same as Spark's ``df.write.option("partitionOverwriteMode", "dynamic").mode("overwrite").save()``.
 
             .. DANGER::
 
@@ -167,8 +162,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
             Remove existing directory and create new one, **overwriting all existing data**.
             **All existing partitions are dropped.**
 
-            Same as Spark's ``df.write.mode("overwrite").save()`` +
-            ``spark.sql.sources.partitionOverwriteMode=static``.
+            Same as Spark's ``df.write.option("partitionOverwriteMode", "static").mode("overwrite").save()``.
 
     .. note::
 
@@ -200,8 +194,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
     """
 
     @slot
-    @contextmanager
-    def apply_to_writer(self, writer: DataFrameWriter) -> Iterator[DataFrameWriter]:
+    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter:
         """
         Apply provided format to :obj:`pyspark.sql.DataFrameWriter`. |support_hooks|
 
@@ -209,8 +202,6 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
         -------
         :obj:`pyspark.sql.DataFrameWriter` with options applied
         """
-        from pyspark.sql import SparkSession
-
         for method, value in self.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}).items():
             # <value> is the arguments that will be passed to the <method>
             # format orc, parquet methods and format simultaneously
@@ -222,33 +213,18 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
             else:
                 writer = writer.option(method, value)
 
-        context: ContextManager
-        spark: SparkSession
-        if isinstance(writer._spark, SparkSession):  # noqa: WPS437
-            spark = writer._spark  # noqa: WPS437
-        else:
-            # In Spark 2, `writer._spark` is not a SparkSession but SQLContext
-            # Using some nasty hack to get current SparkSession
-            spark = SparkSession._instantiatedSession  # noqa: WPS437 # type: ignore[error]
-
-        context = nullcontext()
-
         if self.if_exists == FileDFExistBehavior.REPLACE_OVERLAPPING_PARTITIONS:
-            context = inject_spark_param(spark.conf, PARTITION_OVERWRITE_MODE_PARAM, "dynamic")  # noqa: WPS437
+            writer = writer.mode("overwrite").option("partitionOverwriteMode", "dynamic")
         elif self.if_exists == FileDFExistBehavior.REPLACE_ENTIRE_DIRECTORY:
-            context = inject_spark_param(spark.conf, PARTITION_OVERWRITE_MODE_PARAM, "static")  # noqa: WPS437
-
-        mode = self.if_exists.value
-        if self.if_exists in {
-            FileDFExistBehavior.REPLACE_OVERLAPPING_PARTITIONS,
-            FileDFExistBehavior.REPLACE_ENTIRE_DIRECTORY,
-        }:
-            mode = "overwrite"
+            writer = writer.mode("overwrite").option("partitionOverwriteMode", "static")
         elif self.if_exists == FileDFExistBehavior.SKIP_ENTIRE_DIRECTORY:
-            mode = "ignore"
+            writer = writer.mode("ignore")
+        elif self.if_exists == FileDFExistBehavior.APPEND:
+            writer = writer.mode("append")
+        else:
+            writer = writer.mode("error")
 
-        with context:
-            yield writer.mode(mode)
+        return writer
 
     @root_validator(pre=True)
     def _mode_is_restricted(cls, values):

@@ -9,7 +9,7 @@ Version Compatibility
 * MySQL server versions:
     * Officially declared: 8.0 - 9.2
     * Actually tested: 5.7.13, 9.2.0
-* Spark versions: 2.3.x - 3.5.x
+* Spark versions: 3.2.x - 3.5.x
 * Java versions: 8 - 20
 
 See `official documentation <https://dev.mysql.com/doc/connector-j/en/connector-j-versions.html>`_.

@@ -4,7 +4,6 @@ from contextlib import suppress
 import pytest
 
 from onetl._metrics.recorder import SparkMetricsRecorder
-from onetl._util.spark import get_spark_version
 from onetl.connection import Postgres
 from onetl.db import DBReader, DBWriter
 
@@ -136,13 +135,7 @@ def test_spark_metrics_recorder_postgres_write(spark, processing, get_schema_tab
 
         time.sleep(0.1)  # sleep to fetch late metrics from SparkListener
         metrics = recorder.metrics()
-        spark_version = get_spark_version(spark)
-        if spark_version.major >= 3:
-            # Spark started collecting JDBC write bytes only since Spark 3.0:
-            # https://issues.apache.org/jira/browse/SPARK-29461
-            assert metrics.output.written_rows == df.count()
-        else:
-            assert not metrics.output.written_rows
+        assert metrics.output.written_rows == df.count()
         # JDBC does not provide information about data size
         assert not metrics.output.written_bytes
 

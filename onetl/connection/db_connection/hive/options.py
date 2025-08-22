@@ -91,8 +91,8 @@ class HiveWriteOptions(GenericOptions):
     """
 
     class Config:
-        known_options: frozenset = frozenset()
         extra = "allow"
+        known_options: frozenset = frozenset()
 
     if_exists: HiveTableExistBehavior = Field(  # type: ignore[literal-required]
         default=HiveTableExistBehavior.APPEND,

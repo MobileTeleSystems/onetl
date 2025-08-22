@@ -277,16 +277,7 @@ class Excel(ReadWriteFileFormat):
             raise ValueError(f"Package version should be at least 0.30, got {package_version}")
 
         spark_ver = Version(spark_version).min_digits(3)
-        if spark_ver < Version("3.2"):
-            # Actually, Spark 2.4 is supported, but packages are built only for Scala 2.12
-            # when default pyspark==2.4.1 is built with Scala 2.11.
-            # See https://github.com/crealytics/spark-excel/issues/426
-            raise ValueError(f"Spark version should be at least 3.2, got {spark_version}")
-
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
-        if scala_ver < Version("2.12"):
-            raise ValueError(f"Scala version should be at least 2.12, got {scala_ver.format('{0}.{1}')}")
-
         return [
             f"dev.mauch:spark-excel_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}_{version}",
         ]
@@ -298,14 +289,12 @@ class Excel(ReadWriteFileFormat):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark)
+            spark_version = get_spark_version(spark).format("{0}.{1}.{2}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=self.__class__.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
 
     @slot

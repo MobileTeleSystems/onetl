@@ -183,17 +183,11 @@ class MongoDB(DBConnection):
             scala_ver = Version(scala_version).min_digits(2)
         elif spark_version:
             spark_ver = Version(spark_version)
-            if spark_ver.major < 3:
-                raise ValueError(f"Spark version must be at least 3.0, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
         connector_ver = Version(package_version or default_package_version).min_digits(2)
-
-        if scala_ver < Version("2.12"):
-            raise ValueError(f"Scala version must be at least 2.12, got {scala_ver}")
-
         return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.format('{0}.{1}')}:{connector_ver}"]
 
     @classproperty
@@ -552,14 +546,12 @@ class MongoDB(DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).format("{major}.{minor}")
+            spark_version = get_spark_version(spark).format("{0}.{1}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
 

@@ -1,18 +1,18 @@
-min: &min
-  # Headers are supported only since 2.x.
+3_2_x: &3_2_x
+  # Headers are supported only since Kafka 2.x.
   # Images before 3.2.3 are not creating kafka_jaas.conf properly, and failing to start
   # https://github.com/bitnami/containers/blob/9db9064668365cac89bff58259f63eb78bb97e79/bitnami/kafka/README.md?plain=1#L933
   kafka-version: 3.2.3
   pydantic-version: 1
-  spark-version: 2.4.8
+  spark-version: 3.2.4
   python-version: '3.7'
   java-version: 8
   os: ubuntu-22.04
 
-max: &max
+3_5_x: &3_5_x
   kafka-version: 3.9.0
   pydantic-version: 2
-  spark-version: 3.5.5
+  spark-version: 3.5.6
   python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
@@ -26,6 +26,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small: [*max]
-  full: [*min, *max]
-  nightly: [*min, *max, *latest]
+  small: [*3_5_x]
+  full: [*3_2_x, *3_5_x]
+  nightly: [*latest]

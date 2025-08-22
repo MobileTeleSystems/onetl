@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 
-from onetl._util.spark import get_pyspark_version
 from onetl._util.version import Version
 
 
@@ -33,6 +32,8 @@ def ivysettings_path():
 
 @pytest.fixture(scope="session")
 def maven_packages(request):
+    import pyspark
+
     from onetl.connection import (
         MSSQL,
         Clickhouse,
@@ -47,7 +48,7 @@ def maven_packages(request):
     )
     from onetl.file.format import XML, Avro, Excel
 
-    pyspark_version = get_pyspark_version()
+    pyspark_version = Version(pyspark.__version__)
 
     # get markers from all downstream tests
     markers = set()
@@ -82,40 +83,37 @@ def maven_packages(request):
             ),
         )
 
-    if pyspark_version >= Version("2.4"):
-        if "avro" in markers:
-            # There is no Avro package for Spark 2.3
-            packages.extend(Avro.get_packages(spark_version=str(pyspark_version)))
-        if "kafka" in markers:
-            # Kafka connector for Spark 2.3 is too old and not supported
-            packages.extend(Kafka.get_packages(spark_version=str(pyspark_version)))
+    if "avro" in markers:
+        # There is no Avro package for Spark 2.3
+        packages.extend(Avro.get_packages(spark_version=str(pyspark_version)))
+    if "kafka" in markers:
+        # Kafka connector for Spark 2.3 is too old and not supported
+        packages.extend(Kafka.get_packages(spark_version=str(pyspark_version)))
 
-    if pyspark_version >= Version("3.2"):
-        if "s3" in markers:
-            # There is no SparkS3 connector for Spark less than 3
-            packages.extend(SparkS3.get_packages(spark_version=str(pyspark_version)))
+    if "s3" in markers:
+        # There is no SparkS3 connector for Spark less than 3
+        packages.extend(SparkS3.get_packages(spark_version=str(pyspark_version)))
 
-        if "xml" in markers:
-            # There is no XML files support for Spark less than 3
-            packages.extend(XML.get_packages(spark_version=str(pyspark_version)))
+    if "xml" in markers:
+        # There is no XML files support for Spark less than 3
+        packages.extend(XML.get_packages(spark_version=str(pyspark_version)))
 
-        if "mongodb" in markers:
-            # There is no MongoDB connector for Spark less than 3.2
-            packages.extend(MongoDB.get_packages(spark_version=str(pyspark_version)))
+    if "mongodb" in markers:
+        # There is no MongoDB connector for Spark less than 3.2
+        packages.extend(MongoDB.get_packages(spark_version=str(pyspark_version)))
 
-        if "excel" in markers:
-            # There is no Excel files support for Spark less than 3.2.
-            # There are package versions only for specific Spark versions,
-            # see https://github.com/nightscape/spark-excel/issues/902
-            version = (pyspark_version.major, pyspark_version.minor)
-            if version == (3, 2):
-                packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.2.4"))
-            elif version == (3, 3):
-                packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.3.4"))
-            elif version == (3, 4):
-                packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.4.4"))
-            elif version == (3, 5):
-                packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.5.6"))
+    if "excel" in markers:
+        # There are package versions only for specific Spark versions,
+        # see https://github.com/nightscape/spark-excel/issues/902
+        version = (pyspark_version.major, pyspark_version.minor)
+        if version == (3, 2):
+            packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.2.4"))
+        elif version == (3, 3):
+            packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.3.4"))
+        elif version == (3, 4):
+            packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.4.4"))
+        elif version == (3, 5):
+            packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.5.6"))
 
     return packages
 

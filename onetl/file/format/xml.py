@@ -67,7 +67,7 @@ class XML(ReadWriteFileFormat):
             from pyspark.sql import SparkSession
 
             # Create Spark session with XML package loaded
-            maven_packages = XML.get_packages(spark_version="3.5.5")
+            maven_packages = XML.get_packages(spark_version="3.5.6")
             spark = (
                 SparkSession.builder.appName("spark-app-name")
                 .config("spark.jars.packages", ",".join(maven_packages))
@@ -379,10 +379,10 @@ class XML(ReadWriteFileFormat):
 
             from onetl.file.format import XML
 
-            XML.get_packages(spark_version="3.5.5")
-            XML.get_packages(spark_version="3.5.5", scala_version="2.12")
+            XML.get_packages(spark_version="3.5.6")
+            XML.get_packages(spark_version="3.5.6", scala_version="2.12")
             XML.get_packages(
-                spark_version="3.5.5",
+                spark_version="3.5.6",
                 scala_version="2.12",
                 package_version="0.18.0",
             )
@@ -399,14 +399,6 @@ class XML(ReadWriteFileFormat):
 
         spark_ver = Version(spark_version)
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
-
-        # Ensure compatibility with Spark and Scala versions
-        if spark_ver < Version("3.0"):
-            raise ValueError(f"Spark version must be 3.x, got {spark_ver}")
-
-        if scala_ver < Version("2.12"):
-            raise ValueError(f"Scala version must be at least 2.12, got {scala_ver.format('{0}.{1}')}")
-
         return [f"com.databricks:spark-xml_{scala_ver.format('{0}.{1}')}:{version}"]
 
     @slot
@@ -416,14 +408,12 @@ class XML(ReadWriteFileFormat):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark)
+            spark_version = get_spark_version(spark).format("{0}.{1}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=self.__class__.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
 
     def parse_column(self, column: str | Column, schema: StructType) -> Column:

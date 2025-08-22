@@ -504,12 +504,12 @@ class Hive(DBConnection):
         if columns != df.columns:
             df = df.select(*columns)
 
-        # Writer option "partitionOverwriteMode" was added to Spark only in 2.4.0
-        # so using a workaround with patching Spark config and then setting up the previous value
+        # Explicit option "partitionOverwriteMode" requires DataFrameWriterV2 (TODO).
+        # Using a workaround with patching Spark config and then setting up the previous value
+        log.info("|%s| Inserting data into existing table %r ...", self.__class__.__name__, table)
         with inject_spark_param(self.spark.conf, PARTITION_OVERWRITE_MODE_PARAM, "dynamic"):
             overwrite = write_options.if_exists != HiveTableExistBehavior.APPEND
 
-            log.info("|%s| Inserting data into existing table %r ...", self.__class__.__name__, table)
             df.write.insertInto(table, overwrite=overwrite)
 
         log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
