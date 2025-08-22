@@ -424,8 +424,10 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
             if self._is_dir_entry(remote_dir, entry):
                 path = RemoteDirectory(path=name, stats=stat)
-            else:
+            elif self._is_file_entry(remote_dir, entry):
                 path = RemoteFile(path=name, stats=stat)
+            else:
+                continue
 
             if match_all_filters(path, filters) and not limits_stop_at(path, limits):
                 result.append(path)
@@ -461,12 +463,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
             return False
 
         directory_info = path_repr(self.resolve_dir(remote_dir))
-        if self.list_dir(remote_dir) and not recursive:
-            raise DirectoryNotEmptyError(
-                "|%s| Cannot delete non-empty directory %s",
-                self.__class__.__name__,
-                directory_info,
-            )
+        if not recursive:
+            # self.list_dir may return large list
+            # self._scan_entries return an iterator, which have to be iterated at least once
+            for _entry in self._scan_entries(remote_dir):  # noqa: WPS122, WPS328
+                raise DirectoryNotEmptyError(
+                    "|%s| Cannot delete non-empty directory %s",
+                    self.__class__.__name__,
+                    directory_info,
+                )
 
         log.debug("|%s| Directory to remove: %s", self.__class__.__name__, directory_info)
         if recursive:
@@ -505,7 +510,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
                 path = RemoteDirectory(path=root / name, stats=stat)
                 if match_all_filters(path, filters) and not limits_stop_at(path, limits):
                     dirs.append(RemoteDirectory(path=name, stats=stat))
-            else:
+            elif self._is_file_entry(root, entry):
                 path = RemoteFile(path=root / name, stats=stat)
 
                 if match_all_filters(path, filters) and not limits_stop_at(path, limits):
@@ -534,7 +539,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
                 log.debug("|%s| Directory to remove: %s", self.__class__.__name__, path_repr(path))
                 self._remove_dir_recursive(path)
                 log.debug("|%s| Successfully removed directory '%s'", self.__class__.__name__, path)
-            else:
+            elif self._is_file_entry(root, entry):
                 path = RemoteFile(path=root / name, stats=stat)
                 log.debug("|%s| File to remove: %s", self.__class__.__name__, path_repr(path))
                 self._remove_file(path)
