@@ -465,7 +465,7 @@ def test_file_uploader_run_mode_replace_entire_directory(
 
     target_path_content = []
     for root, _dirs, files in file_connection.walk(target_path):
-        target_path_content.extend(root / file for file in files)
+        target_path_content.extend(root / file.name for file in files)
 
     # target path contains only downloaded files
     assert sorted(target_path_content) == sorted(upload_result.successful)

@@ -423,9 +423,9 @@ class FileConnection(BaseFileConnection, FrozenModel):
             stat = self._extract_stat_from_entry(remote_dir, entry)
 
             if self._is_dir_entry(remote_dir, entry):
-                path = RemoteDirectory(path=name, stats=stat)
+                path = RemoteDirectory(path=remote_dir / name, stats=stat)
             elif self._is_file_entry(remote_dir, entry):
-                path = RemoteFile(path=name, stats=stat)
+                path = RemoteFile(path=remote_dir / name, stats=stat)
             else:
                 continue
 
@@ -504,17 +504,18 @@ class FileConnection(BaseFileConnection, FrozenModel):
             stat = self._extract_stat_from_entry(root, entry)
 
             if self._is_dir_entry(root, entry):
+                directory = RemoteDirectory(path=root / name, stats=stat)
+
                 if not topdown:
-                    yield from self._walk(root=root / name, topdown=topdown, filters=filters, limits=limits)
+                    yield from self._walk(root=directory, topdown=topdown, filters=filters, limits=limits)
 
-                path = RemoteDirectory(path=root / name, stats=stat)
-                if match_all_filters(path, filters) and not limits_stop_at(path, limits):
-                    dirs.append(RemoteDirectory(path=name, stats=stat))
+                if match_all_filters(directory, filters) and not limits_stop_at(directory, limits):
+                    dirs.append(directory)
             elif self._is_file_entry(root, entry):
-                path = RemoteFile(path=root / name, stats=stat)
+                file = RemoteFile(path=root / name, stats=stat)
 
-                if match_all_filters(path, filters) and not limits_stop_at(path, limits):
-                    files.append(RemoteFile(path=name, stats=stat))
+                if match_all_filters(file, filters) and not limits_stop_at(file, limits):
+                    files.append(file)
 
         if topdown and not limits_reached(limits):
             for name in dirs:
@@ -535,15 +536,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
             stat = self._extract_stat_from_entry(root, entry)
 
             if self._is_dir_entry(root, entry):
-                path = RemoteDirectory(path=root / name, stats=stat)
-                log.debug("|%s| Directory to remove: %s", self.__class__.__name__, path_repr(path))
-                self._remove_dir_recursive(path)
-                log.debug("|%s| Successfully removed directory '%s'", self.__class__.__name__, path)
+                directory = RemoteDirectory(path=root / name, stats=stat)
+                log.debug("|%s| Directory to remove: %s", self.__class__.__name__, path_repr(directory))
+                self._remove_dir_recursive(directory)
+                log.debug("|%s| Successfully removed directory '%s'", self.__class__.__name__, directory)
             elif self._is_file_entry(root, entry):
-                path = RemoteFile(path=root / name, stats=stat)
-                log.debug("|%s| File to remove: %s", self.__class__.__name__, path_repr(path))
-                self._remove_file(path)
-                log.debug("|%s| Successfully removed file '%s'", self.__class__.__name__, path)
+                file = RemoteFile(path=root / name, stats=stat)
+                log.debug("|%s| File to remove: %s", self.__class__.__name__, path_repr(file))
+                self._remove_file(file)
+                log.debug("|%s| Successfully removed file '%s'", self.__class__.__name__, file)
 
         self._remove_dir(root)
 
@@ -613,6 +614,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
         >>> for entry in connection._scan_entries(path="/a/path/to/the/directory"):
         ...     break
         >>> entry
+        # arbitrary object returned from underlying client
         {
             'created': '2023-12-08T18:33:39Z',
             'owner': None,
