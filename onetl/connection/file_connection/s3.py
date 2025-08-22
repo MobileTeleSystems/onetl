@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 import io
+import logging
 import os
 import textwrap
-from logging import getLogger
+from pprint import pformat
 from typing import Iterable, Optional
 
+from onetl.exception import DirectoryNotEmptyError
 from onetl.hooks import slot, support_hooks
+from onetl.impl.remote_file import RemoteFile
 
 try:
     from minio import Minio, commonconfig
     from minio.datatypes import Object
+    from minio.deleteobjects import DeleteObject
     from minio.error import S3Error
 except (ImportError, NameError) as e:
     raise ImportError(
@@ -39,9 +43,9 @@ except (ImportError, AttributeError):
 from typing_extensions import Literal
 
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat
+from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat, path_repr
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 @support_hooks
@@ -151,6 +155,71 @@ class S3(FileConnection):
         self._create_dir(remote_directory)
         log.info("|%s| Successfully created directory '%s'", self.__class__.__name__, remote_directory)
         return RemoteDirectory(path=remote_directory, stats=RemotePathStat())
+
+    @slot
+    def remove_dir(self, path: os.PathLike | str, recursive: bool = False) -> bool:  # noqa: WPS321
+        # optimize S3 directory recursive removal by using batch object deletion
+        description = "RECURSIVELY" if recursive else "NON-recursively"
+        log.debug("|%s| %s removing directory '%s'", self.__class__.__name__, description, path)
+        remote_dir = RemotePath(path)
+        directory_info = RemoteDirectory(path=remote_dir, stats=RemotePathStat())
+
+        is_empty = True
+
+        def _scan_entries_recursive(root: RemotePath) -> Iterable[Object]:  # noqa: WPS430
+            nonlocal is_empty
+            directory_path_str = self._delete_absolute_path_slash(root) + "/"
+            entries = self.client.list_objects(self.bucket, prefix=directory_path_str, recursive=True)
+            for entry in entries:
+                is_empty = False  # noqa: WPS442
+
+                name = self._extract_name_from_entry(entry)
+                stat = self._extract_stat_from_entry(root, entry)
+
+                if self._is_dir_entry(root, entry):
+                    file = RemoteDirectory(path=root / name, stats=stat)
+                    log.debug("|%s| Directory to remove: %s", self.__class__.__name__, path_repr(file))
+                    yield entry
+
+                elif self._is_file_entry(root, entry):
+                    directory = RemoteFile(path=root / name, stats=stat)
+                    log.debug("|%s| File to remove: %s", self.__class__.__name__, directory)
+                    yield entry
+                else:
+                    yield entry
+
+        if not recursive:
+            # self.list_dir may return large list
+            # self._scan_entries return an iterator, which have to be iterated at least once
+            for _entry in self._scan_entries(remote_dir):  # noqa: WPS122, WPS328
+                raise DirectoryNotEmptyError(
+                    "|%s| Cannot delete non-empty directory %s",
+                    self.__class__.__name__,
+                    directory_info,
+                )
+
+            log.debug("|%s| Directory to remove: %s", self.__class__.__name__, directory_info)
+            self._remove_dir(remote_dir)
+            log.info("|%s| Successfully removed directory '%s'", self.__class__.__name__, remote_dir)
+            return is_empty
+
+        log.debug("|%s| Directory to remove: %s", self.__class__.__name__, directory_info)
+        objects_to_delete = (
+            DeleteObject(obj.object_name) for obj in _scan_entries_recursive(remote_dir)  # type: ignore[arg-type]
+        )
+        errors = list(self.client.remove_objects(self.bucket, objects_to_delete))
+        if errors:
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug(
+                    "|%s| Failed to remove directory %s:\n%s",
+                    self.__class__.__name__,
+                    directory_info,
+                    pformat(errors),
+                )
+            raise errors[0]
+
+        log.info("|%s| Successfully removed directory '%s'", self.__class__.__name__, remote_dir)
+        return is_empty
 
     @slot
     def path_exists(self, path: os.PathLike | str) -> bool:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import stat
 import textwrap
 from io import BytesIO
 from logging import getLogger
@@ -181,12 +180,24 @@ class Samba(FileConnection):
 
     def _extract_stat_from_entry(self, top: RemotePath, entry) -> RemotePathStat:
         if entry.isDirectory:
-            return RemotePathStat(st_mode=stat.S_IFDIR)
+            return RemotePathStat()
 
         return RemotePathStat(
             st_size=entry.file_size,
             st_mtime=entry.last_write_time,
             st_uid=entry.filename,
+        )
+
+    def _get_stat(self, path: RemotePath) -> RemotePathStat:
+        info = self.client.getAttributes(self.share, os.fspath(path))
+
+        if info.isDirectory:
+            return RemotePathStat()
+
+        return RemotePathStat(
+            st_size=info.file_size,
+            st_mtime=info.last_write_time,
+            st_uid=info.filename,
         )
 
     def _get_client(self) -> SMBConnection:
@@ -224,24 +235,6 @@ class Samba(FileConnection):
                 local_file,
             )
 
-    def _get_stat(self, path: RemotePath) -> RemotePathStat:
-        info = self.client.getAttributes(self.share, os.fspath(path))
-
-        if self.is_dir(os.fspath(path)):
-            return RemotePathStat(st_mode=stat.S_IFDIR)
-
-        return RemotePathStat(
-            st_size=info.file_size,
-            st_mtime=info.last_write_time,
-            st_uid=info.filename,
-        )
-
-    def _remove_file(self, remote_file_path: RemotePath) -> None:
-        self.client.deleteFiles(
-            self.share,
-            os.fspath(remote_file_path),
-        )
-
     def _create_dir(self, path: RemotePath) -> None:
         path_obj = Path(path)
         for parent in reversed(path_obj.parents):
@@ -268,19 +261,28 @@ class Samba(FileConnection):
             os.fspath(target),
         )
 
+    def _remove_file(self, remote_file_path: RemotePath) -> None:
+        self.client.deleteFiles(
+            self.share,
+            os.fspath(remote_file_path),
+        )
+
     def _remove_dir(self, path: RemotePath) -> None:
-        files = self.client.listPath(self.share, os.fspath(path))
+        self.client.deleteDirectory(
+            self.share,
+            os.fspath(path),
+        )
 
-        for item in files:
-            if item.filename not in {".", ".."}:  # skip current and parent directory entries
-                full_path = path / item.filename
-                if item.isDirectory:
-                    # recursively delete subdirectory
-                    self._remove_dir(full_path)
-                else:
-                    self.client.deleteFiles(self.share, os.fspath(full_path))
-
-        self.client.deleteDirectory(self.share, os.fspath(path))
+    def _remove_dir_recursive(self, root: RemotePath) -> None:
+        self.client.deleteFiles(
+            self.share,
+            os.fspath(root).rstrip("/") + "/*",
+            delete_matching_folders=True,
+        )
+        self.client.deleteDirectory(
+            self.share,
+            os.fspath(root),
+        )
 
     def _read_text(self, path: RemotePath, encoding: str) -> str:
         return self._read_bytes(path).decode(encoding)
