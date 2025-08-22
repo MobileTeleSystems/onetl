@@ -1,0 +1,1 @@
+Treat S3 objects with names ending with a ``/`` slash as directory marker
