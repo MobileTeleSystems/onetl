@@ -2,14 +2,11 @@ from string import ascii_letters
 
 import pytest
 
-from onetl._util.version import Version
-
 try:
     import pandas
 except ImportError:
     pytest.skip("Missing pandas", allow_module_level=True)
 
-from onetl._util.spark import get_spark_version
 from onetl.connection import Postgres
 from onetl.db import DBReader
 from tests.util.rand import rand_str
@@ -388,11 +385,6 @@ def test_postgres_reader_snapshot_with_partitioning_mode_range_date_datetime(
     load_table_data,
     column,
 ):
-    spark_version = get_spark_version(spark)
-    if spark_version < Version("2.4"):
-        # https://issues.apache.org/jira/browse/SPARK-22814
-        pytest.skip("partitionColumn of date/datetime is supported only since 2.4.0")
-
     from pyspark.sql.functions import spark_partition_id
 
     postgres = Postgres(

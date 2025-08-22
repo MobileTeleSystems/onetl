@@ -1,11 +1,9 @@
-import contextlib
 import logging
 import re
 import secrets
 
 import pytest
 
-from onetl._util.spark import get_spark_version
 from onetl.connection import Kafka
 from onetl.db import DBWriter
 from onetl.exception import TargetAlreadyExistsError
@@ -65,9 +63,6 @@ def kafka_spark_df(spark, kafka_processing):
 def test_kafka_writer(spark, kafka_processing, kafka_spark_df):
     from pyspark.sql.functions import lit
 
-    if get_spark_version(spark).major < 3:
-        pytest.skip("Spark 3.x or later is required to write/read 'headers' from Kafka messages")
-
     topic, processing = kafka_processing
     df = kafka_spark_df.select("value")
 
@@ -79,7 +74,7 @@ def test_kafka_writer(spark, kafka_processing, kafka_spark_df):
 
     writer = DBWriter(
         connection=kafka,
-        table=topic,
+        target=topic,
     )
     writer.run(df)
 
@@ -108,7 +103,7 @@ def test_kafka_writer_no_value_column_error(spark, kafka_processing, kafka_spark
 
     writer = DBWriter(
         connection=kafka,
-        table=topic,
+        target=topic,
     )
 
     with pytest.raises(AnalysisException, match="Required attribute 'value' not found"):
@@ -146,7 +141,7 @@ def test_kafka_writer_invalid_column_error(
 
     writer = DBWriter(
         connection=kafka,
-        table=topic,
+        target=topic,
     )
 
     error_msg = (
@@ -169,7 +164,7 @@ def test_kafka_writer_key_column(spark, kafka_processing, kafka_spark_df):
 
     writer = DBWriter(
         connection=kafka,
-        table=topic,
+        target=topic,
     )
     writer.run(df)
 
@@ -195,7 +190,7 @@ def test_kafka_writer_topic_column(spark, kafka_processing, caplog, kafka_spark_
 
     writer = DBWriter(
         connection=kafka,
-        table=topic,
+        target=topic,
     )
     writer.run(original_df)
     assert processing.topic_exists(topic)
@@ -220,7 +215,7 @@ def test_kafka_writer_partition_column(spark, kafka_processing, kafka_spark_df):
 
     writer = DBWriter(
         connection=kafka,
-        table=topic,
+        target=topic,
     )
     writer.run(df)
 
@@ -232,12 +227,6 @@ def test_kafka_writer_partition_column(spark, kafka_processing, kafka_spark_df):
 
 
 def test_kafka_writer_headers(spark, kafka_processing, kafka_spark_df):
-    if get_spark_version(spark).major < 3:
-        msg = f"kafka.WriteOptions(include_headers=True) requires Spark 3.x, got {spark.version}"
-        context_manager = pytest.raises(ValueError, match=re.escape(msg))
-    else:
-        context_manager = contextlib.nullcontext()
-
     topic, processing = kafka_processing
 
     kafka = Kafka(
@@ -248,20 +237,19 @@ def test_kafka_writer_headers(spark, kafka_processing, kafka_spark_df):
 
     writer = DBWriter(
         connection=kafka,
-        table=topic,
+        target=topic,
         options=kafka.WriteOptions(include_headers=True),
     )
 
     df = kafka_spark_df.select("value", "headers")
-    with context_manager:
-        writer.run(df)
+    writer.run(df)
 
-        pd_df = processing.get_expected_df(topic, num_messages=kafka_spark_df.count())
+    pd_df = processing.get_expected_df(topic, num_messages=kafka_spark_df.count())
 
-        processing.assert_equal_df(
-            df,
-            other_frame=pd_df.drop(columns=["key", "partition", "topic"], axis=1),
-        )
+    processing.assert_equal_df(
+        df,
+        other_frame=pd_df.drop(columns=["key", "partition", "topic"], axis=1),
+    )
 
 
 def test_kafka_writer_headers_without_include_headers_fail(spark, kafka_processing, kafka_spark_df):
@@ -275,7 +263,7 @@ def test_kafka_writer_headers_without_include_headers_fail(spark, kafka_processi
 
     writer = DBWriter(
         connection=kafka,
-        table=topic,
+        target=topic,
         options=kafka.WriteOptions(include_headers=False),
     )
 
@@ -297,7 +285,7 @@ def test_kafka_writer_mode(spark, kafka_processing, kafka_spark_df):
 
     writer = DBWriter(
         connection=kafka,
-        table=topic,
+        target=topic,
     )
 
     writer.run(df)
@@ -324,7 +312,7 @@ def test_kafka_writer_mode_error(spark, kafka_processing, kafka_spark_df):
 
     writer = DBWriter(
         connection=kafka,
-        table=topic,
+        target=topic,
         options=kafka.WriteOptions(if_exists="error"),
     )
 

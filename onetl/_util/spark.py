@@ -122,16 +122,6 @@ def try_import_pyspark():
         ) from e
 
 
-def get_pyspark_version() -> Version:
-    """
-    Get Spark version from ``pyspark.__version__``
-    """
-    try_import_pyspark()
-    import pyspark
-
-    return Version(pyspark.__version__)
-
-
 def get_spark_version(spark_session: SparkSession) -> Version:
     """
     Get Spark version from active Spark session

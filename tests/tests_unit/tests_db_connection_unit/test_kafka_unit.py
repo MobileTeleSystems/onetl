@@ -36,40 +36,14 @@ def create_temp_file(tmp_path_factory):
 @pytest.mark.parametrize(
     "spark_version, scala_version, package",
     [
-        ("2.4.0", None, "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0"),
-        ("2.4.0", "2.11", "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0"),
-        ("2.4.0", "2.12", "org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.0"),
-        ("3.3.0", None, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0"),
-        ("3.3.0", "2.12", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0"),
-        ("3.3.0", "2.13", "org.apache.spark:spark-sql-kafka-0-10_2.13:3.3.0"),
-        ("3.3.1", "2.12.2", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.1"),
+        ("3.2.0", None, "org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.0"),
+        ("3.2.0", "2.12", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.0"),
+        ("3.2.0", "2.13", "org.apache.spark:spark-sql-kafka-0-10_2.13:3.2.0"),
+        ("3.5.6", "2.12.2", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.6"),
     ],
 )
 def test_kafka_get_packages(spark_version, scala_version, package):
     assert Kafka.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
-
-
-@pytest.mark.parametrize(
-    "spark_version",
-    [
-        "2.2.0",
-        "2.3.1",
-    ],
-)
-def test_kafka_get_packages_error(spark_version):
-    with pytest.raises(ValueError, match=f"Spark version must be at least 2.4, got {spark_version}"):
-        Kafka.get_packages(spark_version=spark_version)
-
-
-def test_kafka_too_old_spark_error(spark_mock, mocker):
-    msg = "Spark version must be at least 2.4, got 2.3.1"
-    mocker.patch.object(spark_mock, "version", new="2.3.1")
-    with pytest.raises(ValueError, match=msg):
-        Kafka(
-            cluster="some_cluster",
-            addresses=["192.168.1.1"],
-            spark=spark_mock,
-        )
 
 
 def test_kafka_missing_package(spark_no_packages):

@@ -84,8 +84,6 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
                 package_source=cls.__name__,
                 args="",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
 

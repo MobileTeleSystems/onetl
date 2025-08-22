@@ -12,24 +12,6 @@ from onetl.file.format import Excel
 pytestmark = [pytest.mark.excel]
 
 
-@pytest.mark.parametrize(
-    "spark_version",
-    [
-        "2.2.1",
-        "2.3.1",
-        "2.4.8",
-    ],
-)
-def test_excel_get_packages_spark_version_not_supported(spark_version):
-    with pytest.raises(ValueError, match=f"Spark version should be at least 3.2, got {spark_version}"):
-        Excel.get_packages(package_version="0.31.2", spark_version=spark_version)
-
-
-def test_excel_get_packages_scala_version_not_supported():
-    with pytest.raises(ValueError, match="Scala version should be at least 2.12, got 2.11"):
-        Excel.get_packages(package_version="0.31.2", spark_version="3.2.4", scala_version="2.11")
-
-
 def test_excel_get_packages_package_version_not_supported():
     with pytest.raises(ValueError, match="Package version should be at least 0.30, got 0.20.4"):
         Excel.get_packages(package_version="0.20.4", spark_version="3.2.4")

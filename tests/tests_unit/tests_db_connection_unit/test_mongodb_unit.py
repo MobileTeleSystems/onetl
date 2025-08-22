@@ -23,31 +23,6 @@ def test_mongodb_get_packages_no_input():
 
 
 @pytest.mark.parametrize(
-    "spark_version",
-    [
-        "2.2",
-        "2.3",
-        "2.4",
-    ],
-)
-def test_mongodb_get_packages_spark_version_not_supported(spark_version):
-    with pytest.raises(ValueError, match=f"Spark version must be at least 3.0, got {spark_version}"):
-        MongoDB.get_packages(spark_version=spark_version)
-
-
-@pytest.mark.parametrize(
-    "scala_version",
-    [
-        "2.9.2",
-        "2.11",
-    ],
-)
-def test_mongodb_get_packages_scala_version_not_supported(scala_version):
-    with pytest.raises(ValueError, match=f"Scala version must be at least 2.12, got {scala_version}"):
-        MongoDB.get_packages(scala_version=scala_version)
-
-
-@pytest.mark.parametrize(
     "spark_version, scala_version, package_version, package",
     [
         (None, "2.12", "10.4.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"),

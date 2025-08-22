@@ -12,7 +12,6 @@ import secrets
 
 import pytest
 
-from onetl._util.spark import get_spark_version
 from onetl.file import FileDFReader
 from onetl.file.format import CSV
 
@@ -199,10 +198,6 @@ def test_file_df_reader_source_path_cannot_be_file(file_df_connection_with_path_
 
 
 def test_file_df_reader_run_recursive_false(spark, file_df_connection_with_path_and_files, file_df_schema):
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("Option `recursive` is not supported on Spark 2")
-
     file_df_connection, source_path, _ = file_df_connection_with_path_and_files
 
     reader = FileDFReader(
@@ -222,10 +217,6 @@ def test_file_df_reader_run_recursive_true(
     file_df_connection_with_path_and_files,
     file_df_dataframe,
 ):
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("Option `recursive` is not supported on Spark 2")
-
     file_df_connection, source_path, _ = file_df_connection_with_path_and_files
     df = file_df_dataframe
 
@@ -266,10 +257,6 @@ def test_file_df_reader_run_partitioned(
 
 
 def test_file_df_reader_run_partitioned_recursive(spark, file_df_connection_with_path_and_files, file_df_dataframe):
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("Option `recursive` is not supported on Spark 2")
-
     file_df_connection, source_path, _ = file_df_connection_with_path_and_files
 
     # csv does not contain "str_value" column.

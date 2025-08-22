@@ -9,8 +9,6 @@ def get_default_scala_version(spark_version: Version) -> Version:
     """
     Get default Scala version for specific Spark version
     """
-    if spark_version.major < 3:
-        return Version("2.11")
     return Version("2.12")
 
 

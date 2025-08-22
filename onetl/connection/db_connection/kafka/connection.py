@@ -122,7 +122,7 @@ class Kafka(DBConnection):
             from pyspark.sql import SparkSession
 
             # Create Spark session with Kafka connector loaded
-            maven_packages = Kafka.get_packages(spark_version="3.5.5")
+            maven_packages = Kafka.get_packages(spark_version="3.5.6")
             exclude_packages = Kafka.get_exclude_packages()
             spark = (
                 SparkSession.builder.appName("spark-app-name")
@@ -312,12 +312,6 @@ class Kafka(DBConnection):
         if not options.include_headers and "headers" in df.columns:
             raise ValueError("Cannot write 'headers' column with kafka.WriteOptions(include_headers=False)")
 
-        spark_version = get_spark_version(self.spark)
-        if options.include_headers and spark_version.major < 3:
-            raise ValueError(
-                f"kafka.WriteOptions(include_headers=True) requires Spark 3.x, got {spark_version}",
-            )
-
         if "topic" in df.columns:
             log.warning("The 'topic' column in the DataFrame will be overridden with value %r", target)
 
@@ -325,7 +319,7 @@ class Kafka(DBConnection):
         write_options.update(options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}))
         write_options["topic"] = target
 
-        # As of Apache Spark version 3.5.5, the mode 'error' is not functioning as expected.
+        # As of Apache Spark version 3.5.6, the mode 'error' is not functioning as expected.
         # This issue has been reported and can be tracked at:
         # https://issues.apache.org/jira/browse/SPARK-44774
         mode = options.if_exists
@@ -410,20 +404,12 @@ class Kafka(DBConnection):
 
             from onetl.connection import Kafka
 
-            Kafka.get_packages(spark_version="3.5.5")
-            Kafka.get_packages(spark_version="3.5.5", scala_version="2.12")
+            Kafka.get_packages(spark_version="3.5.6")
+            Kafka.get_packages(spark_version="3.5.6", scala_version="2.12")
 
         """
 
-        # Connector version is same as Spark, do not perform any additional checks
         spark_ver = Version(spark_version).min_digits(3)
-        if spark_ver < Version("2.4"):
-            # Kafka connector for Spark 2.3 is build with Kafka client 0.10.0.1 which does not support
-            # passing `sasl.jaas.config` option. It is supported only in 0.10.2.0,
-            # see https://issues.apache.org/jira/browse/KAFKA-4259
-            # Old client requires generating JAAS file and placing it to filesystem, which is not secure.
-            raise ValueError(f"Spark version must be at least 2.4, got {spark_ver}")
-
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         return [
             f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}",
@@ -620,28 +606,18 @@ class Kafka(DBConnection):
         return validated_addresses
 
     @validator("spark")
-    def _check_spark_version(cls, spark):
-        spark_version = get_spark_version(spark)
-        if spark_version < Version("2.4"):
-            raise ValueError(f"Spark version must be at least 2.4, got {spark_version}")
-
-        return spark
-
-    @validator("spark")
     def _check_java_class_imported(cls, spark):
         java_class = "org.apache.spark.sql.kafka010.KafkaSourceProvider"
 
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).format("{major}.{minor}")
+            spark_version = get_spark_version(spark).format("{0}.{1}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
 

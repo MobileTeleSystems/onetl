@@ -8,7 +8,6 @@ import datetime
 
 import pytest
 
-from onetl._util.spark import get_spark_version
 from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import XML
 
@@ -47,10 +46,6 @@ def test_xml_reader(
     options,
 ):
     """Reading XML files working as expected on any Spark, Python and Java versions"""
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("XML files are supported on Spark 3.x only")
-
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
     xml_root = source_path / "xml" / path
@@ -74,10 +69,6 @@ def test_xml_reader_with_infer_schema(
     file_df_dataframe,
 ):
     """Reading XML files with inferSchema=True working as expected on any Spark, Python and Java versions"""
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("XML files are supported on Spark 3.x only")
-
     file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
     xml_root = source_path / "xml" / "with_attributes"
@@ -112,10 +103,6 @@ def test_xml_writer(
     options,
 ):
     """Written files can be read by Spark"""
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("XML files are supported on Spark 3.x only")
-
     file_df_connection, source_path = local_fs_file_df_connection_with_path
     df = file_df_dataframe
     xml_root = source_path / "xml"
@@ -154,10 +141,6 @@ def test_xml_reader_with_attributes(
     options,
 ):
     """Reading XML files with attributes works as expected"""
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("XML files are supported on Spark 3.x only")
-
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     xml_root = source_path / "xml" / "with_attributes"
 
@@ -175,12 +158,6 @@ def test_xml_reader_with_attributes(
 
 @pytest.mark.parametrize("column_type", [str, col])
 def test_xml_parse_column(spark, column_type, file_df_schema):
-    from onetl.file.format import XML
-
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("XML files are supported on Spark 3.x only")
-
     xml = XML(rowTag="item")
     df = spark.createDataFrame(
         [
@@ -215,10 +192,6 @@ def test_xml_parse_column(spark, column_type, file_df_schema):
 
 
 def test_xml_parse_column_unsupported_options_warning(spark, file_df_schema):
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("CSV.parse in supported on Spark 3.x only")
-
     df = spark.createDataFrame(
         [
             Row(

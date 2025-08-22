@@ -5,11 +5,6 @@ from onetl.file.format import Iceberg
 pytestmark = [pytest.mark.iceberg]
 
 
-def test_iceberg_get_packages_scala_version_not_supported():
-    with pytest.raises(ValueError, match="Scala version must be at least 2.11, got 2.10"):
-        Iceberg.get_packages(package_version="1.5.0", spark_version="2.4.0", scala_version="2.10")
-
-
 @pytest.mark.parametrize(
     "package_version,spark_version,scala_version,package",
     [

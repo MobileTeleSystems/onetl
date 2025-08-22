@@ -10,41 +10,13 @@ pytestmark = [pytest.mark.s3, pytest.mark.file_df_connection, pytest.mark.connec
 @pytest.mark.parametrize(
     "spark_version, scala_version, package",
     [
-        ("3.5.5", None, "org.apache.spark:spark-hadoop-cloud_2.12:3.5.5"),
-        ("3.5.5", "2.12", "org.apache.spark:spark-hadoop-cloud_2.12:3.5.5"),
-        ("3.5.5", "2.13", "org.apache.spark:spark-hadoop-cloud_2.13:3.5.5"),
+        ("3.5.6", None, "org.apache.spark:spark-hadoop-cloud_2.12:3.5.6"),
+        ("3.5.6", "2.12", "org.apache.spark:spark-hadoop-cloud_2.12:3.5.6"),
+        ("3.5.6", "2.13", "org.apache.spark:spark-hadoop-cloud_2.13:3.5.6"),
     ],
 )
 def test_spark_s3_get_packages(spark_version, scala_version, package):
     assert SparkS3.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
-
-
-@pytest.mark.parametrize(
-    "spark_version",
-    [
-        "2.3.1",
-        "2.4.8",
-    ],
-)
-def test_spark_s3_get_packages_spark_2_error(spark_version):
-    with pytest.raises(ValueError, match=f"Spark version must be at least 3.x, got {spark_version}"):
-        SparkS3.get_packages(spark_version=spark_version)
-
-
-@pytest.mark.parametrize("hadoop_version", ["2.7.3", "2.8.0", "2.10.1"])
-def test_spark_s3_with_hadoop_2_error(spark_mock, hadoop_version):
-    spark_mock._jvm = Mock()
-    spark_mock._jvm.org.apache.hadoop.util.VersionInfo.getVersion = Mock(return_value=hadoop_version)
-
-    with pytest.raises(ValueError, match=f"Only Hadoop 3.x libraries are supported, got {hadoop_version}"):
-        SparkS3(
-            host="some_host",
-            access_key="access_key",
-            secret_key="some key",
-            session_token="some token",
-            bucket="bucket",
-            spark=spark_mock,
-        )
 
 
 def test_spark_s3_missing_package(spark_no_packages):
