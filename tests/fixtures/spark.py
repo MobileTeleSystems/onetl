@@ -107,14 +107,15 @@ def maven_packages(request):
             # There is no Excel files support for Spark less than 3.2.
             # There are package versions only for specific Spark versions,
             # see https://github.com/nightscape/spark-excel/issues/902
-            if pyspark_version.minor == 2:
-                packages.extend(Excel.get_packages(spark_version="3.2.4"))
-            elif pyspark_version.minor == 3:
-                packages.extend(Excel.get_packages(spark_version="3.3.4"))
-            elif pyspark_version.minor == 4:
-                packages.extend(Excel.get_packages(spark_version="3.4.4"))
-            elif pyspark_version.minor == 5:
-                packages.extend(Excel.get_packages(spark_version="3.5.1"))
+            version = (pyspark_version.major, pyspark_version.minor)
+            if version == (3, 2):
+                packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.2.4"))
+            elif version == (3, 3):
+                packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.3.4"))
+            elif version == (3, 4):
+                packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.4.4"))
+            elif version == (3, 5):
+                packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.5.6"))
 
     return packages
 
