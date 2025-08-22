@@ -1,6 +1,6 @@
 min: &min
-  # prior image versions returns empty content of bucket root, some kind of bug
-  minio-version: 2021.3.17
+  # prior image versions doesn't support directory markers (empty objects with path ending with /)
+  minio-version: 2021.12.9
   # Minimal Spark version with Hadoop 3.x support
   spark-version: 3.2.4
   pydantic-version: 1
@@ -9,7 +9,7 @@ min: &min
   os: ubuntu-22.04
 
 max: &max
-  minio-version: 2025.2.18
+  minio-version: 2025.7.23
   spark-version: 3.5.5
   pydantic-version: 2
   python-version: '3.13'

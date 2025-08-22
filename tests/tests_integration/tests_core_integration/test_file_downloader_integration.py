@@ -922,7 +922,7 @@ def test_file_downloader_run_input_is_not_file(request, file_connection, tmp_pat
         local_path=local_path,
     )
 
-    with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
+    with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory'.*\) is not a file"):
         downloader.run([not_a_file])
 
 

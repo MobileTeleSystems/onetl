@@ -941,7 +941,7 @@ def test_file_mover_run_input_is_not_file(request, file_connection):
         target_path=target_path,
     )
 
-    with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
+    with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory'.*\) is not a file"):
         mover.run([not_a_file])
 
 

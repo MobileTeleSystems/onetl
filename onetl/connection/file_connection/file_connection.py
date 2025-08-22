@@ -543,9 +543,9 @@ class FileConnection(BaseFileConnection, FrozenModel):
         self._remove_dir(root)
 
     @abstractmethod
-    def _scan_entries(self, path: RemotePath) -> list:
+    def _scan_entries(self, path: RemotePath) -> Iterable:
         """
-        The method returns a list that contains entries.
+        The method returns an iterator that returns entries.
 
         Entry is an object containing information about a path, like file or nested directory.
 
@@ -559,19 +559,19 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Returns
         -------
-        list
-            List of the entries
+        Iterable
+            Iterable entries
 
         Examples
         --------
 
-        Get a list of entries:
+        Get a entries:
 
         .. code:: python
 
-            entry_list = connection._scan_entries(path="/a/path/to/the/directory")
+            entry_iterable = connection._scan_entries(path="/a/path/to/the/directory")
 
-            print(entry_list)
+            print(entry_iterable)
 
             [
                 {
