@@ -236,6 +236,18 @@ class S3(FileConnection):
 
         return False
 
+    @slot
+    def resolve_dir(self, path: os.PathLike | str) -> RemoteDirectory:
+        remote_path = RemotePath("/" + os.fspath(path).lstrip("/"))
+        if self._is_root(remote_path):
+            return RemoteDirectory(path=RemotePath("/"), stats=RemotePathStat())
+        return super().resolve_dir(remote_path)
+
+    @slot
+    def resolve_file(self, path: os.PathLike | str) -> RemoteFile:
+        remote_path = RemotePath("/" + os.fspath(path).lstrip("/"))
+        return super().resolve_file(remote_path)
+
     def _get_client(self) -> Minio:
         return Minio(
             endpoint=f"{self.host}:{self.port}",

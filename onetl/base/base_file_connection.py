@@ -386,6 +386,9 @@ class BaseFileConnection(BaseConnection):
 
         .. versionadded:: 0.8.0
 
+        .. versionchanged:: 0.14.0
+            Method returns full file/directory path instead of just name.
+
         Parameters
         ----------
         path : str or :obj:`os.PathLike`
@@ -415,7 +418,7 @@ class BaseFileConnection(BaseConnection):
 
         >>> dir_content = connection.list_dir("/path/to/dir")
         >>> os.fspath(dir_content[0])
-        'file.csv'
+        '/path/to/dir/file.csv'
         >>> connection.path_exists("/path/to/dir/file.csv")
         True
         """
@@ -434,6 +437,9 @@ class BaseFileConnection(BaseConnection):
         Just like :obj:`os.walk`, but with additional filter/limit logic.
 
         .. versionadded:: 0.8.0
+
+        .. versionchanged:: 0.14.0
+            Method returns full file/directory path instead of just name.
 
         Parameters
         ----------
@@ -474,7 +480,7 @@ class BaseFileConnection(BaseConnection):
         >>> dirs
         []
         >>> os.fspath(files[0])
-        'file.csv'
+        '/path/to/dir/file.csv'
         >>> connection.path_exists("/path/to/dir/file.csv")
         True
         """

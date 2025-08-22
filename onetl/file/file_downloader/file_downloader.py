@@ -493,9 +493,9 @@ class FileDownloader(FrozenModel):
 
         result = FileSet()
         try:
-            for root, _dirs, files in self.connection.walk(self.source_path, filters=filters, limits=self.limits):
+            for _root, _dirs, files in self.connection.walk(self.source_path, filters=filters, limits=self.limits):
                 for file in files:
-                    result.append(RemoteFile(path=root / file, stats=file.stat()))
+                    result.append(file)
 
         except Exception as e:
             raise RuntimeError(
