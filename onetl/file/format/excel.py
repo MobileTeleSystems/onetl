@@ -40,7 +40,7 @@ class Excel(ReadWriteFileFormat):
             .. warning::
 
                 Not all combinations of Spark version and package version are supported.
-                See `Maven index <https://mvnrepository.com/artifact/com.crealytics/spark-excel>`_
+                See `Maven index <https://mvnrepository.com/artifact/dev.mauch/spark-excel>`_
                 and `official documentation <https://github.com/crealytics/spark-excel>`_.
 
         * Java versions: 8 - 20
@@ -68,7 +68,10 @@ class Excel(ReadWriteFileFormat):
             from onetl.file.format import Excel
 
             # Create Spark session with Excel package loaded
-            maven_packages = Excel.get_packages(spark_version="3.5.1")
+            maven_packages = Excel.get_packages(
+                package_version="0.31.2",
+                spark_version="3.5.6",
+            )
             spark = (
                 SparkSession.builder.appName("spark-app-name")
                 .config("spark.jars.packages", ",".join(maven_packages))
@@ -217,9 +220,9 @@ class Excel(ReadWriteFileFormat):
     @classmethod
     def get_packages(
         cls,
+        package_version: str,
         spark_version: str,
         scala_version: str | None = None,
-        package_version: str | None = None,
     ) -> list[str]:
         """
         Get package names to be downloaded by Spark. |support_hooks|
@@ -227,13 +230,21 @@ class Excel(ReadWriteFileFormat):
         .. warning::
 
             Not all combinations of Spark version and package version are supported.
-            See `Maven index <https://mvnrepository.com/artifact/com.crealytics/spark-excel>`_
+            See `Maven index <https://mvnrepository.com/artifact/dev.mauch/spark-excel>`_
             and `official documentation <https://github.com/crealytics/spark-excel>`_.
 
         .. versionadded:: 0.9.4
+        .. versionchanged:: 0.14.0
+            Maven package ``com.crealytics:spark-excel`` was renamed to ``dev.mauch:spark-excel``.
 
         Parameters
         ----------
+        package_version : str
+            Package version in format ``major.minor.patch``.
+
+            .. versionchanged:: 0.14.0
+                This parameter is now mandatory.
+
         spark_version : str
             Spark version in format ``major.minor.patch``.
 
@@ -242,18 +253,6 @@ class Excel(ReadWriteFileFormat):
 
             If ``None``, ``spark_version`` is used to determine Scala version.
 
-        package_version : str, optional
-            Package version in format ``major.minor.patch``. Default is ``0.20.4``.
-
-            .. warning::
-
-                Version ``0.14`` and below are not supported.
-
-            .. note::
-
-                It is not guaranteed that custom package versions are supported.
-                Tests are performed only for default version.
-
         Examples
         --------
 
@@ -261,26 +260,21 @@ class Excel(ReadWriteFileFormat):
 
             from onetl.file.format import Excel
 
-            Excel.get_packages(spark_version="3.5.1")
-            Excel.get_packages(spark_version="3.5.1", scala_version="2.12")
             Excel.get_packages(
-                spark_version="3.5.1",
+                package_version="0.31.2",
+                spark_version="3.5.6",
+            )
+            Excel.get_packages(
+                package_version="0.31.2",
+                spark_version="3.5.6",
                 scala_version="2.12",
-                package_version="0.20.4",
             )
 
         """
 
-        if package_version:
-            version = Version(package_version)
-            if version < Version("0.15"):
-                # format="com.crealytics.spark.excel" does not support reading folder with files
-                # format="excel" was added only in 0.14, but Maven package for 0.14 has different naming convention than recent versions.
-                # So using 0.15 as the lowest supported version.
-                raise ValueError(f"Package version should be at least 0.15, got {package_version}")
-            log.warning("Passed custom package version %r, it is not guaranteed to be supported", package_version)
-        else:
-            version = Version("0.20.4")
+        version = Version(package_version)
+        if version < Version("0.30"):
+            raise ValueError(f"Package version should be at least 0.30, got {package_version}")
 
         spark_ver = Version(spark_version).min_digits(3)
         if spark_ver < Version("3.2"):
@@ -294,12 +288,12 @@ class Excel(ReadWriteFileFormat):
             raise ValueError(f"Scala version should be at least 2.12, got {scala_ver.format('{0}.{1}')}")
 
         return [
-            f"com.crealytics:spark-excel_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}_{version}",
+            f"dev.mauch:spark-excel_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}_{version}",
         ]
 
     @slot
     def check_if_supported(self, spark: SparkSession) -> None:
-        java_class = "com.crealytics.spark.excel.v2.ExcelDataSource"
+        java_class = "dev.mauch.spark.excel.v2.ExcelDataSource"
 
         try:
             try_import_java_class(spark, java_class)
