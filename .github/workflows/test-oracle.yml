@@ -50,7 +50,7 @@ jobs:
           ORACLE_IMAGE: ${{ inputs.oracle-image }}:${{ inputs.oracle-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ inputs.java-version }}
