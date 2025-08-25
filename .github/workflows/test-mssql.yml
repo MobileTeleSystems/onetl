@@ -43,7 +43,7 @@ jobs:
           MSSQL_IMAGE: mcr.microsoft.com/mssql/server:${{ inputs.mssql-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ inputs.java-version }}
