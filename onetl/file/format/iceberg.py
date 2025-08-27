@@ -34,7 +34,7 @@ class Iceberg(ReadWriteFileFormat):
 
     Based on `Apache Iceberg <https://iceberg.apache.org/spark-quickstart/>`_ file format.
 
-    Supports reading/writing files with Iceberg table format.
+    Supports reading/writing (writing is **ONLY** via ``DBWriter``) files with Iceberg table format.
 
     .. dropdown:: Version compatibility
 

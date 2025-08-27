@@ -46,7 +46,7 @@ def maven_packages(request):
         SparkS3,
         Teradata,
     )
-    from onetl.file.format import XML, Avro, Excel
+    from onetl.file.format import XML, Avro, Excel, Iceberg
 
     pyspark_version = Version(pyspark.__version__)
 
@@ -115,6 +115,13 @@ def maven_packages(request):
         elif version == (3, 5):
             packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="3.5.6"))
 
+    if "iceberg" in markers:
+        version = (pyspark_version.major, pyspark_version.minor)
+        if version == (3, 2):
+            packages.extend(Iceberg.get_packages(package_version="1.4.3", spark_version=str(pyspark_version)))
+        elif version in ((3, 3), (3, 4), (3, 5)):
+            packages.extend(Iceberg.get_packages(package_version="1.6.1", spark_version=str(pyspark_version)))
+
     return packages
 
 
@@ -160,3 +167,36 @@ def spark(warehouse_dir, spark_metastore_dir, ivysettings_path, maven_packages, 
     yield spark
     spark.sparkContext.stop()
     spark.stop()
+
+
+@pytest.fixture(scope="session")
+def iceberg_warehouse_dir(tmp_path_factory):
+    path = tmp_path_factory.mktemp("iceberg-warehouse")
+    yield path
+    shutil.rmtree(path, ignore_errors=True)
+
+
+@pytest.fixture(scope="session")
+def spark_with_s3_iceberg(spark, s3_server):
+    spark.conf.set("spark.sql.catalog.s3", "org.apache.iceberg.spark.SparkCatalog")
+    spark.conf.set("spark.sql.catalog.s3.type", "hadoop")
+    spark.conf.set("spark.sql.catalog.s3.warehouse", "s3a://onetl/data/iceberg")
+
+    hadoop_conf = spark._jsc.hadoopConfiguration()
+    hadoop_conf.set("fs.s3a.access.key", s3_server.access_key)
+    hadoop_conf.set("fs.s3a.secret.key", s3_server.secret_key)
+    hadoop_conf.set("fs.s3a.endpoint", f"http://{s3_server.host}:{s3_server.port}")
+    hadoop_conf.set("fs.s3a.path.style.access", "true")
+
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS s3.onetl")
+    return spark
+
+
+@pytest.fixture(scope="session")
+def spark_with_hdfs_iceberg(spark, iceberg_warehouse_dir):
+    spark.conf.set("spark.sql.catalog.hadoop", "org.apache.iceberg.spark.SparkCatalog")
+    spark.conf.set("spark.sql.catalog.hadoop.type", "hadoop")
+    spark.conf.set("spark.sql.catalog.hadoop.warehouse", f"file://{iceberg_warehouse_dir}")
+
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS hadoop.onetl")
+    return spark
