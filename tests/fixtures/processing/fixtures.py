@@ -83,6 +83,27 @@ def load_table_data(prepare_schema_table, processing):
 
 
 @pytest.fixture
+def iceberg_table(spark_with_hdfs_iceberg, load_table_data):
+    table_name, schema, table = load_table_data
+    catalog = "hadoop"
+    iceberg_table = f"{catalog}.{schema}.{table}"
+
+    spark_with_hdfs_iceberg.table(table_name).writeTo(iceberg_table).using("iceberg").createOrReplace()
+
+    yield iceberg_table
+
+    spark_with_hdfs_iceberg.sql(f"DROP TABLE IF EXISTS {iceberg_table}")
+
+
+@pytest.fixture
+def iceberg_file_df(spark_with_s3_iceberg, file_df_dataframe):
+    catalog = "s3"
+    table = f"test_{secrets.token_hex(5)}"
+    file_df_dataframe.writeTo(f"{catalog}.{table}").using("iceberg").createOrReplace()
+    return catalog, table, file_df_dataframe
+
+
+@pytest.fixture
 def kafka_topic(processing, request):
     topic = secrets.token_hex(6)
     processing.create_topic(topic, num_partitions=1)
