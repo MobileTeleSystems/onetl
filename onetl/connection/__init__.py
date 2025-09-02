@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from onetl.connection.db_connection.clickhouse import Clickhouse
     from onetl.connection.db_connection.greenplum import Greenplum
     from onetl.connection.db_connection.hive import Hive
+    from onetl.connection.db_connection.iceberg import Iceberg
     from onetl.connection.db_connection.kafka import Kafka
     from onetl.connection.db_connection.mongodb import MongoDB
     from onetl.connection.db_connection.mssql import MSSQL
@@ -38,6 +39,7 @@ db_connection_modules = {
     "Greenplum": "greenplum",
     "MongoDB": "mongodb",
     "Hive": "hive",
+    "Iceberg": "iceberg",
     "MSSQL": "mssql",
     "MySQL": "mysql",
     "Oracle": "oracle",

@@ -9,7 +9,7 @@ class SupportColumns:
     def validate_columns(
         self,
         columns: str | list[str] | None,
-    ) -> list[str] | None:
+    ) -> list[str]:
         if columns is None:
             return ["*"]
 

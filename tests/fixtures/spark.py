@@ -38,6 +38,7 @@ def maven_packages(request):
         MSSQL,
         Clickhouse,
         Greenplum,
+        Iceberg,
         Kafka,
         MongoDB,
         MySQL,
@@ -46,7 +47,7 @@ def maven_packages(request):
         SparkS3,
         Teradata,
     )
-    from onetl.file.format import XML, Avro, Excel, Iceberg
+    from onetl.file.format import XML, Avro, Excel
 
     pyspark_version = Version(pyspark.__version__)
 
@@ -174,29 +175,3 @@ def iceberg_warehouse_dir(tmp_path_factory):
     path = tmp_path_factory.mktemp("iceberg-warehouse")
     yield path
     shutil.rmtree(path, ignore_errors=True)
-
-
-@pytest.fixture(scope="session")
-def spark_with_s3_iceberg(spark, s3_server):
-    spark.conf.set("spark.sql.catalog.s3", "org.apache.iceberg.spark.SparkCatalog")
-    spark.conf.set("spark.sql.catalog.s3.type", "hadoop")
-    spark.conf.set("spark.sql.catalog.s3.warehouse", "s3a://onetl/data/iceberg")
-
-    hadoop_conf = spark._jsc.hadoopConfiguration()
-    hadoop_conf.set("fs.s3a.access.key", s3_server.access_key)
-    hadoop_conf.set("fs.s3a.secret.key", s3_server.secret_key)
-    hadoop_conf.set("fs.s3a.endpoint", f"http://{s3_server.host}:{s3_server.port}")
-    hadoop_conf.set("fs.s3a.path.style.access", "true")
-
-    spark.sql("CREATE NAMESPACE IF NOT EXISTS s3.onetl")
-    return spark
-
-
-@pytest.fixture(scope="session")
-def spark_with_hdfs_iceberg(spark, iceberg_warehouse_dir):
-    spark.conf.set("spark.sql.catalog.hadoop", "org.apache.iceberg.spark.SparkCatalog")
-    spark.conf.set("spark.sql.catalog.hadoop.type", "hadoop")
-    spark.conf.set("spark.sql.catalog.hadoop.warehouse", f"file://{iceberg_warehouse_dir}")
-
-    spark.sql("CREATE NAMESPACE IF NOT EXISTS hadoop.onetl")
-    return spark
