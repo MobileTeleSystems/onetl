@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterable
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -12,6 +12,7 @@ from onetl.connection.db_connection.iceberg.dialect import IcebergDialect
 from onetl.connection.db_connection.iceberg.extra import IcebergExtra
 from onetl.connection.db_connection.iceberg.options import (
     IcebergReadOptions,
+    IcebergTableExistBehavior,
     IcebergWriteOptions,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
@@ -48,10 +49,28 @@ class Iceberg(DBConnection):
     catalog_name : str
         Catalog name
 
-        .. versionadded:: 0.14.0
-
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session
+
+    extra : dict | None, default: ``None``
+        A dictionary of additional properties to be used when configuring Iceberg catalog.
+
+        These are Iceberg-specific properties that control behavior of the catalog.
+        See `Iceberg Spark configuration documentation <https://iceberg.apache.org/docs/latest/spark-configuration/>`_
+
+        Pass properties without full prefix. For example:
+
+        .. code:: python
+
+            extra = {
+                "type": "hadoop",
+                "warehouse": "file:///path/to/warehouse",
+            }
+
+        This will be translated to:
+        ``spark.sql.catalog.my_catalog = 'org.apache.iceberg.spark.SparkCatalog'``
+        ``spark.sql.catalog.my_catalog.type = 'hadoop'``
+        ``spark.sql.catalog.my_catalog.warehouse = 'file:///path/to/warehouse'``
 
     Examples
     --------
@@ -61,7 +80,8 @@ class Iceberg(DBConnection):
         from onetl.connection import Iceberg
         from pyspark.sql import SparkSession
 
-        maven_packages = Iceberg.get_packages(package_version="1.6.1", spark_version="3.5")
+        # Note: Iceberg 1.9.2 requires Java 11+
+        maven_packages = Iceberg.get_packages(package_version="1.9.2", spark_version="3.5")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -72,6 +92,10 @@ class Iceberg(DBConnection):
         iceberg = Iceberg(
             catalog_name="my_catalog",
             spark=spark,
+            extra={
+                "type": "hadoop",
+                "warehouse": "file:///path/to/warehouse",
+            },
         ).check()
     """
 
@@ -110,8 +134,6 @@ class Iceberg(DBConnection):
         See `Maven package index <https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-spark>`_
         for all available packages.
 
-        .. versionadded:: 0.14.0
-
         Parameters
         ----------
         package_version : str
@@ -136,7 +158,8 @@ class Iceberg(DBConnection):
 
             from onetl.connection import Iceberg
 
-            Iceberg.get_packages(package_version="1.6.1", spark_version="3.5")
+            # Note: Iceberg 1.9.2 requires Java 11+
+            Iceberg.get_packages(package_version="1.9.2", spark_version="3.5")
         """
 
         version = Version(package_version).min_digits(3)
@@ -198,8 +221,6 @@ class Iceberg(DBConnection):
 
         Same as ``spark.sql(query)``.
 
-        .. versionadded:: 0.14.0
-
         Parameters
         ----------
         query : str
@@ -252,8 +273,6 @@ class Iceberg(DBConnection):
         """
         Execute DDL or DML statement. |support_hooks|
 
-        .. versionadded:: 0.14.0
-
         Parameters
         ----------
         statement : str
@@ -296,7 +315,26 @@ class Iceberg(DBConnection):
         target: str,
         options: IcebergWriteOptions | None = None,
     ) -> None:
-        self._save_as_table(df, target, options)
+        target = self._normalize_table_name(target)
+        write_options = self.WriteOptions.parse(options)
+
+        table_exists = self._target_exist(target)
+
+        if not table_exists or write_options.if_exists == IcebergTableExistBehavior.REPLACE_ENTIRE_TABLE:
+            self._save_as_table(df, target, options)
+            return
+
+        if write_options.if_exists == IcebergTableExistBehavior.ERROR:
+            raise ValueError("Operation stopped due to Iceberg.WriteOptions(if_exists='error')")
+
+        if write_options.if_exists == IcebergTableExistBehavior.IGNORE:
+            log.info(
+                "|%s| Skip writing to existing table because of Iceberg.WriteOptions(if_exists='ignore')",
+                self.__class__.__name__,
+            )
+            return
+
+        self._insert_into(df, target, options)
 
     @slot
     def read_source_as_df(
@@ -311,7 +349,7 @@ class Iceberg(DBConnection):
         options: IcebergReadOptions | None = None,
     ) -> DataFrame:
         query = self.dialect.get_sql_query(
-            table=source,
+            table=self._normalize_table_name(source),
             columns=columns,
             where=self.dialect.apply_window(where, window),
             hint=hint,
@@ -325,6 +363,7 @@ class Iceberg(DBConnection):
         source: str,
         columns: list[str] | None = None,
     ) -> StructType:
+        source = self._normalize_table_name(source)
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
         query = self.dialect.get_sql_query(source, columns=columns, where=0, compact=True)
 
@@ -345,6 +384,7 @@ class Iceberg(DBConnection):
     ) -> tuple[Any, Any]:
         log.info("|%s| Getting min and max values for expression %r ...", self.__class__.__name__, window.expression)
 
+        source = self._normalize_table_name(source)
         query = self.dialect.get_sql_query(
             table=source,
             columns=[
@@ -406,8 +446,55 @@ class Iceberg(DBConnection):
         table: str,
         options: IcebergWriteOptions | dict | None = None,
     ) -> None:
+        write_options = self.WriteOptions.parse(options)
+
+        writer = df.writeTo(table).using("iceberg")
+        for method, value in self._format_write_options(write_options).items():
+            if hasattr(writer, method):
+                if isinstance(value, Iterable) and not isinstance(value, str):
+                    writer = getattr(writer, method)(*value)
+                else:
+                    writer = getattr(writer, method)(value)
+            else:
+                writer = writer.option(method, value)
+
         log.info("|%s| Saving data to a table %r ...", self.__class__.__name__, table)
-
-        df.writeTo(table).using("iceberg").createOrReplace()
-
+        writer.createOrReplace()
         log.info("|%s| Table %r is successfully created.", self.__class__.__name__, table)
+
+    def _insert_into(
+        self,
+        df: DataFrame,
+        table: str,
+        options: IcebergWriteOptions | dict | None = None,
+    ) -> None:
+        write_options = self.WriteOptions.parse(options)
+        unsupported_options = self._format_write_options(write_options)
+        if unsupported_options:
+            log.warning(
+                "|%s| User-specified options %r are ignored while inserting into existing table. "
+                "Using only Iceberg table parameters",
+                self.__class__.__name__,
+                unsupported_options,
+            )
+
+        log.info("|%s| Inserting data into existing table %r ...", self.__class__.__name__, table)
+
+        writer = df.writeTo(table).using("iceberg")
+
+        if write_options.if_exists == IcebergTableExistBehavior.APPEND:
+            writer.append()
+        else:
+            writer.overwritePartitions()
+
+        log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
+
+    def _format_write_options(self, write_options: IcebergWriteOptions) -> dict:
+        return write_options.dict(
+            by_alias=True,
+            exclude_unset=True,
+            exclude={"if_exists"},
+        )
+
+    def _normalize_table_name(self, table: str) -> str:
+        return f"{self.catalog_name}.{table}"

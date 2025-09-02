@@ -26,11 +26,15 @@ class IcebergProcessing(BaseProcessing):
         self.connection = spark
 
     @property
+    def catalog(self) -> str:
+        return os.getenv("ONETL_ICEBERG_CATALOG", "hadoop")
+
+    @property
     def schema(self) -> str:
-        return os.getenv("ONETL_ICEBERG_SCHEMA", "hadoop.onetl")
+        return os.getenv("ONETL_ICEBERG_SCHEMA", "onetl")
 
     def create_schema(self, schema: str) -> None:
-        self.connection.sql(f"CREATE NAMESPACE IF NOT EXISTS {schema}")
+        self.connection.sql(f"CREATE NAMESPACE IF NOT EXISTS {self.catalog}.{schema}")
 
     def create_table_ddl(
         self,
@@ -42,21 +46,23 @@ class IcebergProcessing(BaseProcessing):
         return f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields}) USING iceberg"
 
     def create_table(self, table: str, fields: dict[str, str], schema: str) -> None:
-        self.connection.sql(self.create_table_ddl(table, fields, schema))
+        normalized_schema = f"{self.catalog}.{schema}"
+        self.connection.sql(self.create_table_ddl(table, fields, normalized_schema))
 
     def drop_database(self, schema: str) -> None:
         # https://github.com/apache/iceberg/issues/3541
-        tables = [t.name for t in self.connection.catalog.listTables(self.schema)]
+        normalized_schema = f"{self.catalog}.{schema}"
+        tables = [t.name for t in self.connection.catalog.listTables(normalized_schema)]
         for table in tables:
             self.drop_table(table, schema)
-        self.connection.sql(f"DROP NAMESPACE IF EXISTS {schema}")
+        self.connection.sql(f"DROP NAMESPACE IF EXISTS {normalized_schema}")
 
     def drop_table(self, table: str, schema: str) -> None:
-        self.connection.sql(self.drop_table_ddl(table, schema))
+        self.connection.sql(self.drop_table_ddl(table, f"{self.catalog}.{schema}"))
 
     def insert_data(self, schema: str, table: str, values: list) -> None:
         df = self.connection.createDataFrame(values)
-        df.writeTo(f"{schema}.{table}").append()
+        df.writeTo(f"{self.catalog}.{schema}.{table}").append()
 
     def get_expected_dataframe(
         self,
@@ -65,7 +71,7 @@ class IcebergProcessing(BaseProcessing):
         order_by: str | None = None,
     ) -> pandas.DataFrame:
         values = defaultdict(list)
-        df = self.connection.sql(f"SELECT * FROM {schema}.{table}")
+        df = self.connection.sql(f"SELECT * FROM {self.catalog}.{schema}.{table}")
 
         if order_by:
             df = df.orderBy(order_by)
@@ -76,7 +82,3 @@ class IcebergProcessing(BaseProcessing):
                 values[self.column_names[idx]].append(row[idx])
 
         return pandas.DataFrame(data=values)
-
-    def fix_pandas_df(self, df: pandas.DataFrame) -> pandas.DataFrame:
-        df = super().fix_pandas_df(df)
-        return df

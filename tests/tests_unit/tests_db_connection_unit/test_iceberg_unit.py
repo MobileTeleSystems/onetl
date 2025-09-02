@@ -26,3 +26,25 @@ def test_iceberg_spark_stopped(spark_stopped):
     msg = "Spark session is stopped. Please recreate Spark session."
     with pytest.raises(ValueError, match=msg):
         Iceberg(catalog_name="my_catalog", spark=spark_stopped)
+
+
+@pytest.mark.parametrize(
+    "package_version,spark_version,scala_version,package",
+    [
+        ("1.4.0", "3.3", None, "org.apache.iceberg:iceberg-spark-runtime-3.3_2.12:1.4.0"),
+        ("1.9.2", "3.5", "2.12", "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.2"),
+    ],
+)
+def test_iceberg_get_packages(package_version, spark_version, scala_version, package):
+    assert Iceberg.get_packages(
+        package_version=package_version,
+        spark_version=spark_version,
+        scala_version=scala_version,
+    ) == [package]
+
+
+@pytest.mark.local_fs
+def test_iceberg_missing_package(spark_no_packages):
+    msg = "Cannot import Java class 'org.apache.iceberg.spark.SparkSessionCatalog'"
+    with pytest.raises(ValueError, match=msg):
+        Iceberg(spark=spark_no_packages, catalog_name="my_catalog")

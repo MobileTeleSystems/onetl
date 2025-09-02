@@ -94,6 +94,22 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-iceberg:
+    name: Run Hive tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-iceberg) }}
+
+    uses: ./.github/workflows/test-iceberg.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   tests-kafka:
     name: Run Kafka tests (server=${{ matrix.kafka-version }}, spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
@@ -349,6 +365,7 @@ jobs:
       - tests-core
       - tests-clickhouse
       - tests-hive
+      - tests-iceberg
       - tests-kafka
       - tests-local-fs
       - tests-mongodb
@@ -393,7 +410,7 @@ jobs:
           pattern: coverage-*
           merge-multiple: true
 
-      - name: Generate coverate reports
+      - name: Generate coverage reports
         run: ./combine_coverage.sh
 
       - name: Check coverage

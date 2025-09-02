@@ -8,13 +8,13 @@ from onetl.connection.db_connection.dialect_mixins import (
     SupportColumns,
     SupportHintStr,
     SupportHWMExpressionStr,
-    SupportNameWithMultipleParts,
+    SupportNameWithSchemaOnly,
     SupportWhereStr,
 )
 
 
 class IcebergDialect(  # noqa: WPS215
-    SupportNameWithMultipleParts,
+    SupportNameWithSchemaOnly,
     SupportColumns,
     NotSupportDFSchema,
     SupportWhereStr,
