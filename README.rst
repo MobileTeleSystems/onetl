@@ -90,6 +90,8 @@ Supported storages
 +                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
 |                    | Hive         | Apache Spark `Hive integration <https://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html>`_               |
 +                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
+|                    | Iceberg      | Apache Iceberg `Spark integration <https://iceberg.apache.org/spark-quickstart/>`_                                      |
++                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
 |                    | Kafka        | Apache Spark `Kafka integration <https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html>`_    |
 +                    +--------------+-------------------------------------------------------------------------------------------------------------------------+
 |                    | Greenplum    | VMware `Greenplum Spark connector <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/index.html>`_ |

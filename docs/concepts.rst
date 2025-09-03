@@ -56,6 +56,10 @@ Class diagram
     }
     Hive --|> DBConnection
 
+    class Iceberg <<DBConnection>>{
+    }
+    Iceberg --|> DBConnection
+
     class Greenplum <<DBConnection>>{
     }
     Greenplum --|> DBConnection
