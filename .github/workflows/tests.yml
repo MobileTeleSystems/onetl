@@ -78,31 +78,15 @@ jobs:
       GREENPLUM_PACKAGES_USER: ${{ secrets.GREENPLUM_PACKAGES_USER }}
       GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
 
-  tests-hive:
-    name: Run Hive tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+  tests-hive-and-iceberg:
+    name: Run Hive and Iceberg tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.get-matrix.outputs.matrix-hive) }}
 
-    uses: ./.github/workflows/test-hive.yml
-    with:
-      spark-version: ${{ matrix.spark-version }}
-      pydantic-version: ${{ matrix.pydantic-version }}
-      java-version: ${{ matrix.java-version }}
-      python-version: ${{ matrix.python-version }}
-      os: ${{ matrix.os }}
-
-  tests-iceberg:
-    name: Run Hive tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
-    needs: [get-matrix]
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.get-matrix.outputs.matrix-iceberg) }}
-
-    uses: ./.github/workflows/test-iceberg.yml
+    uses: ./.github/workflows/test-hive-and-iceberg.yml
     with:
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
@@ -364,8 +348,7 @@ jobs:
     needs:
       - tests-core
       - tests-clickhouse
-      - tests-hive
-      - tests-iceberg
+      - tests-hive-and-iceberg
       - tests-kafka
       - tests-local-fs
       - tests-mongodb

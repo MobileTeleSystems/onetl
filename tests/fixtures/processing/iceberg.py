@@ -43,11 +43,10 @@ class IcebergProcessing(BaseProcessing):
         schema: str,
     ) -> str:
         str_fields = ", ".join([f"{key} {value}" for key, value in fields.items()])
-        return f"CREATE TABLE IF NOT EXISTS {schema}.{table} ({str_fields}) USING iceberg"
+        return f"CREATE TABLE IF NOT EXISTS {self.catalog}.{schema}.{table} ({str_fields}) USING iceberg"
 
     def create_table(self, table: str, fields: dict[str, str], schema: str) -> None:
-        normalized_schema = f"{self.catalog}.{schema}"
-        self.connection.sql(self.create_table_ddl(table, fields, normalized_schema))
+        self.connection.sql(self.create_table_ddl(table, fields, schema))
 
     def drop_database(self, schema: str) -> None:
         # https://github.com/apache/iceberg/issues/3541

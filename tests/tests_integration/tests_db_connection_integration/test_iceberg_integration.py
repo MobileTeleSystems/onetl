@@ -73,9 +73,11 @@ def test_iceberg_connection_execute_ddl(iceberg_connection, processing, get_sche
     )
     assert not iceberg_connection.execute(processing.drop_table_ddl(table, schema) + suffix)
     with pytest.raises(Exception):
-        iceberg_connection.execute(f"DROP TABLE {schema}.missing_table{suffix}")
+        iceberg_connection.execute(f"DROP TABLE {iceberg_connection.catalog_name}.{schema}.missing_table{suffix}")
 
-    assert not iceberg_connection.execute(processing.create_table_ddl(table, fields, schema) + suffix)
+    assert not iceberg_connection.execute(
+        processing.create_table_ddl(table, fields, schema) + suffix,
+    )
     # not supported by Iceberg
     with pytest.raises(Exception):
         iceberg_connection.execute(f"DROP NAMESPACE {iceberg_connection.catalog_name}.{schema} CASCADE{suffix}")
@@ -95,11 +97,11 @@ def test_iceberg_connection_execute_dml(request, iceberg_connection, processing,
     fields = {col: processing.get_column_type(col) for col in processing.column_names}
 
     assert not iceberg_connection.execute(
-        processing.create_table_ddl(temp_name, fields, f"{iceberg_connection.catalog_name}.{schema}") + suffix,
+        processing.create_table_ddl(temp_name, fields, schema) + suffix,
     )
 
     def table_finalizer():
-        iceberg_connection.execute(processing.drop_table_ddl(temp_name, f"{iceberg_connection.catalog_name}.{schema}"))
+        iceberg_connection.execute(processing.drop_table_ddl(temp_name, schema))
 
     request.addfinalizer(table_finalizer)
 
