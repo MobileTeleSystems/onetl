@@ -4,6 +4,8 @@ from importlib import import_module
 
 import pytest
 
+from onetl.connection.db_connection.iceberg.connection import Iceberg
+
 PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
 
@@ -13,6 +15,7 @@ def processing(request, spark):
         "clickhouse": ("tests.fixtures.processing.clickhouse", "ClickhouseProcessing"),
         "greenplum": ("tests.fixtures.processing.greenplum", "GreenplumProcessing"),
         "hive": ("tests.fixtures.processing.hive", "HiveProcessing"),
+        "iceberg": ("tests.fixtures.processing.iceberg", "IcebergProcessing"),
         "mongodb": ("tests.fixtures.processing.mongodb", "MongoDBProcessing"),
         "mssql": ("tests.fixtures.processing.mssql", "MSSQLProcessing"),
         "mysql": ("tests.fixtures.processing.mysql", "MySQLProcessing"),
@@ -33,7 +36,7 @@ def processing(request, spark):
     module = import_module(module_name)
     db_processing = getattr(module, class_name)
 
-    if db_storage_name == "hive":
+    if db_storage_name in ("hive", "iceberg"):
         yield db_processing(spark)
     else:
         with db_processing() as result:
@@ -83,24 +86,16 @@ def load_table_data(prepare_schema_table, processing):
 
 
 @pytest.fixture
-def iceberg_table(spark_with_hdfs_iceberg, load_table_data):
-    table_name, schema, table = load_table_data
-    catalog = "hadoop"
-    iceberg_table = f"{catalog}.{schema}.{table}"
-
-    spark_with_hdfs_iceberg.table(table_name).writeTo(iceberg_table).using("iceberg").createOrReplace()
-
-    yield iceberg_table
-
-    spark_with_hdfs_iceberg.sql(f"DROP TABLE IF EXISTS {iceberg_table}")
-
-
-@pytest.fixture
-def iceberg_file_df(spark_with_s3_iceberg, file_df_dataframe):
-    catalog = "s3"
-    table = f"test_{secrets.token_hex(5)}"
-    file_df_dataframe.writeTo(f"{catalog}.{table}").using("iceberg").createOrReplace()
-    return catalog, table, file_df_dataframe
+def iceberg_connection(spark, iceberg_warehouse_dir):
+    iceberg = Iceberg(
+        spark=spark,
+        catalog_name="hadoop",
+        extra={
+            "type": "hadoop",
+            "warehouse": f"file://{iceberg_warehouse_dir}",
+        },
+    )
+    return iceberg
 
 
 @pytest.fixture

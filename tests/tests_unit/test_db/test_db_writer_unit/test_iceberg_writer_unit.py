@@ -1,19 +1,19 @@
 import pytest
 
-from onetl.connection import Hive
+from onetl.connection import Iceberg
 from onetl.db import DBWriter
 
-pytestmark = pytest.mark.hive
+pytestmark = pytest.mark.iceberg
 
 
-def test_hive_writer_wrong_table_name(spark_mock):
-    hive = Hive(cluster="rnd-dwh", spark=spark_mock)
+def test_Iceberg_writer_wrong_table_name(spark_mock):
+    iceberg = Iceberg(catalog_name="my_catalog", spark=spark_mock)
 
     with pytest.raises(
         ValueError,
         match="Name should be passed in `schema.name` format",
     ):
         DBWriter(
-            connection=hive,
+            connection=iceberg,
             target="table",  # Required format: target="schema.table"
         )
