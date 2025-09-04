@@ -541,15 +541,15 @@ def test_mysql_connection_execute_procedure_inout(
     request.addfinalizer(proc_finalizer)
 
     # inout argument is not properly registered
-    # that's not okay, but at the moment we cannot parse all possible SQL dialects to handle this
     with pytest.raises(Exception):
         mysql.execute(f"CALL {proc}(10, 1){suffix}")
 
     with pytest.raises(Exception):
         mysql.execute(f"{{call {proc}(10, 1)}}")
 
-    with pytest.raises(Exception):
-        mysql.execute(f"{{call {proc}(10, ?)}}")
+    # but this is okay
+    assert not mysql.execute(f"CALL {proc}(10, ?){suffix}")
+    assert not mysql.execute(f"{{call {proc}(10, ?)}}")
 
 
 @pytest.mark.flaky
