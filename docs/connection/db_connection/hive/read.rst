@@ -16,7 +16,7 @@ Supported DBReader features
 * * ✅︎ :ref:`incremental-strategy`
 * * ✅︎ :ref:`snapshot-batch-strategy`
 * * ✅︎ :ref:`incremental-batch-strategy`
-* ❌ ``hint`` (is not supported by Hive)
+* ✅︎ ``hint``
 * ❌ ``df_schema``
 * ❌ ``options`` (only Spark config params are used)
 
