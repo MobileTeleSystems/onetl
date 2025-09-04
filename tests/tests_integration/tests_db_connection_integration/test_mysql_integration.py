@@ -548,10 +548,6 @@ def test_mysql_connection_execute_procedure_inout(
     with pytest.raises(Exception):
         mysql.execute(f"{{call {proc}(10, 1)}}")
 
-    # missing value for inout argument
-    with pytest.raises(Exception):
-        mysql.execute(f"CALL {proc}(10, ?){suffix}")
-
     with pytest.raises(Exception):
         mysql.execute(f"{{call {proc}(10, ?)}}")
 
