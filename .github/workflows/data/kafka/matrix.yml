@@ -9,6 +9,7 @@
   java-version: 8
   os: ubuntu-22.04
 
+# Kafka 4.0.0 removed Zookeeper support, and requires KRaft
 3_5_x: &3_5_x
   kafka-version: 3.9.0
   pydantic-version: 2
@@ -27,7 +28,7 @@
   os: ubuntu-latest
 
 latest: &latest
-  kafka-version: latest
+  kafka-version: 3.9.0
   pydantic-version: latest
   spark-version: latest
   python-version: '3.13'

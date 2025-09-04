@@ -40,7 +40,7 @@ jobs:
           docker compose --profile s3 pull
           docker compose --profile s3 up -d --wait --wait-timeout 200
         env:
-          S3_IMAGE: bitnami/minio:${{ inputs.minio-version }}
+          S3_IMAGE: bitnamilegacy/minio:${{ inputs.minio-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
         uses: actions/setup-java@v5
