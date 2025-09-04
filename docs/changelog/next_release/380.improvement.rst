@@ -1,1 +1,0 @@
-Speed up removing S3 and Samba directories with ``recursive=True``.

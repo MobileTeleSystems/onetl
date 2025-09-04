@@ -1,1 +1,0 @@
-Return full file/directory path from ``FileConnection.list_dir`` and ``FileConnection.walk``. Previously these methods returned only file names.

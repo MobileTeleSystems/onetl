@@ -1,1 +1,0 @@
-Update Excel package name from ``com.crealytics:spark-excel`` to ``dev.mauch:spark-excel``. Now ``Excel.get_packages(package_version=...)`` parameter is mandatory.

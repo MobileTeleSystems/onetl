@@ -1,6 +1,0 @@
-Drop Spark 2 support. Minimal supported Spark version is 3.2.
-
-Also dropped:
-
-* ``Greenplum.package_spark_2_3``
-* ``Greenplum.package_spark_2_4``
