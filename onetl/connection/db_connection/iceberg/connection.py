@@ -46,6 +46,10 @@ class Iceberg(DBConnection):
 
         This is an alpha version of connector, it's behavior may change in the future.
 
+    .. seealso::
+
+        Before using this connector please take into account :ref:`iceberg-prerequisites`
+
     .. versionadded:: 0.14.0
 
     Parameters

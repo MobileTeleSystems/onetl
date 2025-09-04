@@ -9,7 +9,7 @@
   os: ubuntu-22.04
 
 3_5_x: &3_5_x
-  mysql-version: 9.2.0
+  mysql-version: 9.4.0
   spark-version: 3.5.6
   pydantic-version: 2
   python-version: '3.13'
@@ -17,7 +17,7 @@
   os: ubuntu-latest
 
 4_0_x: &4_0_x
-  mysql-version: 9.2.0
+  mysql-version: 9.4.0
   spark-version: 4.0.0
   pydantic-version: 2
   python-version: '3.13'
