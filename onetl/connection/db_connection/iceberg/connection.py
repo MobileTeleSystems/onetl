@@ -40,7 +40,7 @@ log = logging.getLogger(__name__)
 
 @support_hooks
 class Iceberg(DBConnection):
-    """Iceberg connection. |support_hooks|
+    """**WARNING: This is an alpha version of Iceberg connection.** |support_hooks|
 
     .. versionadded:: 0.14.0
 
@@ -58,7 +58,7 @@ class Iceberg(DBConnection):
         These are Iceberg-specific properties that control behavior of the catalog.
         See `Iceberg Spark configuration documentation <https://iceberg.apache.org/docs/latest/spark-configuration/>`_
 
-        Pass properties without full prefix. For example:
+        Pass properties **without full prefix**. For example:
 
         .. code:: python
 
@@ -68,19 +68,56 @@ class Iceberg(DBConnection):
             }
 
         This will be translated to:
+
         ``spark.sql.catalog.my_catalog = 'org.apache.iceberg.spark.SparkCatalog'``
+
         ``spark.sql.catalog.my_catalog.type = 'hadoop'``
+
         ``spark.sql.catalog.my_catalog.warehouse = 'file:///path/to/warehouse'``
 
     Examples
     --------
+
+    **REST catalog + S3 warehouse**
 
     .. code:: python
 
         from onetl.connection import Iceberg
         from pyspark.sql import SparkSession
 
-        # Note: Iceberg 1.9.2 requires Java 11+
+        maven_packages = [
+            *Iceberg.get_packages(package_version="1.9.2", spark_version="3.5"),
+            *SparkS3.get_packages(spark_version="3.5.6"),
+        ]
+        spark = (
+            SparkSession.builder.appName("spark-app-name")
+            .config("spark.jars.packages", ",".join(maven_packages))
+            .getOrCreate()
+        )
+
+        # Create connection
+        iceberg = Iceberg(
+            catalog_name="my_catalog",
+            spark=spark,
+            extra={
+                "type": "rest",
+                "uri": "http://localhost:8080",
+                "warehouse": "s3a://bucket/",
+                "hadoop.fs.s3a.endpoint": "http://localhost:9010",
+                "hadoop.fs.s3a.access.key": "access_key",
+                "hadoop.fs.s3a.secret.key": "secret_key",
+                "hadoop.fs.s3a.path.style.access": "true",
+            },
+        )
+
+
+    **Hadoop catalog + HDFS warehouse**
+
+    .. code:: python
+
+        from onetl.connection import Iceberg
+        from pyspark.sql import SparkSession
+
         maven_packages = Iceberg.get_packages(package_version="1.9.2", spark_version="3.5")
         spark = (
             SparkSession.builder.appName("spark-app-name")
@@ -94,9 +131,9 @@ class Iceberg(DBConnection):
             spark=spark,
             extra={
                 "type": "hadoop",
-                "warehouse": "file:///path/to/warehouse",
+                "warehouse": "hdfs://nn:8020/warehouse/path",
             },
-        ).check()
+        )
     """
 
     catalog_name: str
