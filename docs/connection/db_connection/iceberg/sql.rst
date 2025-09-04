@@ -5,6 +5,10 @@ Reading from Iceberg using ``Iceberg.sql``
 
 ``Iceberg.sql`` allows passing custom SQL query, but does not support incremental strategies.
 
+.. warning::
+
+    Unlike DBReader, in SQL queries **table names must include catalog prefix**.
+
 Syntax support
 --------------
 
@@ -14,10 +18,6 @@ Only queries with the following syntax are supported:
 * ✅︎ ``WITH alias AS (...) SELECT ...``
 * ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
-.. warning::
-
-    Query should be written using `SparkSQL <https://spark.apache.org/docs/latest/sql-ref-syntax.html#data-retrieval-statements>`_ syntax.
-    When using Iceberg, **table names must include catalog prefix**.
 
 Examples
 --------
@@ -26,7 +26,7 @@ Examples
 
     from onetl.connection import Iceberg
 
-    iceberg = Iceberg(catalog_name="catalog", ...)
+    iceberg = Iceberg(catalog_name="my_catalog", ...)
     df = iceberg.sql(
         """
         SELECT
@@ -35,10 +35,10 @@ Examples
             CAST(value AS string) value,
             updated_at
         FROM
-            catalog.schema.table
+            my_catalog.my_schema.my_table
         WHERE
             key = 'something'
-        """
+        """,
     )
 
 Recommendations

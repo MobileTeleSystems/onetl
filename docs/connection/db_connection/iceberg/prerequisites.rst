@@ -33,11 +33,11 @@ Configuring Catalog and Warehouse
 ---------------------------------
 
 To work with Iceberg tables you must configure a **catalog** and a **warehouse location**.
-All configuration parameters are passed as Spark options, see
+All configuration parameters are passed down as SparkSession options, see
 `Iceberg Spark configuration <https://iceberg.apache.org/docs/latest/spark-configuration/>`_.
 
 For now, these options can be specified using the ``extra`` field in :ref:`iceberg-connection`.
 
-.. warning::
+.. danger::
 
-  This will be changed in future versions.
+    This will be changed in future onETL versions.

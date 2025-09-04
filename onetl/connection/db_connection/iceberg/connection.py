@@ -40,7 +40,11 @@ log = logging.getLogger(__name__)
 
 @support_hooks
 class Iceberg(DBConnection):
-    """**WARNING: This is an alpha version of Iceberg connection.** |support_hooks|
+    """Iceberg connection. |support_hooks|
+
+    .. danger::
+
+        This is an alpha version of connector, it's behavior may change in the future.
 
     .. versionadded:: 0.14.0
 
@@ -58,7 +62,7 @@ class Iceberg(DBConnection):
         These are Iceberg-specific properties that control behavior of the catalog.
         See `Iceberg Spark configuration documentation <https://iceberg.apache.org/docs/latest/spark-configuration/>`_
 
-        Pass properties **without full prefix**. For example:
+        Pass properties **without catalog prefix**. For example:
 
         .. code:: python
 
@@ -69,11 +73,11 @@ class Iceberg(DBConnection):
 
         This will be translated to:
 
-        ``spark.sql.catalog.my_catalog = 'org.apache.iceberg.spark.SparkCatalog'``
+        .. code:: ini
 
-        ``spark.sql.catalog.my_catalog.type = 'hadoop'``
-
-        ``spark.sql.catalog.my_catalog.warehouse = 'file:///path/to/warehouse'``
+            spark.sql.catalog.my_catalog = 'org.apache.iceberg.spark.SparkCatalog'
+            spark.sql.catalog.my_catalog.type = 'hadoop'
+            spark.sql.catalog.my_catalog.warehouse = 'file:///path/to/warehouse'
 
     Examples
     --------
@@ -89,9 +93,11 @@ class Iceberg(DBConnection):
             *Iceberg.get_packages(package_version="1.9.2", spark_version="3.5"),
             *SparkS3.get_packages(spark_version="3.5.6"),
         ]
+        exclude_packages = SparkS3.get_exclude_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
+            .config("spark.jars.excludes", ",".join(exclude_packages))
             .getOrCreate()
         )
 
@@ -131,7 +137,7 @@ class Iceberg(DBConnection):
             spark=spark,
             extra={
                 "type": "hadoop",
-                "warehouse": "hdfs://nn:8020/warehouse/path",
+                "warehouse": "hdfs://namenode:8020/warehouse/path",
             },
         )
     """

@@ -5,6 +5,10 @@ Executing statements in Iceberg
 
 Use ``Iceberg.execute(...)`` to execute DDL and DML operations.
 
+.. warning::
+
+    In DML/DDL queries **table names must include catalog prefix**.
+
 Syntax support
 ^^^^^^^^^^^^^^
 
@@ -18,11 +22,6 @@ This method supports **any** query syntax supported by Iceberg (Spark SQL), like
 * ✅︎ other statements supported by Iceberg
 * ❌ ``SET ...; SELECT ...;`` - multiple statements not supported
 
-.. warning::
-
-    Queries must use `SparkSQL <https://spark.apache.org/docs/latest/sql-ref-syntax.html#ddl-statements>`_ syntax.
-    When using Iceberg, **table names must include catalog prefix**.
-
 Examples
 ^^^^^^^^
 
@@ -30,18 +29,18 @@ Examples
 
     from onetl.connection import Iceberg
 
-    iceberg = Iceberg(catalog_name="catalog", ...)
+    iceberg = Iceberg(catalog_name="my_catalog", ...)
 
-    iceberg.execute("DROP TABLE catalog.schema.table")
+    iceberg.execute("DROP TABLE my_catalog.my_schema.my_table")
     iceberg.execute(
         """
-        CREATE TABLE catalog.schema.table (
+        CREATE TABLE my_catalog.my_schema.my_table (
             id BIGINT,
             key STRING,
             value DOUBLE
         )
         USING iceberg
-        """
+        """,
     )
 
 Details

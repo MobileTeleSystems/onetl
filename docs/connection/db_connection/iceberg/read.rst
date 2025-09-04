@@ -38,7 +38,7 @@ Snapshot strategy:
 
     reader = DBReader(
         connection=iceberg,
-        source="schema.table",  # catalog is already defined in connection
+        source="my_schema.table",  # catalog is already defined in connection
         columns=["id", "key", "value", "updated_dt"],
         where="key = 'something'",
     )
@@ -56,7 +56,7 @@ Incremental strategy:
 
     reader = DBReader(
         connection=iceberg,
-        source="schema.table",  # catalog is already defined in connection
+        source="my_schema.table",  # catalog is already defined in connection
         columns=["id", "key", "value", "updated_dt"],
         where="key = 'something'",
         hwm=DBReader.AutoDetectHWM(name="iceberg_hwm", expression="updated_dt"),
@@ -73,3 +73,13 @@ Select only required columns
 
 Instead of passing ``"*"`` in ``DBReader(columns=[...])`` prefer passing exact column names.
 This drastically reduces the amount of data read by Spark.
+
+Options
+-------
+
+.. currentmodule:: onetl.connection.db_connection.iceberg.options
+
+.. autopydantic_model:: IcebergReadOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false

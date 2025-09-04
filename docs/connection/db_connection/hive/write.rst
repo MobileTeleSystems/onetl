@@ -52,9 +52,6 @@ Use column-based write formats
 Prefer these write formats:
   * `ORC <https://spark.apache.org/docs/latest/sql-data-sources-orc.html>`_ (**default**)
   * `Parquet <https://spark.apache.org/docs/latest/sql-data-sources-parquet.html>`_
-  * `Iceberg <https://iceberg.apache.org/spark-quickstart/>`_
-  * `Hudi <https://hudi.apache.org/docs/quick-start-guide/>`_
-  * `Delta <https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake>`_
 
 .. warning::
     When using ``DBWriter``, the default spark data format configured in ``spark.sql.sources.default`` is ignored, as  ``Hive.WriteOptions(format=...)`` default value is explicitly set to ``orc``.

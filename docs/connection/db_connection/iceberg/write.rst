@@ -19,10 +19,20 @@ Examples
 
     writer = DBWriter(
         connection=iceberg,
-        target="schema.my_table",  # catalog is already defined in connection
+        target="my_schema.my_table",  # catalog name is already defined in connection
         options=Iceberg.WriteOptions(
             if_exists="append",
         ),
     )
 
     writer.run(df)
+
+Options
+-------
+
+.. currentmodule:: onetl.connection.db_connection.iceberg.options
+
+.. autopydantic_model:: IcebergWriteOptions
+    :member-order: bysource
+    :model-show-field-summary: false
+    :field-show-constraints: false
