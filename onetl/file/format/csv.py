@@ -13,7 +13,7 @@ except (ImportError, AttributeError):
     from pydantic import Field  # type: ignore[no-redef, assignment]
 
 from onetl._util.alias import avoid_alias
-from onetl._util.spark import get_spark_version, stringify
+from onetl._util.spark import stringify
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
 
@@ -416,7 +416,7 @@ class CSV(ReadWriteFileFormat):
             reader = FileDFReader(
                 connection=connection,
                 format=csv,
-                schema=schema,  # < ---
+                df_schema=schema,  # < ---
             )
             df = reader.run(["/some/file.csv"])
 
@@ -538,7 +538,6 @@ class CSV(ReadWriteFileFormat):
 
         spark = SparkSession._instantiatedSession  # noqa: WPS437
         self.check_if_supported(spark)
-        self._check_spark_version_for_serialization(spark)
         self._check_unsupported_serialization_options()
 
         from pyspark.sql.functions import col, from_csv
@@ -610,7 +609,6 @@ class CSV(ReadWriteFileFormat):
 
         spark = SparkSession._instantiatedSession  # noqa: WPS437
         self.check_if_supported(spark)
-        self._check_spark_version_for_serialization(spark)
         self._check_unsupported_serialization_options()
 
         from pyspark.sql.functions import col, to_csv
@@ -622,16 +620,6 @@ class CSV(ReadWriteFileFormat):
 
         options = stringify(self.dict(by_alias=True, exclude_none=True))
         return to_csv(column, options).alias(column_name)
-
-    def _check_spark_version_for_serialization(self, spark: SparkSession):
-        spark_version = get_spark_version(spark)
-        if spark_version.major < 3:
-            class_name = self.__class__.__name__
-            error_msg = (
-                f"`{class_name}.parse_column` or `{class_name}.serialize_column` are available "
-                f"only since Spark 3.x, but got {spark_version}"
-            )
-            raise ValueError(error_msg)
 
     def _check_unsupported_serialization_options(self):
         current_options = self.dict(by_alias=True, exclude_none=True)

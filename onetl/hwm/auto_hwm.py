@@ -11,11 +11,9 @@ try:
 except (ImportError, AttributeError):
     from pydantic import root_validator  # type: ignore[no-redef, assignment]
 
-from typing_extensions import Literal
-
 
 class AutoDetectHWM(HWM):
-    value: Literal[None] = None
+    value: None = None
 
     @root_validator(pre=True)
     def handle_aliases(cls, values):

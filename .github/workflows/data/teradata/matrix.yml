@@ -1,5 +1,5 @@
-max: &max
-  spark-version: 3.5.5
+3_5_x: &3_5_x
+  spark-version: 3.5.6
   pydantic-version: 2
   python-version: '3.13'
   java-version: 20
@@ -13,6 +13,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small: [*max]
-  full: [*max]
+  small: [*3_5_x]
+  full: [*3_5_x]
   nightly: [*latest]

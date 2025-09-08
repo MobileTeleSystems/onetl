@@ -1,0 +1,77 @@
+import logging
+
+import pytest
+
+from onetl._util.version import Version
+from onetl.connection import Iceberg
+from onetl.db import DBWriter
+
+try:
+    import pyspark
+except ImportError:
+    pytest.skip("Missing pyspark", allow_module_level=True)
+
+if Version(pyspark.__version__).major > 3:
+    pytest.skip("Iceberg doesn't support Spark 4 yet", allow_module_level=True)
+
+pytestmark = pytest.mark.iceberg
+
+
+def test_iceberg_writer(spark, iceberg_connection, processing, get_schema_table):
+    df = processing.create_spark_df(spark)
+    table = f"{iceberg_connection.catalog_name}.{get_schema_table.full_name}"
+
+    writer = DBWriter(
+        connection=iceberg_connection,
+        target=get_schema_table.full_name,
+    )
+    writer.run(df)
+
+    ddl = iceberg_connection.sql(f"SHOW CREATE TABLE {table}").collect()[0][0]
+    assert "USING iceberg" in ddl
+
+    processing.assert_equal_df(
+        schema=get_schema_table.schema,
+        table=get_schema_table.table,
+        df=df,
+        order_by="id_int",
+    )
+
+
+# TODO: add test cases when table exist
+@pytest.mark.parametrize(
+    "if_exists",
+    [
+        "append",
+        "replace_overlapping_partitions",
+        "replace_entire_table",
+    ],
+)
+def test_iceberg_writer_target_does_not_exist(
+    spark,
+    iceberg_connection,
+    processing,
+    get_schema_table,
+    if_exists,
+    caplog,
+):
+    df = processing.create_spark_df(spark)
+
+    writer = DBWriter(
+        connection=iceberg_connection,
+        target=get_schema_table.full_name,  # new table
+        options=Iceberg.WriteOptions(if_exists=if_exists),
+    )
+
+    with caplog.at_level(logging.INFO):
+        writer.run(df)
+        table = f"{iceberg_connection.catalog_name}.{get_schema_table.full_name}"
+        assert f"|Iceberg| Saving data to a table '{table}'" in caplog.text
+        assert f"|Iceberg| Table '{table}' is successfully created" in caplog.text
+
+    processing.assert_equal_df(
+        schema=get_schema_table.schema,
+        table=get_schema_table.table,
+        df=df,
+        order_by="id_int",
+    )

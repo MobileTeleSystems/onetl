@@ -109,6 +109,8 @@ class DBWriter(FrozenModel):
 
     @validator("target", pre=True, always=True)
     def validate_target(cls, target, values):
+        if "connection" not in values:
+            return target
         connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_name(target)
 

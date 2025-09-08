@@ -263,6 +263,8 @@ class FileDFReader(FrozenModel):
 
     @validator("source_path", pre=True)
     def _validate_source_path(cls, source_path, values):
+        if "connection" not in values:
+            return source_path
         connection: BaseFileDFConnection = values["connection"]
         if source_path is None:
             return None

@@ -1,4 +1,4 @@
-FROM python:3.13-slim as base
+FROM python:3.13-slim-bookworm as base
 LABEL maintainer="DataOps.ETL"
 
 ARG ONETL_USER_HOME=/usr/local/onetl
@@ -44,7 +44,7 @@ ENV PATH=${ONETL_USER_HOME}/.local/bin:${PATH}
 COPY --chown=onetl:onetl ./run_tests.sh ./pytest_runner.sh ./combine_coverage.sh /app/
 RUN chmod +x /app/run_tests.sh /app/pytest_runner.sh /app/combine_coverage.sh
 
-ARG SPARK_VERSION=3.5.5
+ARG SPARK_VERSION=3.5.6
 # Spark is heavy, and version change is quite rare
 COPY --chown=onetl:onetl ./requirements/tests/spark-${SPARK_VERSION}.txt /app/requirements/tests/
 RUN pip install -r /app/requirements/tests/spark-${SPARK_VERSION}.txt

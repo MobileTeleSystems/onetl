@@ -40,7 +40,8 @@ This is how Greenplum connector performs this:
   See `Explicit type cast`_.
 * Find corresponding ``Spark type`` → ``Greenplumtype (write)`` combination (see below) for each DataFrame column. If no combination is found, raise exception.
 * If ``Greenplumtype (write)`` match ``Greenplum type (read)``, no additional casts will be performed, DataFrame column will be written to Greenplum as is.
-* If ``Greenplumtype (write)`` does not match ``Greenplum type (read)``, DataFrame column will be casted to target column type **on Greenplum side**. For example, you can write column with text data to ``json`` column which Greenplum connector currently does not support.
+* If ``Greenplumtype (write)`` does not match ``Greenplum type (read)``, DataFrame column will be casted to target column type **on Greenplum side**.
+  For example, you can write column with text data to column of ``json`` type (which Greenplum connector currently does not support).
 
 Create new table using Spark
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -360,7 +361,7 @@ For example, you can use `to_json <https://www.postgresql.org/docs/current/funct
 ``DBWriter``
 ~~~~~~~~~~~~
 
-To write data to a ``text`` or ``json`` column in a Greenplum table, use :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method.
+To write data to a column of ``text`` or ``json`` types in some Greenplum table, use :obj:`JSON.serialize_column <onetl.file.format.json.JSON.serialize_column>` method.
 
 .. code-block:: python
 

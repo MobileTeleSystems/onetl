@@ -16,7 +16,7 @@ except (ImportError, AttributeError):
 
 from typing_extensions import Literal
 
-from onetl._util.hadoop import get_hadoop_config, get_hadoop_version
+from onetl._util.hadoop import get_hadoop_config
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
 from onetl._util.spark import get_client_info, get_spark_version, stringify
@@ -131,7 +131,7 @@ class SparkS3(SparkFileDFConnection):
             from pyspark.sql import SparkSession
 
             # Create Spark session with Hadoop AWS libraries loaded
-            maven_packages = SparkS3.get_packages(spark_version="3.5.5")
+            maven_packages = SparkS3.get_packages(spark_version="3.5.6")
             # Some packages are not used, but downloading takes a lot of time. Skipping them.
             excluded_packages = SparkS3.get_exclude_packages()
             spark = (
@@ -231,16 +231,12 @@ class SparkS3(SparkFileDFConnection):
 
             from onetl.connection import SparkS3
 
-            SparkS3.get_packages(spark_version="3.5.5")
-            SparkS3.get_packages(spark_version="3.5.5", scala_version="2.12")
+            SparkS3.get_packages(spark_version="3.5.6")
+            SparkS3.get_packages(spark_version="3.5.6", scala_version="2.12")
 
         """
 
         spark_ver = Version(spark_version).min_digits(3)
-        if spark_ver.major < 3:
-            # https://issues.apache.org/jira/browse/SPARK-23977
-            raise ValueError(f"Spark version must be at least 3.x, got {spark_ver}")
-
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         # https://mvnrepository.com/artifact/org.apache.spark/spark-hadoop-cloud
         return [f"org.apache.spark:spark-hadoop-cloud_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}"]
@@ -388,23 +384,14 @@ class SparkS3(SparkFileDFConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).format("{major}.{minor}.{patch}")
+            spark_version = get_spark_version(spark).format("{0}.{1}.{2}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
 
-        return spark
-
-    @validator("spark")
-    def _validate_hadoop_version(cls, spark: SparkSession) -> SparkSession:
-        hadoop_version = get_hadoop_version(spark)
-        if hadoop_version.major < 3:
-            raise ValueError(f"Only Hadoop 3.x libraries are supported, got {hadoop_version}")
         return spark
 
     def _get_hadoop_config_prefix(self) -> str:

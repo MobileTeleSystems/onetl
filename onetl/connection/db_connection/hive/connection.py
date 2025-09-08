@@ -299,22 +299,25 @@ class Hive(DBConnection):
         write_options = self.WriteOptions.parse(options)
 
         # https://stackoverflow.com/a/72747050
-        if self._target_exist(target) and write_options.if_exists != HiveTableExistBehavior.REPLACE_ENTIRE_TABLE:
-            if write_options.if_exists == HiveTableExistBehavior.ERROR:
-                raise ValueError("Operation stopped due to Hive.WriteOptions(if_exists='error')")
-            elif write_options.if_exists == HiveTableExistBehavior.IGNORE:
-                log.info(
-                    "|%s| Skip writing to existing table because of Hive.WriteOptions(if_exists='ignore')",
-                    self.__class__.__name__,
-                )
-                return
-            # using saveAsTable on existing table does not handle
-            # spark.sql.sources.partitionOverwriteMode=dynamic, so using insertInto instead.
-            self._insert_into(df, target, options)
-        else:
+        if not self._target_exist(target) or write_options.if_exists == HiveTableExistBehavior.REPLACE_ENTIRE_TABLE:
             # if someone needs to recreate the entire table using new set of options, like partitionBy or bucketBy,
             # if_exists="replace_entire_table" should be used
             self._save_as_table(df, target, options)
+            return
+
+        if write_options.if_exists == HiveTableExistBehavior.ERROR:
+            raise ValueError("Operation stopped due to Hive.WriteOptions(if_exists='error')")
+
+        if write_options.if_exists == HiveTableExistBehavior.IGNORE:
+            log.info(
+                "|%s| Skip writing to existing table because of Hive.WriteOptions(if_exists='ignore')",
+                self.__class__.__name__,
+            )
+            return
+
+        # using saveAsTable on existing table does not handle
+        # spark.sql.sources.partitionOverwriteMode=dynamic, so using insertInto instead.
+        self._insert_into(df, target, options)
 
     @slot
     def read_source_as_df(
@@ -466,7 +469,7 @@ class Hive(DBConnection):
         # Do not use SELECT * FROM table, because it may fail if users have no permissions,
         # or Hive Metastore is overloaded.
         # Also we ignore VIEW's as they are not insertable.
-        schema, table = name.split(".", maxsplit=1)
+        schema, table = name.rsplit(".", maxsplit=1)
         query = f"SHOW TABLES IN {schema} LIKE '{table}'"
 
         log.debug("|%s| Executing SQL query:", self.__class__.__name__)
@@ -504,12 +507,12 @@ class Hive(DBConnection):
         if columns != df.columns:
             df = df.select(*columns)
 
-        # Writer option "partitionOverwriteMode" was added to Spark only in 2.4.0
-        # so using a workaround with patching Spark config and then setting up the previous value
+        # Explicit option "partitionOverwriteMode" requires DataFrameWriterV2 (TODO).
+        # Using a workaround with patching Spark config and then setting up the previous value
+        log.info("|%s| Inserting data into existing table %r ...", self.__class__.__name__, table)
         with inject_spark_param(self.spark.conf, PARTITION_OVERWRITE_MODE_PARAM, "dynamic"):
             overwrite = write_options.if_exists != HiveTableExistBehavior.APPEND
 
-            log.info("|%s| Inserting data into existing table %r ...", self.__class__.__name__, table)
             df.write.insertInto(table, overwrite=overwrite)
 
         log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
@@ -549,7 +552,7 @@ class Hive(DBConnection):
             else:
                 writer = writer.option(method, value)
 
-        # deserialize passed OCR(), Parquet(), CSV(), etc. file formats
+        # deserialize passed ORC(), Parquet(), CSV(), etc. file formats
         if isinstance(write_options.format, BaseWritableFileFormat):
             writer = write_options.format.apply_to_writer(writer)
         elif isinstance(write_options.format, str):

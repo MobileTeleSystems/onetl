@@ -6,7 +6,6 @@ import pytest
 
 from onetl.base import SupportsRenameDir
 from onetl.exception import DirectoryExistsError, DirectoryNotFoundError, NotAFileError
-from onetl.impl import RemotePath
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
@@ -51,7 +50,7 @@ def test_file_connection_create_dir(file_connection_with_path, path_type):
 
     if file_connection.path_exists(path):
         # S3 does not support creating directories
-        assert RemotePath("some_dir") in file_connection.list_dir(path.parent)
+        assert path.parent / "some_dir" in file_connection.list_dir(path.parent)
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
@@ -65,8 +64,8 @@ def test_file_connection_rename_file(file_connection_with_path_and_files, path_t
 
     list_dir = file_connection.list_dir(remote_path)
 
-    assert RemotePath("new.txt") in list_dir
-    assert RemotePath("ascii.txt") not in list_dir
+    assert remote_path / "new.txt" in list_dir
+    assert remote_path / "ascii.txt" not in list_dir
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
@@ -75,9 +74,6 @@ def test_file_connection_rename_dir(file_connection_with_path_and_files, path_ty
     if not isinstance(file_connection, SupportsRenameDir):
         # S3 does not have directories
         return
-
-    def stringify(items):
-        return list(map(os.fspath, items))
 
     old_dir = remote_path / "exclude_dir"
     new_dir = remote_path / "exclude_dir1"
@@ -89,15 +85,25 @@ def test_file_connection_rename_dir(file_connection_with_path_and_files, path_ty
     )
 
     list_dir = file_connection.list_dir(remote_path)
-    assert RemotePath("exclude_dir") not in list_dir
-    assert RemotePath("exclude_dir1") in list_dir
+    assert old_dir not in list_dir
+    assert new_dir in list_dir
 
     # root has different name, but all directories content is the same
+
     files_after = [
-        (os.fspath(root), stringify(dirs), stringify(files)) for root, dirs, files in file_connection.walk(new_dir)
+        (
+            os.fspath(root),
+            [os.fspath(directory) for directory in dirs],
+            [os.fspath(file) for file in files],
+        )
+        for root, dirs, files in file_connection.walk(new_dir)
     ]
     assert files_after == [
-        (os.fspath(new_dir / root.relative_to(old_dir)), stringify(dirs), stringify(files))
+        (
+            os.fspath(new_dir / root.relative_to(old_dir)),
+            [os.fspath(new_dir / directory.relative_to(old_dir)) for directory in dirs],
+            [os.fspath(new_dir / file.relative_to(old_dir)) for file in files],
+        )
         for root, dirs, files in files_before
     ]
 
@@ -131,9 +137,6 @@ def test_file_connection_rename_dir_replace(request, file_connection_with_path_a
         # S3 does not have directories
         return
 
-    def stringify(items):
-        return list(map(os.fspath, items))
-
     old_dir = remote_path / "exclude_dir"
     new_dir = remote_path / "exclude_dir1"
 
@@ -153,15 +156,24 @@ def test_file_connection_rename_dir_replace(request, file_connection_with_path_a
     )
 
     list_dir = file_connection.list_dir(remote_path)
-    assert RemotePath("exclude_dir") not in list_dir
-    assert RemotePath("exclude_dir1") in list_dir
+    assert old_dir not in list_dir
+    assert new_dir in list_dir
 
     # root has different name, but all directories content is the same
     files_after = [
-        (os.fspath(root), stringify(dirs), stringify(files)) for root, dirs, files in file_connection.walk(new_dir)
+        (
+            os.fspath(root),
+            [os.fspath(directory) for directory in dirs],
+            [os.fspath(file) for file in files],
+        )
+        for root, dirs, files in file_connection.walk(new_dir)
     ]
     assert files_after == [
-        (os.fspath(new_dir / root.relative_to(old_dir)), stringify(dirs), stringify(files))
+        (
+            os.fspath(new_dir / root.relative_to(old_dir)),
+            [os.fspath(new_dir / directory.relative_to(old_dir)) for directory in dirs],
+            [os.fspath(new_dir / file.relative_to(old_dir)) for file in files],
+        )
         for root, dirs, files in files_before
     ]
 

@@ -1,16 +1,23 @@
-min: &min
-  # Minimal version with ivysettings.xml override support
-  spark-version: 2.3.1
+3_2_x: &3_2_x
+  spark-version: 3.2.4
   pydantic-version: 1
   python-version: '3.7'
   java-version: 8
   os: ubuntu-22.04
 
-max: &max
-  spark-version: 3.5.5
+3_5_x: &3_5_x
+  spark-version: 3.5.6
   pydantic-version: 2
   python-version: '3.13'
   java-version: 20
+  os: ubuntu-latest
+
+4_0_x: &4_0_x
+  spark-version: 4.0.0
+  pydantic-version: 2
+  python-version: '3.13'
+  # https://stackoverflow.com/a/79017758/23601543
+  java-version: 22
   os: ubuntu-latest
 
 latest: &latest
@@ -21,6 +28,6 @@ latest: &latest
   os: ubuntu-latest
 
 matrix:
-  small: [*max]
-  full: [*min, *max]
-  nightly: [*min, *max, *latest]
+  small: [*3_5_x]
+  full: [*3_2_x, *3_5_x, *4_0_x]
+  nightly: [*latest]

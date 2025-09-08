@@ -200,7 +200,7 @@ def test_hive_strategy_incremental_nothing_to_read(spark, processing, prepare_sc
     [
         ("float_value", ValueError, "Expression 'float_value' returned values"),
         ("text_string", RuntimeError, "Cannot detect HWM type for"),
-        ("unknown_column", Exception, r"column .* cannot be resolved|cannot resolve .* given input columns"),
+        ("unknown_column", Exception, r".*cannot.*resolve.*"),
     ],
 )
 def test_hive_strategy_incremental_wrong_hwm(

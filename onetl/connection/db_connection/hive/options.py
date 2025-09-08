@@ -91,8 +91,8 @@ class HiveWriteOptions(GenericOptions):
     """
 
     class Config:
-        known_options: frozenset = frozenset()
         extra = "allow"
+        known_options: frozenset = frozenset()
 
     if_exists: HiveTableExistBehavior = Field(  # type: ignore[literal-required]
         default=HiveTableExistBehavior.APPEND,
@@ -144,7 +144,7 @@ class HiveWriteOptions(GenericOptions):
             .. DANGER::
 
                 This mode does make sense **ONLY** if the table is partitioned.
-                **IF NOT, YOU'LL LOOSE YOUR DATA!**
+                **IF NOT, YOU'LL LOSE YOUR DATA!**
 
             .. dropdown:: Behavior in details
 

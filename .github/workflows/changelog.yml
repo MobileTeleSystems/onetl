@@ -16,17 +16,20 @@ jobs:
   check-changelog:
     name: Changelog Entry Check
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     if: "!contains(github.event.pull_request.labels.*.name, 'ci:skip-changelog') && github.event.pull_request.user.login != 'pre-commit-ci[bot]' && github.event.pull_request.user.login != 'dependabot[bot]'"
+
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
 

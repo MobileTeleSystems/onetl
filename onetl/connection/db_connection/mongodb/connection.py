@@ -54,7 +54,7 @@ class MongoDBExtra(GenericOptions):
 class MongoDB(DBConnection):
     """MongoDB connection. |support_hooks|
 
-    Based on package `org.mongodb.spark:mongo-spark-connector:10.4.1 <https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector_2.12/10.4.1>`_
+    Based on package `org.mongodb.spark:mongo-spark-connector:10.5.0 <https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector_2.12/10.5.0>`_
     (`MongoDB connector for Spark <https://www.mongodb.com/docs/spark-connector/current/>`_)
 
     .. seealso::
@@ -161,7 +161,7 @@ class MongoDB(DBConnection):
             Spark version in format ``major.minor``. Used only if ``scala_version=None``.
 
         package_version : str, optional
-            Specifies the version of the MongoDB Spark connector to use. Defaults to ``10.4.1``.
+            Specifies the version of the MongoDB Spark connector to use. Defaults to ``10.5.0``.
 
             .. versionadded:: 0.11.0
 
@@ -174,26 +174,20 @@ class MongoDB(DBConnection):
             MongoDB.get_packages(scala_version="2.12")
 
             # specify custom connector version
-            MongoDB.get_packages(scala_version="2.12", package_version="10.4.1")
+            MongoDB.get_packages(scala_version="2.12", package_version="10.5.0")
         """
 
-        default_package_version = "10.4.1"
+        default_package_version = "10.5.0"
 
         if scala_version:
             scala_ver = Version(scala_version).min_digits(2)
         elif spark_version:
             spark_ver = Version(spark_version)
-            if spark_ver.major < 3:
-                raise ValueError(f"Spark version must be at least 3.0, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
         connector_ver = Version(package_version or default_package_version).min_digits(2)
-
-        if scala_ver < Version("2.12"):
-            raise ValueError(f"Scala version must be at least 2.12, got {scala_ver}")
-
         return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.format('{0}.{1}')}:{connector_ver}"]
 
     @classproperty
@@ -204,7 +198,7 @@ class MongoDB(DBConnection):
             "use `MongoDB.get_packages(spark_version='3.2')` instead"
         )
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.5.0"
 
     @classproperty
     def package_spark_3_3(cls) -> str:
@@ -214,7 +208,7 @@ class MongoDB(DBConnection):
             "use `MongoDB.get_packages(spark_version='3.3')` instead"
         )
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.5.0"
 
     @classproperty
     def package_spark_3_4(cls) -> str:
@@ -224,7 +218,7 @@ class MongoDB(DBConnection):
             "use `MongoDB.get_packages(spark_version='3.4')` instead"
         )
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.mongodb.spark:mongo-spark-connector_2.12:10.4.1"
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.5.0"
 
     @slot
     def pipeline(
@@ -552,14 +546,12 @@ class MongoDB(DBConnection):
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).format("{major}.{minor}")
+            spark_version = get_spark_version(spark).format("{0}.{1}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
 

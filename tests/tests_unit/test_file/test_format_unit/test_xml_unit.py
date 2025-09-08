@@ -38,38 +38,6 @@ def test_xml_get_packages(spark_version, scala_version, package_version, expecte
 @pytest.mark.parametrize(
     "spark_version, scala_version, package_version",
     [
-        ("2.4.8", None, None),
-        ("2.3.4", None, None),
-    ],
-)
-def test_xml_get_packages_restriction_for_spark_2x(spark_version, scala_version, package_version):
-    with pytest.raises(ValueError, match=r"Spark version must be 3.x, got \d+\.\d+"):
-        XML.get_packages(
-            spark_version=spark_version,
-            scala_version=scala_version,
-            package_version=package_version,
-        )
-
-
-@pytest.mark.parametrize(
-    "spark_version, scala_version, package_version",
-    [
-        ("3.2.4", "2.11", None),
-        ("3.4.1", "2.10", None),
-    ],
-)
-def test_xml_get_packages_scala_version_error(spark_version, scala_version, package_version):
-    with pytest.raises(ValueError, match=f"Scala version must be at least 2.12, got {scala_version}"):
-        XML.get_packages(
-            spark_version=spark_version,
-            scala_version=scala_version,
-            package_version=package_version,
-        )
-
-
-@pytest.mark.parametrize(
-    "spark_version, scala_version, package_version",
-    [
         ("3.2.4", "2.12", "0.13.0"),
         ("3.4.1", "2.12", "0.10.0"),
     ],

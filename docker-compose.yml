@@ -7,7 +7,7 @@ services:
       context: .
       target: base
       args:
-        SPARK_VERSION: 3.5.5
+        SPARK_VERSION: 3.5.6
     env_file: .env.docker
     volumes:
       - ./:/app/
@@ -94,7 +94,7 @@ services:
     profiles: [clickhouse, jdbc, db, all]
 
   zookeeper:
-    image: ${ZOOKEEPER_IMAGE:-bitnami/zookeeper:3.8}
+    image: ${ZOOKEEPER_IMAGE:-bitnamilegacy/zookeeper:3.8}
     restart: unless-stopped
     ports:
       - 2181:2181
@@ -111,7 +111,7 @@ services:
     profiles: [kafka, db, all]
 
   kafka:
-    image: ${KAFKA_IMAGE:-bitnami/kafka:latest}
+    image: ${KAFKA_IMAGE:-bitnamilegacy/kafka:3.9.0}
     restart: unless-stopped
     ports:
       - 9093:9093
@@ -358,7 +358,7 @@ services:
     profiles: [samba, file, all]
 
   s3:
-    image: ${S3_IMAGE:-bitnami/minio:latest}
+    image: ${S3_IMAGE:-bitnamilegacy/minio:latest}
     restart: unless-stopped
     environment:
       TZ: UTC

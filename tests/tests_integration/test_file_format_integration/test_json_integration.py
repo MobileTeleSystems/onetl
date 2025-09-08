@@ -6,8 +6,6 @@ Do not test all the possible options and combinations, we are not testing Spark 
 
 import pytest
 
-from onetl._util.spark import get_spark_version
-from onetl._util.version import Version
 from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import JSON
 
@@ -100,10 +98,6 @@ def test_json_writer_is_not_supported(
 )
 @pytest.mark.parametrize("column_type", [str, col])
 def test_json_parse_column(spark, json_row, schema, expected_row, column_type):
-    spark_version = get_spark_version(spark)
-    if spark_version < Version("2.4") and isinstance(schema, MapType):
-        pytest.skip("JSON.parse_column accepts MapType only in Spark 2.4+")
-
     json = JSON()
     df = spark.createDataFrame([json_row])
     parsed_df = df.select(json.parse_column(column_type("json_column"), schema))
@@ -137,10 +131,6 @@ def test_json_serialize_column(spark, row, expected_row, column_type):
 
 
 def test_json_serialize_column_unsupported_options_warning(spark):
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("CSV.serialize_column in supported on Spark 3.x only")
-
     df = spark.createDataFrame([Row(json_column=Row(id=1, name="Alice"))])
 
     json = JSON(
@@ -159,10 +149,6 @@ def test_json_serialize_column_unsupported_options_warning(spark):
 
 
 def test_json_parse_column_unsupported_options_warning(spark):
-    spark_version = get_spark_version(spark)
-    if spark_version.major < 3:
-        pytest.skip("CSV.parse in supported on Spark 3.x only")
-
     schema = StructType([StructField("id", IntegerType()), StructField("name", StringType())])
     df = spark.createDataFrame([Row(json_column='{"id":1,"name":"Alice"}')])
 

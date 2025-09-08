@@ -14,6 +14,13 @@ concurrency:
 
 env:
   DEFAULT_PYTHON: '3.13'
+  MIN_COVERAGE: 96
+
+permissions:
+  contents: write
+  checks: write
+  pull-requests: write
+
 
 jobs:
   get-matrix:
@@ -75,15 +82,15 @@ jobs:
       GREENPLUM_PACKAGES_USER: ${{ secrets.GREENPLUM_PACKAGES_USER }}
       GREENPLUM_PACKAGES_PASSWORD: ${{ secrets.GREENPLUM_PACKAGES_PASSWORD }}
 
-  tests-hive:
-    name: Run Hive tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+  tests-hive-and-iceberg:
+    name: Run Hive and Iceberg tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.get-matrix.outputs.matrix-hive) }}
 
-    uses: ./.github/workflows/test-hive.yml
+    uses: ./.github/workflows/test-hive-and-iceberg.yml
     with:
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
@@ -340,10 +347,12 @@ jobs:
   all_done:
     name: Tests done
     runs-on: ubuntu-latest
+
+    if: always()
     needs:
       - tests-core
       - tests-clickhouse
-      - tests-hive
+      - tests-hive-and-iceberg
       - tests-kafka
       - tests-local-fs
       - tests-mongodb
@@ -362,10 +371,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
 
@@ -382,22 +391,41 @@ jobs:
         run: pip install -I coverage pytest
 
       - name: Download all coverage reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: reports/
           pattern: coverage-*
           merge-multiple: true
 
-      - name: Generate coverate reports
+      - name: Generate coverage reports
         run: ./combine_coverage.sh
 
-      - name: Check coverage
-        uses: codecov/codecov-action@v5
+      - name: Coverage comment
+        id: coverage
+        uses: MishaKav/pytest-coverage-comment@v1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./reports/coverage.xml
-          fail_ci_if_error: true
-          plugin: noop
+          pytest-xml-coverage-path: ./reports/coverage.xml
+          default-branch: develop
+          xml-skip-covered: true
+          report-only-changed-files: true
+          hide-comment: ${{ github.event_name != 'pull_request' }}
+
+      - name: Dynamic Badges
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        if: github.repository == 'MobileTeleSystems/onetl' && github.event_name == 'push'
+        with:
+          auth: ${{ secrets.AUTOMERGE_TOKEN }}
+          gistID: 03e73a82ecc4709934540ce8201cc3b4
+          filename: onetl_badge.json
+          label: Coverage
+          message: ${{ steps.coverage.outputs.coverage }}
+          color: ${{ steps.coverage.outputs.color }}
+
+      - name: Fail if coverage too low
+        if: ${{ steps.coverage.outputs.coverage < env.MIN_COVERAGE }}
+        run: |
+          echo "Coverage is below ${{ env.MIN_COVERAGE }}%!"
+          exit 1
 
       - name: All done
         run: echo 1

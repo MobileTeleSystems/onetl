@@ -2,8 +2,6 @@ import logging
 
 import pytest
 
-from onetl._util.spark import get_spark_version
-
 try:
     import pandas
 except ImportError:
@@ -27,11 +25,7 @@ def test_hive_check(spark, caplog):
 
 @pytest.mark.parametrize("suffix", ["", ";"])
 def test_hive_connection_sql(spark, processing, load_table_data, suffix):
-    if get_spark_version(spark).major < 3:
-        database_table_column = "databaseName"
-        database_name_column = "database"
-    else:
-        database_table_column = database_name_column = "namespace"
+    database_table_column = database_name_column = "namespace"
 
     hive = Hive(cluster="rnd-dwh", spark=spark)
     schema = load_table_data.schema

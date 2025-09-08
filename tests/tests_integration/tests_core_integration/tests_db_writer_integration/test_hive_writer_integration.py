@@ -4,7 +4,6 @@ import textwrap
 
 import pytest
 
-from onetl._util.spark import get_spark_version
 from onetl.connection import Hive
 from onetl.db import DBWriter
 from onetl.file.format import CSV, ORC, Parquet
@@ -63,10 +62,12 @@ def test_hive_writer_with_options(spark, processing, get_schema_table, options):
     response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
     response = response.collect()[0][0]
 
-    if get_spark_version(spark).major < 3:
-        assert "`compression` 'snappy'" in response
-    else:
-        assert "'compression' = 'snappy'" in response
+    found = False
+    for syntax in ("`compression` 'snappy'", "'compression' = 'snappy'"):
+        if syntax in response:
+            found = True
+
+    assert found, response
 
 
 @pytest.mark.parametrize(

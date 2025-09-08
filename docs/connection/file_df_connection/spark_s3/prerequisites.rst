@@ -6,7 +6,7 @@ Prerequisites
 Version Compatibility
 ---------------------
 
-* Spark versions: 3.2.x - 3.5.x (only with Hadoop 3.x libraries)
+* Spark versions: 3.2.x - 3.5.x
 * Java versions: 8 - 20
 
 Installing PySpark

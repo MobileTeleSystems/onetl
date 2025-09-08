@@ -1,4 +1,4 @@
-name: Tests for Hive
+name: Tests for Hive and Iceberg
 on:
   workflow_call:
     inputs:
@@ -23,22 +23,22 @@ on:
         default: true
 
 jobs:
-  test-hive:
-    name: Run Hive tests (spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+  test-hive-and-iceberg:
+    name: Run Hive and Iceberg tests (spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java ${{ inputs.java-version }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ inputs.java-version }}
 
       - name: Set up Python ${{ inputs.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ inputs.python-version }}
 
@@ -47,10 +47,10 @@ jobs:
         if: inputs.with-cache
         with:
           path: ~/.ivy2
-          key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-${{ inputs.pydantic-version }}-tests-hive-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
+          key: ${{ runner.os }}-ivy-${{ inputs.spark-version }}-${{ inputs.pydantic-version }}-tests-hive-and-iceberg-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
           restore-keys: |
-            ${{ runner.os }}-ivy-${{ inputs.spark-version }}-${{ inputs.pydantic-version }}-tests-hive-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
-            ${{ runner.os }}-ivy-${{ inputs.spark-version }}-${{ inputs.pydantic-version }}-tests-hive-
+            ${{ runner.os }}-ivy-${{ inputs.spark-version }}-${{ inputs.pydantic-version }}-tests-hive-and-iceberg-${{ hashFiles('onetl/connection/db_connection/*.py', 'onetl/connection/file_df_connection/*.py') }}
+            ${{ runner.os }}-ivy-${{ inputs.spark-version }}-${{ inputs.pydantic-version }}-tests-hive-and-iceberg-
 
       - name: Cache pip
         uses: actions/cache@v4
@@ -74,11 +74,12 @@ jobs:
           mkdir reports/ || echo "Directory exists"
           source .env.local
           ./pytest_runner.sh -m hive
+          ./pytest_runner.sh -m iceberg
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-hive-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
+          name: coverage-hive-and-iceberg-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: reports/*
           # https://github.com/actions/upload-artifact/issues/602
           include-hidden-files: true

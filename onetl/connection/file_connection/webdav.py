@@ -5,7 +5,6 @@ from __future__ import annotations
 import datetime
 import io
 import os
-import stat
 import textwrap
 from logging import getLogger
 from ssl import SSLContext
@@ -166,7 +165,7 @@ class WebDAV(FileConnection, RenameDirMixin):
         info = self.client.info(os.fspath(path))
 
         if self.client.is_dir(os.fspath(path)):
-            return RemotePathStat(st_mode=stat.S_IFDIR)
+            return RemotePathStat()
 
         return RemotePathStat(
             st_size=info["size"],
@@ -243,7 +242,7 @@ class WebDAV(FileConnection, RenameDirMixin):
 
     def _extract_stat_from_entry(self, top: RemotePath, entry: dict) -> RemotePathStat:
         if entry["isdir"]:
-            return RemotePathStat(st_mode=stat.S_IFDIR)
+            return RemotePathStat()
 
         return RemotePathStat(
             st_size=entry["size"],

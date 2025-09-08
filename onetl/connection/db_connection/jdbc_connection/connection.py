@@ -84,8 +84,6 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
                 package_source=cls.__name__,
                 args="",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
 
@@ -146,7 +144,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
 
         query = clear_statement(query)
 
-        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_class_name())
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         log_lines(log, query)
 
@@ -220,7 +218,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
             limit=limit,
         )
 
-        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_class_name())
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         log_lines(log, query)
 
@@ -252,7 +250,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
             else write_options.if_exists.value
         )
         log.info("|%s| Saving data to a table %r", self.__class__.__name__, target)
-        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_class_name())
         df.write.format("jdbc").mode(mode).options(dbtable=target, **jdbc_properties).save()
         log.info("|%s| Table %r successfully written", self.__class__.__name__, target)
 
@@ -263,7 +261,7 @@ class JDBCConnection(JDBCMixin, DBConnection):  # noqa: WPS338
         columns: list[str] | None = None,
         options: JDBCReadOptions | None = None,
     ) -> StructType:
-        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_class_name())
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
         query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)

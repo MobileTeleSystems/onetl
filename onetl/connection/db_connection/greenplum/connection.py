@@ -11,6 +11,7 @@ from urllib.parse import quote, urlencode, urlparse, urlunparse
 
 from etl_entities.instance import Host
 
+from onetl._util.classproperty import classproperty
 from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
 
 try:
@@ -18,7 +19,6 @@ try:
 except (ImportError, AttributeError):
     from pydantic import validator, SecretStr  # type: ignore[no-redef, assignment]
 
-from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
 from onetl._util.spark import (
@@ -248,30 +248,13 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
             scala_ver = Version(scala_version).min_digits(2)
         elif spark_version:
             spark_ver = Version(spark_version).min_digits(2)
-            if spark_ver >= Version("3.3") or spark_ver < Version("2.3"):
-                raise ValueError(f"Spark version must be 2.3.x - 3.2.x, got {spark_ver}")
+            if spark_ver >= Version("3.3"):
+                raise ValueError(f"Spark version must be 3.2.x or less, got {spark_ver}")
             scala_ver = get_default_scala_version(spark_ver)
         else:
             raise ValueError("You should pass either `scala_version` or `spark_version`")
 
-        if scala_ver < Version("2.11") or scala_ver > Version("2.12"):
-            raise ValueError(f"Scala version must be 2.11 - 2.12, got {scala_ver.format('{0}.{1}')}")
-
         return [f"io.pivotal:greenplum-spark_{scala_ver.format('{0}.{1}')}:{package_ver}"]
-
-    @classproperty
-    def package_spark_2_3(cls) -> str:
-        """Get package name to be downloaded by Spark 2.3."""
-        msg = "`Greenplum.package_2_3` will be removed in 1.0.0, use `Greenplum.get_packages(spark_version='2.3')` instead"
-        warnings.warn(msg, UserWarning, stacklevel=3)
-        return "io.pivotal:greenplum-spark_2.11:2.2.0"
-
-    @classproperty
-    def package_spark_2_4(cls) -> str:
-        """Get package name to be downloaded by Spark 2.4."""
-        msg = "`Greenplum.package_2_4` will be removed in 1.0.0, use `Greenplum.get_packages(spark_version='2.4')` instead"
-        warnings.warn(msg, UserWarning, stacklevel=3)
-        return "io.pivotal:greenplum-spark_2.11:2.2.0"
 
     @classproperty
     def package_spark_3_2(cls) -> str:
@@ -400,7 +383,7 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
         columns: list[str] | None = None,
         options: JDBCReadOptions | None = None,
     ) -> StructType:
-        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_name())
+        log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_class_name())
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
         query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)
@@ -462,14 +445,12 @@ class Greenplum(JDBCMixin, DBConnection):  # noqa: WPS338
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).format("{major}.{minor}")
+            spark_version = get_spark_version(spark).format("{0}.{1}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
                 package_source=cls.__name__,
                 args=f"spark_version='{spark_version}'",
             )
-            if log.isEnabledFor(logging.DEBUG):
-                log.debug("Missing Java class", exc_info=e, stack_info=True)
             raise ValueError(msg) from e
         return spark
 

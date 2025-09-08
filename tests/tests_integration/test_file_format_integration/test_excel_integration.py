@@ -6,8 +6,6 @@ Do not test all the possible options and combinations, we are not testing Spark 
 
 import pytest
 
-from onetl._util.spark import get_spark_version
-from onetl._util.version import Version
 from onetl.file import FileDFReader, FileDFWriter
 from onetl.file.format import Excel
 
@@ -30,10 +28,6 @@ def test_excel_reader_with_infer_schema(
     format,
 ):
     """Reading CSV files with inferSchema=True working as expected on any Spark, Python and Java versions"""
-    spark_version = get_spark_version(spark)
-    if spark_version < Version("3.2"):
-        pytest.skip("Excel files are supported on Spark 3.2+ only")
-
     file_df_connection, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
     excel_root = source_path / format / "without_header"
@@ -80,10 +74,6 @@ def test_excel_reader_with_options(
     options,
 ):
     """Reading Excel files working as expected on any Spark, Python and Java versions"""
-    spark_version = get_spark_version(spark)
-    if spark_version < Version("3.2"):
-        pytest.skip("Excel files are supported on Spark 3.2+ only")
-
     local_fs, source_path, _ = local_fs_file_df_connection_with_path_and_files
     df = file_df_dataframe
     excel_root = source_path / format / path
@@ -116,10 +106,6 @@ def test_excel_writer(
     options,
 ):
     """Written files can be read by Spark"""
-    spark_version = get_spark_version(spark)
-    if spark_version < Version("3.2"):
-        pytest.skip("Excel files are supported on Spark 3.2+ only")
-
     file_df_connection, source_path = local_fs_file_df_connection_with_path
     df = file_df_dataframe
     excel_root = source_path / "excel"

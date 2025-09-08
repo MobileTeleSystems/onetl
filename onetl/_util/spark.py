@@ -89,7 +89,7 @@ def inject_spark_param(conf: RuntimeConfig, name: str, value: Any):
     """
     original_value = conf.get(name, None)
 
-    try:
+    try:  # noqa: WPS243
         conf.unset(name)
         if value is not None:
             conf.set(name, value)
@@ -120,16 +120,6 @@ def try_import_pyspark():
                 """,
             ).strip(),
         ) from e
-
-
-def get_pyspark_version() -> Version:
-    """
-    Get Spark version from ``pyspark.__version__``
-    """
-    try_import_pyspark()
-    import pyspark
-
-    return Version(pyspark.__version__)
 
 
 def get_spark_version(spark_session: SparkSession) -> Version:

@@ -9,7 +9,7 @@ Version Compatibility
 * Greenplum server versions:
     * Officially declared: 5.x, 6.x, and 7.x (which requires ``Greenplum.get_packages(package_version="2.3.0")`` or higher)
     * Actually tested: 6.23, 7.0
-* Spark versions: 2.3.x - 3.2.x (Spark 3.3+ is not supported yet)
+* Spark versions: 3.2.x (Spark 3.3+ is not supported yet)
 * Java versions: 8 - 11
 
 See `official documentation <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.2/greenplum-connector-spark/release_notes.html>`_.
@@ -83,9 +83,8 @@ so you need to limit number of connections to avoid opening too many of them.
 * Reading about ``100+Gb`` of data requires ``20-30`` parallel connections.
 * Opening more than ``30-50`` connections is not recommended.
 
-Number of connections can be limited by 2 ways:
-
-* By limiting number of Spark executors and number of cores per-executor. Max number of parallel jobs is ``executors * cores``.
+Number of connections can be limited by setting the number of Spark executors and number of cores per-executor.
+Max number of parallel tasks is ``executors * cores``.
 
 .. tabs::
 
@@ -97,6 +96,14 @@ Number of connections can be limited by 2 ways:
             .config("spark.master", "local[5]")
             .config("spark.executor.cores", 1)
         ).getOrCreate()
+
+        # Set connection pool size at least to number of executors + 1 for driver
+        Greenplum(
+            ...,
+            extra={
+                "pool.maxSize": 6,
+            },
+        )
 
     .. code-tab:: py Spark with master=yarn or master=k8s, dynamic allocation
 
@@ -117,21 +124,6 @@ Number of connections can be limited by 2 ways:
             .config("spark.executor.instances", 10)
             .config("spark.executor.cores", 1)
         ).getOrCreate()
-
-* By limiting connection pool size user by Spark (**only** for Spark with ``master=local``):
-
-.. code:: python
-
-        spark = SparkSession.builder.config("spark.master", "local[*]").getOrCreate()
-
-        # No matter how many executors are started and how many cores they have,
-        # number of connections cannot exceed pool size:
-        Greenplum(
-            ...,
-            extra={
-                "pool.maxSize": 10,
-            },
-        )
 
 See `connection pooling <https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/using_the_connector.html#jdbcconnpool>`_
 documentation.

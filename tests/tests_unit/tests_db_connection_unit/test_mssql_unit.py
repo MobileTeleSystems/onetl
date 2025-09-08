@@ -15,23 +15,23 @@ def test_mssql_class_attributes():
 def test_mssql_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `MSSQL.get_packages()` instead")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre8"
+        assert MSSQL.package == "com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre8"
 
 
 @pytest.mark.parametrize(
     "java_version, package_version, expected_packages",
     [
-        (None, None, ["com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre8"]),
-        ("8", None, ["com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre8"]),
-        ("9", None, ["com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre8"]),
-        ("11", None, ["com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11"]),
-        ("20", None, ["com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11"]),
-        ("8", "12.8.1.jre8", ["com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre8"]),
-        ("11", "12.8.1.jre11", ["com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11"]),
+        (None, None, ["com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre8"]),
+        ("8", None, ["com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre8"]),
+        ("9", None, ["com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre8"]),
+        ("11", None, ["com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre11"]),
+        ("20", None, ["com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre11"]),
+        ("8", "13.2.0.jre8", ["com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre8"]),
+        ("11", "13.2.0.jre11", ["com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre11"]),
         ("11", "12.7.0.jre11-preview", ["com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre11-preview"]),
         ("8", "12.7.0.jre8-preview", ["com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre8-preview"]),
-        ("8", "12.8.1", ["com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre8"]),
-        ("11", "12.8.1", ["com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11"]),
+        ("8", "13.2.0", ["com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre8"]),
+        ("11", "13.2.0", ["com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre11"]),
     ],
 )
 def test_mssql_get_packages(java_version, package_version, expected_packages):

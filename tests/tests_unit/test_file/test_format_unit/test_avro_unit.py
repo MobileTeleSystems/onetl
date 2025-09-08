@@ -8,35 +8,18 @@ pytestmark = [pytest.mark.avro]
 
 
 @pytest.mark.parametrize(
-    "spark_version",
-    [
-        "2.2.1",
-        "2.3.1",
-    ],
-)
-def test_avro_get_packages_spark_version_not_supported(spark_version):
-    with pytest.raises(ValueError, match=f"Spark version should be at least 2.4, got {spark_version}"):
-        Avro.get_packages(spark_version=spark_version)
-
-
-def test_avro_get_packages_scala_version_not_supported():
-    with pytest.raises(ValueError, match="Scala version should be at least 2.11, got 2.10"):
-        Avro.get_packages(spark_version="2.4.0", scala_version="2.10")
-
-
-@pytest.mark.parametrize(
     "spark_version, scala_version, package",
     [
         # Detect Scala version by Spark version
-        ("2.4.0", None, "org.apache.spark:spark-avro_2.11:2.4.0"),
-        ("3.5.5", None, "org.apache.spark:spark-avro_2.12:3.5.5"),
+        ("3.2.0", None, "org.apache.spark:spark-avro_2.12:3.2.0"),
+        ("3.5.6", None, "org.apache.spark:spark-avro_2.12:3.5.6"),
         # Override Scala version
-        ("2.4.0", "2.11", "org.apache.spark:spark-avro_2.11:2.4.0"),
-        ("2.4.0", "2.12", "org.apache.spark:spark-avro_2.12:2.4.0"),
-        ("3.5.5", "2.12", "org.apache.spark:spark-avro_2.12:3.5.5"),
-        ("3.5.5", "2.13", "org.apache.spark:spark-avro_2.13:3.5.5"),
+        ("3.2.0", "2.12", "org.apache.spark:spark-avro_2.12:3.2.0"),
+        ("3.2.0", "2.12", "org.apache.spark:spark-avro_2.12:3.2.0"),
+        ("3.5.6", "2.12", "org.apache.spark:spark-avro_2.12:3.5.6"),
+        ("3.5.6", "2.13", "org.apache.spark:spark-avro_2.13:3.5.6"),
         # Scala version contain three digits when only two needed
-        ("3.5.5", "2.12.1", "org.apache.spark:spark-avro_2.12:3.5.5"),
+        ("3.5.6", "2.12.1", "org.apache.spark:spark-avro_2.12:3.5.6"),
     ],
 )
 def test_avro_get_packages(spark_version, scala_version, package):

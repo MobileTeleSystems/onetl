@@ -38,16 +38,15 @@ def test_file_downloader_view_file(file_connection_with_path_and_files):
     )
 
     remote_files = downloader.view_files()
-    remote_files_list = []
-
+    expected_files = []
     # some clients return different st_mtime in .walk(root) and in .get_stat(file),
     # so don't use .resolve_file(path) here
     for root, _dirs, files in file_connection.walk(remote_path):
         for file in files:
-            remote_files_list.append(RemotePath(root) / file)
+            expected_files.append(RemotePath(root) / file)
 
     assert remote_files
-    assert sorted(remote_files) == sorted(remote_files_list)
+    assert sorted(remote_files) == sorted(expected_files)
 
 
 @pytest.mark.parametrize("path_type", [str, PurePosixPath], ids=["path_type str", "path_type PurePosixPath"])
@@ -922,7 +921,7 @@ def test_file_downloader_run_input_is_not_file(request, file_connection, tmp_pat
         local_path=local_path,
     )
 
-    with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory', .*\) is not a file"):
+    with pytest.raises(NotAFileError, match=rf"'{not_a_file}' \(kind='directory'.*\) is not a file"):
         downloader.run([not_a_file])
 
 

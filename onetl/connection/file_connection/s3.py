@@ -3,17 +3,21 @@
 from __future__ import annotations
 
 import io
+import logging
 import os
 import textwrap
-from contextlib import suppress
-from logging import getLogger
-from typing import Optional
+from pprint import pformat
+from typing import Iterable, Optional
 
+from onetl.exception import DirectoryNotEmptyError
 from onetl.hooks import slot, support_hooks
+from onetl.impl.remote_file import RemoteFile
 
 try:
     from minio import Minio, commonconfig
     from minio.datatypes import Object
+    from minio.deleteobjects import DeleteObject
+    from minio.error import S3Error
 except (ImportError, NameError) as e:
     raise ImportError(
         textwrap.dedent(
@@ -39,9 +43,9 @@ except (ImportError, AttributeError):
 from typing_extensions import Literal
 
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat
+from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat, path_repr
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 @support_hooks
@@ -153,6 +157,71 @@ class S3(FileConnection):
         return RemoteDirectory(path=remote_directory, stats=RemotePathStat())
 
     @slot
+    def remove_dir(self, path: os.PathLike | str, recursive: bool = False) -> bool:  # noqa: WPS321
+        # optimize S3 directory recursive removal by using batch object deletion
+        description = "RECURSIVELY" if recursive else "NON-recursively"
+        log.debug("|%s| %s removing directory '%s'", self.__class__.__name__, description, path)
+        remote_dir = RemotePath(path)
+        directory_info = RemoteDirectory(path=remote_dir, stats=RemotePathStat())
+
+        is_empty = True
+
+        def _scan_entries_recursive(root: RemotePath) -> Iterable[Object]:  # noqa: WPS430
+            nonlocal is_empty
+            directory_path_str = self._delete_absolute_path_slash(root) + "/"
+            entries = self.client.list_objects(self.bucket, prefix=directory_path_str, recursive=True)
+            for entry in entries:
+                is_empty = False  # noqa: WPS442
+
+                name = self._extract_name_from_entry(entry)
+                stat = self._extract_stat_from_entry(root, entry)
+
+                if self._is_dir_entry(root, entry):
+                    file = RemoteDirectory(path=root / name, stats=stat)
+                    log.debug("|%s| Directory to remove: %s", self.__class__.__name__, path_repr(file))
+                    yield entry
+
+                elif self._is_file_entry(root, entry):
+                    directory = RemoteFile(path=root / name, stats=stat)
+                    log.debug("|%s| File to remove: %s", self.__class__.__name__, directory)
+                    yield entry
+                else:
+                    yield entry
+
+        if not recursive:
+            # self.list_dir may return large list
+            # self._scan_entries return an iterator, which have to be iterated at least once
+            for _entry in self._scan_entries(remote_dir):  # noqa: WPS122, WPS328
+                raise DirectoryNotEmptyError(
+                    "|%s| Cannot delete non-empty directory %s",
+                    self.__class__.__name__,
+                    directory_info,
+                )
+
+            log.debug("|%s| Directory to remove: %s", self.__class__.__name__, directory_info)
+            self._remove_dir(remote_dir)
+            log.info("|%s| Successfully removed directory '%s'", self.__class__.__name__, remote_dir)
+            return is_empty
+
+        log.debug("|%s| Directory to remove: %s", self.__class__.__name__, directory_info)
+        objects_to_delete = (
+            DeleteObject(obj.object_name) for obj in _scan_entries_recursive(remote_dir)  # type: ignore[arg-type]
+        )
+        errors = list(self.client.remove_objects(self.bucket, objects_to_delete))
+        if errors:
+            if log.isEnabledFor(logging.DEBUG):
+                log.debug(
+                    "|%s| Failed to remove directory %s:\n%s",
+                    self.__class__.__name__,
+                    directory_info,
+                    pformat(errors),
+                )
+            raise errors[0]
+
+        log.info("|%s| Successfully removed directory '%s'", self.__class__.__name__, remote_dir)
+        return is_empty
+
+    @slot
     def path_exists(self, path: os.PathLike | str) -> bool:
         remote_path = RemotePath(os.fspath(path))
         if self._is_root(remote_path):
@@ -166,6 +235,18 @@ class S3(FileConnection):
                 return True
 
         return False
+
+    @slot
+    def resolve_dir(self, path: os.PathLike | str) -> RemoteDirectory:
+        remote_path = RemotePath("/" + os.fspath(path).lstrip("/"))
+        if self._is_root(remote_path):
+            return RemoteDirectory(path=RemotePath("/"), stats=RemotePathStat())
+        return super().resolve_dir(remote_path)
+
+    @slot
+    def resolve_file(self, path: os.PathLike | str) -> RemoteFile:
+        remote_path = RemotePath("/" + os.fspath(path).lstrip("/"))
+        return super().resolve_file(remote_path)
 
     def _get_client(self) -> Minio:
         return Minio(
@@ -195,22 +276,26 @@ class S3(FileConnection):
         if path.is_absolute():
             path = path.relative_to("/")
 
-        return os.fspath(path)
+        return os.fspath(path).rstrip("/")
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
         path_str = self._delete_absolute_path_slash(remote_file_path)
         self.client.fget_object(self.bucket, path_str, os.fspath(local_file_path))
 
     def _get_stat(self, path: RemotePath) -> RemotePathStat:
+        if self._is_root(path):
+            return RemotePathStat()
+
+        # for some reason, client.stat_object returns less precise st_mtime than client.list_objects
         path_str = self._delete_absolute_path_slash(path)
+        objects = self.client.list_objects(self.bucket, prefix=path_str)
+        for obj in objects:
+            object_path = RemotePath(obj.object_name)
+            object_path_str = self._delete_absolute_path_slash(object_path)
+            if object_path_str == path_str:
+                return self._extract_stat_from_entry(path.parent, obj)
 
-        with suppress(Exception):
-            # for some reason, client.stat_object returns less precise st_mtime than client.list_objects
-            objects = self.client.list_objects(self.bucket, prefix=path_str)
-            for obj in objects:
-                if obj.object_name == path_str:
-                    return self._extract_stat_from_entry(path.parent, obj)
-
+        # for empty directory return empty stat
         return RemotePathStat()
 
     def _remove_file(self, remote_file_path: RemotePath) -> None:
@@ -236,12 +321,13 @@ class S3(FileConnection):
 
         self._remove_file(source)
 
-    def _scan_entries(self, path: RemotePath) -> list[Object]:
+    def _scan_entries(self, path: RemotePath) -> Iterable[Object]:
         if self._is_root(path):
             return self.client.list_objects(self.bucket)
 
-        path_str = self._delete_absolute_path_slash(path)
-        return self.client.list_objects(self.bucket, prefix=path_str + "/")
+        directory_path_str = self._delete_absolute_path_slash(path) + "/"
+        objects = self.client.list_objects(self.bucket, prefix=directory_path_str)
+        return (obj for obj in objects if obj.object_name != directory_path_str)
 
     def _extract_name_from_entry(self, entry: Object) -> str:
         return RemotePath(entry.object_name).name
@@ -260,8 +346,16 @@ class S3(FileConnection):
         )
 
     def _remove_dir(self, path: RemotePath) -> None:
-        # Empty. S3 does not have directories.
-        pass
+        directory_path_str = self._delete_absolute_path_slash(path) + "/"
+        try:
+            # S3 does not have directories, but some integrations (like Iceberg or Spark 4.0)
+            # may create empty object with name ending with /, and it will be considered as a directory marker.
+            # delete such object if it present, and ignore error if it does not
+            self.client.remove_object(self.bucket, directory_path_str)
+        except S3Error as err:
+            if err.code == "NoSuchKey":
+                return
+            raise
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         path_str = self._delete_absolute_path_slash(path)
@@ -302,14 +396,19 @@ class S3(FileConnection):
         if self._is_root(path):
             return True
 
-        path_str = self._delete_absolute_path_slash(path)
-        return bool(list(self.client.list_objects(self.bucket, prefix=path_str + "/")))
+        directory_path_str = self._delete_absolute_path_slash(path) + "/"
+        try:
+            next(self.client.list_objects(self.bucket, prefix=directory_path_str))
+            return True
+        except StopIteration:
+            return False
 
     def _is_file(self, path: RemotePath) -> bool:
         path_str = self._delete_absolute_path_slash(path)
-
         try:
             self.client.stat_object(self.bucket, path_str)
             return True
-        except Exception:  # noqa: B001, E722
-            return False
+        except S3Error as err:
+            if err.code == "NoSuchKey":
+                return False
+            raise
