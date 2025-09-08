@@ -28,7 +28,7 @@ Features
 
 - Add Spark 4.0 support. (:github:pull:`297`)
 - Add ``Iceberg`` connection support. For now this is alpha version, and behavior may change in future. (:github:pull:`378`, :github:pull:`386`)
-- Treat S3 objects with names ending with a ``/`` slash as directory marker (:github:pull:`379`)
+- Treat S3 objects with names ending with a ``/`` slash as directory marker. (:github:pull:`379`)
 
 Improvements
 ------------
