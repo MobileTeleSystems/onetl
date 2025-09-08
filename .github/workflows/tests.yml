@@ -14,9 +14,13 @@ concurrency:
 
 env:
   DEFAULT_PYTHON: '3.13'
+  MIN_COVERAGE: 93
 
 permissions:
-  contents: read
+  contents: write
+  checks: write
+  pull-requests: write
+
 
 jobs:
   get-matrix:
@@ -396,13 +400,32 @@ jobs:
       - name: Generate coverage reports
         run: ./combine_coverage.sh
 
-      - name: Check coverage
-        uses: codecov/codecov-action@v5
+      - name: Coverage comment
+        id: coverage
+        uses: MishaKav/pytest-coverage-comment@v1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./reports/coverage.xml
-          fail_ci_if_error: true
-          plugin: noop
+          pytest-xml-coverage-path: ./reports/coverage.xml
+          default-branch: develop
+          xml-skip-covered: true
+          report-only-changed-files: true
+          hide-comment: ${{ github.event_name != 'pull_request' }}
+
+      - name: Dynamic Badges
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        if: github.repository == 'MobileTeleSystems/onetl' && github.event_name == 'push'
+        with:
+          auth: ${{ secrets.AUTOMERGE_TOKEN }}
+          gistID: 03e73a82ecc4709934540ce8201cc3b4
+          filename: onetl_badge.json
+          label: Coverage
+          message: ${{ steps.coverage.outputs.coverage }}
+          color: ${{ steps.coverage.outputs.color }}
+
+      - name: Fail if coverage too low
+        if: ${{ steps.coverage.outputs.coverage < env.MIN_COVERAGE }}
+        run: |
+          echo "Coverage is below ${{ env.MIN_COVERAGE }}%!"
+          exit 1
 
       - name: All done
         run: echo 1
