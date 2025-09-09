@@ -25,8 +25,8 @@ def test_spark_s3_check(s3_file_df_connection, caplog):
     assert "secret_key = SecretStr('**********')" in caplog.text
     assert s3.secret_key.get_secret_value() not in caplog.text
     assert "session_token =" not in caplog.text
+    assert "path_style_access" in caplog.text
     assert "extra = {" in caplog.text
-    assert "'path.style.access': True" in caplog.text
 
     assert "Connection is available." in caplog.text
 

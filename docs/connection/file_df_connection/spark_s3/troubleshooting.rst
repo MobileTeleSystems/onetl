@@ -246,7 +246,7 @@ Another option is to disable SSL check:
 
 But is is **NOT** recommended.
 
-Accessing S3 without domain-style access style support
+Accessing S3 without path-style access style support
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: text
@@ -260,10 +260,8 @@ To use path-style access, use option below:
     spark_s3 = SparkS3(
         host="s3provider.com",
         bucket="my-bucket",
+        path_style_access=True,
         ...,
-        extra={
-            "path.style.access": True,
-        },
     )
 
 Slow or unstable writing to S3

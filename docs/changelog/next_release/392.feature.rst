@@ -1,0 +1,2 @@
+Allowed to set ``path_style_access`` as a parameter in ``SparkS3`` connection instead of ``extra`` field.
+This change improved IDE autocompletion and made it more explicit that the parameter is important for the connector's functionality.
