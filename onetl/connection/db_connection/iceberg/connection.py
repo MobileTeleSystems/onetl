@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any, Iterable, Optional
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
 from onetl._util.version import Version
+from onetl.connection.db_connection.iceberg.catalog import IcebergCatalog
 from onetl.connection.db_connection.iceberg.dialect import IcebergDialect
 from onetl.connection.db_connection.iceberg.extra import IcebergExtra
 from onetl.connection.db_connection.iceberg.options import (
@@ -147,6 +148,7 @@ class Iceberg(DBConnection):
     """
 
     catalog_name: str
+    catalog: Optional[IcebergCatalog] = None
     extra: IcebergExtra = IcebergExtra()
 
     ReadOptions = IcebergReadOptions
@@ -164,7 +166,9 @@ class Iceberg(DBConnection):
             f"spark.sql.catalog.{self.catalog_name}",
             "org.apache.iceberg.spark.SparkCatalog",
         )
-        for k, v in self.extra.dict().items():
+        catalog_config = self.catalog.get_config() if self.catalog else {}
+        catalog_config.update(self.extra.dict())
+        for k, v in catalog_config.items():
             self.spark.conf.set(f"spark.sql.catalog.{self.catalog_name}.{k}", v)
 
     @slot
