@@ -90,9 +90,7 @@ def s3_file_df_connection(s3_file_connection, spark, s3_server):
         access_key=s3_server.access_key,
         secret_key=s3_server.secret_key,
         protocol=s3_server.protocol,
-        extra={
-            "path.style.access": True,
-        },
+        path_style_access=True,
         spark=spark,
     )
 

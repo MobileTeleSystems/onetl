@@ -565,7 +565,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
         access_key="somekey",
         secret_key="somesecret",
         # Access bucket as s3.test.com/my-bucket
-        extra={"path.style.access": True},
+        path_style_access=True,
         spark=spark,
     ).check()
 

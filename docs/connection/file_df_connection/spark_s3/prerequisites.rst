@@ -28,7 +28,7 @@ AWS and some other S3 cloud providers allows bucket access using domain style on
 Other implementations, like Minio, by default allows path style access only, e.g. ``https://s3provider.com/mybucket``
 (see `MINIO_DOMAIN <https://min.io/docs/minio/linux/reference/minio-server/minio-server.html#envvar.MINIO_DOMAIN>`_).
 
-You should set ``path.style.access`` to ``True`` or ``False``, to choose the preferred style.
+You should set ``path_style_access`` to ``True`` or ``False``, to choose the preferred style.
 
 Authentication
 ~~~~~~~~~~~~~~

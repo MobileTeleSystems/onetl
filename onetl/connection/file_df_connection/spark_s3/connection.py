@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from contextlib import suppress
-from typing import TYPE_CHECKING, ClassVar, List, Optional
+from typing import TYPE_CHECKING, ClassVar, Dict, List, Optional
 
 from etl_entities.instance import Host
 
@@ -91,6 +91,9 @@ class SparkS3(SparkFileDFConnection):
     region : str, optional
         Region name of bucket in S3 service
 
+    path_style_access : bool, optional
+        ``True`` to connect to bucket as ``protocol://host/bucket``, ``False`` to use ``protocol://bucket.host`` instead. This depends on S3 implementation.
+
     extra : dict, optional
         A dictionary of additional properties to be used when connecting to S3.
 
@@ -104,10 +107,10 @@ class SparkS3(SparkFileDFConnection):
         .. code:: python
 
             extra = {
-                "path.style.access": True,
                 "committer.magic.enabled": True,
                 "committer.name": "magic",
                 "connection.timeout": 300000,
+                "path.style.access": True,
             }
 
         .. warning::
@@ -177,9 +180,7 @@ class SparkS3(SparkFileDFConnection):
                 bucket="my-bucket",
                 access_key="ACCESS_KEY",
                 secret_key="SECRET_KEY",
-                extra={
-                    "path.style.access": True,  # <---
-                },
+                path_style_access=True,
                 spark=spark,
             ).check()
     """
@@ -194,6 +195,7 @@ class SparkS3(SparkFileDFConnection):
     secret_key: Optional[SecretStr] = None
     session_token: Optional[SecretStr] = None
     region: Optional[str] = None
+    path_style_access: Optional[bool] = None
     extra: SparkS3Extra = SparkS3Extra()
 
     _ROOT_CONFIG_KEYS: ClassVar[List[str]] = [
@@ -370,11 +372,17 @@ class SparkS3(SparkFileDFConnection):
         return super().write_df_as_files(df, path, format=format, options=options)
 
     @root_validator
-    def _validate_port(cls, values):
+    def _validate_port(cls, values: Dict):
         if values["port"] is not None:
             return values
 
         values["port"] = 443 if values["protocol"] == "https" else 80
+        return values
+
+    @root_validator
+    def _set_path_style_access(cls, values: Dict):
+        if values.get("path_style_access") is None:
+            values["path_style_access"] = getattr(values["extra"], "path.style.access", False)
         return values
 
     @validator("spark")
@@ -425,6 +433,9 @@ class SparkS3(SparkFileDFConnection):
 
         if self.region:
             conf[f"{prefix}.endpoint.region"] = self.region
+
+        if self.path_style_access:
+            conf[f"{prefix}.path.style.access"] = "true"
 
         for key, value in self.extra.dict(by_alias=True, exclude_none=True).items():
             conf[f"{prefix}.{key}"] = value
