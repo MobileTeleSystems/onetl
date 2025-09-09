@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from onetl.connection import Iceberg
+from onetl.connection.db_connection.iceberg.catalog.rest import IcebergRESTCatalog
 
 pytestmark = [pytest.mark.iceberg, pytest.mark.db_connection, pytest.mark.connection]
 
@@ -15,6 +16,42 @@ def test_iceberg_missing_args(spark_mock):
     # no catalog_name
     with pytest.raises(ValueError, match="field required"):
         Iceberg(spark=spark_mock)
+
+
+def test_iceberg_with_rest_catalog(spark_mock):
+    iceberg = Iceberg(
+        catalog_name="my_catalog",
+        catalog=IcebergRESTCatalog(
+            uri="http://localhost:8080",
+            headers={
+                "X-Custom-Header": "123",
+            },
+            extra={
+                "warehouse": "s3a://bucket/",
+                "hadoop.fs.s3a.endpoint": "http://localhost:9010",
+                "hadoop.fs.s3a.access.key": "onetl",
+                "hadoop.fs.s3a.secret.key": "123UsedForTestOnly@!",
+                "hadoop.fs.s3a.path.style.access": "true",
+            },
+        ),
+        spark=spark_mock,
+    )
+    assert iceberg
+    assert iceberg.catalog.get_config() == {
+        "type": "rest",
+        "uri": "http://localhost:8080",
+        "header.X-Custom-Header": "123",
+        "warehouse": "s3a://bucket/",
+        "hadoop.fs.s3a.endpoint": "http://localhost:9010",
+        "hadoop.fs.s3a.access.key": "onetl",
+        "hadoop.fs.s3a.secret.key": "123UsedForTestOnly@!",
+        "hadoop.fs.s3a.path.style.access": "true",
+    }
+
+
+def test_iceberg_rest_catalog_missing_args():
+    with pytest.raises(ValueError, match="field required"):
+        IcebergRESTCatalog()
 
 
 def test_iceberg_instance_url(spark_mock):
