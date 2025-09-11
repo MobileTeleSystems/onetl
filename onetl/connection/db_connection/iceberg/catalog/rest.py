@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Optional
+
+from onetl.connection.db_connection.iceberg.catalog.auth.base import (
+    IcebergRESTCatalogAuth,
+)
 
 try:
     from pydantic.v1 import Field
@@ -22,6 +26,8 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
     uri: str
     headers: Dict[str, str] = Field(default_factory=dict)
     extra: Dict[str, str] = Field(default_factory=dict)
+
+    auth: Optional[IcebergRESTCatalogAuth] = None
 
     @property
     def type(self) -> str:
