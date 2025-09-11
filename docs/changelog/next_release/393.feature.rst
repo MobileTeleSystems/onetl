@@ -1,0 +1,1 @@
+Introduced OAuth2 authentication in Iceberg REST Catalog
