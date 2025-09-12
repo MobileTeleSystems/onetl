@@ -3,6 +3,9 @@
 from onetl.connection.db_connection.iceberg.catalog.auth.base import (
     IcebergRESTCatalogAuth,
 )
+from onetl.connection.db_connection.iceberg.catalog.auth.basic import (
+    IcebergRESTCatalogBasicAuth,
+)
 from onetl.connection.db_connection.iceberg.catalog.auth.bearer import (
     IcebergRESTCatalogBearerAuth,
 )

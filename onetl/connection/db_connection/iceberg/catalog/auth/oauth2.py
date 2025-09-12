@@ -51,7 +51,7 @@ class IcebergRESTCatalogOAuth2(IcebergRESTCatalogAuth, FrozenModel):
                 else self.client_secret.get_secret_value()
             ),
             "token-expires-in-ms": (
-                int(self.token_refresh_interval.total_seconds() * 1000) if self.token_refresh_interval else None
+                str(int(self.token_refresh_interval.total_seconds() * 1000)) if self.token_refresh_interval else None
             ),
             "token-refresh-enabled": "true" if self.token_refresh_interval is not None else "false",
             "token-exchange-enabled": "true" if self.token_exchange_enabled else "false",
