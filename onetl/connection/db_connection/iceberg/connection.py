@@ -167,9 +167,6 @@ class Iceberg(DBConnection):
             "org.apache.iceberg.spark.SparkCatalog",
         )
         catalog_config = self.catalog.get_config() if self.catalog else {}
-        catalog_auth_config = self.catalog.auth.get_config() if self.catalog and self.catalog.auth else {}
-
-        catalog_config.update(catalog_auth_config)
         catalog_config.update(self.extra.dict())
         for k, v in catalog_config.items():
             self.spark.conf.set(f"spark.sql.catalog.{self.catalog_name}.{k}", v)

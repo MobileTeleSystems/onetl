@@ -8,6 +8,7 @@ import pytest
 from onetl.connection import Iceberg
 from onetl.connection.db_connection.iceberg.catalog import IcebergRESTCatalog
 from onetl.connection.db_connection.iceberg.catalog.auth import (
+    IcebergRESTCatalogBasicAuth,
     IcebergRESTCatalogBearerAuth,
     IcebergRESTCatalogOAuth2,
 )
@@ -73,6 +74,34 @@ def test_iceberg_rest_catalog_missing_args():
         IcebergRESTCatalog()
 
 
+def test_iceberg_rest_catalog_with_basic_auth(spark_mock):
+    iceberg = Iceberg(
+        catalog_name="my_catalog",
+        catalog=IcebergRESTCatalog(
+            uri="http://localhost:8080",
+            auth=IcebergRESTCatalogBasicAuth(
+                user="my_username",
+                password="my_password",
+            ),
+        ),
+        spark=spark_mock,
+    )
+    assert iceberg.catalog.auth.get_config() == {
+        "rest.auth.type": "basic",
+        "rest.auth.basic.username": "my_username",
+        "rest.auth.basic.password": "my_password",
+    }
+    expected_calls = [
+        call("spark.sql.catalog.my_catalog", "org.apache.iceberg.spark.SparkCatalog"),
+        call("spark.sql.catalog.my_catalog.type", "rest"),
+        call("spark.sql.catalog.my_catalog.uri", "http://localhost:8080"),
+        call("spark.sql.catalog.my_catalog.rest.auth.type", "basic"),
+        call("spark.sql.catalog.my_catalog.rest.auth.basic.username", "my_username"),
+        call("spark.sql.catalog.my_catalog.rest.auth.basic.password", "my_password"),
+    ]
+    spark_mock.conf.set.assert_has_calls(expected_calls, any_order=True)
+
+
 def test_iceberg_rest_catalog_with_bearer_auth(spark_mock):
     iceberg = Iceberg(
         catalog_name="my_catalog",
@@ -112,7 +141,7 @@ def test_iceberg_rest_catalog_with_oauth2_secret_only(spark_mock):
     assert iceberg.catalog.auth.get_config() == {
         "rest.auth.type": "oauth2",
         "credential": "my_secret",
-        "token-expires-in-ms": 3_600_000,  # default 1 hour
+        "token-expires-in-ms": "3600000",  # default 1 hour
         "token-refresh-enabled": "true",
         "token-exchange-enabled": "true",
     }
@@ -122,7 +151,7 @@ def test_iceberg_rest_catalog_with_oauth2_secret_only(spark_mock):
         call("spark.sql.catalog.my_catalog.uri", "http://localhost:8080"),
         call("spark.sql.catalog.my_catalog.rest.auth.type", "oauth2"),
         call("spark.sql.catalog.my_catalog.credential", "my_secret"),
-        call("spark.sql.catalog.my_catalog.token-expires-in-ms", 3_600_000),
+        call("spark.sql.catalog.my_catalog.token-expires-in-ms", "3600000"),
         call("spark.sql.catalog.my_catalog.token-refresh-enabled", "true"),
         call("spark.sql.catalog.my_catalog.token-exchange-enabled", "true"),
     ]
@@ -144,7 +173,7 @@ def test_iceberg_rest_catalog_with_oauth2_client_and_secret():
         "rest.auth.type": "oauth2",
         "credential": "my_client:my_secret",
         "oauth2-server-uri": "http://my-server/oauth/tokens",
-        "token-expires-in-ms": 1_800_000,
+        "token-expires-in-ms": "1800000",
         "token-exchange-enabled": "false",
         "token-refresh-enabled": "true",
     }
@@ -164,7 +193,7 @@ def test_iceberg_rest_catalog_with_oauth2_extra_fields():
         "rest.auth.type": "oauth2",
         "token-refresh-enabled": "true",
         "token-exchange-enabled": "true",
-        "token-expires-in-ms": 3_600_000,
+        "token-expires-in-ms": "3600000",
         "credential": "my_secret",
         "audience": "iceberg-service",
         "resource": "catalog-api",

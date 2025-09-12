@@ -41,4 +41,8 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
         }
         for key, value in self.headers.items():
             config[f"header.{key}"] = value
+
+        if self.auth:
+            config.update(self.auth.get_config())
+
         return config
