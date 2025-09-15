@@ -232,7 +232,7 @@ def test_iceberg_spark_stopped(spark_stopped):
     "package_version,spark_version,scala_version,package",
     [
         ("1.4.0", "3.3", None, "org.apache.iceberg:iceberg-spark-runtime-3.3_2.12:1.4.0"),
-        ("1.9.2", "3.5", "2.12", "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.9.2"),
+        ("1.10.0", "3.5", "2.12", "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.10.0"),
     ],
 )
 def test_iceberg_get_packages(package_version, spark_version, scala_version, package):

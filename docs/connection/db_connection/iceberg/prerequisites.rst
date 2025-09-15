@@ -15,8 +15,8 @@ Version Compatibility
 ---------------------
 
 * Iceberg catalog: depends on chosen implementation (e.g. REST, Hadoop)
-* Spark versions: 3.2.x – 3.5.x
-* Java versions: 8 – 20
+* Spark versions: 3.2.x – 4.0.x
+* Java versions: 8 – 22
 
 See `official documentation <https://iceberg.apache.org/docs/latest/spark-getting-started/>`_
 for details on catalog and warehouse configuration.
