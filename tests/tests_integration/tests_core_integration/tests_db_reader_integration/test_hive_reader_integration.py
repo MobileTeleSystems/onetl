@@ -258,12 +258,10 @@ def test_hive_reader_snapshot_nothing_to_read(spark, processing, prepare_schema_
     )
     total_span = pandas.concat([first_span, second_span], ignore_index=True)
 
-    spark.catalog.clearCache()
-
     pyspark_version = Version(pyspark.__version__)
     if pyspark_version.major < 4:
         # .run() is not called, but dataframes are lazy, so it now contains all data from the source.
-        # for some reason, this doesn't work on Spark 4
+        # For some reason, this doesn't work on Spark 4. Probably it caches file names after scan.
         processing.assert_equal_df(df=df, other_frame=total_span, order_by="id_int")
 
     # read data explicitly

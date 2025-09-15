@@ -122,8 +122,8 @@ def maven_packages(request):
         version = (pyspark_version.major, pyspark_version.minor)
         if version == (3, 2):
             packages.extend(Iceberg.get_packages(package_version="1.4.3", spark_version=str(pyspark_version)))
-        elif version in ((3, 3), (3, 4), (3, 5)):
-            packages.extend(Iceberg.get_packages(package_version="1.6.1", spark_version=str(pyspark_version)))
+        else:
+            packages.extend(Iceberg.get_packages(package_version="1.10.0", spark_version=str(pyspark_version)))
 
     return packages
 

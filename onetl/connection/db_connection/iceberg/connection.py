@@ -95,7 +95,7 @@ class Iceberg(DBConnection):
         from pyspark.sql import SparkSession
 
         maven_packages = [
-            *Iceberg.get_packages(package_version="1.9.2", spark_version="3.5"),
+            *Iceberg.get_packages(package_version="1.10.0", spark_version="3.5"),
             *SparkS3.get_packages(spark_version="3.5.6"),
         ]
         exclude_packages = SparkS3.get_exclude_packages()
@@ -129,7 +129,7 @@ class Iceberg(DBConnection):
         from onetl.connection import Iceberg
         from pyspark.sql import SparkSession
 
-        maven_packages = Iceberg.get_packages(package_version="1.9.2", spark_version="3.5")
+        maven_packages = Iceberg.get_packages(package_version="1.10.0", spark_version="3.5.6")
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -209,8 +209,8 @@ class Iceberg(DBConnection):
 
             from onetl.connection import Iceberg
 
-            # Note: Iceberg 1.9.2 requires Java 11+
-            Iceberg.get_packages(package_version="1.9.2", spark_version="3.5")
+            # Note: Iceberg 1.10.0 requires Java 11+
+            Iceberg.get_packages(package_version="1.10.0", spark_version="3.5.6")
         """
 
         version = Version(package_version).min_digits(3)
