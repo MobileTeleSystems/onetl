@@ -40,7 +40,7 @@ def test_iceberg_writer(spark, iceberg_connection, processing, get_schema_table)
 )
 def test_iceberg_writer_target_does_not_exist(
     spark,
-    iceberg_connection,
+    iceberg_connection_local_fs,
     processing,
     get_schema_table,
     if_exists,
@@ -49,14 +49,14 @@ def test_iceberg_writer_target_does_not_exist(
     df = processing.create_spark_df(spark)
 
     writer = DBWriter(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         target=get_schema_table.full_name,  # new table
         options=Iceberg.WriteOptions(if_exists=if_exists),
     )
 
     with caplog.at_level(logging.INFO):
         writer.run(df)
-        table = f"{iceberg_connection.catalog_name}.{get_schema_table.full_name}"
+        table = f"{iceberg_connection_local_fs.catalog_name}.{get_schema_table.full_name}"
         assert f"|Iceberg| Saving data to a table '{table}'" in caplog.text
         assert f"|Iceberg| Table '{table}' is successfully created" in caplog.text
 

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
-from onetl.connection.db_connection.iceberg.catalog.auth.base import (
+from onetl.connection.db_connection.iceberg.catalog.auth import (
     IcebergRESTCatalogAuth,
 )
+from onetl.connection.db_connection.iceberg.warehouse import IcebergWarehouse
 
 try:
     from pydantic.v1 import Field
@@ -20,7 +21,7 @@ from onetl.impl.frozen_model import FrozenModel
 class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
     """Iceberg REST Catalog.
 
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.14.1
     """
 
     uri: str
@@ -33,11 +34,12 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
     def type(self) -> str:
         return "rest"
 
-    def get_config(self) -> Dict[str, str]:
+    def get_config(self, warehouse: IcebergWarehouse) -> Dict[str, str]:
         config = {
             "type": self.type,
             "uri": self.uri,
             **self.extra,
+            **warehouse.get_config(),
         }
         for key, value in self.headers.items():
             config[f"header.{key}"] = value

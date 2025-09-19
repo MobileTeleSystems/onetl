@@ -3,8 +3,16 @@ from collections import namedtuple
 from importlib import import_module
 
 import pytest
+from pytest_lazyfixture import lazy_fixture
 
+from onetl.connection.db_connection.iceberg.catalog.filesystem import (
+    IcebergFilesystemCatalog,
+)
 from onetl.connection.db_connection.iceberg.connection import Iceberg
+from onetl.connection.db_connection.iceberg.warehouse.filesystem import (
+    IcebergFilesystemWarehouse,
+)
+from onetl.connection.file_df_connection.spark_local_fs import SparkLocalFS
 
 PreparedDbInfo = namedtuple("PreparedDbInfo", ["full_name", "schema", "table"])
 
@@ -86,16 +94,69 @@ def load_table_data(prepare_schema_table, processing):
 
 
 @pytest.fixture
-def iceberg_connection(spark, iceberg_warehouse_dir):
+def iceberg_connection_local_fs(spark, iceberg_warehouse_dir, local_fs_file_df_connection):
     iceberg = Iceberg(
         spark=spark,
         catalog_name="hadoop",
-        extra={
-            "type": "hadoop",
-            "warehouse": f"file://{iceberg_warehouse_dir}",
-        },
+        catalog=IcebergFilesystemCatalog(),
+        warehouse=IcebergFilesystemWarehouse(
+            connection=local_fs_file_df_connection,
+            path=iceberg_warehouse_dir,
+        ),
     )
     return iceberg
+
+
+@pytest.fixture
+def iceberg_connection_hdfs(spark, iceberg_warehouse_dir, hdfs_file_df_connection):
+    iceberg = Iceberg(
+        spark=spark,
+        catalog_name="hadoop",
+        catalog=IcebergFilesystemCatalog(),
+        warehouse=IcebergFilesystemWarehouse(
+            connection=hdfs_file_df_connection,
+            path=iceberg_warehouse_dir,
+        ),
+    )
+    return iceberg
+
+
+@pytest.fixture
+def iceberg_connection_s3(spark, iceberg_warehouse_dir, s3_file_df_connection):
+    iceberg = Iceberg(
+        spark=spark,
+        catalog_name="hadoop",
+        catalog=IcebergFilesystemCatalog(),
+        warehouse=IcebergFilesystemWarehouse(
+            connection=s3_file_df_connection,
+            path=iceberg_warehouse_dir,
+        ),
+    )
+    return iceberg
+
+
+@pytest.fixture(
+    params=[
+        lazy_fixture("iceberg_connection_local_fs"),
+        lazy_fixture("iceberg_connection_hdfs"),
+        lazy_fixture("iceberg_connection_s3"),
+    ],
+)
+def iceberg_connection(request):
+    return request.param
+
+
+@pytest.fixture
+def iceberg_mock(spark_mock):
+    return Iceberg(
+        catalog_name="my_catalog",
+        catalog=IcebergFilesystemCatalog(),
+        warehouse=IcebergFilesystemWarehouse(
+            connection=SparkLocalFS(spark=spark_mock),
+            path="/data",
+        ),
+        spark=spark_mock,
+    )
 
 
 @pytest.fixture

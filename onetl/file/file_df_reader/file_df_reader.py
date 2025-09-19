@@ -263,17 +263,19 @@ class FileDFReader(FrozenModel):
 
     @validator("source_path", pre=True)
     def _validate_source_path(cls, source_path, values):
-        if "connection" not in values:
-            return source_path
-        connection: BaseFileDFConnection = values["connection"]
         if source_path is None:
             return None
-        return connection.path_from_string(source_path)
+
+        connection = values.get("connection")
+        if isinstance(connection, BaseFileDFConnection):
+            return connection.path_from_string(source_path)
+        return source_path
 
     @validator("format")
     def _validate_format(cls, format, values):  # noqa: WPS125
-        connection: BaseFileDFConnection = values["connection"]
-        connection.check_if_format_supported(format)
+        connection = values.get("connection")
+        if isinstance(connection, BaseFileDFConnection):
+            connection.check_if_format_supported(format)
         return format
 
     @validator("options")

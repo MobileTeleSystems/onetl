@@ -1,0 +1,1 @@
+Added ``IcebergFilesystemCatalog``, ``IcebergFilesystemWarehouse`` classes to improve Iceberg UX
