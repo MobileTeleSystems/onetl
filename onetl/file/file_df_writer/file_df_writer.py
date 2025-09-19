@@ -175,15 +175,16 @@ class FileDFWriter(FrozenModel):
 
     @validator("target_path", pre=True)
     def _validate_target_path(cls, target_path, values):
-        if "connection" not in values:
-            return target_path
-        connection: BaseFileDFConnection = values["connection"]
-        return connection.path_from_string(target_path)
+        connection = values.get("connection")
+        if isinstance(connection, BaseFileDFConnection):
+            return connection.path_from_string(target_path)
+        return target_path
 
     @validator("format")
     def _validate_format(cls, format, values):  # noqa: WPS125
-        connection: BaseFileDFConnection = values["connection"]
-        connection.check_if_format_supported(format)
+        connection = values.get("connection")
+        if isinstance(connection, BaseFileDFConnection):
+            connection.check_if_format_supported(format)
         return format
 
     @validator("options")

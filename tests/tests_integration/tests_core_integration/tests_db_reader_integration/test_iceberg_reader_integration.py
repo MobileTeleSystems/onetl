@@ -5,6 +5,8 @@ try:
 except ImportError:
     pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
+from pytest_lazyfixture import lazy_fixture
+
 from onetl._util.version import Version
 from onetl.db import DBReader
 from tests.util.rand import rand_str
@@ -27,9 +29,9 @@ def test_iceberg_reader_snapshot(iceberg_connection, processing, load_table_data
     )
 
 
-def test_iceberg_reader_snapshot_with_columns(iceberg_connection, processing, load_table_data):
+def test_iceberg_reader_snapshot_with_columns(iceberg_connection_local_fs, processing, load_table_data):
     reader1 = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=load_table_data.full_name,
     )
     table_df = reader1.run()
@@ -43,7 +45,7 @@ def test_iceberg_reader_snapshot_with_columns(iceberg_connection, processing, lo
         "hwm_datetime",
     ]
     reader2 = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=load_table_data.full_name,
         columns=columns,
     )
@@ -60,7 +62,7 @@ def test_iceberg_reader_snapshot_with_columns(iceberg_connection, processing, lo
     )
 
     reader3 = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=load_table_data.full_name,
         columns=["count(*) as abc"],
     )
@@ -71,15 +73,15 @@ def test_iceberg_reader_snapshot_with_columns(iceberg_connection, processing, lo
     assert count_df.collect()[0][0] == table_df.count()
 
 
-def test_iceberg_reader_snapshot_with_columns_duplicated(iceberg_connection, prepare_schema_table):
+def test_iceberg_reader_snapshot_with_columns_duplicated(iceberg_connection_local_fs, prepare_schema_table):
     reader1 = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=prepare_schema_table.full_name,
     )
     df1 = reader1.run()
 
     reader2 = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=prepare_schema_table.full_name,
         columns=[
             "*",
@@ -91,7 +93,7 @@ def test_iceberg_reader_snapshot_with_columns_duplicated(iceberg_connection, pre
     assert df2.columns == df1.columns + ["id_int"]
 
 
-def test_iceberg_reader_snapshot_with_columns_mixed_naming(iceberg_connection, processing, get_schema_table):
+def test_iceberg_reader_snapshot_with_columns_mixed_naming(iceberg_connection_local_fs, processing, get_schema_table):
     # create table with mixed column names, e.g. IdInt
     full_name, schema, table = get_schema_table
     column_names = []
@@ -108,7 +110,7 @@ def test_iceberg_reader_snapshot_with_columns_mixed_naming(iceberg_connection, p
     # before 0.10 this caused errors because * in column names was replaced with real column names,
     # but they were not escaped
     reader = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=full_name,
         columns=["*"],
     )
@@ -117,15 +119,15 @@ def test_iceberg_reader_snapshot_with_columns_mixed_naming(iceberg_connection, p
     assert df.columns == column_names
 
 
-def test_iceberg_reader_with_where(iceberg_connection, processing, load_table_data):
+def test_iceberg_reader_with_where(iceberg_connection_local_fs, processing, load_table_data):
     reader = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=load_table_data.full_name,
     )
     table_df = reader.run()
 
     reader1 = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=load_table_data.full_name,
         where="id_int < 1000",
     )
@@ -133,7 +135,7 @@ def test_iceberg_reader_with_where(iceberg_connection, processing, load_table_da
     assert table_df1.count() == table_df.count()
 
     reader2 = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=load_table_data.full_name,
         where="id_int < 1000 OR id_int = 1000",
     )
@@ -148,7 +150,7 @@ def test_iceberg_reader_with_where(iceberg_connection, processing, load_table_da
     )
 
     reader3 = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=load_table_data.full_name,
         where="id_int = 50",
     )
@@ -176,11 +178,11 @@ def test_iceberg_reader_snapshot_with_columns_and_where(iceberg_connection, proc
     assert count_df.collect()[0][0] == table_df.count()
 
 
-def test_iceberg_reader_non_existing_table(iceberg_connection, get_schema_table):
+def test_iceberg_reader_non_existing_table(iceberg_connection_local_fs, get_schema_table):
     from pyspark.sql.utils import AnalysisException
 
     reader = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=get_schema_table.full_name,
     )
 
@@ -189,11 +191,11 @@ def test_iceberg_reader_non_existing_table(iceberg_connection, get_schema_table)
         assert "does not exists" in str(excinfo.value)
 
 
-def test_iceberg_reader_snapshot_nothing_to_read(iceberg_connection, processing, prepare_schema_table):
+def test_iceberg_reader_snapshot_nothing_to_read(iceberg_connection_local_fs, processing, prepare_schema_table):
     import pyspark
 
     reader = DBReader(
-        connection=iceberg_connection,
+        connection=iceberg_connection_local_fs,
         source=prepare_schema_table.full_name,
     )
 
