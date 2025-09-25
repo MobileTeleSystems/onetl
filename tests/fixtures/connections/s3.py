@@ -14,7 +14,7 @@ from tests.util.upload_files import upload_files
     ],
 )
 def s3_server():
-    S3Server = namedtuple("S3Server", ["host", "port", "bucket", "access_key", "secret_key", "protocol"])
+    S3Server = namedtuple("S3Server", ["host", "port", "bucket", "access_key", "secret_key", "protocol", "region"])
 
     return S3Server(
         host=os.getenv("ONETL_S3_HOST"),
@@ -23,6 +23,7 @@ def s3_server():
         access_key=os.getenv("ONETL_S3_ACCESS_KEY"),
         secret_key=os.getenv("ONETL_S3_SECRET_KEY"),
         protocol=os.getenv("ONETL_S3_PROTOCOL", "http").lower(),
+        region=os.getenv("ONETL_S3_REGION"),
     )
 
 
@@ -90,6 +91,7 @@ def s3_file_df_connection(s3_file_connection, spark, s3_server):
         access_key=s3_server.access_key,
         secret_key=s3_server.secret_key,
         protocol=s3_server.protocol,
+        region=s3_server.region,
         path_style_access=True,
         spark=spark,
     )

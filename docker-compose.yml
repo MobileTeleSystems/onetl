@@ -378,7 +378,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    profiles: [s3, file_df, file, all]
+    profiles: [s3, iceberg, file_df, file, all]
+
+  iceberg-rest:
+    image: tabulario/iceberg-rest:latest
+    restart: unless-stopped
+    environment:
+      CATALOG_WAREHOUSE: s3a://onetl/data/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://s3:9000
+      CATALOG_S3_PATH__STYLE__ACCESS: true
+      AWS_ACCESS_KEY_ID: onetl
+      AWS_SECRET_ACCESS_KEY: 123UsedForTestOnly@!
+      AWS_REGION: us-east-1
+    ports:
+      - 8181:8181
+    depends_on:
+      s3:
+        condition: service_healthy
+    networks:
+      - onetl
+    profiles: [iceberg, all]
 
   sftp:
     image: ${SFTP_IMAGE:-linuxserver/openssh-server}

@@ -35,10 +35,10 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Start S3
-        run: |
+        run: |  # s3 & iceberg-rest combined due to parallel workflows limit
           docker compose --profile all down -v --remove-orphans
-          docker compose --profile s3 pull
-          docker compose --profile s3 up -d --wait --wait-timeout 200
+          docker compose --profile iceberg pull
+          docker compose --profile iceberg up -d --wait --wait-timeout 200
         env:
           S3_IMAGE: bitnamilegacy/minio:${{ inputs.minio-version }}
 

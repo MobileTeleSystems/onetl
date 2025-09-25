@@ -5,8 +5,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Dict
 
-from onetl.connection.db_connection.iceberg.warehouse import IcebergWarehouse
-
 
 class IcebergCatalog(ABC):
     """
@@ -16,5 +14,5 @@ class IcebergCatalog(ABC):
     """
 
     @abstractmethod
-    def get_config(self, warehouse: IcebergWarehouse) -> Dict[str, str]:
+    def get_config(self) -> Dict[str, str]:
         """Return flat dict with catalog configuration."""

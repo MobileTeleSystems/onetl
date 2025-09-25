@@ -8,6 +8,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
 
+from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.catalog.auth import IcebergRESTCatalogAuth
 from onetl.impl.frozen_model import FrozenModel
 
@@ -53,8 +54,8 @@ class IcebergRESTCatalogOAuth2(IcebergRESTCatalogAuth, FrozenModel):
             "token-expires-in-ms": (
                 str(int(self.token_refresh_interval.total_seconds() * 1000)) if self.token_refresh_interval else None
             ),
-            "token-refresh-enabled": "true" if self.token_refresh_interval is not None else "false",
-            "token-exchange-enabled": "true" if self.token_exchange_enabled else "false",
+            "token-refresh-enabled": stringify(self.token_refresh_interval is not None),
+            "token-exchange-enabled": stringify(self.token_exchange_enabled),
             "oauth2-server-uri": self.oauth2_server_uri,
             "scope": " ".join(self.scopes) if self.scopes else None,
             "audience": self.audience,

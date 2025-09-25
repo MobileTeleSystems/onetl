@@ -4,3 +4,6 @@ from onetl.connection.db_connection.iceberg.warehouse.base import IcebergWarehou
 from onetl.connection.db_connection.iceberg.warehouse.filesystem import (
     IcebergFilesystemWarehouse,
 )
+from onetl.connection.db_connection.iceberg.warehouse.s3 import (
+    IcebergS3Warehouse,
+)
