@@ -25,7 +25,6 @@ class IcebergFilesystemWarehouse(IcebergWarehouse, FrozenModel):
         config = {
             "warehouse": self.connection._convert_to_url(self.path),
         }
-
         if isinstance(self.connection, SparkS3):
             prefix = self.connection._get_hadoop_config_prefix()
             hadoop_config = {"hadoop." + k: v for k, v in self.connection._get_expected_hadoop_config(prefix).items()}

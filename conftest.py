@@ -4,7 +4,9 @@ import os
 os.environ["ONETL_PLUGINS_BLACKLIST"] = "failing-plugin"
 
 pytest_plugins = [
-    "tests.fixtures.processing.fixtures",
+    "tests.fixtures.processing.fixtures.processing",
+    "tests.fixtures.processing.fixtures.iceberg",
+    "tests.fixtures.processing.fixtures.kafka",
     "tests.fixtures.create_keytab",
     "tests.fixtures.global_hwm_store",
     "tests.fixtures.hwm_delta",

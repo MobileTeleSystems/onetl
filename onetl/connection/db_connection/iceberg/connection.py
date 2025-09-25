@@ -168,9 +168,11 @@ class Iceberg(DBConnection):
             f"spark.sql.catalog.{self.catalog_name}",
             "org.apache.iceberg.spark.SparkCatalog",
         )
-        catalog_config = self.catalog.get_config(warehouse=self.warehouse)
-        catalog_config.update(self.extra.dict())
-
+        catalog_config = {
+            **self.catalog.get_config(),
+            **self.warehouse.get_config(),
+            **self.extra.dict(),
+        }
         for k, v in catalog_config.items():
             self.spark.conf.set(f"spark.sql.catalog.{self.catalog_name}.{k}", v)
 

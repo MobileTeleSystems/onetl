@@ -3,9 +3,6 @@
 from typing import Dict
 
 from onetl.connection.db_connection.iceberg.catalog import IcebergCatalog
-from onetl.connection.db_connection.iceberg.warehouse.filesystem import (
-    IcebergFilesystemWarehouse,
-)
 from onetl.impl.frozen_model import FrozenModel
 
 
@@ -14,8 +11,8 @@ class IcebergFilesystemCatalog(IcebergCatalog, FrozenModel):
     def type(self) -> str:
         return "hadoop"
 
-    def get_config(self, warehouse: IcebergFilesystemWarehouse) -> Dict[str, str]:
-        return {
+    def get_config(self) -> Dict[str, str]:
+        config = {
             "type": self.type,
-            **warehouse.get_config(),
         }
+        return config

@@ -27,7 +27,7 @@ class IcebergProcessing(BaseProcessing):
 
     @property
     def catalog(self) -> str:
-        return os.getenv("ONETL_ICEBERG_CATALOG", "hadoop")
+        return os.getenv("ONETL_ICEBERG_CATALOG", "my_catalog")
 
     @property
     def schema(self) -> str:

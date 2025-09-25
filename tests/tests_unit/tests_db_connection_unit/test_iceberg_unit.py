@@ -19,6 +19,7 @@ from onetl.connection.db_connection.iceberg.catalog.filesystem import (
 from onetl.connection.db_connection.iceberg.warehouse.filesystem import (
     IcebergFilesystemWarehouse,
 )
+from onetl.connection.db_connection.iceberg.warehouse.s3 import IcebergS3Warehouse
 from onetl.connection.file_df_connection.spark_local_fs import SparkLocalFS
 from onetl.connection.file_df_connection.spark_s3.connection import SparkS3
 
@@ -46,8 +47,10 @@ def test_iceberg_with_filesystem_catalog_local_connection(spark_mock, iceberg_wa
         spark=spark_mock,
     )
     assert iceberg
-    assert iceberg.catalog.get_config(iceberg.warehouse) == {
+    assert iceberg.catalog.get_config() == {
         "type": "hadoop",
+    }
+    assert iceberg.warehouse.get_config() == {
         "warehouse": f"file://{iceberg_warehouse_dir}",
     }
     expected_calls = [
@@ -77,8 +80,10 @@ def test_iceberg_with_filesystem_catalog_hdfs_connection(spark_mock, mocker, ice
         spark=spark_mock,
     )
     assert iceberg
-    assert iceberg.catalog.get_config(iceberg.warehouse) == {
+    assert iceberg.catalog.get_config() == {
         "type": "hadoop",
+    }
+    assert iceberg.warehouse.get_config() == {
         "warehouse": f"{connection._get_conn_str()}{iceberg_warehouse_dir}",
     }
     expected_calls = [
@@ -110,8 +115,11 @@ def test_iceberg_with_filesystem_catalog_s3_connection(spark_mock, iceberg_wareh
         spark=spark_mock,
     )
     assert iceberg
-    assert iceberg.catalog.get_config(iceberg.warehouse) == {
+    assert iceberg.catalog.get_config() == {
         "type": "hadoop",
+    }
+    assert iceberg.warehouse.get_config() == {
+        "warehouse": f"s3a://onetl{iceberg_warehouse_dir}",
         "hadoop.fs.s3a.bucket.onetl.access.key": "onetl",
         "hadoop.fs.s3a.bucket.onetl.secret.key": "123UsedForTestOnly@!",
         "hadoop.fs.s3a.bucket.onetl.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",
@@ -119,7 +127,6 @@ def test_iceberg_with_filesystem_catalog_s3_connection(spark_mock, iceberg_wareh
         "hadoop.fs.s3a.bucket.onetl.endpoint": "http://localhost:9010",
         "hadoop.fs.s3a.bucket.onetl.path.style.access": "true",
         "hadoop.fs.s3a.user.agent.prefix": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
-        "warehouse": f"s3a://onetl{iceberg_warehouse_dir}",
     }
     expected_calls = [
         call("spark.sql.catalog.my_catalog", "org.apache.iceberg.spark.SparkCatalog"),
@@ -142,7 +149,7 @@ def test_iceberg_with_filesystem_catalog_s3_connection(spark_mock, iceberg_wareh
     spark_mock.conf.set.assert_has_calls(expected_calls, any_order=True)
 
 
-def test_iceberg_with_rest_catalog(spark_mock):
+def test_iceberg_with_rest_catalog_local_connection(spark_mock):
     warehouse = IcebergFilesystemWarehouse(
         connection=SparkLocalFS(spark=spark_mock),
         path="/data",
@@ -154,36 +161,120 @@ def test_iceberg_with_rest_catalog(spark_mock):
             headers={
                 "X-Custom-Header": "123",
             },
-            extra={
-                "hadoop.fs.s3a.endpoint": "http://localhost:9010",
-                "hadoop.fs.s3a.access.key": "onetl",
-                "hadoop.fs.s3a.secret.key": "123UsedForTestOnly@!",
-                "hadoop.fs.s3a.path.style.access": "true",
-            },
         ),
         warehouse=warehouse,
         spark=spark_mock,
     )
     assert iceberg
-    assert iceberg.catalog.get_config(warehouse) == {
+    assert iceberg.catalog.get_config() == {
         "type": "rest",
         "uri": "http://localhost:8080",
         "header.X-Custom-Header": "123",
+    }
+    assert iceberg.warehouse.get_config() == {
         "warehouse": "file:///data",
-        "hadoop.fs.s3a.endpoint": "http://localhost:9010",
-        "hadoop.fs.s3a.access.key": "onetl",
-        "hadoop.fs.s3a.secret.key": "123UsedForTestOnly@!",
-        "hadoop.fs.s3a.path.style.access": "true",
     }
     expected_calls = [
         call("spark.sql.catalog.my_catalog", "org.apache.iceberg.spark.SparkCatalog"),
         call("spark.sql.catalog.my_catalog.type", "rest"),
         call("spark.sql.catalog.my_catalog.uri", "http://localhost:8080"),
         call("spark.sql.catalog.my_catalog.warehouse", "file:///data"),
-        call("spark.sql.catalog.my_catalog.hadoop.fs.s3a.endpoint", "http://localhost:9010"),
-        call("spark.sql.catalog.my_catalog.hadoop.fs.s3a.access.key", "onetl"),
-        call("spark.sql.catalog.my_catalog.hadoop.fs.s3a.secret.key", "123UsedForTestOnly@!"),
-        call("spark.sql.catalog.my_catalog.hadoop.fs.s3a.path.style.access", "true"),
+        call("spark.sql.catalog.my_catalog.header.X-Custom-Header", "123"),
+    ]
+    spark_mock.conf.set.assert_has_calls(expected_calls, any_order=True)
+
+
+def test_iceberg_with_rest_catalog_hdfs_connection(spark_mock, mocker, iceberg_warehouse_dir):
+    from onetl.connection.file_df_connection.spark_hdfs.connection import SparkHDFS
+
+    def conn_str(self):
+        return f"hdfs://{self.host}:{self.ipc_port}"
+
+    mocker.patch.object(SparkHDFS, "_get_conn_str", conn_str)
+
+    connection = SparkHDFS(spark=spark_mock, host="namenode", cluster="rnd-dwh")
+    iceberg = Iceberg(
+        catalog_name="my_catalog",
+        catalog=IcebergRESTCatalog(
+            uri="http://localhost:8080",
+            headers={
+                "X-Custom-Header": "123",
+            },
+        ),
+        warehouse=IcebergFilesystemWarehouse(
+            connection=connection,
+            path=iceberg_warehouse_dir,
+        ),
+        spark=spark_mock,
+    )
+    assert iceberg
+    assert iceberg.catalog.get_config() == {
+        "type": "rest",
+        "uri": "http://localhost:8080",
+        "header.X-Custom-Header": "123",
+    }
+    assert iceberg.warehouse.get_config() == {
+        "warehouse": f"{connection._get_conn_str()}{iceberg_warehouse_dir}",
+    }
+    expected_calls = [
+        call("spark.sql.catalog.my_catalog", "org.apache.iceberg.spark.SparkCatalog"),
+        call("spark.sql.catalog.my_catalog.type", "rest"),
+        call("spark.sql.catalog.my_catalog.uri", "http://localhost:8080"),
+        call("spark.sql.catalog.my_catalog.warehouse", f"{connection._get_conn_str()}{iceberg_warehouse_dir}"),
+        call("spark.sql.catalog.my_catalog.header.X-Custom-Header", "123"),
+    ]
+    spark_mock.conf.set.assert_has_calls(expected_calls, any_order=True)
+
+
+def test_iceberg_with_rest_catalog_s3_connection(spark_mock):
+    warehouse = IcebergS3Warehouse(
+        path="/data",
+        host="localhost",
+        port=9010,
+        protocol="http",
+        bucket="onetl",
+        path_style_access=True,
+        access_key="onetl",
+        secret_key="123UsedForTestOnly@!",
+        region="us-east-1",
+    )
+    iceberg = Iceberg(
+        catalog_name="my_catalog",
+        catalog=IcebergRESTCatalog(
+            uri="http://localhost:8080",
+            headers={
+                "X-Custom-Header": "123",
+            },
+        ),
+        warehouse=warehouse,
+        spark=spark_mock,
+    )
+    assert iceberg
+    assert iceberg.catalog.get_config() == {
+        "type": "rest",
+        "uri": "http://localhost:8080",
+        "header.X-Custom-Header": "123",
+    }
+    assert iceberg.warehouse.get_config() == {
+        "warehouse": "s3a://onetl/data",
+        "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+        "s3.endpoint": "http://localhost:9010",
+        "s3.access-key-id": "onetl",
+        "s3.secret-access-key": "123UsedForTestOnly@!",
+        "s3.path-style-access": "true",
+        "s3.region": "us-east-1",
+    }
+    expected_calls = [
+        call("spark.sql.catalog.my_catalog", "org.apache.iceberg.spark.SparkCatalog"),
+        call("spark.sql.catalog.my_catalog.type", "rest"),
+        call("spark.sql.catalog.my_catalog.uri", "http://localhost:8080"),
+        call("spark.sql.catalog.my_catalog.warehouse", "s3a://onetl/data"),
+        call("spark.sql.catalog.my_catalog.io-impl", "org.apache.iceberg.aws.s3.S3FileIO"),
+        call("spark.sql.catalog.my_catalog.s3.endpoint", "http://localhost:9010"),
+        call("spark.sql.catalog.my_catalog.s3.access-key-id", "onetl"),
+        call("spark.sql.catalog.my_catalog.s3.secret-access-key", "123UsedForTestOnly@!"),
+        call("spark.sql.catalog.my_catalog.s3.path-style-access", "true"),
+        call("spark.sql.catalog.my_catalog.s3.region", "us-east-1"),
         call("spark.sql.catalog.my_catalog.header.X-Custom-Header", "123"),
     ]
     spark_mock.conf.set.assert_has_calls(expected_calls, any_order=True)

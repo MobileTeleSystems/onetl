@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from onetl._util.version import Version
+from onetl.connection.db_connection.iceberg.warehouse.s3 import IcebergS3Warehouse
 
 
 @pytest.fixture(scope="session")
@@ -120,10 +121,19 @@ def maven_packages(request):
 
     if "iceberg" in markers:
         version = (pyspark_version.major, pyspark_version.minor)
-        if version == (3, 2):
-            packages.extend(Iceberg.get_packages(package_version="1.4.3", spark_version=str(pyspark_version)))
-        else:
-            packages.extend(Iceberg.get_packages(package_version="1.10.0", spark_version=str(pyspark_version)))
+        iceberg_version = "1.4.3" if version == (3, 2) else "1.10.0"
+        packages.extend(
+            Iceberg.get_packages(
+                package_version=iceberg_version,
+                spark_version=str(pyspark_version),
+            ),
+        )
+        if "s3" in markers:
+            packages.extend(
+                IcebergS3Warehouse.get_packages(
+                    package_version=iceberg_version,
+                ),
+            )
 
     return packages
 
@@ -161,7 +171,10 @@ def spark(warehouse_dir, spark_metastore_dir, ivysettings_path, maven_packages, 
         .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
         .config("spark.kryoserializer.buffer.max", "256m")
         .config("spark.default.parallelism", "1")
-        .config("spark.driver.extraJavaOptions", f"-Dderby.system.home={os.fspath(spark_metastore_dir)}")
+        .config(
+            "spark.driver.extraJavaOptions",
+            f"-Dderby.system.home={os.fspath(spark_metastore_dir)} -Daws.region=us-east-1",
+        )
         .config("spark.sql.warehouse.dir", warehouse_dir)
         .enableHiveSupport()
         .getOrCreate()
