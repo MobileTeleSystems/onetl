@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import stat
 import textwrap
 from contextlib import suppress
 from logging import getLogger
@@ -504,14 +503,12 @@ class HDFS(FileConnection, RenameDirMixin):
         #   "type"            : "DIRECTORY"
         # }
 
-        path_type = stat.S_IFDIR if status["type"] == "DIRECTORY" else stat.S_IFREG
-
         return RemotePathStat(
             st_size=status["length"],
             st_mtime=status["modificationTime"] / 1000,  # HDFS uses timestamps with milliseconds
             st_uid=status["owner"],
             st_gid=status["group"],
-            st_mode=int(status["permission"], 8) | path_type,
+            st_mode=int(status["permission"], 8),
         )
 
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
@@ -549,7 +546,5 @@ class HDFS(FileConnection, RenameDirMixin):
             st_mtime=entry_stat["modificationTime"] / 1000,  # HDFS uses timestamps with milliseconds
             st_uid=entry_stat["owner"],
             st_gid=entry_stat["group"],
-            st_mode=(
-                int(entry_stat["permission"], 8) | stat.S_IFDIR if entry_stat["type"] == "DIRECTORY" else stat.S_IFREG
-            ),
+            st_mode=int(entry_stat["permission"], 8),
         )
