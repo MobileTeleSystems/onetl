@@ -40,7 +40,7 @@ jobs:
           docker compose --profile kafka pull
           docker compose --profile kafka up -d --wait --wait-timeout 200
         env:
-          KAFKA_IMAGE: bitnami/kafka:${{ inputs.kafka-version }}
+          KAFKA_IMAGE: bitnamilegacy/kafka:${{ inputs.kafka-version }}
 
       - name: Set up Java ${{ inputs.java-version }}
         uses: actions/setup-java@v5
@@ -90,7 +90,7 @@ jobs:
         if: failure()
         uses: jwalton/gh-docker-logs@v2
         with:
-          images: bitnami/kafka
+          images: bitnamilegacy/kafka
           dest: ./logs
 
       - name: Upload Kafka logs

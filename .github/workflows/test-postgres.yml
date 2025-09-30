@@ -98,7 +98,7 @@ jobs:
         if: failure()
         uses: jwalton/gh-docker-logs@v2
         with:
-          images: postgres,bitnami/pgbouncer
+          images: postgres,bitnamilegacy/pgbouncer
           dest: ./logs
 
       - name: Upload Postgres logs

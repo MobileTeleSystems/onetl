@@ -47,7 +47,7 @@ services:
     profiles: [greenplum, db, all]
 
   pgbouncer-transaction-gp:
-    image: ${PGBOUNCER_IMAGE:-bitnami/pgbouncer:latest}
+    image: ${PGBOUNCER_IMAGE:-bitnamilegacy/pgbouncer:latest}
     restart: unless-stopped
     environment:
       TZ: UTC
@@ -228,7 +228,7 @@ services:
     profiles: [postgres, jdbc, db, all]
 
   pgbouncer-transaction-pg:
-    image: ${PGBOUNCER_IMAGE:-bitnami/pgbouncer:latest}
+    image: ${PGBOUNCER_IMAGE:-bitnamilegacy/pgbouncer:latest}
     restart: unless-stopped
     environment:
       TZ: UTC

@@ -121,7 +121,7 @@ jobs:
         if: failure()
         uses: jwalton/gh-docker-logs@v2
         with:
-          images: andruche/greenplum,bitnami/pgbouncer
+          images: andruche/greenplum,bitnamilegacy/pgbouncer
           dest: ./logs
 
       - name: Upload Greenplum logs

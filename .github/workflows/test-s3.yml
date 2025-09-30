@@ -90,7 +90,7 @@ jobs:
         if: failure()
         uses: jwalton/gh-docker-logs@v2
         with:
-          images: bitnami/minio
+          images: bitnamilegacy/minio
           dest: ./logs
 
       - name: Upload S3 logs
