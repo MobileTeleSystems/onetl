@@ -505,7 +505,13 @@ class Iceberg(DBConnection):
         write_options = self.WriteOptions.parse(options)
 
         writer = df.writeTo(table).using("iceberg")
-        for method, value in self._format_write_options(write_options).items():
+        if write_options.table_properties:
+            for key, value in write_options.table_properties.items():
+                writer = writer.tableProperty(key, value)
+        formatted_options = self._format_write_options(write_options)
+        formatted_options.pop("table_properties", None)
+
+        for method, value in formatted_options.items():
             if hasattr(writer, method):
                 if isinstance(value, Iterable) and not isinstance(value, str):
                     writer = getattr(writer, method)(*value)
@@ -550,6 +556,7 @@ class Iceberg(DBConnection):
             by_alias=True,
             exclude_unset=True,
             exclude={"if_exists"},
+            # do not exclude custom options here
         )
 
     def _normalize_table_name(self, table: str) -> str:

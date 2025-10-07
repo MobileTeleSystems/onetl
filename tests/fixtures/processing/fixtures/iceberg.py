@@ -16,11 +16,15 @@ from onetl.connection.db_connection.iceberg.warehouse.s3 import IcebergS3Warehou
 from onetl.connection.file_df_connection.spark_local_fs import SparkLocalFS
 
 
-@pytest.fixture
+@pytest.fixture(
+    params=[
+        pytest.param("fs-catalog", marks=[pytest.mark.fs_catalog]),
+    ],
+)
 def iceberg_connection_fs_catalog_local_fs_warehouse(spark, iceberg_warehouse_dir, local_fs_file_df_connection):
     iceberg = Iceberg(
         spark=spark,
-        catalog_name="my_catalog",
+        catalog_name="my_fs_catalog",
         catalog=IcebergFilesystemCatalog(),
         warehouse=IcebergFilesystemWarehouse(
             connection=local_fs_file_df_connection,
@@ -30,11 +34,15 @@ def iceberg_connection_fs_catalog_local_fs_warehouse(spark, iceberg_warehouse_di
     return iceberg
 
 
-@pytest.fixture
+@pytest.fixture(
+    params=[
+        pytest.param("fs-catalog", marks=[pytest.mark.fs_catalog]),
+    ],
+)
 def iceberg_connection_fs_catalog_hdfs_warehouse(spark, iceberg_warehouse_dir, hdfs_file_df_connection):
     iceberg = Iceberg(
         spark=spark,
-        catalog_name="my_catalog",
+        catalog_name="my_fs_catalog",
         catalog=IcebergFilesystemCatalog(),
         warehouse=IcebergFilesystemWarehouse(
             connection=hdfs_file_df_connection,
@@ -59,11 +67,15 @@ def iceberg_rest_catalog_server():
     )
 
 
-@pytest.fixture
+@pytest.fixture(
+    params=[
+        pytest.param("fs-catalog", marks=[pytest.mark.fs_catalog]),
+    ],
+)
 def iceberg_connection_fs_catalog_s3_warehouse(spark, iceberg_warehouse_dir, s3_file_df_connection):
     iceberg = Iceberg(
         spark=spark,
-        catalog_name="my_catalog",
+        catalog_name="my_fs_catalog",
         catalog=IcebergFilesystemCatalog(),
         warehouse=IcebergFilesystemWarehouse(
             connection=s3_file_df_connection,
@@ -73,22 +85,25 @@ def iceberg_connection_fs_catalog_s3_warehouse(spark, iceberg_warehouse_dir, s3_
     return iceberg
 
 
-@pytest.fixture
+@pytest.fixture(
+    params=[
+        pytest.param("rest-catalog", marks=[pytest.mark.rest_catalog]),
+    ],
+)
 def iceberg_connection_rest_catalog_s3_warehouse(
     spark,
-    iceberg_warehouse_dir,
     s3_file_df_connection,
     iceberg_rest_catalog_server,
 ):
     s3 = s3_file_df_connection
     iceberg = Iceberg(
         spark=spark,
-        catalog_name="my_catalog",
+        catalog_name="my_rest_catalog",
         catalog=IcebergRESTCatalog(
             uri=f"http://{iceberg_rest_catalog_server.host}:{iceberg_rest_catalog_server.port}",
         ),
         warehouse=IcebergS3Warehouse(
-            path=iceberg_warehouse_dir,
+            path="/data",
             host=s3.host,
             port=s3.port,
             protocol=s3.protocol,
@@ -125,3 +140,8 @@ def iceberg_mock(spark_mock):
         ),
         spark=spark_mock,
     )
+
+
+@pytest.fixture
+def processing_after_connection(iceberg_connection, processing):
+    return processing

@@ -35,7 +35,7 @@ def processing(request, spark):
     db_processing = getattr(module, class_name)
 
     if db_storage_name in ("hive", "iceberg"):
-        yield db_processing(spark)
+        yield db_processing(spark, request)
     else:
         with db_processing() as result:
             yield result

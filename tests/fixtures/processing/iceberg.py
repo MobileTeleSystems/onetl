@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 import pandas
+from pytest import FixtureRequest
 
 from tests.fixtures.processing.base_processing import BaseProcessing
 
@@ -21,13 +22,22 @@ class IcebergProcessing(BaseProcessing):
         "hwm_datetime": "timestamp",
         "float_value": "float",
     }
+    _supported_catalog_types = ("fs_catalog", "rest_catalog")
 
-    def __init__(self, spark: SparkSession):
+    def __init__(self, spark: SparkSession, request: FixtureRequest):
         self.connection = spark
+        self._request = request
 
     @property
     def catalog(self) -> str:
-        return os.getenv("ONETL_ICEBERG_CATALOG", "my_catalog")
+        markers = [mark.name for mark in self._request.node.iter_markers()]
+        for catalog in self._supported_catalog_types:
+            if catalog in markers:
+                return f"my_{catalog}"
+
+        raise ValueError(
+            f"One of possible catalog types should be in markers: {self._supported_catalog_types}",
+        )
 
     @property
     def schema(self) -> str:
