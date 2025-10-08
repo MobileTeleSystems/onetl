@@ -1,0 +1,1 @@
+Added support for ``Iceberg.WriteOptions(table_properties)``. In particular, ``location`` can be set now.

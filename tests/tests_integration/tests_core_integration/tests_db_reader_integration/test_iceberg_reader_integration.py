@@ -12,7 +12,8 @@ from tests.util.rand import rand_str
 pytestmark = pytest.mark.iceberg
 
 
-def test_iceberg_reader_snapshot(iceberg_connection, processing, load_table_data):
+def test_iceberg_reader_snapshot(iceberg_connection, processing_after_connection, load_table_data):
+    processing = processing_after_connection
     reader = DBReader(
         connection=iceberg_connection,
         source=load_table_data.full_name,
@@ -172,7 +173,11 @@ def test_iceberg_reader_with_where(iceberg_connection_fs_catalog_local_fs_wareho
     assert one_df.count() == 1
 
 
-def test_iceberg_reader_snapshot_with_columns_and_where(iceberg_connection, processing, load_table_data):
+def test_iceberg_reader_snapshot_with_columns_and_where(
+    iceberg_connection,
+    processing_after_connection,
+    load_table_data,
+):
     reader1 = DBReader(
         connection=iceberg_connection,
         source=load_table_data.full_name,

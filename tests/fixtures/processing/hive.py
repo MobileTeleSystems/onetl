@@ -6,6 +6,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING
 
 import pandas
+from pytest import FixtureRequest
 
 from tests.fixtures.processing.base_processing import BaseProcessing
 
@@ -25,8 +26,9 @@ class HiveProcessing(BaseProcessing):
         "float_value": "float",
     }
 
-    def __init__(self, spark: SparkSession):
+    def __init__(self, spark: SparkSession, request: FixtureRequest):
         self.connection = spark
+        self._request = request
 
     @property
     def schema(self) -> str:
