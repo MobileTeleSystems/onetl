@@ -15,6 +15,26 @@ class IcebergRESTCatalogBasicAuth(IcebergRESTCatalogAuth, FrozenModel):
     """Basic Authentication for Iceberg REST Catalog.
 
     .. versionadded:: 0.14.1
+
+    Parameters
+    ----------
+    user : str
+        Username for authentication
+
+    password : str
+        Password for authentication
+
+    Examples
+    --------
+
+    .. code:: python
+
+        from onetl.connection import Iceberg
+
+        auth = Iceberg.RESTCatalog.BasicAuth(
+            user="my_user",
+            password="my_password",
+        )
     """
 
     # https://github.com/apache/iceberg/blob/28555ad8fbad77a4067b6ee2afbdea15428dea26/core/src/main/java/org/apache/iceberg/rest/auth/BasicAuthManager.java

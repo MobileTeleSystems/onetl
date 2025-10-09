@@ -8,7 +8,11 @@ from typing import TYPE_CHECKING, Any, Iterable
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
 from onetl._util.version import Version
-from onetl.connection.db_connection.iceberg.catalog import IcebergCatalog
+from onetl.connection.db_connection.iceberg.catalog import (
+    IcebergCatalog,
+    IcebergFilesystemCatalog,
+    IcebergRESTCatalog,
+)
 from onetl.connection.db_connection.iceberg.dialect import IcebergDialect
 from onetl.connection.db_connection.iceberg.extra import IcebergExtra
 from onetl.connection.db_connection.iceberg.options import (
@@ -16,7 +20,11 @@ from onetl.connection.db_connection.iceberg.options import (
     IcebergTableExistBehavior,
     IcebergWriteOptions,
 )
-from onetl.connection.db_connection.iceberg.warehouse import IcebergWarehouse
+from onetl.connection.db_connection.iceberg.warehouse import (
+    IcebergFilesystemWarehouse,
+    IcebergS3Warehouse,
+    IcebergWarehouse,
+)
 from onetl.exception import MISSING_JVM_CLASS_MSG
 
 try:
@@ -62,6 +70,12 @@ class Iceberg(DBConnection):
     spark : :obj:`pyspark.sql.SparkSession`
         Spark session
 
+    catalog : :obj:`IcebergCatalog`
+        Iceberg catalog configuration
+
+    warehouse : :obj:`IcebergWarehouse`
+        Iceberg warehouse configuration
+
     extra : dict | None, default: ``None``
         A dictionary of additional properties to be used when configuring Iceberg catalog.
 
@@ -73,79 +87,86 @@ class Iceberg(DBConnection):
         .. code:: python
 
             extra = {
-                "type": "hadoop",
-                "warehouse": "file:///path/to/warehouse",
+                "cache-enabled": "true",
+                "cache.expiration-interval-ms": "40000",
             }
 
         This will be translated to:
 
         .. code:: ini
 
-            spark.sql.catalog.my_catalog = 'org.apache.iceberg.spark.SparkCatalog'
-            spark.sql.catalog.my_catalog.type = 'hadoop'
-            spark.sql.catalog.my_catalog.warehouse = 'file:///path/to/warehouse'
+            spark.sql.catalog.my_catalog.cache-enabled = 'true'
+            spark.sql.catalog.my_catalog.cache.expiration-interval-ms = '40000'
 
     Examples
     --------
 
-    **REST catalog + S3 warehouse**
+    .. tabs::
 
-    .. code:: python
+        .. code-tab:: python REST catalog and S3 warehouse
 
-        from onetl.connection import Iceberg
-        from pyspark.sql import SparkSession
+            from onetl.connection import Iceberg
+            from pyspark.sql import SparkSession
 
-        maven_packages = [
-            *Iceberg.get_packages(package_version="1.10.0", spark_version="3.5"),
-            *SparkS3.get_packages(spark_version="3.5.6"),
-        ]
-        exclude_packages = SparkS3.get_exclude_packages()
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .config("spark.jars.excludes", ",".join(exclude_packages))
-            .getOrCreate()
-        )
+            maven_packages = [
+                *Iceberg.get_packages(package_version="1.10.0", spark_version="3.5"),
+                *Iceberg.S3Warehouse.get_packages(package_version="1.10.0"),
+            ]
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
 
-        # Create connection
-        iceberg = Iceberg(
-            catalog_name="my_catalog",
-            spark=spark,
-            extra={
-                "type": "rest",
-                "uri": "http://localhost:8080",
-                "warehouse": "s3a://bucket/",
-                "hadoop.fs.s3a.endpoint": "http://localhost:9010",
-                "hadoop.fs.s3a.access.key": "access_key",
-                "hadoop.fs.s3a.secret.key": "secret_key",
-                "hadoop.fs.s3a.path.style.access": "true",
-            },
-        )
+            iceberg = Iceberg(
+                catalog_name="my_catalog",
+                spark=spark,
+                catalog=Iceberg.RESTCatalog(
+                    uri="http://rest.domain.com:8080",
+                    auth=Iceberg.RESTCatalog.BasicAuth(
+                        user="my_user",
+                        password="my_password"
+                    )
+                ),
+                warehouse=Iceberg.S3Warehouse(
+                    path="/warehouse",
+                    host="s3.domain.com",
+                    protocol="http",
+                    bucket="my-bucket",
+                    path_style_access=True,
+                    region="us-east-1",
+                    access_key="access_key",
+                    secret_key="secret_key"
+                )
+            )
 
+        .. code-tab:: python Filesystem catalog and HDFS warehouse
 
-    **Hadoop catalog + HDFS warehouse**
+            from onetl.connection import Iceberg, SparkHDFS
+            from pyspark.sql import SparkSession
 
-    .. code:: python
+            maven_packages = Iceberg.get_packages(package_version="1.10.0", spark_version="3.5.6")
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
 
-        from onetl.connection import Iceberg
-        from pyspark.sql import SparkSession
+            hdfs_connection = SparkHDFS(
+                host="namenode",
+                cluster="my-cluster",
+                spark=spark
+            )
 
-        maven_packages = Iceberg.get_packages(package_version="1.10.0", spark_version="3.5.6")
-        spark = (
-            SparkSession.builder.appName("spark-app-name")
-            .config("spark.jars.packages", ",".join(maven_packages))
-            .getOrCreate()
-        )
-
-        # Create connection
-        iceberg = Iceberg(
-            catalog_name="my_catalog",
-            spark=spark,
-            extra={
-                "type": "hadoop",
-                "warehouse": "hdfs://namenode:8020/warehouse/path",
-            },
-        )
+            iceberg = Iceberg(
+                catalog_name="my_catalog",
+                spark=spark,
+                catalog=Iceberg.Filesystem.Catalog(),
+                warehouse=Iceberg.Filesystem.Warehouse(
+                    connection=hdfs_connection,
+                    path="/warehouse/path"
+                )
+            )
     """
 
     catalog_name: str
@@ -153,6 +174,10 @@ class Iceberg(DBConnection):
     warehouse: IcebergWarehouse
     extra: IcebergExtra = IcebergExtra()
 
+    FilesystemCatalog = IcebergFilesystemCatalog
+    RESTCatalog = IcebergRESTCatalog
+    FilesystemWarehouse = IcebergFilesystemWarehouse
+    S3Warehouse = IcebergS3Warehouse
     ReadOptions = IcebergReadOptions
     WriteOptions = IcebergWriteOptions
 

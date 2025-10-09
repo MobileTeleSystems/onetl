@@ -29,15 +29,14 @@ BEFORE creating the connector instance.
 
 See :ref:`install-spark` installation instruction for more details.
 
-Configuring Catalog and Warehouse
+Popular Metastore Implementations
 ---------------------------------
 
-To work with Iceberg tables you must configure a **catalog** and a **warehouse location**.
-All configuration parameters are passed down as SparkSession options, see
-`Iceberg Spark configuration <https://iceberg.apache.org/docs/latest/spark-configuration/>`_.
+Iceberg supports multiple catalog implementations. Here are some popular options:
 
-For now, these options can be specified using the ``extra`` field in :ref:`iceberg-connection`.
-
-.. danger::
-
-    This will be changed in future onETL versions.
+* **Apache Iceberg Hadoop Catalog** — `File-based catalog using Hadoop filesystem <https://iceberg.apache.org/docs/latest/spark-configuration/>`_
+* **Apache Iceberg REST Catalog** — `Iceberg REST catalog <https://iceberg.apache.org/rest-catalog-spec/>`_
+* **Polaris** — `Сatalog service enabling multi-engine table access <https://polaris.apache.org/in-dev/unreleased/getting-started/>`_
+* **Lakekeeper** — `Rust native сatalog service <https://docs.lakekeeper.io/getting-started/>`_
+* **Gravitino** — `Apache Gravitino unified catalog <https://gravitino.apache.org/docs/>`_
+* **Unity Catalog** — `Databricks Unity Catalog <https://docs.databricks.com/aws/en/external-access/iceberg/>`_
