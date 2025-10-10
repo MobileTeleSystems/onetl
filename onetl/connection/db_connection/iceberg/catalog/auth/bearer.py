@@ -12,9 +12,25 @@ from onetl.impl.frozen_model import FrozenModel
 
 
 class IcebergRESTCatalogBearerAuth(IcebergRESTCatalogAuth, FrozenModel):
-    """Bearer Authentication for Iceberg REST Catalog.
+    """Bearer Token Authentication for Iceberg REST Catalog.
 
     .. versionadded:: 0.14.1
+
+    Parameters
+    ----------
+    access_token : str
+        Bearer token for authentication
+
+    Examples
+    --------
+
+    .. code:: python
+
+        from onetl.connection import Iceberg
+
+        auth = Iceberg.RESTCatalog.BearerAuth(
+            access_token="my_bearer_token",
+        )
     """
 
     # https://github.com/apache/iceberg/blob/28555ad8fbad77a4067b6ee2afbdea15428dea26/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Manager.java#L40

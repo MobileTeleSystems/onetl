@@ -7,6 +7,31 @@ from onetl.impl.frozen_model import FrozenModel
 
 
 class IcebergFilesystemCatalog(IcebergCatalog, FrozenModel):
+    """Iceberg Filesystem Catalog (Hadoop Catalog).
+
+    .. versionadded:: 0.14.1
+
+    .. note::
+
+        This catalog stores Iceberg tables as nested directories:
+
+        .. code-block:: text
+
+            {warehouse.path}/{schema}/{table}
+
+        This means that tables **cannot have a custom location** and will always be created
+        under the schema directory inside the warehouse path.
+
+    Examples
+    --------
+
+    .. code:: python
+
+        from onetl.connection import Iceberg
+
+        catalog = Iceberg.FilesystemCatalog()
+    """
+
     @property
     def type(self) -> str:
         return "hadoop"

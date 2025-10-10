@@ -17,6 +17,62 @@ class IcebergRESTCatalogOAuth2(IcebergRESTCatalogAuth, FrozenModel):
     """OAuth2 Authentication for Iceberg REST Catalog.
 
     .. versionadded:: 0.14.1
+
+    Parameters
+    ----------
+    client_secret : str
+        OAuth2 client secret
+
+    client_id : str, optional
+        OAuth2 client ID. If not provided, only client_secret will be used.
+
+    token_refresh_interval : timedelta, optional
+        Interval for automatic token refresh. Default: 1 hour.
+        Set to `None` to disable automatic refresh.
+
+    token_exchange_enabled : bool, default: True
+        Whether to enable token exchange functionality.
+
+    oauth2_server_uri : str, optional
+        OAuth2 server URI for token exchange. If not provided, uses the catalog's
+        ``v1/oauth/tokens`` endpoint.
+
+    scopes : List[str], default: []
+        OAuth2 scopes to request.
+
+    audience : str, optional
+        OAuth2 audience parameter.
+
+    resource : str, optional
+        OAuth2 resource parameter.
+
+    Examples
+    --------
+
+    .. tabs::
+
+        .. code-tab:: python OAuth2
+
+            from onetl.connection import Iceberg
+
+            auth = Iceberg.RESTCatalog.OAuth2(
+                client_id="my_client_id",
+                client_secret="my_client_secret",
+            )
+
+        .. code-tab:: python OAuth2 with optional fields
+
+            from datetime import timedelta
+            from onetl.connection import Iceberg
+
+            auth = Iceberg.RESTCatalog.OAuth2(
+                client_id="my_client_id",
+                client_secret="my_client_secret",
+                scopes=["catalog:read"],
+                oauth2_server_uri="https://oauth.example.com/token",
+                token_refresh_interval=timedelta(minutes=30),
+                audience="iceberg-catalog",
+            )
     """
 
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Properties.java#L49-L56

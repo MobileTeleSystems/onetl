@@ -18,6 +18,75 @@ from onetl.impl.frozen_model import FrozenModel
 
 
 class IcebergFilesystemWarehouse(IcebergWarehouse, FrozenModel):
+    """Iceberg Filesystem Warehouse.
+
+    .. versionadded:: 0.14.1
+
+    .. note::
+
+        This warehouse uses **FileDFConnection** classes to access data at the warehouse location.
+        It relies on **Spark's filesystem configuration and behavior**.
+
+    Parameters
+    ----------
+    connection : SparkFileDFConnection
+        File connection for data storage
+
+    path : str
+        Warehouse path
+
+    Examples
+    --------
+
+    .. tabs::
+
+        .. code-tab:: python Local filesystem
+
+            from onetl.connection import Iceberg, SparkLocalFS
+
+            local_fs_connection = SparkLocalFS(spark=spark)
+
+            warehouse = Iceberg.FilesystemWarehouse(
+                connection=local_fs_connection,
+                path="/warehouse/path",
+            )
+
+        .. code-tab:: python HDFS
+
+            from onetl.connection import Iceberg, SparkHDFS
+
+            hdfs_connection = SparkHDFS(
+                host="namenode",
+                cluster="my-cluster",
+                spark=spark,
+            )
+
+            warehouse = Iceberg.FilesystemWarehouse(
+                connection=hdfs_connection,
+                path="/warehouse/path",
+            )
+
+        .. code-tab:: python S3
+
+            from onetl.connection import Iceberg, SparkS3
+
+            s3_connection = SparkS3(
+                host="s3.domain.com",
+                protocol="http",
+                bucket="my-bucket",
+                access_key="access_key",
+                secret_key="secret_key",
+                path_style_access=True,
+                region="us-east-1",
+                spark=spark,
+            )
+
+            warehouse = Iceberg.FilesystemWarehouse(
+                connection=s3_connection,
+                path="/warehouse/path"
+            )
+    """
+
     connection: SparkFileDFConnection
     path: PurePathProtocol
 
