@@ -39,7 +39,7 @@ class IcebergS3Warehouse(IcebergWarehouse, FrozenModel):
     host : str
         S3 endpoint hostname
 
-    port : int
+    port : int, optional
         S3 endpoint port
 
     protocol : Literal["http", "https"], default: "https"
@@ -87,7 +87,7 @@ class IcebergS3Warehouse(IcebergWarehouse, FrozenModel):
 
     path: PurePathProtocol
     host: str
-    port: int
+    port: Optional[int] = None
     protocol: Literal["http", "https"] = "https"
     bucket: str
     path_style_access: bool = False
@@ -101,7 +101,7 @@ class IcebergS3Warehouse(IcebergWarehouse, FrozenModel):
         config = {
             "warehouse": "s3a://" + self.bucket + "/" + self.path.as_posix().lstrip("/"),
             "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
-            "s3.endpoint": f"{self.protocol}://{self.host}:{self.port}",
+            "s3.endpoint": f"{self.protocol}://{self.host}{f':{self.port}' if self.port else ''}",
             "s3.access-key-id": self.access_key,
             "s3.secret-access-key": self.secret_key.get_secret_value() if self.secret_key else None,
             "s3.session-token": self.session_token.get_secret_value() if self.session_token else None,
