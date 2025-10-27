@@ -75,7 +75,7 @@ jobs:
           ./run_tests.sh onetl/_util onetl/hooks onetl/file/filter onetl/file/limit onetl/hwm/store/hwm_class_registry.py
 
       - name: Upload coverage results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-core-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: reports/*

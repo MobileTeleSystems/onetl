@@ -97,7 +97,7 @@ jobs:
           dest: ./logs
 
       - name: Upload Clickhouse logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: container-logs-clickhouse-${{ inputs.clickhouse-version }}-spark-${{ inputs.spark-version }}
@@ -109,7 +109,7 @@ jobs:
           docker compose --profile all down -v --remove-orphans
 
       - name: Upload coverage results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-clickhouse-${{ inputs.clickhouse-version }}-spark-${{ inputs.spark-version }}-python-${{ inputs.python-version }}-os-${{ inputs.os }}
           path: reports/*
