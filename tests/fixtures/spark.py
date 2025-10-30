@@ -173,7 +173,7 @@ def spark(warehouse_dir, spark_metastore_dir, ivysettings_path, maven_packages, 
         .config("spark.default.parallelism", "1")
         .config(
             "spark.driver.extraJavaOptions",
-            f"-Dderby.system.home={os.fspath(spark_metastore_dir)} -Daws.region=us-east-1",
+            f"-Dderby.system.home={os.fspath(spark_metastore_dir)}",
         )
         .config("spark.sql.warehouse.dir", warehouse_dir)
         .enableHiveSupport()
