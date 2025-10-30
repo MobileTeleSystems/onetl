@@ -105,8 +105,8 @@ class IcebergS3Warehouse(IcebergWarehouse, FrozenModel):
             "s3.access-key-id": self.access_key,
             "s3.secret-access-key": self.secret_key.get_secret_value() if self.secret_key else None,
             "s3.session-token": self.session_token.get_secret_value() if self.session_token else None,
-            "s3.region": self.region,
             "s3.path-style-access": stringify(self.path_style_access),
+            "client.region": self.region,
             **self.extra,
         }
         return {k: v for k, v in config.items() if v is not None}

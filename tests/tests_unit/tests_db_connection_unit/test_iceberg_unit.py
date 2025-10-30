@@ -262,7 +262,7 @@ def test_iceberg_with_rest_catalog_s3_connection(spark_mock):
         "s3.access-key-id": "onetl",
         "s3.secret-access-key": "123UsedForTestOnly@!",
         "s3.path-style-access": "true",
-        "s3.region": "us-east-1",
+        "client.region": "us-east-1",
     }
     expected_calls = [
         call("spark.sql.catalog.my_catalog", "org.apache.iceberg.spark.SparkCatalog"),
@@ -274,7 +274,7 @@ def test_iceberg_with_rest_catalog_s3_connection(spark_mock):
         call("spark.sql.catalog.my_catalog.s3.access-key-id", "onetl"),
         call("spark.sql.catalog.my_catalog.s3.secret-access-key", "123UsedForTestOnly@!"),
         call("spark.sql.catalog.my_catalog.s3.path-style-access", "true"),
-        call("spark.sql.catalog.my_catalog.s3.region", "us-east-1"),
+        call("spark.sql.catalog.my_catalog.client.region", "us-east-1"),
         call("spark.sql.catalog.my_catalog.header.X-Custom-Header", "123"),
     ]
     spark_mock.conf.set.assert_has_calls(expected_calls, any_order=True)
