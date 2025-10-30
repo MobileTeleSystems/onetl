@@ -16,7 +16,6 @@ from onetl.connection.db_connection.iceberg.catalog import (
 from onetl.connection.db_connection.iceberg.dialect import IcebergDialect
 from onetl.connection.db_connection.iceberg.extra import IcebergExtra
 from onetl.connection.db_connection.iceberg.options import (
-    IcebergReadOptions,
     IcebergTableExistBehavior,
     IcebergWriteOptions,
 )
@@ -178,7 +177,6 @@ class Iceberg(DBConnection):
     RESTCatalog = IcebergRESTCatalog
     FilesystemWarehouse = IcebergFilesystemWarehouse
     S3Warehouse = IcebergS3Warehouse
-    ReadOptions = IcebergReadOptions
     WriteOptions = IcebergWriteOptions
 
     Dialect = IcebergDialect
@@ -427,7 +425,6 @@ class Iceberg(DBConnection):
         df_schema: StructType | None = None,
         window: Window | None = None,
         limit: int | None = None,
-        options: IcebergReadOptions | None = None,
     ) -> DataFrame:
         query = self.dialect.get_sql_query(
             table=self._normalize_table_name(source),

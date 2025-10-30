@@ -73,13 +73,3 @@ Select only required columns
 
 Instead of passing ``"*"`` in ``DBReader(columns=[...])`` prefer passing exact column names.
 This drastically reduces the amount of data read by Spark.
-
-Options
--------
-
-.. currentmodule:: onetl.connection.db_connection.iceberg.options
-
-.. autopydantic_model:: IcebergReadOptions
-    :member-order: bysource
-    :model-show-field-summary: false
-    :field-show-constraints: false
