@@ -142,6 +142,9 @@ class Clickhouse(JDBCConnection):
         package_version : str, optional
             ClickHouse JDBC version client packages. Defaults to ``0.7.2``.
 
+            Versions 0.8.0-0.9.2 are not supported,
+            see `issue #2625 <https://github.com/ClickHouse/clickhouse-java/issues/2625>`_.
+
             .. versionadded:: 0.11.0
 
         apache_http_client_version : str, optional
@@ -158,14 +161,18 @@ class Clickhouse(JDBCConnection):
 
             from onetl.connection import Clickhouse
 
+            Clickhouse.get_packages()
+            Clickhouse.get_packages(package_version="0.7.2")
             Clickhouse.get_packages(package_version="0.6.0", apache_http_client_version="5.4.2")
-
         """
-        default_jdbc_version = "0.7.2"
-        default_http_version = "5.4.2"
 
+        # 0.9.3+ is not a default due to performance issues: https://github.com/ClickHouse/clickhouse-java/issues/2516
+        default_jdbc_version = "0.7.2"
         jdbc_version = Version(package_version or default_jdbc_version).min_digits(3)
-        http_version = Version(apache_http_client_version or default_http_version).min_digits(3)
+
+        # https://github.com/ClickHouse/clickhouse-java/issues/2625
+        if jdbc_version >= Version("0.9.3"):
+            return [f"com.clickhouse:clickhouse-jdbc-all:{jdbc_version}"]
 
         result = [
             f"com.clickhouse:clickhouse-jdbc:{jdbc_version}",
@@ -173,6 +180,12 @@ class Clickhouse(JDBCConnection):
         ]
 
         if Version("0.5.0") <= jdbc_version <= Version("0.7.0"):
+            # Before 0.5.0 builtin Java HTTP Client was used.
+            # In 0.5.0-0.7.0 users may choose one of 2 HTTP Clients by using Maven classifier,
+            # which is not supported by Spark, unfortunately, so we need to add HTTP client manually.
+            # After 0.7.1 Apache HTTP Client is a new default.
+            default_http_version = "5.4.2"
+            http_version = Version(apache_http_client_version or default_http_version).min_digits(3)
             result.append(f"org.apache.httpcomponents.client5:httpclient5:{http_version}")
 
         return result

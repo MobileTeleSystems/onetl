@@ -30,6 +30,30 @@ def test_clickhouse_package():
             ],
         ),
         (
+            "0.9.3",
+            None,
+            [
+                "com.clickhouse:clickhouse-jdbc-all:0.9.3",
+            ],
+        ),
+        (
+            "0.9.2",
+            None,
+            [
+                "com.clickhouse:clickhouse-jdbc:0.9.2",
+                "com.clickhouse:clickhouse-http-client:0.9.2",
+            ],
+        ),
+        (
+            "0.7.1",
+            None,
+            [
+                "com.clickhouse:clickhouse-jdbc:0.7.1",
+                "com.clickhouse:clickhouse-http-client:0.7.1",
+                # No HTTP client should be included
+            ],
+        ),
+        (
             "0.7.0",
             None,
             [
@@ -59,8 +83,9 @@ def test_clickhouse_package():
         (
             "0.4.0",
             "4.5.14",
+            # No HTTP client should be included
             ["com.clickhouse:clickhouse-jdbc:0.4.0", "com.clickhouse:clickhouse-http-client:0.4.0"],
-        ),  # No HTTP client should be included
+        ),
     ],
 )
 def test_clickhouse_get_packages(package_version, apache_http_client_version, expected_packages):

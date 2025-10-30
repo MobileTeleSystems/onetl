@@ -1,0 +1,2 @@
+Add support for ``Clickhouse.get_packages(package_version="0.9.3")``.
+Versions in range ``0.8.0-0.9.2`` are not supported due to `issue #2625 <https://github.com/ClickHouse/clickhouse-java/issues/2625>`_.

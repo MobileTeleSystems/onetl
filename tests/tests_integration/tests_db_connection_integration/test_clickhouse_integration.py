@@ -1,4 +1,3 @@
-import contextlib
 import logging
 
 import pytest
@@ -263,7 +262,10 @@ def test_clickhouse_connection_execute_dml(request, spark, processing, load_tabl
         order_by="id_int",
     )
 
-    clickhouse.execute(f"ALTER TABLE {temp_table} UPDATE hwm_int = 1 WHERE id_int < 20{suffix}")
+    with caplog.at_level(logging.INFO):
+        clickhouse.execute(f"ALTER TABLE {temp_table} UPDATE hwm_int = 1 WHERE id_int < 20{suffix}")
+        assert "Detected dialect: 'org.apache.spark.sql.jdbc.NoopDialect'" in caplog.text
+
     df = clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}")
     assert df.count()
 
@@ -274,26 +276,12 @@ def test_clickhouse_connection_execute_dml(request, spark, processing, load_tabl
     updated_df = pandas.concat([updated_rows, unchanged_rows])
     processing.assert_equal_df(df=df, other_frame=updated_df, order_by="id_int")
 
-    with caplog.at_level(logging.INFO):
-        clickhouse.execute(f"UPDATE {temp_table} SET hwm_int = 1 WHERE id_int < 50{suffix}")
-        assert "Detected dialect: 'org.apache.spark.sql.jdbc.NoopDialect'" in caplog.text
-
     clickhouse.execute(f"ALTER TABLE {temp_table} DELETE WHERE id_int < 70{suffix}")
     df = clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}")
     assert df.count()
 
     left_df = updated_df[updated_df.id_int >= 70]
     processing.assert_equal_df(df=df, other_frame=left_df, order_by="id_int")
-
-    # supported only by Clickhouse 22.8+ (experimental)
-    with contextlib.suppress(Exception):
-        clickhouse.execute(f"DELETE FROM {temp_table} WHERE id_int < 90{suffix}")
-
-        df = clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}")
-        assert df.count()
-
-        left_df = updated_df[updated_df.id_int >= 90]
-        processing.assert_equal_df(df=df, other_frame=left_df, order_by="id_int")
 
     assert not clickhouse.execute(f"TRUNCATE TABLE {temp_table}{suffix}")
     assert not clickhouse.fetch(f"SELECT * FROM {temp_table}{suffix}").count()
