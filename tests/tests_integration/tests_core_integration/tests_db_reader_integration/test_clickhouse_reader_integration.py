@@ -451,7 +451,8 @@ def test_clickhouse_reader_snapshot_with_columns(spark, processing, load_table_d
     reader3 = DBReader(
         connection=clickhouse,
         source=load_table_data.full_name,
-        columns=["count(*) as abc"],
+        # Clickhouse 0.9.2 returns Uint64 as JDBC.OTHER type which Spark doesn't support
+        columns=["toInt64(count(*)) as abc"],
     )
     count_df = reader3.run()
 
@@ -605,7 +606,8 @@ def test_clickhouse_reader_snapshot_with_columns_and_where(spark, processing, lo
     reader2 = DBReader(
         connection=clickhouse,
         source=load_table_data.full_name,
-        columns=["count(*)"],
+        # Clickhouse 0.9.2 returns Uint64 as JDBC.OTHER type which Spark doesn't support
+        columns=["toInt64(count(*))"],
         where="id_int < 80 AND id_int > 10",
     )
     count_df = reader2.run()
