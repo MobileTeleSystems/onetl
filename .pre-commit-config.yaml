@@ -62,7 +62,7 @@ repos:
         args: [--autofix, --indent, '2', --preserve-quotes, --offset, '2']
 
   - repo: https://github.com/lovesegfault/beautysh
-    rev: v6.2.1
+    rev: v6.4.1
     hooks:
       - id: beautysh
         additional_dependencies: [setuptools]
