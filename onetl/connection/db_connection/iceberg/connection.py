@@ -187,7 +187,7 @@ class Iceberg(DBConnection):
 
     def __init__(
         self,
-        /,
+        *,
         spark: SparkSession,
         catalog_name: str,
         catalog: IcebergCatalog,
