@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 from onetl._util.version import Version
-from onetl.connection.db_connection.iceberg.warehouse.s3 import IcebergS3Warehouse
 
 
 @pytest.fixture(scope="session")
@@ -130,7 +129,7 @@ def maven_packages(request):
         )
         if "s3" in markers:
             packages.extend(
-                IcebergS3Warehouse.get_packages(
+                Iceberg.S3Warehouse.get_packages(
                     package_version=iceberg_version,
                 ),
             )

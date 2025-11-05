@@ -6,22 +6,7 @@ from unittest.mock import call
 import pytest
 
 from onetl import __version__ as onetl_version
-from onetl.connection import Iceberg
-from onetl.connection.db_connection.iceberg.catalog import IcebergRESTCatalog
-from onetl.connection.db_connection.iceberg.catalog.auth import (
-    IcebergRESTCatalogBasicAuth,
-    IcebergRESTCatalogBearerAuth,
-    IcebergRESTCatalogOAuth2,
-)
-from onetl.connection.db_connection.iceberg.catalog.filesystem import (
-    IcebergFilesystemCatalog,
-)
-from onetl.connection.db_connection.iceberg.warehouse.filesystem import (
-    IcebergFilesystemWarehouse,
-)
-from onetl.connection.db_connection.iceberg.warehouse.s3 import IcebergS3Warehouse
-from onetl.connection.file_df_connection.spark_local_fs import SparkLocalFS
-from onetl.connection.file_df_connection.spark_s3.connection import SparkS3
+from onetl.connection import Iceberg, SparkLocalFS, SparkS3
 
 pytestmark = [pytest.mark.iceberg, pytest.mark.db_connection, pytest.mark.connection]
 
@@ -39,8 +24,8 @@ def test_iceberg_missing_args(spark_mock):
 def test_iceberg_with_filesystem_catalog_local_connection(spark_mock, iceberg_warehouse_dir):
     iceberg = Iceberg(
         catalog_name="my_catalog",
-        catalog=IcebergFilesystemCatalog(),
-        warehouse=IcebergFilesystemWarehouse(
+        catalog=Iceberg.FilesystemCatalog(),
+        warehouse=Iceberg.FilesystemWarehouse(
             connection=SparkLocalFS(spark=spark_mock),
             path=iceberg_warehouse_dir,
         ),
@@ -72,8 +57,8 @@ def test_iceberg_with_filesystem_catalog_hdfs_connection(spark_mock, mocker, ice
     connection = SparkHDFS(spark=spark_mock, host="namenode", cluster="rnd-dwh")
     iceberg = Iceberg(
         catalog_name="my_catalog",
-        catalog=IcebergFilesystemCatalog(),
-        warehouse=IcebergFilesystemWarehouse(
+        catalog=Iceberg.FilesystemCatalog(),
+        warehouse=Iceberg.FilesystemWarehouse(
             connection=connection,
             path=iceberg_warehouse_dir,
         ),
@@ -107,8 +92,8 @@ def test_iceberg_with_filesystem_catalog_s3_connection(spark_mock, iceberg_wareh
     )
     iceberg = Iceberg(
         catalog_name="my_catalog",
-        catalog=IcebergFilesystemCatalog(),
-        warehouse=IcebergFilesystemWarehouse(
+        catalog=Iceberg.FilesystemCatalog(),
+        warehouse=Iceberg.FilesystemWarehouse(
             connection=connection,
             path=iceberg_warehouse_dir,
         ),
@@ -150,13 +135,13 @@ def test_iceberg_with_filesystem_catalog_s3_connection(spark_mock, iceberg_wareh
 
 
 def test_iceberg_with_rest_catalog_local_connection(spark_mock):
-    warehouse = IcebergFilesystemWarehouse(
+    warehouse = Iceberg.FilesystemWarehouse(
         connection=SparkLocalFS(spark=spark_mock),
         path="/data",
     )
     iceberg = Iceberg(
         catalog_name="my_catalog",
-        catalog=IcebergRESTCatalog(
+        catalog=Iceberg.RESTCatalog(
             uri="http://localhost:8080",
             headers={
                 "X-Custom-Header": "123",
@@ -195,13 +180,13 @@ def test_iceberg_with_rest_catalog_hdfs_connection(spark_mock, mocker, iceberg_w
     connection = SparkHDFS(spark=spark_mock, host="namenode", cluster="rnd-dwh")
     iceberg = Iceberg(
         catalog_name="my_catalog",
-        catalog=IcebergRESTCatalog(
+        catalog=Iceberg.RESTCatalog(
             uri="http://localhost:8080",
             headers={
                 "X-Custom-Header": "123",
             },
         ),
-        warehouse=IcebergFilesystemWarehouse(
+        warehouse=Iceberg.FilesystemWarehouse(
             connection=connection,
             path=iceberg_warehouse_dir,
         ),
@@ -227,7 +212,7 @@ def test_iceberg_with_rest_catalog_hdfs_connection(spark_mock, mocker, iceberg_w
 
 
 def test_iceberg_with_rest_catalog_s3_connection(spark_mock):
-    warehouse = IcebergS3Warehouse(
+    warehouse = Iceberg.S3Warehouse(
         path="/data",
         host="localhost",
         port=9010,
@@ -240,7 +225,7 @@ def test_iceberg_with_rest_catalog_s3_connection(spark_mock):
     )
     iceberg = Iceberg(
         catalog_name="my_catalog",
-        catalog=IcebergRESTCatalog(
+        catalog=Iceberg.RESTCatalog(
             uri="http://localhost:8080",
             headers={
                 "X-Custom-Header": "123",
@@ -282,20 +267,20 @@ def test_iceberg_with_rest_catalog_s3_connection(spark_mock):
 
 def test_iceberg_rest_catalog_missing_args():
     with pytest.raises(ValueError, match="field required"):
-        IcebergRESTCatalog()
+        Iceberg.RESTCatalog()
 
 
 def test_iceberg_rest_catalog_with_basic_auth(spark_mock):
     iceberg = Iceberg(
         catalog_name="my_catalog",
-        catalog=IcebergRESTCatalog(
+        catalog=Iceberg.RESTCatalog(
             uri="http://localhost:8080",
-            auth=IcebergRESTCatalogBasicAuth(
+            auth=Iceberg.RESTCatalog.BasicAuth(
                 user="my_username",
                 password="my_password",
             ),
         ),
-        warehouse=IcebergFilesystemWarehouse(
+        warehouse=Iceberg.FilesystemWarehouse(
             connection=SparkLocalFS(spark=spark_mock),
             path="/data",
         ),
@@ -320,13 +305,13 @@ def test_iceberg_rest_catalog_with_basic_auth(spark_mock):
 def test_iceberg_rest_catalog_with_bearer_auth(spark_mock):
     iceberg = Iceberg(
         catalog_name="my_catalog",
-        catalog=IcebergRESTCatalog(
+        catalog=Iceberg.RESTCatalog(
             uri="http://localhost:8080",
-            auth=IcebergRESTCatalogBearerAuth(
+            auth=Iceberg.RESTCatalog.BearerAuth(
                 access_token="my_access_token",
             ),
         ),
-        warehouse=IcebergFilesystemWarehouse(
+        warehouse=Iceberg.FilesystemWarehouse(
             connection=SparkLocalFS(spark=spark_mock),
             path="/data",
         ),
@@ -349,13 +334,13 @@ def test_iceberg_rest_catalog_with_bearer_auth(spark_mock):
 def test_iceberg_rest_catalog_with_oauth2_secret_only(spark_mock):
     iceberg = Iceberg(
         catalog_name="my_catalog",
-        catalog=IcebergRESTCatalog(
+        catalog=Iceberg.RESTCatalog(
             uri="http://localhost:8080",
-            auth=IcebergRESTCatalogOAuth2(
+            auth=Iceberg.RESTCatalog.OAuth2(
                 client_secret="my_secret",
             ),
         ),
-        warehouse=IcebergFilesystemWarehouse(
+        warehouse=Iceberg.FilesystemWarehouse(
             connection=SparkLocalFS(spark=spark_mock),
             path="/data",
         ),
@@ -382,9 +367,9 @@ def test_iceberg_rest_catalog_with_oauth2_secret_only(spark_mock):
 
 
 def test_iceberg_rest_catalog_with_oauth2_client_and_secret():
-    catalog = IcebergRESTCatalog(
+    catalog = Iceberg.RESTCatalog(
         uri="http://localhost:8080",
-        auth=IcebergRESTCatalogOAuth2(
+        auth=Iceberg.RESTCatalog.OAuth2(
             client_id="my_client",
             client_secret="my_secret",
             oauth2_server_uri="http://my-server/oauth/tokens",
@@ -403,9 +388,9 @@ def test_iceberg_rest_catalog_with_oauth2_client_and_secret():
 
 
 def test_iceberg_rest_catalog_with_oauth2_extra_fields():
-    catalog = IcebergRESTCatalog(
+    catalog = Iceberg.RESTCatalog(
         uri="http://localhost:8080",
-        auth=IcebergRESTCatalogOAuth2(
+        auth=Iceberg.RESTCatalog.OAuth2(
             client_secret="my_secret",
             scopes=["catalog:read", "catalog:write"],
             audience="iceberg-service",
@@ -425,9 +410,9 @@ def test_iceberg_rest_catalog_with_oauth2_extra_fields():
 
 
 def test_iceberg_rest_catalog_with_oauth2_no_token_refresh():
-    catalog = IcebergRESTCatalog(
+    catalog = Iceberg.RESTCatalog(
         uri="http://localhost:8080",
-        auth=IcebergRESTCatalogOAuth2(
+        auth=Iceberg.RESTCatalog.OAuth2(
             client_secret="my_secret",
             token_refresh_interval=None,
         ),
