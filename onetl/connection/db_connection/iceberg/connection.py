@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Union
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -185,8 +185,22 @@ class Iceberg(DBConnection):
     def _check_query(self) -> str:
         return f"SHOW NAMESPACES IN {self.catalog_name}"
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        /,
+        spark: SparkSession,
+        catalog_name: str,
+        catalog: IcebergCatalog,
+        warehouse: IcebergWarehouse,
+        extra: Union[IcebergExtra, Dict[str, Any]] = IcebergExtra(),  # noqa: B008, WPS404
+    ):
+        super().__init__(
+            spark=spark,
+            catalog_name=catalog_name,  # type: ignore[call-arg]
+            catalog=catalog,  # type: ignore[call-arg]
+            warehouse=warehouse,  # type: ignore[call-arg]
+            extra=extra,  # type: ignore[call-arg]
+        )
         self.spark.conf.set(
             f"spark.sql.catalog.{self.catalog_name}",
             "org.apache.iceberg.spark.SparkCatalog",
