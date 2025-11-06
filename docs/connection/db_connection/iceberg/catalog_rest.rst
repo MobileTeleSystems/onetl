@@ -17,4 +17,5 @@ Authentication
 
     auth_basic
     auth_bearer
-    auth_oauth2
+    auth_oauth2_client_credentials
+    auth_oauth2_token_exchange

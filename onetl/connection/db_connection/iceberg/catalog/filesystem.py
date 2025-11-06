@@ -32,12 +32,7 @@ class IcebergFilesystemCatalog(IcebergCatalog, FrozenModel):
         catalog = Iceberg.FilesystemCatalog()
     """
 
-    @property
-    def type(self) -> str:
-        return "hadoop"
-
     def get_config(self) -> Dict[str, str]:
-        config = {
-            "type": self.type,
+        return {
+            "type": "hadoop",
         }
-        return config

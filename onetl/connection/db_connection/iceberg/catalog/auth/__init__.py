@@ -9,6 +9,17 @@ from onetl.connection.db_connection.iceberg.catalog.auth.basic import (
 from onetl.connection.db_connection.iceberg.catalog.auth.bearer import (
     IcebergRESTCatalogBearerAuth,
 )
-from onetl.connection.db_connection.iceberg.catalog.auth.oauth2 import (
-    IcebergRESTCatalogOAuth2,
+from onetl.connection.db_connection.iceberg.catalog.auth.oauth2_client_credentials import (
+    IcebergRESTCatalogOAuth2ClientCredentials,
 )
+from onetl.connection.db_connection.iceberg.catalog.auth.oauth2_token_exchange import (
+    IcebergRESTCatalogOAuth2TokenExchange,
+)
+
+__all__ = [
+    "IcebergRESTCatalogAuth",
+    "IcebergRESTCatalogBasicAuth",
+    "IcebergRESTCatalogBearerAuth",
+    "IcebergRESTCatalogOAuth2ClientCredentials",
+    "IcebergRESTCatalogOAuth2TokenExchange",
+]

@@ -14,15 +14,17 @@ from onetl.impl.frozen_model import FrozenModel
 class IcebergRESTCatalogBasicAuth(IcebergRESTCatalogAuth, FrozenModel):
     """Basic Authentication for Iceberg REST Catalog.
 
+    All requests to REST catalog are made with HTTP header ``Authorization: Basic {user}:{password}``.
+
     .. versionadded:: 0.14.1
 
     Parameters
     ----------
     user : str
-        Username for authentication
+        Username for authentication.
 
     password : str
-        Password for authentication
+        Password for authentication.
 
     Examples
     --------
@@ -37,18 +39,14 @@ class IcebergRESTCatalogBasicAuth(IcebergRESTCatalogAuth, FrozenModel):
         )
     """
 
-    # https://github.com/apache/iceberg/blob/28555ad8fbad77a4067b6ee2afbdea15428dea26/core/src/main/java/org/apache/iceberg/rest/auth/BasicAuthManager.java
+    # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/BasicAuthManager.java
+    # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/AuthProperties.java#L44-L45
     user: str
     password: SecretStr
 
-    @property
-    def type(self) -> str:
-        return "basic"
-
     def get_config(self) -> Dict[str, str]:
-        config = {
-            "rest.auth.type": self.type,
+        return {
+            "rest.auth.type": "basic",
             "rest.auth.basic.username": self.user,
             "rest.auth.basic.password": self.password.get_secret_value(),
         }
-        return config
