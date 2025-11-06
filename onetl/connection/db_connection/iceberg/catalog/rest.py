@@ -8,7 +8,8 @@ from onetl.connection.db_connection.iceberg.catalog.auth import (
     IcebergRESTCatalogAuth,
     IcebergRESTCatalogBasicAuth,
     IcebergRESTCatalogBearerAuth,
-    IcebergRESTCatalogOAuth2,
+    IcebergRESTCatalogOAuth2ClientCredentials,
+    IcebergRESTCatalogOAuth2TokenExchange,
 )
 
 try:
@@ -30,10 +31,10 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
     uri : str
         REST catalog server URI
 
-    headers : Dict[str, str], default: {}
+    headers : dict[str, str], optional
         Additional HTTP headers to include in requests
 
-    extra : Dict[str, str], default: {}
+    extra : dict[str, str], optional
         Additional configuration parameters
 
     auth : IcebergRESTCatalogAuth, optional
@@ -53,7 +54,7 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
                 auth=Iceberg.RESTCatalog.BasicAuth(
                     user="my_user",
                     password="my_password",
-                )
+                ),
             )
 
         .. code-tab:: python REST catalog with bearer token
@@ -64,20 +65,32 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
                 uri="https://rest.domain.com:8080",
                 auth=Iceberg.RESTCatalog.BearerAuth(
                     access_token="my_bearer_token",
-                )
+                ),
             )
 
-        .. code-tab:: python REST catalog with OAuth2
+        .. code-tab:: python REST catalog with OAuth2 Client Credentials Flow
 
             from onetl.connection import Iceberg
 
             catalog = Iceberg.RESTCatalog(
                 uri="https://rest.domain.com:8080",
-                auth=Iceberg.RESTCatalog.OAuth2(
+                auth=Iceberg.RESTCatalog.OAuth2ClientCredentials(
                     client_id="my_client_id",
                     client_secret="my_client_secret",
-                    scopes=["catalog:read", "catalog:write"],
-                )
+                ),
+            )
+
+        .. code-tab:: python REST catalog with OAuth2 Token Exchange Flow
+
+            from onetl.connection import Iceberg
+
+            catalog = Iceberg.RESTCatalog(
+                uri="https://rest.domain.com:8080",
+                auth=Iceberg.RESTCatalog.OAuth2TokenExchange(
+                    token="user_token",
+                    client_id="my_client_id",
+                    client_secret="my_client_secret",
+                ),
             )
 
         .. code-tab:: python REST catalog with custom auth
@@ -93,7 +106,7 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
                 extra={
                     "timeout": "30s",
                     "retry": "3",
-                }
+                },
             )
 
             \"\"\"
@@ -108,7 +121,8 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
 
     BasicAuth = IcebergRESTCatalogBasicAuth
     BearerAuth = IcebergRESTCatalogBearerAuth
-    OAuth2 = IcebergRESTCatalogOAuth2
+    OAuth2ClientCredentials = IcebergRESTCatalogOAuth2ClientCredentials
+    OAuth2TokenExchange = IcebergRESTCatalogOAuth2TokenExchange
 
     uri: str
     headers: Dict[str, str] = Field(default_factory=dict)
@@ -116,13 +130,9 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
 
     auth: Optional[IcebergRESTCatalogAuth] = None
 
-    @property
-    def type(self) -> str:
-        return "rest"
-
     def get_config(self) -> Dict[str, str]:
         config = {
-            "type": self.type,
+            "type": "rest",
             "uri": self.uri,
             **self.extra,
         }
