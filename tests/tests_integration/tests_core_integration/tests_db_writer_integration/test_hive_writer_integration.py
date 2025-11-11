@@ -853,3 +853,31 @@ def test_hive_writer_insert_into_wrong_columns(spark, processing, prepare_schema
     ).strip()
     with pytest.raises(ValueError, match=error_msg3):
         writer.run(df4)
+
+
+def test_hive_writer_with_table_properties(spark, processing, get_schema_table):
+    df = processing.create_spark_df(spark)
+    hive = Hive(cluster="rnd-dwh", spark=spark)
+
+    writer = DBWriter(
+        connection=hive,
+        target=get_schema_table.full_name,
+        options=Hive.WriteOptions(
+            table_properties={
+                "comment": "test table",
+                "auto.purge": True,
+                "my_property": "my_value",
+                "my_numeric_property": 1,
+            },
+        ),
+    )
+    writer.run(df)
+
+    response = hive.sql(f"SHOW CREATE TABLE {get_schema_table.full_name}")
+    response = response.collect()[0][0]
+
+    assert "COMMENT 'test table'" in response
+    assert "TBLPROPERTIES" in response
+    assert "'auto.purge' = 'true'" in response
+    assert "'my_property' = 'my_value'" in response
+    assert "'my_numeric_property' = '1'" in response

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 from enum import Enum
-from typing import List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from onetl._util.alias import avoid_alias
 
@@ -312,6 +312,18 @@ class HiveWriteOptions(GenericOptions):
     ``None`` means compression is disabled.
 
     Examples: ``snappy``, ``zlib``
+
+    .. warning::
+
+        Used **only** while **creating new table**, or in case of ``if_exists=replace_entire_table``
+    """
+
+    table_properties: Dict[str, Any] = Field(default_factory=dict)
+    """Properties to configure table behavior.
+
+    .. versionadded:: 0.14.1
+
+    Examples: ``{"auto.purge": True}``
 
     .. warning::
 
