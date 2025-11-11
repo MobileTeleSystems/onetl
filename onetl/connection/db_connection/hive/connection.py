@@ -14,7 +14,7 @@ except (ImportError, AttributeError):
     from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl._metrics.recorder import SparkMetricsRecorder
-from onetl._util.spark import inject_spark_param, override_job_description
+from onetl._util.spark import inject_spark_param, override_job_description, stringify
 from onetl._util.sql import clear_statement
 from onetl.base import BaseWritableFileFormat
 from onetl.connection.db_connection.db_connection import DBConnection
@@ -542,7 +542,7 @@ class Hive(DBConnection):
         for method, value in write_options.dict(  # noqa: WPS352
             by_alias=True,
             exclude_none=True,
-            exclude={"if_exists", "format"},
+            exclude={"if_exists", "format", "table_properties"},
         ).items():
             if hasattr(writer, method):
                 if isinstance(value, Iterable) and not isinstance(value, str):
@@ -562,5 +562,9 @@ class Hive(DBConnection):
 
         log.info("|%s| Saving data to a table %r ...", self.__class__.__name__, table)
         writer.mode(mode).saveAsTable(table)
+
+        if write_options.table_properties:
+            properties = ", ".join(f"'{k}'='{stringify(v)}'" for k, v in write_options.table_properties.items())
+            self.sql(f"ALTER TABLE {table} SET TBLPROPERTIES ({properties})")
 
         log.info("|%s| Table %r is successfully created.", self.__class__.__name__, table)
