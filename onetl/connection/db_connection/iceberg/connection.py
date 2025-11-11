@@ -32,7 +32,7 @@ except (ImportError, AttributeError):
     from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl._metrics.recorder import SparkMetricsRecorder
-from onetl._util.spark import get_spark_version, override_job_description
+from onetl._util.spark import get_spark_version, override_job_description, stringify
 from onetl._util.sql import clear_statement
 from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.hooks import slot, support_hooks
@@ -543,7 +543,7 @@ class Iceberg(DBConnection):
         writer = df.writeTo(table).using("iceberg")
         if write_options.table_properties:
             for key, value in write_options.table_properties.items():
-                writer = writer.tableProperty(key, value)
+                writer = writer.tableProperty(key, stringify(value))
         formatted_options = self._format_write_options(write_options)
         formatted_options.pop("table_properties", None)
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict
+from typing import Any, Dict
 
 from onetl._util.alias import avoid_alias
 
@@ -138,7 +138,7 @@ class IcebergWriteOptions(GenericOptions):
                     If the table exists, **raises an error**.
     """
 
-    table_properties: Dict[str, str] = Field(default_factory=dict)
+    table_properties: Dict[str, Any] = Field(default_factory=dict)
     """Properties to configure table behavior.
 
     Examples: ``{"location": "/path"}``
