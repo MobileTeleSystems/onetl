@@ -39,8 +39,8 @@ class IcebergRESTCatalogBasicAuth(IcebergRESTCatalogAuth, FrozenModel):
         )
     """
 
-    # https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/core/src/main/java/org/apache/iceberg/rest/auth/BasicAuthManager.java
-    # https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/core/src/main/java/org/apache/iceberg/rest/auth/AuthProperties.java#L44-L45
+    # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/BasicAuthManager.java
+    # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/AuthProperties.java#L44-L45
     user: str
     password: SecretStr
 
