@@ -71,7 +71,7 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
                 client_id="my_client_id",
                 client_secret="my_client_secret",
                 scopes=["catalog:read"],
-                oauth2_server_uri="https://oauth.example.com/token",
+                oauth2_server_uri="http://keycloak.domain.com/realms/my-realm/protocol/openid-connect/token",
                 token_refresh_interval=timedelta(minutes=30),
                 audience="iceberg-catalog",
             )

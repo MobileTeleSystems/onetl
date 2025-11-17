@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
+from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.catalog.auth import (
     IcebergRESTCatalogAuth,
     IcebergRESTCatalogBasicAuth,
@@ -125,8 +126,8 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
     OAuth2TokenExchange = IcebergRESTCatalogOAuth2TokenExchange
 
     uri: str
-    headers: Dict[str, str] = Field(default_factory=dict)
-    extra: Dict[str, str] = Field(default_factory=dict)
+    headers: Dict[str, Any] = Field(default_factory=dict)
+    extra: Dict[str, Any] = Field(default_factory=dict)
 
     auth: Optional[IcebergRESTCatalogAuth] = None
 
@@ -134,10 +135,10 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
         config = {
             "type": "rest",
             "uri": self.uri,
-            **self.extra,
+            **stringify(self.extra),
         }
         for key, value in self.headers.items():
-            config[f"header.{key}"] = value
+            config[f"header.{key}"] = stringify(value)
 
         if self.auth:
             config.update(self.auth.get_config())

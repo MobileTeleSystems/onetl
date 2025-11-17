@@ -6,3 +6,10 @@ from onetl.connection.db_connection.iceberg.extra import IcebergExtra
 from onetl.connection.db_connection.iceberg.options import (
     IcebergWriteOptions,
 )
+
+__all__ = [
+    "Iceberg",
+    "IcebergDialect",
+    "IcebergExtra",
+    "IcebergWriteOptions",
+]
