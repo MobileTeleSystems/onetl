@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Union
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -23,6 +23,9 @@ from onetl.connection.db_connection.iceberg.warehouse import (
     IcebergFilesystemWarehouse,
     IcebergS3Warehouse,
     IcebergWarehouse,
+)
+from onetl.connection.db_connection.iceberg.warehouse.delegated import (
+    IcebergDelegatedWarehouse,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
 
@@ -64,10 +67,7 @@ class Iceberg(DBConnection):
     Parameters
     ----------
     catalog_name : str
-        Catalog name
-
-    spark : :obj:`pyspark.sql.SparkSession`
-        Spark session
+        Catalog name. Arbitrary string used by Spark to identify catalog and tables (``mycatalog.myschema.mytable``).
 
     catalog : :obj:`IcebergCatalog`
         Iceberg catalog configuration
@@ -97,12 +97,15 @@ class Iceberg(DBConnection):
             spark.sql.catalog.my_catalog.cache-enabled = 'true'
             spark.sql.catalog.my_catalog.cache.expiration-interval-ms = '40000'
 
+    spark : :obj:`pyspark.sql.SparkSession`
+        Spark session
+
     Examples
     --------
 
     .. tabs::
 
-        .. code-tab:: python REST catalog and S3 warehouse
+        .. code-tab:: python REST catalog with Bearer token auth, S3 warehouse with explicit credentials
 
             from onetl.connection import Iceberg
             from pyspark.sql import SparkSession
@@ -121,12 +124,12 @@ class Iceberg(DBConnection):
                 catalog_name="my_catalog",
                 spark=spark,
                 catalog=Iceberg.RESTCatalog(
-                    uri="http://rest.domain.com:8080",
-                    auth=Iceberg.RESTCatalog.BasicAuth(
-                        user="my_user",
-                        password="my_password"
-                    )
+                    uri="http://my.rest.catalog/iceberg",
+                    auth=Iceberg.RESTCatalog.OAuth2BearerToken(
+                        token="my_token",
+                    ),
                 ),
+                # explicit S3 warehouse params
                 warehouse=Iceberg.S3Warehouse(
                     path="/warehouse",
                     host="s3.domain.com",
@@ -136,10 +139,44 @@ class Iceberg(DBConnection):
                     region="us-east-1",
                     access_key="access_key",
                     secret_key="secret_key"
-                )
+                ),
             )
 
-        .. code-tab:: python Filesystem catalog and HDFS warehouse
+        .. code-tab:: python REST catalog with OAuth2 client credentials, S3 warehouse with vended credentials
+
+            from onetl.connection import Iceberg
+            from pyspark.sql import SparkSession
+
+            maven_packages = [
+                *Iceberg.get_packages(package_version="1.10.0", spark_version="3.5"),
+                # required to use S3 warehouse
+                *Iceberg.S3Warehouse.get_packages(package_version="1.10.0"),
+            ]
+            spark = (
+                SparkSession.builder.appName("spark-app-name")
+                .config("spark.jars.packages", ",".join(maven_packages))
+                .getOrCreate()
+            )
+
+            iceberg = Iceberg(
+                catalog_name="my_catalog",
+                spark=spark,
+                catalog=Iceberg.RESTCatalog(
+                    uri="http://my.rest.catalog/iceberg",
+                    auth=Iceberg.RESTCatalog.OAuth2ClientCredentials(
+                        client_id="my_client",
+                        client_secret="my_secret",
+                        oauth2_server_uri="http://keycloak.domain.com/realms/my-realm/protocol/openid-connect/token",
+                    ),
+                ),
+                # S3 warehouse params and credentials are provided by REST Catalog
+                warehouse=Iceberg.DeletatedWarehouse(
+                    name="my-warehouse",
+                    access_delegation=["vended-credentials"],
+                ),
+            )
+
+        .. code-tab:: python HDFS Filesystem catalog, HDFS warehouse
 
             from onetl.connection import Iceberg, SparkHDFS
             from pyspark.sql import SparkSession
@@ -160,23 +197,26 @@ class Iceberg(DBConnection):
             iceberg = Iceberg(
                 catalog_name="my_catalog",
                 spark=spark,
-                catalog=Iceberg.Filesystem.Catalog(),
-                warehouse=Iceberg.Filesystem.Warehouse(
+                catalog=Iceberg.FilesystemCatalog(),
+                warehouse=Iceberg.FilesystemWarehouse(
                     connection=hdfs_connection,
-                    path="/warehouse/path"
-                )
+                    path="/warehouse/path",
+                ),
             )
     """
 
     catalog_name: str
     catalog: IcebergCatalog
-    warehouse: IcebergWarehouse
+    warehouse: Optional[IcebergWarehouse] = None
     extra: IcebergExtra = IcebergExtra()
 
     FilesystemCatalog = IcebergFilesystemCatalog
     RESTCatalog = IcebergRESTCatalog
+
     FilesystemWarehouse = IcebergFilesystemWarehouse
     S3Warehouse = IcebergS3Warehouse
+    DelegatedWarehouse = IcebergDelegatedWarehouse
+
     WriteOptions = IcebergWriteOptions
 
     Dialect = IcebergDialect
@@ -191,7 +231,7 @@ class Iceberg(DBConnection):
         spark: SparkSession,
         catalog_name: str,
         catalog: IcebergCatalog,
-        warehouse: IcebergWarehouse,
+        warehouse: Optional[IcebergWarehouse] = None,
         extra: Union[IcebergExtra, Dict[str, Any]] = IcebergExtra(),  # noqa: B008, WPS404
     ):
         super().__init__(
@@ -207,7 +247,7 @@ class Iceberg(DBConnection):
         )
         catalog_config = {
             **self.catalog.get_config(),
-            **self.warehouse.get_config(),
+            **(self.warehouse.get_config() if self.warehouse else {}),
             **self.extra.dict(),
         }
         for k, v in catalog_config.items():

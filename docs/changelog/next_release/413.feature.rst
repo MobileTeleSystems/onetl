@@ -1,0 +1,1 @@
+Implement ``Iceberg.DelegatedWarehouse`` allowing to use vended S3 credentials or remote-signing.

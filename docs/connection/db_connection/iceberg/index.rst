@@ -16,6 +16,7 @@ Iceberg
 
     warehouse_filesystem
     warehouse_s3
+    warehouse_delegated
 
 .. toctree::
     :maxdepth: 1

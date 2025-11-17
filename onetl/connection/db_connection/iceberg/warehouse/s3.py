@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+from __future__ import annotations
+
 import os
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from typing_extensions import Literal
 
@@ -90,14 +92,15 @@ class IcebergS3Warehouse(IcebergWarehouse, FrozenModel):
     port: Optional[int] = None
     protocol: Literal["http", "https"] = "https"
     bucket: str
+    region: str
     path_style_access: bool = False
     access_key: Optional[str] = None
     secret_key: Optional[SecretStr] = None
     session_token: Optional[SecretStr] = None
-    region: str
-    extra: Dict[str, str] = Field(default_factory=dict)
+    extra: Dict[str, Any] = Field(default_factory=dict)
 
-    def get_config(self) -> Dict[str, str]:
+    @slot
+    def get_config(self) -> dict[str, str]:
         config = {
             "warehouse": "s3a://" + self.bucket + "/" + self.path.as_posix().lstrip("/"),
             "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
@@ -107,7 +110,7 @@ class IcebergS3Warehouse(IcebergWarehouse, FrozenModel):
             "s3.session-token": self.session_token.get_secret_value() if self.session_token else None,
             "s3.path-style-access": stringify(self.path_style_access),
             "client.region": self.region,
-            **self.extra,
+            **stringify(self.extra),
         }
         return {k: v for k, v in config.items() if v is not None}
 

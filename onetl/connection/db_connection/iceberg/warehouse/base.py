@@ -1,9 +1,8 @@
 # SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from abc import ABC, abstractmethod
-from typing import Dict
+from __future__ import annotations
 
-from onetl.base import PurePathProtocol
+from abc import ABC, abstractmethod
 
 
 class IcebergWarehouse(ABC):
@@ -13,8 +12,6 @@ class IcebergWarehouse(ABC):
     .. versionadded:: 0.14.1
     """
 
-    path: PurePathProtocol
-
     @abstractmethod
-    def get_config(self) -> Dict[str, str]:
+    def get_config(self) -> dict[str, str]:
         """Return flat dict with warehouse configuration."""

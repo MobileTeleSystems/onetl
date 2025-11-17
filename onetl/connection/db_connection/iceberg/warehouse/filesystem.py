@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2021-2024 MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from typing import Dict
-
-from onetl.connection.file_df_connection.spark_s3.connection import SparkS3
+from __future__ import annotations
 
 try:
     from pydantic.v1 import validator
@@ -14,9 +12,12 @@ from onetl.connection.db_connection.iceberg.warehouse import IcebergWarehouse
 from onetl.connection.file_df_connection.spark_file_df_connection import (
     SparkFileDFConnection,
 )
+from onetl.connection.file_df_connection.spark_s3.connection import SparkS3
+from onetl.hooks import slot, support_hooks
 from onetl.impl.frozen_model import FrozenModel
 
 
+@support_hooks
 class IcebergFilesystemWarehouse(IcebergWarehouse, FrozenModel):
     """Iceberg Filesystem Warehouse.
 
@@ -90,13 +91,17 @@ class IcebergFilesystemWarehouse(IcebergWarehouse, FrozenModel):
     connection: SparkFileDFConnection
     path: PurePathProtocol
 
-    def get_config(self) -> Dict[str, str]:
+    @slot
+    def get_config(self) -> dict[str, str]:
         config = {
-            "warehouse": self.connection._convert_to_url(self.path),
+            "warehouse": self.connection._convert_to_url(self.path),  # noqa: WPS437
+            "io-impl": "org.apache.iceberg.hadoop.HadoopFileIO",
         }
         if isinstance(self.connection, SparkS3):
-            prefix = self.connection._get_hadoop_config_prefix()
-            hadoop_config = {"hadoop." + k: v for k, v in self.connection._get_expected_hadoop_config(prefix).items()}
+            prefix = self.connection._get_hadoop_config_prefix()  # noqa: WPS437
+            hadoop_config = {
+                "hadoop." + k: v for k, v in self.connection._get_expected_hadoop_config(prefix).items()  # noqa: WPS437
+            }
             config.update(hadoop_config)
 
         return config

@@ -415,7 +415,7 @@ class SparkS3(SparkFileDFConnection):
             if prefixed_key in conf:
                 conf[f"fs.s3a.{key}"] = conf.pop(prefixed_key)
 
-    def _get_expected_hadoop_config(self, prefix: str) -> dict:
+    def _get_expected_hadoop_config(self, prefix: str) -> dict[str, str]:
         conf = {
             f"{prefix}.endpoint": f"{self.protocol}://{self.host}:{self.port}",
             f"{prefix}.connection.ssl.enabled": self.protocol == "https",

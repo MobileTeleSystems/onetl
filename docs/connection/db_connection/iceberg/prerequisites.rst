@@ -34,9 +34,9 @@ Popular Metastore Implementations
 
 Iceberg supports multiple catalog implementations. Here are some popular options:
 
-* **Apache Iceberg Hadoop Catalog** — `File-based catalog using Hadoop filesystem <https://iceberg.apache.org/docs/latest/spark-configuration/>`_
-* **Apache Iceberg REST Catalog** — `Iceberg REST catalog <https://iceberg.apache.org/rest-catalog-spec/>`_
-* **Polaris** — `Сatalog service enabling multi-engine table access <https://polaris.apache.org/in-dev/unreleased/getting-started/>`_
-* **Lakekeeper** — `Rust native сatalog service <https://docs.lakekeeper.io/getting-started/>`_
-* **Gravitino** — `Apache Gravitino unified catalog <https://gravitino.apache.org/docs/>`_
-* **Unity Catalog** — `Databricks Unity Catalog <https://docs.databricks.com/aws/en/external-access/iceberg/>`_
+* `Apache Iceberg Hadoop Catalog <https://iceberg.apache.org/docs/latest/spark-configuration/>`_
+* `Lakekeeper <https://docs.lakekeeper.io/getting-started/>`_
+* `Polaris <https://polaris.apache.org/in-dev/unreleased/getting-started/>`_
+* `Nessie <https://projectnessie.org/guides/iceberg-rest/>`_
+* `Apache Gravitino <https://gravitino.apache.org/docs/>`_
+* `Databricks Unity Catalog <https://docs.databricks.com/aws/en/external-access/iceberg/>`_
