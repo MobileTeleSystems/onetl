@@ -172,7 +172,7 @@ class Iceberg(DBConnection):
                 # S3 warehouse params and credentials are provided by REST Catalog
                 warehouse=Iceberg.DeletatedWarehouse(
                     name="my-warehouse",
-                    access_delegation=["vended-credentials"],
+                    access_delegation="vended-credentials",
                 ),
             )
 

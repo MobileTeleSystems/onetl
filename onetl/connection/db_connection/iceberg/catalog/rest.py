@@ -10,7 +10,6 @@ from onetl.connection.db_connection.iceberg.catalog.auth import (
     IcebergRESTCatalogBasicAuth,
     IcebergRESTCatalogBearerAuth,
     IcebergRESTCatalogOAuth2ClientCredentials,
-    IcebergRESTCatalogOAuth2TokenExchange,
 )
 
 try:
@@ -81,19 +80,6 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
                 ),
             )
 
-        .. code-tab:: python REST catalog with OAuth2 Token Exchange Flow
-
-            from onetl.connection import Iceberg
-
-            catalog = Iceberg.RESTCatalog(
-                uri="https://rest.domain.com:8080",
-                auth=Iceberg.RESTCatalog.OAuth2TokenExchange(
-                    token="user_token",
-                    client_id="my_client_id",
-                    client_secret="my_client_secret",
-                ),
-            )
-
         .. code-tab:: python REST catalog with custom auth
 
             from onetl.connection import Iceberg
@@ -123,7 +109,6 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
     BasicAuth = IcebergRESTCatalogBasicAuth
     BearerAuth = IcebergRESTCatalogBearerAuth
     OAuth2ClientCredentials = IcebergRESTCatalogOAuth2ClientCredentials
-    OAuth2TokenExchange = IcebergRESTCatalogOAuth2TokenExchange
 
     uri: str
     headers: Dict[str, Any] = Field(default_factory=dict)
