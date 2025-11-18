@@ -15,10 +15,11 @@ Also apart from JVM properties, stopping Spark session does not clear Spark cont
 Spark sessions are created using the same context object, and thus using the same Spark config options.
 
 To properly stop Spark session, it is **required** to:
-* Stop Spark session by calling ``sparkSession.stop()``.
-* **STOP PYTHON INTERPRETER**, e.g. by calling ``sys.exit()``.
-* Start new Python interpreter.
-* Start new Spark session with config options you need.
+
+  * Stop Spark session by calling ``sparkSession.stop()``.
+  * **STOP PYTHON INTERPRETER**, e.g. by calling ``sys.exit()``.
+  * Start new Python interpreter.
+  * Start new Spark session with config options you need.
 
 Skipping some of these steps can lead to issues with creating new Spark session.
 
