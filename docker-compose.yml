@@ -251,7 +251,7 @@ services:
     profiles: [postgres, jdbc, db, all]
 
   hdfs:
-    image: ${HDFS_IMAGE:-mtsrus/hadoop:hadoop2-hdfs}
+    image: ${HDFS_IMAGE:-mtsrus/hadoop:hadoop3-hdfs}
     hostname: hdfs
     restart: unless-stopped
     environment:
