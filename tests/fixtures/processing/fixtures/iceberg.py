@@ -88,7 +88,7 @@ def iceberg_connection_rest_catalog_s3_warehouse(
         spark=spark,
         catalog_name="my_rest_catalog",
         catalog=Iceberg.RESTCatalog(
-            uri=f"http://{iceberg_rest_catalog_server.host}:{iceberg_rest_catalog_server.port}",
+            url=f"http://{iceberg_rest_catalog_server.host}:{iceberg_rest_catalog_server.port}",
         ),
         warehouse=Iceberg.S3Warehouse(
             path="/data",

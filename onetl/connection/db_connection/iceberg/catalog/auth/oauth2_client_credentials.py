@@ -4,9 +4,9 @@ from datetime import timedelta
 from typing import Dict, List, Optional
 
 try:
-    from pydantic.v1 import Field, SecretStr
+    from pydantic.v1 import AnyUrl, Field, SecretStr
 except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
+    from pydantic import Field, SecretStr, AnyUrl  # type: ignore[no-redef, assignment]
 
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.catalog.auth import IcebergRESTCatalogAuth
@@ -35,18 +35,18 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
         Interval for `automatic token refresh <https://www.oauth.com/oauth2-servers/access-tokens/refreshing-access-tokens/>`_.
         Default: 1 hour. Set to `None` to disable automatic refresh.
 
-    oauth2_server_uri : str, optional
-        OAuth2 server URI. If not provided, uses the REST catalog's
+    oauth2_token_endpoint : str, optional
+        OAuth2 endpoint for fetching tokens. If not provided, uses the REST catalog's
         ``v1/oauth/tokens`` endpoint.
 
     scopes : List[str], default: []
         `OAuth2 scopes <https://www.oauth.com/oauth2-servers/scope/>`_ to request.
 
     audience : str, optional
-        OAuth2 audience parameter.
+        OAuth2 ``audience`` param.
 
     resource : str, optional
-        OAuth2 resource parameter.
+        OAuth2 ``resource`` param.
 
     Examples
     --------
@@ -71,7 +71,7 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
                 client_id="my_client_id",
                 client_secret="my_client_secret",
                 scopes=["catalog:read"],
-                oauth2_server_uri="http://keycloak.domain.com/realms/my-realm/protocol/openid-connect/token",
+                oauth2_token_endpoint="http://keycloak.domain.com/realms/my-realm/protocol/openid-connect/token",
                 token_refresh_interval=timedelta(minutes=30),
                 audience="iceberg-catalog",
             )
@@ -95,7 +95,7 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Properties.java#L30-L31C30
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Manager.java#L275-L293
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/ResourcePaths.java#L57-L59
-    oauth2_server_uri: Optional[str] = None
+    oauth2_token_endpoint: Optional[AnyUrl] = None
 
     scopes: List[str] = Field(default_factory=list)
     audience: Optional[str] = None
@@ -114,7 +114,7 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
                 str(int(self.token_refresh_interval.total_seconds() * 1000)) if self.token_refresh_interval else None
             ),
             "token-refresh-enabled": stringify(self.token_refresh_interval is not None),
-            "oauth2-server-uri": self.oauth2_server_uri,
+            "oauth2-server-uri": str(self.oauth2_token_endpoint) if self.oauth2_token_endpoint else None,
             "scope": " ".join(self.scopes) if self.scopes else None,
             "audience": self.audience,
             "resource": self.resource,

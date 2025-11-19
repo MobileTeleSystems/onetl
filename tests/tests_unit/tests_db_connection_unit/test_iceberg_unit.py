@@ -145,7 +145,7 @@ def test_iceberg_with_rest_catalog_local_warehouse(spark_mock):
     iceberg = Iceberg(
         catalog_name="my_catalog",
         catalog=Iceberg.RESTCatalog(
-            uri="http://localhost:8080",
+            url="http://localhost:8080",
             headers={
                 "X-Custom-Header": 123,
             },
@@ -185,7 +185,7 @@ def test_iceberg_with_rest_catalog_hdfs_warehouse(spark_mock, mocker, iceberg_wa
     iceberg = Iceberg(
         catalog_name="my_catalog",
         catalog=Iceberg.RESTCatalog(
-            uri="http://localhost:8080",
+            url="http://localhost:8080",
             headers={
                 "X-Custom-Header": 123,
             },
@@ -231,7 +231,7 @@ def test_iceberg_with_rest_catalog_s3_warehouse(spark_mock):
     iceberg = Iceberg(
         catalog_name="my_catalog",
         catalog=Iceberg.RESTCatalog(
-            uri="http://localhost:8080",
+            url="http://localhost:8080",
             headers={
                 "X-Custom-Header": 123,
             },
@@ -273,7 +273,7 @@ def test_iceberg_with_rest_catalog_delegated_warehouse(spark_mock):
     iceberg = Iceberg(
         catalog_name="my_catalog",
         catalog=Iceberg.RESTCatalog(
-            uri="http://localhost:8080",
+            url="http://localhost:8080",
             headers={
                 "X-Custom-Header": 123,
             },
@@ -316,7 +316,7 @@ def test_iceberg_rest_catalog_with_basic_auth(spark_mock):
     iceberg = Iceberg(
         catalog_name="my_catalog",
         catalog=Iceberg.RESTCatalog(
-            uri="http://localhost:8080",
+            url="http://localhost:8080",
             auth=Iceberg.RESTCatalog.BasicAuth(
                 user="my_username",
                 password="my_password",
@@ -348,7 +348,7 @@ def test_iceberg_rest_catalog_with_bearer_auth(spark_mock):
     iceberg = Iceberg(
         catalog_name="my_catalog",
         catalog=Iceberg.RESTCatalog(
-            uri="http://localhost:8080",
+            url="http://localhost:8080",
             auth=Iceberg.RESTCatalog.BearerAuth(
                 access_token="my_access_token",
             ),
@@ -377,7 +377,7 @@ def test_iceberg_rest_catalog_with_oauth2_client_credentials_minimal(spark_mock)
     iceberg = Iceberg(
         catalog_name="my_catalog",
         catalog=Iceberg.RESTCatalog(
-            uri="http://localhost:8080",
+            url="http://localhost:8080",
             auth=Iceberg.RESTCatalog.OAuth2ClientCredentials(
                 client_secret="my_secret",
             ),
@@ -410,11 +410,11 @@ def test_iceberg_rest_catalog_with_oauth2_client_credentials_minimal(spark_mock)
 
 def test_iceberg_rest_catalog_with_oauth2_client_credentials_full():
     catalog = Iceberg.RESTCatalog(
-        uri="http://localhost:8080",
+        url="http://localhost:8080",
         auth=Iceberg.RESTCatalog.OAuth2ClientCredentials(
             client_id="my_client",
             client_secret="my_secret",
-            oauth2_server_uri="http://my-server/oauth/tokens",
+            oauth2_token_endpoint="http://my-server/oauth/tokens",
             token_refresh_interval=timedelta(minutes=30),
             scopes=["catalog:read", "catalog:write"],
             audience="iceberg-service",
@@ -436,7 +436,7 @@ def test_iceberg_rest_catalog_with_oauth2_client_credentials_full():
 
 def test_iceberg_rest_catalog_with_oauth2_client_credentials_no_token_refresh():
     catalog = Iceberg.RESTCatalog(
-        uri="http://localhost:8080",
+        url="http://localhost:8080",
         auth=Iceberg.RESTCatalog.OAuth2ClientCredentials(
             client_secret="my_secret",
             token_refresh_interval=None,

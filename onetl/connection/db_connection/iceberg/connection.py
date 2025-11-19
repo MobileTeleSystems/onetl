@@ -124,7 +124,7 @@ class Iceberg(DBConnection):
                 catalog_name="my_catalog",
                 spark=spark,
                 catalog=Iceberg.RESTCatalog(
-                    uri="http://my.rest.catalog/iceberg",
+                    url="http://my.rest.catalog/iceberg",
                     auth=Iceberg.RESTCatalog.OAuth2BearerToken(
                         token="my_token",
                     ),
@@ -162,11 +162,11 @@ class Iceberg(DBConnection):
                 catalog_name="my_catalog",
                 spark=spark,
                 catalog=Iceberg.RESTCatalog(
-                    uri="http://my.rest.catalog/iceberg",
+                    url="http://my.rest.catalog/iceberg",
                     auth=Iceberg.RESTCatalog.OAuth2ClientCredentials(
                         client_id="my_client",
                         client_secret="my_secret",
-                        oauth2_server_uri="http://keycloak.domain.com/realms/my-realm/protocol/openid-connect/token",
+                        oauth2_token_endpoint="http://keycloak.domain.com/realms/my-realm/protocol/openid-connect/token",
                     ),
                 ),
                 # S3 warehouse params and credentials are provided by REST Catalog

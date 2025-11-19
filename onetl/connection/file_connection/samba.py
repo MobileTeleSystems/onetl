@@ -115,7 +115,7 @@ class Samba(FileConnection):
     share: str
     protocol: Union[Literal["SMB"], Literal["NetBIOS"]] = "SMB"
     port: Optional[int] = None
-    domain: Optional[str] = ""
+    domain: str = ""
     auth_type: Union[Literal["NTLMv1"], Literal["NTLMv2"]] = "NTLMv2"
     user: Optional[str] = None
     password: Optional[SecretStr] = None

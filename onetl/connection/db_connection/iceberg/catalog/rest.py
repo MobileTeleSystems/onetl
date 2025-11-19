@@ -4,20 +4,19 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+try:
+    from pydantic.v1 import AnyUrl, Field
+except (ImportError, AttributeError):
+    from pydantic import Field, AnyUrl  # type: ignore[no-redef, assignment]
+
 from onetl._util.spark import stringify
+from onetl.connection.db_connection.iceberg.catalog import IcebergCatalog
 from onetl.connection.db_connection.iceberg.catalog.auth import (
     IcebergRESTCatalogAuth,
     IcebergRESTCatalogBasicAuth,
     IcebergRESTCatalogBearerAuth,
     IcebergRESTCatalogOAuth2ClientCredentials,
 )
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
-
-from onetl.connection.db_connection.iceberg.catalog import IcebergCatalog
 from onetl.impl.frozen_model import FrozenModel
 
 
@@ -28,8 +27,8 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
 
     Parameters
     ----------
-    uri : str
-        REST catalog server URI
+    url : str
+        REST catalog server URL
 
     headers : dict[str, str], optional
         Additional HTTP headers to include in requests
@@ -50,7 +49,7 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
             from onetl.connection import Iceberg
 
             catalog = Iceberg.RESTCatalog(
-                uri="https://rest.domain.com:8080",
+                url="https://rest.domain.com:8080",
                 auth=Iceberg.RESTCatalog.BasicAuth(
                     user="my_user",
                     password="my_password",
@@ -62,7 +61,7 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
             from onetl.connection import Iceberg
 
             catalog = Iceberg.RESTCatalog(
-                uri="https://rest.domain.com:8080",
+                url="https://rest.domain.com:8080",
                 auth=Iceberg.RESTCatalog.BearerAuth(
                     access_token="my_bearer_token",
                 ),
@@ -73,7 +72,7 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
             from onetl.connection import Iceberg
 
             catalog = Iceberg.RESTCatalog(
-                uri="https://rest.domain.com:8080",
+                url="https://rest.domain.com:8080",
                 auth=Iceberg.RESTCatalog.OAuth2ClientCredentials(
                     client_id="my_client_id",
                     client_secret="my_client_secret",
@@ -85,7 +84,7 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
             from onetl.connection import Iceberg
 
             catalog = Iceberg.RESTCatalog(
-                uri="https://rest.domain.com:8080",
+                url="https://rest.domain.com:8080",
                 headers={
                     "X-Custom-Auth": "my_custom_token",
                     "X-Request-ID": "request-123",
@@ -110,7 +109,7 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
     BearerAuth = IcebergRESTCatalogBearerAuth
     OAuth2ClientCredentials = IcebergRESTCatalogOAuth2ClientCredentials
 
-    uri: str
+    url: AnyUrl
     headers: Dict[str, Any] = Field(default_factory=dict)
     extra: Dict[str, Any] = Field(default_factory=dict)
 
@@ -119,7 +118,7 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
     def get_config(self) -> Dict[str, str]:
         config = {
             "type": "rest",
-            "uri": self.uri,
+            "uri": self.url,
             **stringify(self.extra),
         }
         for key, value in self.headers.items():
