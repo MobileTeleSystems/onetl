@@ -118,7 +118,7 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
     def get_config(self) -> Dict[str, str]:
         config = {
             "type": "rest",
-            "uri": self.url,
+            "uri": str(self.url),
             **stringify(self.extra),
         }
         for key, value in self.headers.items():

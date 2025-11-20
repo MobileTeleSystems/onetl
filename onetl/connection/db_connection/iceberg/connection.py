@@ -241,17 +241,20 @@ class Iceberg(DBConnection):
             warehouse=warehouse,  # type: ignore[call-arg]
             extra=extra,  # type: ignore[call-arg]
         )
-        self.spark.conf.set(
-            f"spark.sql.catalog.{self.catalog_name}",
-            "org.apache.iceberg.spark.SparkCatalog",
-        )
+        for k, v in self._get_spark_config().items():
+            self.spark.conf.set(k, v)
+
+    def _get_spark_config(self) -> dict[str, str]:
+        """Useful for debug"""
         catalog_config = {
             **self.catalog.get_config(),
             **(self.warehouse.get_config() if self.warehouse else {}),
             **self.extra.dict(),
         }
-        for k, v in catalog_config.items():
-            self.spark.conf.set(f"spark.sql.catalog.{self.catalog_name}.{k}", v)
+        catalog_prefix = f"spark.sql.catalog.{self.catalog_name}"
+        spark_config = {catalog_prefix: "org.apache.iceberg.spark.SparkCatalog"}
+        spark_config.update({f"{catalog_prefix}.{k}": v for k, v in catalog_config.items()})
+        return spark_config
 
     @slot
     @classmethod
