@@ -62,7 +62,7 @@ repos:
         args: [--autofix, --indent, '2', --preserve-quotes, --offset, '2']
 
   - repo: https://github.com/lovesegfault/beautysh
-    rev: v6.4.1
+    rev: v6.4.2
     hooks:
       - id: beautysh
         additional_dependencies: [setuptools]
@@ -88,7 +88,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.1
+    rev: v3.21.2
     hooks:
       - id: pyupgrade
         args: [--py37-plus, --keep-runtime-typing]
@@ -112,7 +112,7 @@ repos:
           - black==25.1.0
 
   - repo: https://github.com/pycqa/bandit
-    rev: 1.9.0
+    rev: 1.9.2
     hooks:
       - id: bandit
         args:
