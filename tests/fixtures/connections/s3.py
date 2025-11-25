@@ -45,8 +45,8 @@ def s3_file_connection(s3_server):
         protocol=s3_server.protocol,
     )
 
-    if not s3.client.bucket_exists(s3_server.bucket):
-        s3.client.make_bucket(s3_server.bucket)
+    if not s3.client.bucket_exists(bucket_name=s3_server.bucket):
+        s3.client.make_bucket(bucket_name=s3_server.bucket)
 
     return s3
 
