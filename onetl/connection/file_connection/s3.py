@@ -214,7 +214,7 @@ class S3(FileConnection):
         errors = list(
             self.client.remove_objects(
                 bucket_name=self.bucket,
-                objects=objects_to_delete,
+                delete_object_list=objects_to_delete,
             ),
         )
         if errors:
