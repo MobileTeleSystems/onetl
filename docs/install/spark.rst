@@ -37,7 +37,7 @@ This is usually done by setting up ``spark.jars.packages`` option while creating
     maven_packages = (
         Greenplum.get_packages(spark_version="3.2")
         + MySQL.get_packages()
-        + Teradata.get_packages()
+        + Postgres.get_packages()
     )
 
     spark = (
@@ -114,7 +114,7 @@ Can be used if you have access both to public repos (like Maven) and a private A
     maven_packages = (
         Greenplum.get_packages(spark_version="3.2")
         + MySQL.get_packages()
-        + Teradata.get_packages()
+        + Postgres.get_packages()
     )
 
     spark = (
@@ -229,7 +229,7 @@ Same as above, but can be used even if there is no network access to public repo
     maven_packages = (
         Greenplum.get_packages(spark_version="3.2")
         + MySQL.get_packages()
-        + Teradata.get_packages()
+        + Postgres.get_packages()
     )
 
     spark = (
@@ -253,7 +253,7 @@ Can be used to pass already downloaded file to Ivy, and skip resolving package f
     maven_packages = (
         Greenplum.get_packages(spark_version="3.2")
         + MySQL.get_packages()
-        + Teradata.get_packages()
+        + Postgres.get_packages()
     )
 
     spark = (

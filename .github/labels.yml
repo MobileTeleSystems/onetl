@@ -78,10 +78,6 @@
     description: Postgres-related
     color: 1077a6
 
-  - name: db:teradata
-    description: Teradata-related
-    color: 04115d
-
   - name: file:ftp
     description: FTP-related
     color: e41c74

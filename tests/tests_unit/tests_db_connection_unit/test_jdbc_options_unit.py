@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from onetl.connection import MSSQL, Clickhouse, MySQL, Oracle, Postgres, Teradata
+from onetl.connection import MSSQL, Clickhouse, MySQL, Oracle, Postgres
 from onetl.connection.db_connection.jdbc_connection import JDBCTableExistBehavior
 
 pytestmark = [pytest.mark.postgres]
@@ -62,10 +62,6 @@ def test_jdbc_options_default():
         (MySQL.ExecuteOptions, False),
         (MySQL.ReadOptions, True),
         (MySQL.WriteOptions, True),
-        (Teradata.FetchOptions, False),
-        (Teradata.ExecuteOptions, False),
-        (Teradata.ReadOptions, True),
-        (Teradata.WriteOptions, True),
         (Oracle.FetchOptions, False),
         (Oracle.ExecuteOptions, False),
         (Oracle.ReadOptions, True),
@@ -90,7 +86,6 @@ def test_jdbc_read_write_options_populated_by_connection_class(arg, value, optio
         (Clickhouse.ReadOptions, "ClickhouseReadOptions"),
         (MSSQL.ReadOptions, "MSSQLReadOptions"),
         (MySQL.ReadOptions, "MySQLReadOptions"),
-        (Teradata.ReadOptions, "TeradataReadOptions"),
         (Oracle.ReadOptions, "OracleReadOptions"),
     ],
 )
@@ -121,7 +116,6 @@ def test_jdbc_write_options_cannot_be_used_in_read_options(arg, value, options_c
         (Clickhouse.WriteOptions, "ClickhouseWriteOptions"),
         (MSSQL.WriteOptions, "MSSQLWriteOptions"),
         (MySQL.WriteOptions, "MySQLWriteOptions"),
-        (Teradata.WriteOptions, "TeradataWriteOptions"),
         (Oracle.WriteOptions, "OracleWriteOptions"),
     ],
 )
@@ -191,7 +185,6 @@ def test_jdbc_old_options_allowed_but_deprecated(arg, value):
         Clickhouse.ReadOptions,
         MSSQL.ReadOptions,
         MySQL.ReadOptions,
-        Teradata.ReadOptions,
         Oracle.ReadOptions,
     ],
 )
@@ -318,7 +311,6 @@ def test_jdbc_write_options_mode_deprecated(options, value, message):
         (Clickhouse.WriteOptions, {"if_exists": "wrong_mode"}),
         (MSSQL.WriteOptions, {"if_exists": "wrong_mode"}),
         (MySQL.WriteOptions, {"if_exists": "wrong_mode"}),
-        (Teradata.WriteOptions, {"if_exists": "wrong_mode"}),
         (Oracle.WriteOptions, {"if_exists": "wrong_mode"}),
     ],
 )
@@ -347,7 +339,6 @@ def test_jdbc_sql_options_partition_bounds(options, expected_message):
         Clickhouse.SQLOptions,
         MSSQL.SQLOptions,
         MySQL.SQLOptions,
-        Teradata.SQLOptions,
         Oracle.SQLOptions,
     ],
 )
@@ -363,7 +354,6 @@ def test_jdbc_sql_options_partitioning_mode_prohibited(options_class):
         Clickhouse.SQLOptions,
         MSSQL.SQLOptions,
         MySQL.SQLOptions,
-        Teradata.SQLOptions,
         Oracle.SQLOptions,
     ],
 )

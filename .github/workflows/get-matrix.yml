@@ -29,8 +29,6 @@ on:
         value: ${{ jobs.get-matrix.outputs.matrix-oracle }}
       matrix-postgres:
         value: ${{ jobs.get-matrix.outputs.matrix-postgres }}
-      matrix-teradata:
-        value: ${{ jobs.get-matrix.outputs.matrix-teradata }}
       matrix-ftp:
         value: ${{ jobs.get-matrix.outputs.matrix-ftp }}
       matrix-ftps:
@@ -65,7 +63,6 @@ jobs:
       matrix-mysql: ${{ toJson(fromJson(steps.matrix-mysql.outputs.result)[steps.key-mysql.outputs.key]) }}
       matrix-oracle: ${{ toJson(fromJson(steps.matrix-oracle.outputs.result)[steps.key-oracle.outputs.key]) }}
       matrix-postgres: ${{ toJson(fromJson(steps.matrix-postgres.outputs.result)[steps.key-postgres.outputs.key]) }}
-      matrix-teradata: ${{ toJson(fromJson(steps.matrix-teradata.outputs.result)[steps.key-teradata.outputs.key]) }}
       matrix-ftp: ${{ toJson(fromJson(steps.matrix-ftp.outputs.result)[steps.key-ftp.outputs.key]) }}
       matrix-ftps: ${{ toJson(fromJson(steps.matrix-ftps.outputs.result)[steps.key-ftps.outputs.key]) }}
       matrix-hdfs: ${{ toJson(fromJson(steps.matrix-hdfs.outputs.result)[steps.key-hdfs.outputs.key]) }}
@@ -457,36 +454,6 @@ jobs:
         uses: mikefarah/yq@v4.49.1
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/postgres/matrix.yml
-
-      - name: Check if Teradata files are changed
-        id: changed-teradata
-        uses: tj-actions/changed-files@v47
-        with:
-          files_from_source_file: .github/workflows/data/teradata/tracked.txt
-          files_ignore_from_source_file: .github/workflows/data/teradata/ignored.txt
-
-      - name: Print Teradata files changed
-        run: |
-          echo '${{ steps.changed-teradata.outputs.all_changed_files }}'
-
-      - name: Calculate Teradata matrix key
-        id: key-teradata
-        run: |
-          if ${{ inputs.nightly }}; then
-            key=nightly
-          elif ${{ steps.changed-base.outputs.any_changed }} || ${{ steps.changed-db.outputs.any_changed }} || ${{ steps.changed-teradata.outputs.any_changed }}; then
-            key=full
-          else
-            key=small
-          fi
-          echo key=$key
-          echo key=$key >> $GITHUB_OUTPUT
-
-      - name: Get Teradata matrix
-        id: matrix-teradata
-        uses: mikefarah/yq@v4.49.1
-        with:
-          cmd: yq -o=json '.matrix' .github/workflows/data/teradata/matrix.yml
 
       - name: Check if FTP files are changed
         id: changed-ftp

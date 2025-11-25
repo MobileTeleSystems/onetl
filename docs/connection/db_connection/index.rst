@@ -17,4 +17,3 @@ DB Connections
     MySQL <mysql/index>
     Oracle <oracle/index>
     Postgres <postgres/index>
-    Teradata <teradata/index>

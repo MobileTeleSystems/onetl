@@ -45,7 +45,6 @@ def maven_packages(request):
         Oracle,
         Postgres,
         SparkS3,
-        Teradata,
     )
     from onetl.file.format import XML, Avro, Excel
 
@@ -71,9 +70,6 @@ def maven_packages(request):
 
     if "postgres" in markers:
         packages.extend(Postgres.get_packages())
-
-    if "teradata" in markers:
-        packages.extend(Teradata.get_packages())
 
     gp_package_version = os.getenv("ONETL_GP_PACKAGE_VERSION")
     if "greenplum" in markers and gp_package_version != "local":

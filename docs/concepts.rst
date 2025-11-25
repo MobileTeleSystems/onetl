@@ -96,10 +96,6 @@ Class diagram
     }
     Oracle --|> JDBCConnection
 
-    class Teradata <<DBConnection>>{
-    }
-    Teradata --|> JDBCConnection
-
     class FileConnection <<FileConnection>>{
     }
     FileConnection --|> BaseConnection
