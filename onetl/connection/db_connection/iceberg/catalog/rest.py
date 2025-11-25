@@ -23,7 +23,7 @@ from onetl.impl.frozen_model import FrozenModel
 class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
     """Iceberg REST Catalog.
 
-    .. versionadded:: 0.14.1
+    .. versionadded:: 0.15.0
 
     Parameters
     ----------

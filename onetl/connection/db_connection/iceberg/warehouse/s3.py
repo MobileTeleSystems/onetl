@@ -26,7 +26,7 @@ from onetl.impl.frozen_model import FrozenModel
 class IcebergS3Warehouse(IcebergWarehouse, FrozenModel):
     """Iceberg S3 Warehouse. |support_hooks|
 
-    .. versionadded:: 0.14.1
+    .. versionadded:: 0.15.0
 
     .. note::
 

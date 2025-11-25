@@ -28,7 +28,7 @@ class IcebergDelegatedWarehouse(IcebergWarehouse, FrozenModel):
       * `Apache Gravitino <https://gravitino.apache.org/docs/1.0.0/security/credential-vending/>`_
       * `Databricks Unity Catalog <https://docs.databricks.com/aws/en/external-access/iceberg#use-iceberg-tables-with-apache-spark>`_
 
-    .. versionadded:: 0.14.1
+    .. versionadded:: 0.15.0
 
     Parameters
     ----------

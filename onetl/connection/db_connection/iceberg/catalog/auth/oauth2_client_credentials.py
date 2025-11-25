@@ -21,7 +21,7 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
 
     After that, all requests to REST catalog are made with a HTTP header ``Authorization: Bearer {access_token}``.
 
-    .. versionadded:: 0.14.1
+    .. versionadded:: 0.15.0
 
     Parameters
     ----------

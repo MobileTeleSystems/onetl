@@ -16,7 +16,7 @@ class IcebergRESTCatalogBasicAuth(IcebergRESTCatalogAuth, FrozenModel):
 
     All requests to REST catalog are made with HTTP header ``Authorization: Basic {user}:{password}``.
 
-    .. versionadded:: 0.14.1
+    .. versionadded:: 0.15.0
 
     Parameters
     ----------

@@ -321,7 +321,7 @@ class HiveWriteOptions(GenericOptions):
     table_properties: Dict[str, Any] = Field(default_factory=dict)
     """Properties to configure table behavior.
 
-    .. versionadded:: 0.14.1
+    .. versionadded:: 0.15.0
 
     Examples: ``{"auto.purge": True}``
 

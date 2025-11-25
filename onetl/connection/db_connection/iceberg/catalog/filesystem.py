@@ -9,7 +9,7 @@ from onetl.impl.frozen_model import FrozenModel
 class IcebergFilesystemCatalog(IcebergCatalog, FrozenModel):
     """Iceberg Filesystem Catalog (Hadoop Catalog).
 
-    .. versionadded:: 0.14.1
+    .. versionadded:: 0.15.0
 
     .. note::
 

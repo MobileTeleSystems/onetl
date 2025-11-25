@@ -21,7 +21,7 @@ from onetl.impl.frozen_model import FrozenModel
 class IcebergFilesystemWarehouse(IcebergWarehouse, FrozenModel):
     """Iceberg Filesystem Warehouse.
 
-    .. versionadded:: 0.14.1
+    .. versionadded:: 0.15.0
 
     .. note::
 
