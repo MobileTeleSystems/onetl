@@ -7,7 +7,7 @@ services:
       context: .
       target: base
       args:
-        SPARK_VERSION: 3.5.6
+        SPARK_VERSION: 3.5.7
     env_file: .env.docker
     volumes:
       - ./:/app/

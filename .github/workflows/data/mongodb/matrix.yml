@@ -8,7 +8,7 @@
 
 3_5_x: &3_5_x
   mongodb-version: 8.0.13
-  spark-version: 3.5.6
+  spark-version: 3.5.7
   pydantic-version: 2
   python-version: '3.13'
   java-version: 20
@@ -16,7 +16,7 @@
 
 4_0_x: &4_0_x
   mongodb-version: 8.0.13
-  spark-version: 4.0.0
+  spark-version: 4.0.1
   pydantic-version: 2
   python-version: '3.13'
   # https://stackoverflow.com/a/79017758/23601543
