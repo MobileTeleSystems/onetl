@@ -169,7 +169,11 @@ class S3(FileConnection):
         def _scan_entries_recursive(root: RemotePath) -> Iterable[Object]:  # noqa: WPS430
             nonlocal is_empty
             directory_path_str = self._delete_absolute_path_slash(root) + "/"
-            entries = self.client.list_objects(self.bucket, prefix=directory_path_str, recursive=True)
+            entries = self.client.list_objects(
+                bucket_name=self.bucket,
+                prefix=directory_path_str,
+                recursive=True,
+            )
             for entry in entries:
                 is_empty = False  # noqa: WPS442
 
@@ -207,7 +211,12 @@ class S3(FileConnection):
         objects_to_delete = (
             DeleteObject(obj.object_name) for obj in _scan_entries_recursive(remote_dir)  # type: ignore[arg-type]
         )
-        errors = list(self.client.remove_objects(self.bucket, objects_to_delete))
+        errors = list(
+            self.client.remove_objects(
+                bucket_name=self.bucket,
+                objects=objects_to_delete,
+            ),
+        )
         if errors:
             if log.isEnabledFor(logging.DEBUG):
                 log.debug(
@@ -228,7 +237,10 @@ class S3(FileConnection):
             return True
 
         remote_path_str = self._delete_absolute_path_slash(remote_path)
-        for component in self.client.list_objects(self.bucket, prefix=remote_path_str):
+        for component in self.client.list_objects(  # noqa: WPS352
+            bucket_name=self.bucket,
+            prefix=remote_path_str,
+        ):
             component_path = RemotePath(component.object_name)
             component_path_str = self._delete_absolute_path_slash(component_path)
             if component_path_str == remote_path_str:
@@ -280,7 +292,11 @@ class S3(FileConnection):
 
     def _download_file(self, remote_file_path: RemotePath, local_file_path: LocalPath) -> None:
         path_str = self._delete_absolute_path_slash(remote_file_path)
-        self.client.fget_object(self.bucket, path_str, os.fspath(local_file_path))
+        self.client.fget_object(
+            bucket_name=self.bucket,
+            object_name=path_str,
+            file_path=os.fspath(local_file_path),
+        )
 
     def _get_stat(self, path: RemotePath) -> RemotePathStat:
         if self._is_root(path):
@@ -288,7 +304,10 @@ class S3(FileConnection):
 
         # for some reason, client.stat_object returns less precise st_mtime than client.list_objects
         path_str = self._delete_absolute_path_slash(path)
-        objects = self.client.list_objects(self.bucket, prefix=path_str)
+        objects = self.client.list_objects(
+            bucket_name=self.bucket,
+            prefix=path_str,
+        )
         for obj in objects:
             object_path = RemotePath(obj.object_name)
             object_path_str = self._delete_absolute_path_slash(object_path)
@@ -300,7 +319,10 @@ class S3(FileConnection):
 
     def _remove_file(self, remote_file_path: RemotePath) -> None:
         path_str = self._delete_absolute_path_slash(remote_file_path)
-        self.client.remove_object(self.bucket, path_str)
+        self.client.remove_object(
+            bucket_name=self.bucket,
+            object_name=path_str,
+        )
 
     def _create_dir(self, path: RemotePath) -> None:
         # in s3 dirs do not exist
@@ -308,7 +330,11 @@ class S3(FileConnection):
 
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
         path_str = self._delete_absolute_path_slash(remote_file_path)
-        self.client.fput_object(self.bucket, path_str, os.fspath(local_file_path))
+        self.client.fput_object(
+            bucket_name=self.bucket,
+            object_name=path_str,
+            file_path=os.fspath(local_file_path),
+        )
 
     def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         source_str = self._delete_absolute_path_slash(source)
@@ -323,10 +349,13 @@ class S3(FileConnection):
 
     def _scan_entries(self, path: RemotePath) -> Iterable[Object]:
         if self._is_root(path):
-            return self.client.list_objects(self.bucket)
+            return self.client.list_objects(bucket_name=self.bucket)
 
         directory_path_str = self._delete_absolute_path_slash(path) + "/"
-        objects = self.client.list_objects(self.bucket, prefix=directory_path_str)
+        objects = self.client.list_objects(
+            bucket_name=self.bucket,
+            prefix=directory_path_str,
+        )
         return (obj for obj in objects if obj.object_name != directory_path_str)
 
     def _extract_name_from_entry(self, entry: Object) -> str:
@@ -351,7 +380,10 @@ class S3(FileConnection):
             # S3 does not have directories, but some integrations (like Iceberg or Spark 4.0)
             # may create empty object with name ending with /, and it will be considered as a directory marker.
             # delete such object if it present, and ignore error if it does not
-            self.client.remove_object(self.bucket, directory_path_str)
+            self.client.remove_object(
+                bucket_name=self.bucket,
+                object_name=directory_path_str,
+            )
         except S3Error as err:
             if err.code == "NoSuchKey":
                 return
@@ -360,22 +392,26 @@ class S3(FileConnection):
     def _read_text(self, path: RemotePath, encoding: str, **kwargs) -> str:
         path_str = self._delete_absolute_path_slash(path)
         file_handler = self.client.get_object(
-            self.bucket,
-            path_str,
+            bucket_name=self.bucket,
+            object_name=path_str,
             **kwargs,
         )
         return file_handler.read().decode(encoding)
 
     def _read_bytes(self, path: RemotePath, **kwargs) -> bytes:
         path_str = self._delete_absolute_path_slash(path)
-        file_handler = self.client.get_object(self.bucket, path_str, **kwargs)
+        file_handler = self.client.get_object(
+            bucket_name=self.bucket,
+            object_name=path_str,
+            **kwargs,
+        )
         return file_handler.read()
 
     def _write_text(self, path: RemotePath, content: str, encoding: str, **kwargs) -> None:
         content_bytes = content.encode(encoding)
         stream = io.BytesIO(content_bytes)
         self.client.put_object(
-            self.bucket,
+            bucket_name=self.bucket,
             data=stream,
             object_name=self._delete_absolute_path_slash(path),
             length=len(content_bytes),
@@ -385,7 +421,7 @@ class S3(FileConnection):
     def _write_bytes(self, path: RemotePath, content: bytes, **kwargs) -> None:
         stream = io.BytesIO(content)
         self.client.put_object(
-            self.bucket,
+            bucket_name=self.bucket,
             data=stream,
             object_name=self._delete_absolute_path_slash(path),
             length=len(content),
@@ -398,7 +434,12 @@ class S3(FileConnection):
 
         directory_path_str = self._delete_absolute_path_slash(path) + "/"
         try:
-            next(self.client.list_objects(self.bucket, prefix=directory_path_str))
+            next(
+                self.client.list_objects(
+                    bucket_name=self.bucket,
+                    prefix=directory_path_str,
+                ),
+            )
             return True
         except StopIteration:
             return False
@@ -406,7 +447,10 @@ class S3(FileConnection):
     def _is_file(self, path: RemotePath) -> bool:
         path_str = self._delete_absolute_path_slash(path)
         try:
-            self.client.stat_object(self.bucket, path_str)
+            self.client.stat_object(
+                bucket_name=self.bucket,
+                object_name=path_str,
+            )
             return True
         except S3Error as err:
             if err.code == "NoSuchKey":
