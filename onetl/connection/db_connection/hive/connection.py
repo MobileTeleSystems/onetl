@@ -335,6 +335,7 @@ class Hive(DBConnection):
     @slot
     def read_source_as_df(  # noqa: PLR0913
         self,
+        *,
         source: str,
         columns: list[str] | None = None,
         hint: str | None = None,

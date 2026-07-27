@@ -417,8 +417,8 @@ class MongoDB(DBConnection):
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
         log_with_indent(log, "collection = %r", source)
-        log_json(log, pipeline, "pipeline")
-        log_json(log, hint, "hint")
+        log_json(log, pipeline, name="pipeline")
+        log_json(log, hint, name="hint")
 
         read_options["aggregation.pipeline"] = json.dumps(pipeline)
         if hint:
@@ -441,6 +441,7 @@ class MongoDB(DBConnection):
     @slot
     def read_source_as_df(  # noqa: PLR0913
         self,
+        *,
         source: str,
         columns: list[str] | None = None,
         hint: dict | None = None,
@@ -463,8 +464,8 @@ class MongoDB(DBConnection):
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
         log_with_indent(log, "collection = %r", source)
-        log_json(log, pipeline, "pipeline")
-        log_json(log, hint, "hint")
+        log_json(log, pipeline, name="pipeline")
+        log_json(log, hint, name="hint")
         spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
         if df_schema:

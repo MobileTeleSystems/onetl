@@ -833,13 +833,13 @@ class DBReader(FrozenModel):
         log_with_indent(log, "source = '%s'", self.source)
 
         if self.hint:
-            log_json(log, self.hint, "hint")
+            log_json(log, self.hint, name="hint")
 
         if self.columns:
             log_collection(log, "columns", self.columns)
 
         if self.where:
-            log_json(log, self.where, "where")
+            log_json(log, self.where, name="where")
 
         if self.df_schema:
             empty_df = self.connection.spark.createDataFrame([], self.df_schema)

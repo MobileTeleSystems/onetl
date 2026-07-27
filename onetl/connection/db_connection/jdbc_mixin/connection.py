@@ -437,7 +437,7 @@ class JDBCMixin:
             jdbc_statement = self._build_statement(statement, statement_type, jdbc_connection, statement_args)
             return self._execute_statement(jdbc_connection, jdbc_statement, statement, options, callback, read_only)
 
-    def _execute_statement(  # noqa: PLR0913
+    def _execute_statement(  # noqa: PLR0913, PLR0917
         self,
         jdbc_connection,
         jdbc_statement,

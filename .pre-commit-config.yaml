@@ -87,13 +87,13 @@ repos:
         priority: 8
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.11.29
+    rev: 0.11.32
     hooks:
       - id: uv-lock
         priority: 8
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.22
+    rev: v0.16.0
     hooks:
       - id: ruff-format
         priority: 8

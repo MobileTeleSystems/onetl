@@ -175,7 +175,7 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         if not data:
             return None
 
-        latest = sorted(data, key=operator.itemgetter("modified_time"))[-1]
+        latest = sorted(data, key=operator.itemgetter("modified_time"))[-1]  # noqa: FURB192
         return HWMTypeRegistry.parse(latest)
 
     @slot

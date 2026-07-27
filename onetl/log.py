@@ -206,6 +206,7 @@ def log_with_indent(
 def log_lines(  # noqa: PLR0913
     logger: logging.Logger,
     inp: str,
+    *,
     name: str | None = None,
     indent: int = 0,
     level: int = logging.INFO,
@@ -246,6 +247,7 @@ def log_lines(  # noqa: PLR0913
 def log_json(  # noqa: PLR0913
     logger: logging.Logger,
     inp: Any,
+    *,
     name: str | None = None,
     indent: int = 0,
     level: int = logging.INFO,
@@ -276,13 +278,14 @@ def log_json(  # noqa: PLR0913
     ```
     """
 
-    log_lines(logger, json.dumps(inp, indent=4), name, indent, level, stacklevel=stacklevel + 1)
+    log_lines(logger, json.dumps(inp, indent=4), name=name, indent=indent, level=level, stacklevel=stacklevel + 1)
 
 
 def log_collection(  # noqa: PLR0913
     logger: logging.Logger,
     name: str,
     collection: Iterable,
+    *,
     max_items: int | None = None,
     indent: int = 0,
     level: int = logging.INFO,

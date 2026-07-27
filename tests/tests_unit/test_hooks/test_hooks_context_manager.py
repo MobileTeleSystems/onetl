@@ -273,7 +273,7 @@ def test_hooks_execute_context_manager_catch_exception(caplog):
 
         def __exit__(self, exc_type, exc_value, traceback):
             if exc_type:
-                log.exception("Context caught exception", exc_info=(exc_type, exc_value, traceback))
+                log.exception("Context caught exception", exc_info=(exc_type, exc_value, traceback))  # noqa: LOG004
                 del traceback
                 msg = "Replaced"
                 raise RuntimeError(msg) from exc_value
