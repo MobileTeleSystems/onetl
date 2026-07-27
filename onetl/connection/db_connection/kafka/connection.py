@@ -226,19 +226,31 @@ class Kafka(DBConnection):
         self._log_parameters()
 
         try:
-            with override_job_description(self.spark, f"{self}.check()"):
-                self._get_topics()
+            read_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
 
-                read_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
-                # We need to read just any topic allowed to check if Kafka is alive
+            # We need to read just any topic on Spark executor to check the connection
+            topics = self._get_topics()
+            if topics:
+                # Firstly try topics allowed by ACL
+                read_options["subscribe"] = topics.pop()
+            else:
+                # There is no default topics in Kafka which anyone can read
+                # __consumer_offsets is read/written by group coordinator, not regular consumer.
+                # So we need to read from any topic to check the connection
                 read_options["subscribePattern"] = ".*"
-                self.spark.read.format("kafka").options(**read_options).load().take(1)
 
-            log.info("|%s| Connection is available.", self.__class__.__name__)
+            with override_job_description(self.spark, f"{self}.check()"):
+                self.spark.read.format("kafka").options(**read_options).load().take(1)
         except Exception as e:
-            log.exception("|%s| Connection is unavailable", self.__class__.__name__)
-            msg = "Connection is unavailable"
-            raise RuntimeError(msg) from e
+            if "TopicAuthorizationException" in str(e):
+                # We only need to know that Kafka if reachable,
+                # not that we have read access to some random topic
+                pass
+            else:
+                log.exception("|%s| Connection is unavailable", self.__class__.__name__)
+                msg = "Connection is unavailable"
+                raise RuntimeError(msg) from e
+        log.info("|%s| Connection is available.", self.__class__.__name__)
         return self
 
     @slot
