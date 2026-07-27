@@ -1,6 +1,8 @@
 # Changelog { #DBR-onetl-changelog }
 
-- [Next release](./NEXT_RELEASE.md)
+- [Next release](./NEXT_RELEASE)
+- [0.16.2 (2026-07-27)][DBR-onetl-changelog-0-16-2]
+- [0.16.1 (2026-07-14)][DBR-onetl-changelog-0-16-1]
 - [0.16.0 (2026-05-12)][DBR-onetl-changelog-0-16-0]
 - [0.15.1 (2026-04-15)][DBR-onetl-changelog-0-15-1]
 - [0.15.0 (2025-12-08)][DBR-onetl-changelog-0-15-0]
