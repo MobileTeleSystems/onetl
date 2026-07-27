@@ -240,16 +240,16 @@ class Kafka(DBConnection):
                 # Firstly try topics allowed by ACL
                 read_options["subscribe"] = topics.pop()
             else:
-                # if ACL is not configured, try to read any topic
-                # There is no system topics in Kafka which anyone can read
-                # __consumer_offsets is read/written by group coordinator, not regular consumer
+                # There is no default topics in Kafka which anyone can read
+                # __consumer_offsets is read/written by group coordinator, not regular consumer.
+                # So we need to read from any topic to check the connection
                 read_options["subscribePattern"] = ".*"
 
             with override_job_description(self.spark, f"{self}.check()"):
                 self.spark.read.format("kafka").options(**read_options).load().take(1)
         except Exception as e:
             if "TopicAuthorizationException" in str(e):
-                # We need to know only that Kafka if reachable,
+                # We only need to know that Kafka if reachable,
                 # not that we have read access to some random topic
                 pass
             else:
