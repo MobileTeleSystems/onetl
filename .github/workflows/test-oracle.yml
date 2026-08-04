@@ -112,6 +112,7 @@ jobs:
             sed -i 's|ONETL_ORA_SERVICE_NAME=.*|ONETL_ORA_SERVICE_NAME=${{ inputs.db-name }}|' .env.local
 
             mkdir reports/ || echo "Directory exists"
+            rm -rf reports/*
             export "PYTEST=coverage run -m pytest --junitxml=reports/junit/oracle-${RANDOM}.xml"
             make test-spark UV_ARGS="--group test-oracle" PYTEST_ARGS="-m oracle"
 
