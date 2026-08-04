@@ -92,24 +92,8 @@ repos:
       - id: uv-lock
         priority: 8
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.1
-    hooks:
-      - id: ruff-format
-        priority: 8
-      - id: ruff-check
-        args: [--fix]
-        priority: 9
-
   - repo: local
     hooks:
-      - id: mypy
-        name: mypy
-        entry: python3 -m mypy onetl
-        language: system
-        types: [python]
-        pass_filenames: false
-        priority: 10
       - id: towncrier
         name: towncrier
         entry: towncrier build --draft
@@ -117,6 +101,7 @@ repos:
         types: [markdown]
         pass_filenames: false
         priority: 8
+
       - id: links2anchors
         name: links2anchors
         entry: python mddocs/scripts/links2anchors.py
@@ -124,6 +109,7 @@ repos:
         types: [markdown]
         pass_filenames: false
         priority: 8
+
       - id: generate_anchors
         name: generate_anchors
         entry: python mddocs/scripts/generate_anchors.py
@@ -131,6 +117,30 @@ repos:
         types: [markdown]
         pass_filenames: false
         priority: 8
+
+      - id: ruff-format
+        name: ruff-format
+        language: system
+        entry: ruff format .
+        types: [python]
+        pass_filenames: false
+        priority: 8
+
+      - id: ruff-check
+        name: ruff-check
+        language: system
+        entry: ruff check --fix
+        types: [python]
+        pass_filenames: false
+        priority: 9
+
+      - id: mypy
+        name: mypy
+        entry: python3 -m mypy onetl
+        language: system
+        types: [python]
+        pass_filenames: false
+        priority: 10
 
   - repo: meta
     hooks:
@@ -144,4 +154,6 @@ ci:
     - chmod # failing in pre-commit.ci
     - docker-compose-check # cannot run on pre-commit.ci
     - mypy # checked with Github Actions
+    - ruff-format # checked with Github Actions
+    - ruff-check # checked with Github Actions
     - towncrier # checked with Github Actions

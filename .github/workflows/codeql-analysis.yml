@@ -57,12 +57,11 @@ jobs:
         run: |
           uv sync --extra files --group test-spark-3.5 --group test-pydantic-2 --group dev
 
-          # Set the `CODEQL-PYTHON` environment variable to the Python executable
-          # that includes the dependencies
-          echo "CODEQL_PYTHON=$(which python)" >> $GITHUB_ENV
-
-      - name: Run mypy
-        run: python3 -m mypy onetl
+      - name: Run linters
+        run: |
+          uv run ruff format --check
+          uv run ruff check
+          uv run -m mypy onetl
 
   codeql:
     name: CodeQL
