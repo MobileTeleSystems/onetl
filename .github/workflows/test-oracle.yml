@@ -18,6 +18,9 @@ on:
       pydantic-version:
         required: true
         type: string
+      etl-entities-version:
+        required: true
+        type: string
       java-version:
         required: true
         type: string
@@ -105,6 +108,7 @@ jobs:
           max_attempts: 3
           command: |
             export PYDANTIC_VERSION=${{ inputs.pydantic-version }}
+            exrort ETL_ENTITIES_VERSION=${{ inputs.etl-entities-version }}
             export SPARK_VERSION=${{ inputs.spark-version }}
             export ONETL_ORA_CLIENT_PATH=$(realpath ./oracle/instantclient_21_10)
             export LD_LIBRARY_PATH=${ONETL_ORA_CLIENT_PATH}:${LD_LIBRARY_PATH}

@@ -6,7 +6,6 @@ from collections.abc import Iterable
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from etl_entities.instance import Cluster
 from humanize import naturaldelta
 
 try:
@@ -29,6 +28,7 @@ from onetl.connection.db_connection.hive.slots import HiveSlots
 from onetl.file.format.file_format import ReadWriteFileFormat, WriteOnlyFileFormat
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
+from onetl.impl import Cluster
 from onetl.log import log_lines, log_with_indent
 
 if TYPE_CHECKING:

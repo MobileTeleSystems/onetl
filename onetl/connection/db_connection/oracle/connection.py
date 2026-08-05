@@ -17,8 +17,6 @@ try:
 except (ImportError, AttributeError):
     from pydantic import root_validator  # type: ignore[no-redef, assignment]
 
-from etl_entities.instance import Host
-
 from onetl._util.classproperty import classproperty
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
@@ -37,7 +35,7 @@ from onetl.connection.db_connection.oracle.options import (
 )
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
-from onetl.impl import GenericOptions
+from onetl.impl import GenericOptions, Host
 from onetl.log import BASE_LOG_INDENT, log_lines
 
 # do not import PySpark here, as we allow user to use `Oracle.get_packages()` for creating Spark session

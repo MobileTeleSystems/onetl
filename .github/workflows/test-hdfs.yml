@@ -11,6 +11,9 @@ on:
       pydantic-version:
         required: true
         type: string
+      etl-entities-version:
+        required: true
+        type: string
       java-version:
         required: true
         type: string
@@ -90,6 +93,7 @@ jobs:
           make test-spark UV_ARGS="--extra hdfs --extra kerberos" PYTEST_ARGS="-n logical -m hdfs"
         env:
           PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
+          ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
           SPARK_VERSION: ${{ inputs.spark-version }}
 
       - name: Dump HDFS logs on failure

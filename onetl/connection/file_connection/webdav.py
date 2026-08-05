@@ -9,10 +9,6 @@ from logging import getLogger
 from pathlib import Path
 from typing import Any
 
-from etl_entities.instance import Host
-
-from onetl.impl.generic_options import GenericOptions
-
 try:
     from pydantic.v1 import DirectoryPath, Field, FilePath, SecretStr, root_validator, validator
 except (ImportError, AttributeError):
@@ -30,7 +26,7 @@ from typing import Literal
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
 from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath, RemotePathStat
+from onetl.impl import GenericOptions, Host, LocalPath, RemotePath, RemotePathStat
 
 try:
     from requests.adapters import HTTPAdapter

@@ -6,7 +6,7 @@ except (ImportError, AttributeError):
     from pydantic import SecretStr  # type: ignore[no-redef, assignment]
 
 from onetl.connection.db_connection.iceberg.catalog.auth import IcebergRESTCatalogAuth
-from onetl.impl.frozen_model import FrozenModel
+from onetl.impl import FrozenModel
 
 
 class IcebergRESTCatalogBasicAuth(IcebergRESTCatalogAuth, FrozenModel):

@@ -5,10 +5,6 @@ import os
 import textwrap
 from logging import getLogger
 
-from etl_entities.instance import Host
-
-from onetl.impl.generic_options import GenericOptions
-
 try:
     from pydantic.v1 import Field, SecretStr
 except (ImportError, AttributeError):
@@ -18,8 +14,7 @@ from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
 from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath
-from onetl.impl.remote_path_stat import RemotePathStat
+from onetl.impl import GenericOptions, Host, LocalPath, RemotePath, RemotePathStat
 
 try:
     from ftputil import FTPHost

@@ -11,7 +11,7 @@ except (ImportError, AttributeError):
 
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.warehouse import IcebergWarehouse
-from onetl.impl.frozen_model import FrozenModel
+from onetl.impl import FrozenModel
 
 
 @support_hooks

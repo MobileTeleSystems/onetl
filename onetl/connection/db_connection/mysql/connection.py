@@ -4,8 +4,6 @@ import warnings
 from contextlib import closing
 from typing import ClassVar
 
-from etl_entities.instance import Host
-
 from onetl._util.classproperty import classproperty
 from onetl._util.spark import get_client_info
 from onetl._util.version import Version
@@ -23,7 +21,7 @@ from onetl.connection.db_connection.mysql.options import (
     MySQLWriteOptions,
 )
 from onetl.hooks import slot, support_hooks
-from onetl.impl.generic_options import GenericOptions
+from onetl.impl import GenericOptions, Host
 
 # do not import PySpark here, as we allow user to use `MySQL.get_packages()` for creating Spark session
 

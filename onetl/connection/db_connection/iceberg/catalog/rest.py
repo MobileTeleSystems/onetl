@@ -15,7 +15,7 @@ from onetl.connection.db_connection.iceberg.catalog.auth import (
     IcebergRESTCatalogBearerAuth,
     IcebergRESTCatalogOAuth2ClientCredentials,
 )
-from onetl.impl.frozen_model import FrozenModel
+from onetl.impl import FrozenModel
 
 
 class IcebergRESTCatalog(IcebergCatalog, FrozenModel):

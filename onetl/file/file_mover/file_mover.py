@@ -16,6 +16,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
+from onetl._util.file import absolute_path
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol
 from onetl.file.file_mover.options import FileMoverOptions
@@ -430,8 +431,8 @@ class FileMover(FrozenModel):
 
             elif not remote_file_path.is_absolute():
                 # Passed path is already relative
-                new_file = self.target_path / remote_file_path
-                old_file = self.source_path / remote_file_path
+                new_file = absolute_path(self.target_path / remote_file_path)
+                old_file = absolute_path(self.source_path / remote_file_path)
             else:
                 # Wrong path (not relative path and source path not in the path to the file)
                 msg = f"File path '{old_file}' does not match source_path '{self.source_path}'"
@@ -444,13 +445,9 @@ class FileMover(FrozenModel):
 
         return result
 
-    @validator("target_path", pre=True, always=True)
-    def _resolve_target_path(cls, target_path):
-        return RemotePath(target_path)
-
-    @validator("source_path", pre=True, always=True)
-    def _validate_source_path(cls, source_path):
-        return RemotePath(source_path) if source_path else None
+    @validator("source_path", "target_path", pre=True, always=True)
+    def _resolve_target_path(cls, value):
+        return absolute_path(RemotePath(value)) if value else None
 
     def _check_source_path(self):
         self.connection.resolve_dir(self.source_path)

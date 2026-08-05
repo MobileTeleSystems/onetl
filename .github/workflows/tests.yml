@@ -39,6 +39,7 @@ jobs:
     with:
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -57,6 +58,7 @@ jobs:
       clickhouse-version: ${{ matrix.clickhouse-version }}
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -75,6 +77,7 @@ jobs:
       spark-version: ${{ matrix.spark-version }}
       package-version: ${{ matrix.package-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -94,6 +97,7 @@ jobs:
     with:
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -111,6 +115,7 @@ jobs:
       kafka-version: ${{ matrix.kafka-version }}
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -127,6 +132,7 @@ jobs:
     with:
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -144,6 +150,7 @@ jobs:
       mongodb-version: ${{ matrix.mongodb-version }}
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -161,6 +168,7 @@ jobs:
       mssql-version: ${{ matrix.mssql-version }}
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -178,6 +186,7 @@ jobs:
       mysql-version: ${{ matrix.mysql-version }}
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -197,6 +206,7 @@ jobs:
       db-name: ${{ matrix.db-name }}
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -214,6 +224,7 @@ jobs:
       postgres-version: ${{ matrix.postgres-version }}
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -230,6 +241,7 @@ jobs:
     with:
       ftp-version: ${{ matrix.ftp-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
@@ -245,6 +257,7 @@ jobs:
     with:
       ftps-version: ${{ matrix.ftps-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
@@ -261,6 +274,7 @@ jobs:
       hadoop-version: ${{ matrix.hadoop-version }}
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -278,6 +292,7 @@ jobs:
       minio-version: ${{ matrix.minio-version }}
       spark-version: ${{ matrix.spark-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       java-version: ${{ matrix.java-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
@@ -294,6 +309,7 @@ jobs:
     with:
       openssh-version: ${{ matrix.openssh-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
@@ -309,6 +325,7 @@ jobs:
     with:
       server-version: ${{ matrix.server-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
@@ -325,6 +342,7 @@ jobs:
     with:
       webdav-version: ${{ matrix.webdav-version }}
       pydantic-version: ${{ matrix.pydantic-version }}
+      etl-entities-version: ${{ matrix.etl-entities-version }}
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 

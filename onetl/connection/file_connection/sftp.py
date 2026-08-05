@@ -7,10 +7,6 @@ import warnings
 from logging import getLogger
 from stat import S_ISDIR, S_ISREG
 
-from etl_entities.instance import Host
-
-from onetl.impl.generic_options import GenericOptions
-
 try:
     from pydantic.v1 import Field, FilePath, SecretStr, root_validator
 except (ImportError, AttributeError):
@@ -19,7 +15,7 @@ except (ImportError, AttributeError):
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
 from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath
+from onetl.impl import GenericOptions, Host, LocalPath, RemotePath
 
 try:
     from paramiko import ProxyCommand, SSHClient, SSHConfig, WarningPolicy

@@ -14,6 +14,9 @@ on:
       pydantic-version:
         required: true
         type: string
+      etl-entities-version:
+        required: true
+        type: string
       java-version:
         required: true
         type: string
@@ -100,6 +103,7 @@ jobs:
           make test-spark UV_ARGS="--group test-greenplum" PYTEST_ARGS="-m greenplum"
         env:
           PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
+          ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
           SPARK_VERSION: ${{ inputs.spark-version }}
           ONETL_GP_PACKAGE_VERSION: ${{ inputs.package-version }}
           GREENPLUM_PACKAGES_USER: ${{ secrets.GREENPLUM_PACKAGES_USER }}
@@ -112,6 +116,7 @@ jobs:
           make test-spark UV_ARGS="--group test-greenplum" PYTEST_ARGS="-m greenplum -k 'tests_core_integration or tests_db_connection_integration'"
         env:
           PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
+          ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
           SPARK_VERSION: ${{ inputs.spark-version }}
           ONETL_GP_PACKAGE_VERSION: ${{ inputs.package-version }}
           ONETL_GP_PORT: 6433

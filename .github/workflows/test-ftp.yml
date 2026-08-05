@@ -8,6 +8,9 @@ on:
       pydantic-version:
         required: true
         type: string
+      etl-entities-version:
+        required: true
+        type: string
       python-version:
         required: true
         type: string
@@ -61,6 +64,7 @@ jobs:
           make test-no-spark UV_ARGS="--extra ftp" PYTEST_ARGS="-m ftp"
         env:
           PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
+          ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
 
       - name: Dump FTP logs on failure
         if: failure()

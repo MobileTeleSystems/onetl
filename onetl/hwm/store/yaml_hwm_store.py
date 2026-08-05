@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 import operator
+import os
 import re
 from typing import ClassVar
 
@@ -12,14 +13,10 @@ from etl_entities.hwm_store import (
     register_hwm_store_class,
 )
 from platformdirs import user_data_dir
-
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from pydantic.v1 import BaseModel
 
 from onetl.hooks import slot, support_hooks
-from onetl.impl import FrozenModel, LocalPath
+from onetl.impl import LocalPath
 
 DATA_PATH = LocalPath(user_data_dir("onETL", "ONEtools"))
 
@@ -53,7 +50,7 @@ def default_hwm_store_class(klass: type[BaseHWMStore]) -> type[BaseHWMStore]:
 @default_hwm_store_class
 @register_hwm_store_class("yaml")
 @support_hooks
-class YAMLHWMStore(BaseHWMStore, FrozenModel):
+class YAMLHWMStore(BaseHWMStore):
     r"""YAML **local store** for HWM values. Used as default HWM store. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
 
     Parameters
@@ -152,20 +149,30 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
     ```
     """
 
-    class Config:
-        frozen = True
-
     path: LocalPath = DATA_PATH / "yml_hwm_store"
     encoding: str = "utf-8"
 
     ITEMS_DELIMITER_PATTERN: ClassVar[re.Pattern] = re.compile("[#@|]+")
     PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:/\\]+")
 
-    @validator("path", pre=True, always=True)
-    def validate_path(cls, path):
+    if issubclass(BaseHWMStore, BaseModel):
+
+        class Config:
+            # pydantic v1
+            frozen = True
+            extra = "forbid"
+    else:
+        # pydantic v2
+        model_config: ClassVar = {"frozen": True, "extra": "forbid"}
+
+    def __init__(self, path: os.PathLike | str = DATA_PATH / "yml_hwm_store", encoding="utf-8"):
         path = LocalPath(path).expanduser().resolve()
         path.mkdir(parents=True, exist_ok=True)
-        return path
+
+        super().__init__(
+            path=path,
+            encoding=encoding,
+        )
 
     @slot
     def get_hwm(self, name: str) -> HWM | None:

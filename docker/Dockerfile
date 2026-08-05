@@ -45,6 +45,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 ARG SPARK_VERSION=3.5
 ARG PYDANTIC_VERSION=2
+ARG ETL_ENTITIES_VERSION=3
 COPY --chown=onetl:onetl pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv sync \
@@ -59,6 +60,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --group test-oracle \
     --group test-postgres \
     --group test-pydantic-${PYDANTIC_VERSION} \
+    --group test-etl-entities-${ETL_ENTITIES_VERSION} \
     --group test-spark-${SPARK_VERSION}
 
 FROM base AS full

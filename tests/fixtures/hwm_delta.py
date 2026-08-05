@@ -10,8 +10,7 @@ from etl_entities.hwm import (
     FileModifiedTimeHWM,
 )
 
-from onetl.impl.remote_file import RemoteFile
-from onetl.impl.remote_path import RemotePath
+from onetl.impl import RemoteFile, RemotePath
 from onetl.impl.remote_path_stat import RemotePathStat
 
 

@@ -11,6 +11,9 @@ on:
       pydantic-version:
         required: true
         type: string
+      etl-entities-version:
+        required: true
+        type: string
       java-version:
         required: true
         type: string
@@ -85,6 +88,7 @@ jobs:
           make test-spark UV_ARGS="--group test-mongodb" PYTEST_ARGS="-m mongodb"
         env:
           PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
+          ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
           SPARK_VERSION: ${{ inputs.spark-version }}
 
       - name: Dump MongoDB logs on failure

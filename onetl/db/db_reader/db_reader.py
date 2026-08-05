@@ -4,12 +4,10 @@ import textwrap
 import time
 import warnings
 from logging import getLogger
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import frozendict
 from etl_entities.hwm import HWM, ColumnHWM, KeyValueHWM
-from etl_entities.old_hwm import IntHWM as OldColumnHWM
-from etl_entities.source import Column, Table
 from humanize import naturaldelta
 
 try:
@@ -17,7 +15,9 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
+
 from onetl._util.alias import avoid_alias
+from onetl._util.process import get_process_info
 from onetl._util.spark import override_job_description, try_import_pyspark
 from onetl.base import (
     BaseDBConnection,
@@ -311,8 +311,8 @@ class DBReader(FrozenModel):
     where: Any | None = None
     hint: Any | None = None
     df_schema: "StructType | None" = None
-    hwm_column: str | tuple | None = None
-    hwm_expression: str | None = None
+    hwm_column: str | tuple[str, str] | None = Field(deprecated=True, default=None)
+    hwm_expression: str | None = Field(deprecated=True, default=None)
     hwm: AutoDetectHWM | ColumnHWM | KeyValueHWM | None = None
     options: GenericOptions | None = None
 
@@ -388,11 +388,11 @@ class DBReader(FrozenModel):
                     )
                     raise ValueError(error_message)
 
-            # convert old parameters to new one
-            old_hwm = OldColumnHWM(
-                source=Table(name=source, instance=connection.instance_url),  # type: ignore[arg-type]
-                column=Column(name=hwm_column),  # type: ignore[arg-type]
-            )
+            process_name, hostname = get_process_info()
+            hwm_column = cast("str", hwm_column)
+            hwm_expression = cast("str | None", hwm_expression)
+            # backported HWM.qualified_name from etl_entities v1/v2
+            qualified_name = f"{hwm_column}#{source}@{connection.instance_url}#{process_name}@{hostname}"
             warnings.warn(
                 textwrap.dedent(
                     f"""
@@ -401,7 +401,7 @@ class DBReader(FrozenModel):
 
                     Instead use:
                         hwm=DBReader.AutoDetectHWM(
-                            name={old_hwm.qualified_name!r},
+                            name={qualified_name!r},
                             expression={hwm_column!r},
                         )
                     """,
@@ -409,8 +409,9 @@ class DBReader(FrozenModel):
                 UserWarning,
                 stacklevel=2,
             )
+
             hwm = AutoDetectHWM(
-                name=old_hwm.qualified_name,
+                name=qualified_name,
                 expression=hwm_expression or hwm_column,
             )
 
