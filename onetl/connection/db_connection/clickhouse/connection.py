@@ -4,8 +4,6 @@ import logging
 import warnings
 from typing import ClassVar
 
-from etl_entities.instance import Host
-
 from onetl._util.classproperty import classproperty
 from onetl._util.spark import get_client_info
 from onetl._util.version import Version
@@ -20,7 +18,7 @@ from onetl.connection.db_connection.clickhouse.options import (
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_mixin import JDBCStatementType
 from onetl.hooks import slot, support_hooks
-from onetl.impl import GenericOptions
+from onetl.impl import GenericOptions, Host
 
 # do not import PySpark here, as we allow user to use `Clickhouse.get_packages()` for creating Spark session
 

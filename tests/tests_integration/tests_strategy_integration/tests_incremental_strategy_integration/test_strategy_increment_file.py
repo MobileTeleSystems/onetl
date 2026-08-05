@@ -5,7 +5,6 @@ import time
 import pytest
 from etl_entities.hwm import ColumnIntHWM, FileListHWM, FileModifiedTimeHWM
 from etl_entities.hwm_store import HWMStoreStackManager
-from etl_entities.instance import AbsolutePath
 
 from onetl.file import FileDownloader
 from onetl.strategy import IncrementalStrategy
@@ -237,7 +236,7 @@ def test_file_downloader_incremental_strategy_different_hwm_optional_attribute_i
     file_connection, remote_path, _ = file_connection_with_path_and_files
     local_path = tmp_path_factory.mktemp("local_path")
 
-    old_hwm = hwm_type(name=hwm_name, directory=AbsolutePath(remote_path), expression="some", description="another")
+    old_hwm = hwm_type(name=hwm_name, directory=remote_path, expression="some", description="another")
     # HWM Store contains HWM with same name, but different optional attribute
     fake_hwm = old_hwm.copy(update={attribute: rand_str()})
     hwm_store.set_hwm(fake_hwm)

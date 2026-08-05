@@ -9,12 +9,9 @@ import warnings
 from collections.abc import Generator, Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
-from typing import cast
+from typing import Any, cast
 
 from etl_entities.hwm import FileHWM, FileListHWM
-from etl_entities.instance import AbsolutePath
-from etl_entities.old_hwm import FileListHWM as OldFileListHWM
-from etl_entities.source import RemoteFolder
 from humanize import naturaldelta
 from ordered_set import OrderedSet
 
@@ -23,7 +20,9 @@ try:
 except (ImportError, AttributeError):
     from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
-from onetl._util.file import generate_temp_path
+
+from onetl._util.file import absolute_path, generate_temp_path
+from onetl._util.process import get_process_info
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol
 from onetl.file.file_downloader.options import FileDownloaderOptions
@@ -272,7 +271,7 @@ class FileDownloader(FrozenModel):
     limits: list[BaseFileLimit] = Field(default_factory=list, alias="limit")
 
     hwm: FileHWM | None = None
-    hwm_type: type[OldFileListHWM] | str | None = None
+    hwm_type: Any | None = Field(default=None, deprecated=True)
 
     options: FileDownloaderOptions = FileDownloaderOptions()
 
@@ -533,17 +532,13 @@ class FileDownloader(FrozenModel):
             elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
             entity_boundary_log(log, f"{method} ended in %s", elapsed, char="-")
 
-    @validator("local_path", pre=True, always=True)
-    def _resolve_local_path(cls, local_path):
-        return LocalPath(local_path).resolve()
+    @validator("local_path", "temp_path", pre=True, always=True)
+    def _resolve_local_path(cls, value):
+        return LocalPath(value).expanduser().resolve() if value else None
 
     @validator("source_path", pre=True, always=True)
-    def _validate_source_path(cls, source_path):
-        return RemotePath(source_path) if source_path else None
-
-    @validator("temp_path", pre=True, always=True)
-    def _validate_temp_path(cls, temp_path):
-        return LocalPath(temp_path).resolve() if temp_path else None
+    def _validate_source_path(cls, value):
+        return absolute_path(RemotePath(value)) if value else None
 
     @root_validator(skip_on_failure=True)
     def _validate_hwm(cls, values):
@@ -556,9 +551,11 @@ class FileDownloader(FrozenModel):
             msg = "If `hwm` is passed, `source_path` must be specified"
             raise ValueError(msg)
 
-        if hwm_type and (hwm_type == "file_list" or issubclass(hwm_type, OldFileListHWM)):
-            remote_file_folder = RemoteFolder(name=source_path, instance=connection.instance_url)
-            old_hwm = OldFileListHWM(source=remote_file_folder)
+        if hwm_type:
+            process_name, hostname = get_process_info()
+            # backported HWM.qualified_name from etl_entities v1/v2
+            qualified_name = f"file_list#{os.fspath(source_path)}@{connection.instance_url}#{process_name}@{hostname}"
+
             warnings.warn(
                 textwrap.dedent(
                     f"""
@@ -566,19 +563,19 @@ class FileDownloader(FrozenModel):
                     and will be removed in v1.0.0.
 
                     Instead use:
-                        hwm=FileListHWM(name={old_hwm.qualified_name!r})
+                        hwm=FileListHWM(name={qualified_name!r})
                     """,
                 ),
                 UserWarning,
                 stacklevel=2,
             )
             hwm = FileListHWM(
-                name=old_hwm.qualified_name,
+                name=qualified_name,
                 directory=source_path,
             )
 
         if hwm and not hwm.entity:
-            hwm = hwm.copy(update={"entity": AbsolutePath(source_path)})
+            hwm = hwm.copy(update={"entity": source_path})
 
         if hwm and hwm.entity != source_path:
             error_message = textwrap.dedent(
@@ -751,8 +748,8 @@ class FileDownloader(FrozenModel):
 
             elif not remote_file_path.is_absolute():
                 # Passed path is already relative
+                remote_file = absolute_path(self.source_path / remote_file_path)
                 local_file = self.local_path / remote_file_path
-                remote_file = self.source_path / remote_file_path
                 if current_temp_dir:
                     tmp_file = current_temp_dir / remote_file_path
             else:

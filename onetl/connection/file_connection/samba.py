@@ -7,10 +7,6 @@ from logging import getLogger
 from pathlib import Path
 from typing import Literal
 
-from etl_entities.instance import Host
-
-from onetl.impl.generic_options import GenericOptions
-
 try:
     from pydantic.v1 import Field, SecretStr, validator
 except (ImportError, AttributeError):
@@ -18,7 +14,7 @@ except (ImportError, AttributeError):
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath, RemotePathStat
+from onetl.impl import GenericOptions, Host, LocalPath, RemotePath, RemotePathStat
 
 try:
     from smb.smb_structs import OperationFailure

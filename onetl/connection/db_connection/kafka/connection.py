@@ -5,8 +5,6 @@ import logging
 from contextlib import closing
 from typing import TYPE_CHECKING, Any
 
-from etl_entities.instance import Cluster
-
 try:
     from pydantic.v1 import root_validator, validator
 except (ImportError, AttributeError):
@@ -46,6 +44,7 @@ from onetl.connection.db_connection.kafka.slots import KafkaSlots
 from onetl.exception import MISSING_JVM_CLASS_MSG, TargetAlreadyExistsError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm.window import Window
+from onetl.impl import Cluster
 from onetl.log import log_collection, log_with_indent
 
 if TYPE_CHECKING:

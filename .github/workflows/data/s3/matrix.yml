@@ -4,6 +4,7 @@
   # Minimal Spark version with Hadoop 3.x support
   spark-version: '3.2'
   pydantic-version: 1
+  etl-entities-version: 2
   python-version: '3.10'
   java-version: 8
   os: ubuntu-22.04
@@ -12,6 +13,7 @@
   minio-version: 2025.7.23
   spark-version: '3.5'
   pydantic-version: 2
+  etl-entities-version: 3
   python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
@@ -20,6 +22,7 @@
   minio-version: 2025.7.23
   spark-version: '4.0'
   pydantic-version: 2
+  etl-entities-version: 3
   python-version: '3.14'
   # https://issues.apache.org/jira/browse/SPARK-54276
   java-version: 22
@@ -29,6 +32,7 @@
   minio-version: 2025.7.23
   spark-version: '4.1'
   pydantic-version: 2
+  etl-entities-version: 3
   python-version: '3.14'
   # https://issues.apache.org/jira/browse/SPARK-54276
   java-version: 22
@@ -38,6 +42,7 @@
   minio-version: 2025.7.23
   spark-version: '4.2'
   pydantic-version: 2
+  etl-entities-version: 3
   python-version: '3.14'
   java-version: 25
   os: ubuntu-latest

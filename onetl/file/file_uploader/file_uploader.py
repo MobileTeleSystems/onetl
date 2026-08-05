@@ -16,7 +16,7 @@ try:
 except (ImportError, AttributeError):
     from pydantic import PrivateAttr, validator  # type: ignore[no-redef, assignment]
 
-from onetl._util.file import generate_temp_path
+from onetl._util.file import absolute_path, generate_temp_path
 from onetl.base import BaseFileConnection
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file.file_set import FileSet
@@ -392,15 +392,11 @@ class FileUploader(FrozenModel):
 
     @validator("local_path", pre=True, always=True)
     def _resolve_local_path(cls, local_path):
-        return LocalPath(local_path).resolve() if local_path else None
+        return LocalPath(local_path).expanduser().resolve() if local_path else None
 
-    @validator("target_path", pre=True, always=True)
-    def _validate_target_path(cls, target_path):
-        return RemotePath(target_path)
-
-    @validator("temp_path", pre=True, always=True)
-    def _validate_temp_path(cls, temp_path):
-        return RemotePath(temp_path) if temp_path else None
+    @validator("target_path", "temp_path", pre=True, always=True)
+    def _validate_target_path(cls, value):
+        return absolute_path(RemotePath(value)) if value else None
 
     def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
         log.info("|Local FS| -> |%s| Uploading files using parameters:'", self.connection.__class__.__name__)
@@ -452,7 +448,7 @@ class FileUploader(FrozenModel):
             elif not local_file_path.is_absolute():
                 # Passed path is already relative
                 local_file = self.local_path / local_file_path
-                target_file = self.target_path / local_file_path
+                target_file = absolute_path(self.target_path / local_file_path)
                 if current_temp_dir:
                     tmp_file = current_temp_dir / local_file_path
             else:

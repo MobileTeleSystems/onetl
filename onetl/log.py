@@ -518,9 +518,9 @@ def log_hwm(logger: logging.Logger, hwm: "HWM", indent: int = 0, stacklevel: int
     INFO  onetl.module            entity = "my_source",
     INFO  onetl.module            expression = None,
     INFO  onetl.module            value = [
-    INFO  onetl.module                AbsolutePath("/some/file1.csv"),
-    INFO  onetl.module                AbsolutePath("/some/file2.csv"),
-    INFO  onetl.module                AbsolutePath("/some/file3.csv"),
+    INFO  onetl.module                RemotePath("/some/file1.csv"),
+    INFO  onetl.module                RemotePath("/some/file2.csv"),
+    INFO  onetl.module                RemotePath("/some/file3.csv"),
     INFO  onetl.module            ]
     INFO  onetl.module        )
     ```

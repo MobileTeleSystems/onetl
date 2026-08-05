@@ -7,7 +7,6 @@ import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 from urllib.parse import quote, urlencode, urlparse, urlunparse
 
-from etl_entities.instance import Host
 from typing_extensions import deprecated
 
 try:
@@ -46,7 +45,7 @@ from onetl.connection.db_connection.jdbc_mixin import (
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
-from onetl.impl import GenericOptions
+from onetl.impl import GenericOptions, Host
 from onetl.log import log_lines, log_with_indent
 
 if TYPE_CHECKING:

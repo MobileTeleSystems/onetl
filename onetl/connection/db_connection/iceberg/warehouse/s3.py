@@ -3,19 +3,18 @@
 import os
 from typing import Any, Literal
 
-from onetl._util.version import Version
-from onetl.hooks import slot, support_hooks
-from onetl.impl.remote_path import RemotePath
-
 try:
     from pydantic.v1 import Field, SecretStr, validator
 except (ImportError, AttributeError):
     from pydantic import Field, SecretStr, validator  # type: ignore[no-redef, assignment]
 
+
 from onetl._util.spark import stringify
+from onetl._util.version import Version
 from onetl.base import PurePathProtocol
 from onetl.connection.db_connection.iceberg.warehouse import IcebergWarehouse
-from onetl.impl.frozen_model import FrozenModel
+from onetl.hooks import slot, support_hooks
+from onetl.impl import FrozenModel, RemotePath
 
 
 @support_hooks

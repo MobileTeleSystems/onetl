@@ -3,8 +3,6 @@
 import warnings
 from enum import Enum
 
-from onetl.impl.generic_options import GenericOptions
-
 try:
     from pydantic.v1 import Field, root_validator
 except (ImportError, AttributeError):
@@ -16,6 +14,7 @@ from onetl.connection.db_connection.jdbc_mixin import (
     JDBCFetchOptions,
     JDBCMixinOptions,
 )
+from onetl.impl import GenericOptions
 
 # options from which are populated by Greenplum class methods
 GENERIC_PROHIBITED_OPTIONS = frozenset(

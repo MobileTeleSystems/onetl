@@ -6,8 +6,6 @@ import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 from urllib import parse as parser
 
-from etl_entities.instance import Host
-
 try:
     from pydantic.v1 import PrivateAttr, SecretStr, validator
 except (ImportError, AttributeError):
@@ -34,7 +32,7 @@ from onetl.connection.db_connection.mongodb.options import (
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
-from onetl.impl import GenericOptions
+from onetl.impl import GenericOptions, Host
 from onetl.log import log_dataframe_schema, log_json, log_options, log_with_indent
 
 if TYPE_CHECKING:

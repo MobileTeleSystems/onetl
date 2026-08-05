@@ -4,7 +4,7 @@
 from typing import TYPE_CHECKING
 
 from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
-from onetl.impl.frozen_model import FrozenModel
+from onetl.impl import FrozenModel
 
 if TYPE_CHECKING:
     from onetl.connection.db_connection.kafka.connection import Kafka

@@ -3,14 +3,14 @@
 import logging
 import os
 import shutil
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 try:
     from pydantic.v1 import Field, PrivateAttr, root_validator, validator
 except (ImportError, AttributeError):
     from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
-from onetl._util.file import get_file_hash, is_file_readable
+from onetl._util.file import get_file_hash, readable_local_file
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions, LocalPath, path_repr
@@ -166,9 +166,9 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
                 log.exception("Failed to remove keytab file '%s'", self._keytab_path)
         self._keytab_path = None
 
-    @validator("keytab")
+    @validator("keytab", pre=True)
     def _validate_keytab(cls, value):
-        return is_file_readable(value)
+        return readable_local_file(LocalPath(value).expanduser().resolve())
 
     @root_validator
     def _use_keytab(cls, values):
@@ -180,7 +180,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
         return values
 
     def _prepare_keytab(self, kafka: "Kafka") -> str:
-        keytab: LocalPath = self.keytab  # type: ignore[assignment]
+        keytab = cast("LocalPath", self.keytab)
         if not self.deploy_keytab:
             return os.fspath(keytab)
 
@@ -188,7 +188,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
         log.debug("Moving keytab from %s to %s", path_repr(keytab), path_repr(self._keytab_path))
         shutil.copy2(keytab, self._keytab_path)
         kafka.spark.sparkContext.addFile(os.fspath(self._keytab_path))
-        return os.fspath(self._keytab_path.name)
+        return self._keytab_path.name
 
     @staticmethod
     def _generate_keytab_path(keytab: LocalPath, principal: str) -> LocalPath:

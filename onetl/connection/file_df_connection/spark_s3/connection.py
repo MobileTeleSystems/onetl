@@ -6,8 +6,6 @@ import warnings
 from contextlib import suppress
 from typing import TYPE_CHECKING, ClassVar
 
-from etl_entities.instance import Host
-
 try:
     from pydantic.v1 import SecretStr, root_validator, validator
 except (ImportError, AttributeError):
@@ -33,7 +31,7 @@ from onetl.connection.file_df_connection.spark_file_df_connection import (
 from onetl.connection.file_df_connection.spark_s3.extra import SparkS3Extra
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
-from onetl.impl import RemotePath
+from onetl.impl import Host, RemotePath
 from onetl.log import log_options
 
 if TYPE_CHECKING:

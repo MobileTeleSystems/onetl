@@ -7,10 +7,6 @@ from contextlib import suppress
 from logging import getLogger
 from typing import TYPE_CHECKING, cast
 
-from etl_entities.instance import Cluster, Host
-
-from onetl.impl.generic_options import GenericOptions
-
 try:
     from pydantic.v1 import (
         Field,
@@ -37,7 +33,7 @@ from onetl.connection.file_connection.hdfs.slots import HDFSSlots
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
 from onetl.connection.kerberos_helpers import kinit
 from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath, RemotePathStat
+from onetl.impl import Cluster, GenericOptions, Host, LocalPath, RemotePath, RemotePathStat
 
 try:
     from hdfs import Client, InsecureClient  # noqa: F401

@@ -12,8 +12,7 @@ from typing import cast
 
 from onetl.exception import DirectoryNotEmptyError
 from onetl.hooks import slot, support_hooks
-from onetl.impl.generic_options import GenericOptions
-from onetl.impl.remote_file import RemoteFile
+from onetl.impl import GenericOptions, RemoteFile
 
 try:
     from minio import Minio, commonconfig
@@ -39,8 +38,6 @@ except (ImportError, NameError) as e:
         ).strip(),
     ) from e
 
-from etl_entities.instance import Host
-
 try:
     from pydantic.v1 import DirectoryPath, Field, FilePath, SecretStr, root_validator, validator
 except (ImportError, AttributeError):
@@ -56,7 +53,7 @@ except (ImportError, AttributeError):
 from typing import Literal
 
 from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat, path_repr
+from onetl.impl import Host, LocalPath, RemoteDirectory, RemotePath, RemotePathStat, path_repr
 
 log = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ except (ImportError, AttributeError):
 
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.catalog.auth import IcebergRESTCatalogAuth
-from onetl.impl.frozen_model import FrozenModel
+from onetl.impl import FrozenModel
 
 
 class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenModel):

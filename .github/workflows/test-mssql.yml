@@ -11,6 +11,9 @@ on:
       pydantic-version:
         required: true
         type: string
+      etl-entities-version:
+        required: true
+        type: string
       java-version:
         required: true
         type: string
@@ -93,6 +96,7 @@ jobs:
           max_attempts: 3
           command: |
             export PYDANTIC_VERSION=${{ inputs.pydantic-version }}
+            exrort ETL_ENTITIES_VERSION=${{ inputs.etl-entities-version }}
             export SPARK_VERSION=${{ inputs.spark-version }}
 
             mkdir reports/ || echo "Directory exists"

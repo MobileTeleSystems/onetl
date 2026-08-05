@@ -4,28 +4,20 @@ from typing import Any
 
 from etl_entities.hwm import HWM
 
-try:
-    from pydantic.v1 import root_validator
-except (ImportError, AttributeError):
-    from pydantic import root_validator  # type: ignore[no-redef, assignment]
-
 
 class AutoDetectHWM(HWM):
     value: None = None
 
-    @root_validator(pre=True)
-    def handle_aliases(cls, values):
-        # this validator is hack for accommodating multiple aliases for a single field in pydantic v1.
-
+    def __init__(self, **kwargs):
         # 'column' is an alias used specifically for instances of the ColumnHWM class.
-        if "source" in values and "entity" not in values:
-            values["entity"] = values.pop("source")
+        if "source" in kwargs and "entity" not in kwargs:
+            kwargs["entity"] = kwargs.pop("source")
 
         # 'topic' is an alias used for instances of the KeyValueHWM class.
-        elif "topic" in values and "entity" not in values:
-            values["entity"] = values.pop("topic")
+        elif "topic" in kwargs and "entity" not in kwargs:
+            kwargs["entity"] = kwargs.pop("topic")
 
-        return values
+        super().__init__(**kwargs)
 
     def update(self, value: Any) -> "AutoDetectHWM":
         """Update current HWM value with some implementation-specific logic, and return HWM"""
@@ -35,9 +27,18 @@ class AutoDetectHWM(HWM):
     def reset(self) -> "AutoDetectHWM":
         raise NotImplementedError
 
+    # pydantic v1
     def dict(self, **kwargs):
-        serialized_data = super().dict(**kwargs)
+        result = super().dict(**kwargs)
         # as in HWM classes default value for 'value' may be any structure,
         # e.g. frozendict for KeyValueHWM, there should unified dict representation
-        serialized_data.pop("value")
-        return serialized_data
+        result.pop("value", None)
+        return result
+
+    # pydantic v2
+    def model_dump(self, **kwargs):
+        result = super().model_dump(**kwargs)
+        # as in HWM classes default value for 'value' may be any structure,
+        # e.g. frozendict for KeyValueHWM, there should unified dict representation
+        result.pop("value", None)
+        return result

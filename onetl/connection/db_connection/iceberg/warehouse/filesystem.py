@@ -12,7 +12,7 @@ from onetl.connection.file_df_connection.spark_file_df_connection import (
 )
 from onetl.connection.file_df_connection.spark_s3.connection import SparkS3
 from onetl.hooks import slot, support_hooks
-from onetl.impl.frozen_model import FrozenModel
+from onetl.impl import FrozenModel
 
 
 @support_hooks

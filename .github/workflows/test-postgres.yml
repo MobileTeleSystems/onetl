@@ -11,6 +11,9 @@ on:
       pydantic-version:
         required: true
         type: string
+      etl-entities-version:
+        required: true
+        type: string
       java-version:
         required: true
         type: string
@@ -85,6 +88,7 @@ jobs:
           make test-spark UV_ARGS="--group test-postgres" PYTEST_ARGS="-m postgres"
         env:
           PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
+          ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
           SPARK_VERSION: ${{ inputs.spark-version }}
 
       - name: Run tests with PGBouncer
@@ -95,6 +99,7 @@ jobs:
         env:
           ONETL_PG_PORT: 6432
           PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
+          ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
           SPARK_VERSION: ${{ inputs.spark-version }}
 
       - name: Dump Postgres logs on failure

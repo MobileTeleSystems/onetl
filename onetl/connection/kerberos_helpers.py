@@ -5,17 +5,16 @@ import subprocess
 from logging import getLogger
 from threading import Lock
 
-from onetl._util.file import is_file_readable
+from onetl._util.file import readable_local_file
+from onetl.impl.local_path import LocalPath
 
 log = getLogger(__name__)
 _kinit_lock = Lock()
 
 
-def kinit_keytab(user: str, keytab: str | os.PathLike) -> None:
-    path = is_file_readable(keytab)
-
+def kinit_keytab(user: str, keytab: LocalPath) -> None:
     with _kinit_lock:
-        cmd = ["kinit", user, "-k", "-t", os.fspath(path)]
+        cmd = ["kinit", user, "-k", "-t", os.fspath(readable_local_file(keytab))]
         log.info("|onETL| Executing kerberos auth command: %s", " ".join(cmd))
         subprocess.check_call(cmd)  # noqa: S603
 
@@ -40,7 +39,7 @@ def kinit_password(user: str, password: str) -> None:
             raise subprocess.CalledProcessError(exit_code, cmd)
 
 
-def kinit(user: str, keytab: os.PathLike | None = None, password: str | None = None) -> None:
+def kinit(user: str, keytab: LocalPath | None = None, password: str | None = None) -> None:
     if keytab:
         kinit_keytab(user, keytab)
     elif password:

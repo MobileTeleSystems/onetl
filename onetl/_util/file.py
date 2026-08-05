@@ -4,26 +4,26 @@ import hashlib
 import io
 import os
 from datetime import datetime
-from pathlib import Path
 from typing import TypeVar
 
+from onetl._util.process import get_process_info
 from onetl.base.path_protocol import PathProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol
 from onetl.exception import NotAFileError
-from onetl.impl import path_repr
+from onetl.impl import LocalPath, path_repr
 
 # e.g. 20230524122150
 DATETIME_FORMAT = "%Y%m%d%H%M%S"
 
 
 def get_file_hash(
-    path: os.PathLike | str,
+    path: LocalPath,
     algorithm: str,
     chunk_size: int = io.DEFAULT_BUFFER_SIZE,
 ) -> "hashlib._Hash":
     """Get file hash by path and algorithm"""
     digest = hashlib.new(algorithm)
-    with Path(path).open("rb") as file:
+    with path.open("rb") as file:
         chunk = file.read(chunk_size)
         while chunk:
             digest.update(chunk)
@@ -32,10 +32,8 @@ def get_file_hash(
     return digest
 
 
-def is_file_readable(path: str | os.PathLike) -> Path:
+def readable_local_file(path: LocalPath) -> LocalPath:
     """Check if specified path is a file and is readable"""
-    path = Path(os.path.expandvars(path)).expanduser().resolve()
-
     if not path.exists():
         msg = f"File '{path}' does not exist"
         raise FileNotFoundError(msg)
@@ -67,19 +65,29 @@ def generate_temp_path(root: T) -> T:
     --------
 
     ```python
-    >>> from etl_entities.process import Process
     >>> from pathlib import Path
     >>> generate_temp_path(Path("/tmp")) # doctest: +SKIP
     Path("/tmp/onetl/currenthost/myprocess/20230524122150")
-    >>> with Process(dag="mydag", task="mytask"): # doctest: +SKIP
-    ...    generate_temp_path(Path("/abc"))
-    Path("/abc/onetl/currenthost/mydag.mytask.myprocess/20230524122150")
 
     ```
     """
 
-    from etl_entities.process import ProcessStackManager
-
-    current_process = ProcessStackManager.get_current()
+    process_name, hostname = get_process_info()
     current_dt = datetime.now().strftime(DATETIME_FORMAT)  # noqa: DTZ005
-    return root / "onetl" / current_process.host / current_process.full_name / current_dt
+    return root / "onetl" / hostname / process_name / current_dt
+
+
+def absolute_path(path: T) -> T:
+    if "~" in path.parts:
+        msg = "Path cannot contain `~`"
+        raise ValueError(msg)
+
+    if ".." in path.parts:
+        msg = "Path cannot contain `..`"
+        raise ValueError(msg)
+
+    if not path.is_absolute():
+        msg = "Path should be absolute"
+        raise ValueError(msg)
+
+    return path
