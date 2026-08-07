@@ -142,6 +142,77 @@ services:
       retries: 5
     profiles: [kafka, db, all]
 
+  keycloak:
+    image: ${KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.7.0}
+    restart: unless-stopped
+    command: start-dev --import-realm
+    ports:
+      - 8080:8080
+    environment:
+      TZ: UTC
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: 123AdminUserForTests@!
+      KC_HEALTH_ENABLED: 'true'
+      KC_HOSTNAME: http://localhost:8080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: 'true'
+    volumes:
+      - ./docker/kafka/keycloak/onetl-kafka-realm.json:/opt/keycloak/data/import/onetl-kafka-realm.json:ro
+    networks:
+      - onetl
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          { printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0;
+          grep -q 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    profiles: [kafka-oauth]
+
+  kafka-oauth:
+    image: ${KAFKA_OAUTH_IMAGE:-apache/kafka:3.9.1}
+    restart: unless-stopped
+    ports:
+      - 9097:9097
+    environment:
+      TZ: UTC
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-oauth:9091
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENERS: CONTROLLER://:9091,INTERNAL://:9092,OAUTH_INTERNAL://:9096,OAUTH_EXTERNAL://:9097
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-oauth:9092,OAUTH_INTERNAL://kafka-oauth:9096,OAUTH_EXTERNAL://localhost:9097
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,OAUTH_INTERNAL:SASL_PLAINTEXT,OAUTH_EXTERNAL:SASL_PLAINTEXT
+      KAFKA_SASL_ENABLED_MECHANISMS: OAUTHBEARER
+      KAFKA_LISTENER_NAME_OAUTH__INTERNAL_OAUTHBEARER_SASL_JAAS_CONFIG: org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required;
+      KAFKA_LISTENER_NAME_OAUTH__INTERNAL_OAUTHBEARER_SASL_SERVER_CALLBACK_HANDLER_CLASS: org.apache.kafka.common.security.oauthbearer.OAuthBearerValidatorCallbackHandler
+      KAFKA_LISTENER_NAME_OAUTH__INTERNAL_OAUTHBEARER_SASL_OAUTHBEARER_JWKS_ENDPOINT_URL: http://keycloak:8080/realms/onetl-kafka/protocol/openid-connect/certs
+      KAFKA_LISTENER_NAME_OAUTH__INTERNAL_OAUTHBEARER_SASL_OAUTHBEARER_EXPECTED_ISSUER: http://localhost:8080/realms/onetl-kafka
+      KAFKA_LISTENER_NAME_OAUTH__EXTERNAL_OAUTHBEARER_SASL_JAAS_CONFIG: org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required;
+      KAFKA_LISTENER_NAME_OAUTH__EXTERNAL_OAUTHBEARER_SASL_SERVER_CALLBACK_HANDLER_CLASS: org.apache.kafka.common.security.oauthbearer.OAuthBearerValidatorCallbackHandler
+      KAFKA_LISTENER_NAME_OAUTH__EXTERNAL_OAUTHBEARER_SASL_OAUTHBEARER_JWKS_ENDPOINT_URL: http://keycloak:8080/realms/onetl-kafka/protocol/openid-connect/certs
+      KAFKA_LISTENER_NAME_OAUTH__EXTERNAL_OAUTHBEARER_SASL_OAUTHBEARER_EXPECTED_ISSUER: http://localhost:8080/realms/onetl-kafka
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    volumes:
+      - ./docker/kafka/oauth-client.properties:/opt/kafka/config/oauth-client.properties:ro
+    networks:
+      - onetl
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, /opt/kafka/bin/kafka-topics.sh --bootstrap-server 127.0.0.1:9096 --command-config /opt/kafka/config/oauth-client.properties --list]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
+    profiles: [kafka-oauth]
+
   mongodb:
     image: ${MONGODB_IMAGE:-mongo:latest}
     restart: unless-stopped

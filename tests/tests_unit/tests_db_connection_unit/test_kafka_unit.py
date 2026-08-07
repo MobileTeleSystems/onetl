@@ -370,6 +370,127 @@ def test_kafka_basic_auth(spark_mock):
         }
 
 
+@pytest.mark.parametrize(
+    ("spark_version", "callback_handler"),
+    [
+        (
+            "3.4.4",
+            "org.apache.kafka.common.security.oauthbearer.secured.OAuthBearerLoginCallbackHandler",
+        ),
+        (
+            "3.5.0",
+            "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginCallbackHandler",
+        ),
+        (
+            "4.2.0",
+            "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginCallbackHandler",
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    ("scopes", "scope_option"),
+    [
+        ([], ""),
+        (["kafka"], ' scope="kafka"'),
+        (["kafka:read", "kafka:write"], ' scope="kafka:read kafka:write"'),
+    ],
+)
+def test_kafka_oauth2_client_credentials(spark_mock, spark_version, callback_handler, scopes, scope_option):
+    spark_mock.version = spark_version
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        auth=Kafka.OAuth2ClientCredentials(
+            client_id="client-id",
+            client_secret="client-secret",
+            oauth2_token_endpoint="https://keycloak.example.com/realms/onetl/protocol/openid-connect/token",
+            scopes=scopes,
+        ),
+    )
+
+    assert kafka.auth.get_options(kafka) == {
+        "sasl.mechanism": "OAUTHBEARER",
+        "sasl.login.callback.handler.class": callback_handler,
+        "sasl.oauthbearer.token.endpoint.url": (
+            "https://keycloak.example.com/realms/onetl/protocol/openid-connect/token"
+        ),
+        "sasl.jaas.config": (
+            "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required "
+            f'clientId="client-id" clientSecret="client-secret"{scope_option};'
+        ),
+    }
+
+
+def test_kafka_oauth2_client_credentials_escapes_client_secret():
+    auth = Kafka.OAuth2ClientCredentials(
+        client_id="client-id",
+        client_secret='secret"value\\',
+        oauth2_token_endpoint="https://keycloak.example.com/token",
+        scopes=["kafka:read"],
+    )
+
+    assert auth.get_jaas_conf() == (
+        "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required "
+        'clientId="client-id" '
+        'clientSecret="secret\\"value\\\\" '
+        'scope="kafka:read";'
+    )
+
+
+def test_kafka_oauth2_client_credentials_hides_secret():
+    auth = Kafka.OAuth2ClientCredentials(
+        client_id="client-id",
+        client_secret="client-secret",
+        oauth2_token_endpoint="https://keycloak.example.com/token",
+    )
+
+    assert "client-secret" not in repr(auth)
+    assert auth.client_secret != "client-secret"
+    assert auth.client_secret.get_secret_value() == "client-secret"
+
+
+@pytest.mark.parametrize("spark_version", ["3.2.4", "3.3.4"])
+def test_kafka_oauth2_client_credentials_unsupported_spark(spark_mock, spark_version):
+    spark_mock.version = spark_version
+    kafka = Kafka(
+        spark=spark_mock,
+        addresses=["some_address"],
+        cluster="cluster",
+        auth=Kafka.OAuth2ClientCredentials(
+            client_id="client-id",
+            client_secret="client-secret",
+            oauth2_token_endpoint="https://keycloak.example.com/token",
+        ),
+    )
+
+    msg = rf"Kafka OAuth2 Client Credentials authentication requires Spark 3\.4 or higher, got {spark_version}\."
+    with pytest.raises(ValueError, match=msg):
+        kafka.auth.get_options(kafka)
+
+
+@pytest.mark.parametrize("missing_field", ["client_id", "client_secret", "oauth2_token_endpoint"])
+def test_kafka_oauth2_client_credentials_missing_field(missing_field):
+    kwargs = {
+        "client_id": "client-id",
+        "client_secret": "client-secret",
+        "oauth2_token_endpoint": "https://keycloak.example.com/token",
+    }
+    kwargs.pop(missing_field)
+
+    with pytest.raises(ValueError, match="field required"):
+        Kafka.OAuth2ClientCredentials(**kwargs)
+
+
+def test_kafka_oauth2_client_credentials_invalid_endpoint():
+    with pytest.raises(ValueError, match="invalid or missing URL scheme"):
+        Kafka.OAuth2ClientCredentials(
+            client_id="client-id",
+            client_secret="client-secret",
+            oauth2_token_endpoint="keycloak.example.com/token",
+        )
+
+
 @pytest.mark.parametrize("option", ["sasl.jaas.config", "sasl.mechanism"])
 def test_kafka_scram_auth_prohibited_options(option):
     msg = rf"Options \['{option}'\] are not allowed to use in a KafkaScramAuth"

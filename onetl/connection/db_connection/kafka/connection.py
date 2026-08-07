@@ -28,6 +28,9 @@ from onetl.connection.db_connection.kafka.extra import KafkaExtra
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
+from onetl.connection.db_connection.kafka.kafka_oauth2_client_credentials import (
+    KafkaOAuth2ClientCredentials,
+)
 from onetl.connection.db_connection.kafka.kafka_plaintext_protocol import (
     KafkaPlaintextProtocol,
 )
@@ -191,6 +194,33 @@ class Kafka(DBConnection):
         ).check()
         ```
 
+    === "Create Kafka connection with `SASL_SSL` protocol and `OAUTHBEARER` auth"
+
+        ```python
+        from pathlib import Path
+
+        # Create Spark session with Kafka connector loaded
+        ...
+
+        # Create connection
+        kafka = Kafka(
+            addresses=["mybroker:9092", "anotherbroker:9092"],
+            cluster="my-cluster",
+            protocol=Kafka.SSLProtocol(
+                # read server public certificate from file
+                truststore_type="PEM",
+                truststore_certificates=Path("/path/to/server.crt").read_text(),
+            ),
+            auth=Kafka.OAuth2ClientCredentials(
+                client_id="my-client",
+                client_secret="my-secret",
+                oauth2_token_endpoint="https://keycloak.example.com/realms/my-realm/protocol/openid-connect/token",
+                scopes=["kafka"],
+            ),
+            spark=spark,
+        ).check()
+        ```
+
     === "Create Kafka connection with extra options"
 
         ```python
@@ -211,6 +241,7 @@ class Kafka(DBConnection):
 
     BasicAuth = KafkaBasicAuth
     KerberosAuth = KafkaKerberosAuth
+    OAuth2ClientCredentials = KafkaOAuth2ClientCredentials
     ScramAuth = KafkaScramAuth
     ReadOptions = KafkaReadOptions
     WriteOptions = KafkaWriteOptions

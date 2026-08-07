@@ -55,6 +55,7 @@
             * [Auth](connection/db_connection/kafka/auth.md)
             * [Basic Auth](connection/db_connection/kafka/basic_auth.md)
             * [Kerberos Auth](connection/db_connection/kafka/kerberos_auth.md)
+            * [OAuth2 Client Credentials](connection/db_connection/kafka/oauth2_client_credentials.md)
             * [Scram Auth](connection/db_connection/kafka/scram_auth.md)
             * [protocol](connection/db_connection/kafka/protocol.md)
             * [Plaintext protocol](connection/db_connection/kafka/plaintext_protocol.md)
