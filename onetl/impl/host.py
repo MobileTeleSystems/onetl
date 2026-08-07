@@ -6,26 +6,25 @@
 
 from __future__ import annotations
 
-try:
-    from pydantic.v1 import AnyUrl, ConstrainedStr, parse_obj_as
-except (ImportError, AttributeError):
-    from pydantic import (  # type: ignore[no-redef, assignment]
-        AnyUrl,
-        ConstrainedStr,
-        parse_obj_as,
-    )
+from typing import Annotated
+
+from pydantic import (
+    AfterValidator,
+    AnyUrl,
+    StringConstraints,
+    TypeAdapter,
+)
+
+AnyUrlTypeAdapter = TypeAdapter(AnyUrl)
 
 
-class Host(ConstrainedStr):
-    """Generic host representation"""
+def validate(value: str) -> str:
+    url = AnyUrlTypeAdapter.validate_python(f"http://{value}")
+    if url.host != value:
+        msg = f"Invalid host {value}"
+        raise ValueError(msg)
 
-    min_length = 1
+    return value
 
-    @classmethod
-    def validate(cls, value: str) -> str:
-        url = parse_obj_as(AnyUrl, f"http://{value}")  # NOSONAR
-        if url.host != value:
-            msg = f"Invalid host {value}"
-            raise ValueError(msg)
 
-        return value
+Host = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate)]

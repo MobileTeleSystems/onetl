@@ -1,11 +1,9 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from datetime import timedelta
+from typing import Annotated
 
-try:
-    from pydantic.v1 import AnyUrl, Field, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import AnyUrl, Field, SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import Field, HttpUrl, SecretStr, UrlConstraints
 
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.catalog.auth import IcebergRESTCatalogAuth
@@ -96,7 +94,13 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Properties.java#L30-L31C30
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Manager.java#L275-L293
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/ResourcePaths.java#L57-L59
-    oauth2_token_endpoint: AnyUrl | None = None
+    oauth2_token_endpoint: (
+        Annotated[
+            HttpUrl,
+            UrlConstraints(host_required=True, preserve_empty_path=True),
+        ]
+        | None
+    ) = None
 
     scopes: list[str] = Field(default_factory=list)
     audience: str | None = None

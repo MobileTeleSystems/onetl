@@ -1,16 +1,14 @@
 3_2_x: &3_2_x
   hadoop-version: hadoop2-hdfs
   spark-version: '3.2'
-  pydantic-version: 1
   etl-entities-version: 2
   python-version: '3.10'
   java-version: 8
-  os: ubuntu-22.04
+  os: ubuntu-latest
 
 3_5_x: &3_5_x
   hadoop-version: hadoop3-hdfs
   spark-version: '3.5'
-  pydantic-version: 2
   etl-entities-version: 3
   python-version: '3.13'
   java-version: 20
@@ -19,7 +17,6 @@
 4_0_x: &4_0_x
   hadoop-version: hadoop3-hdfs
   spark-version: '4.0'
-  pydantic-version: 2
   etl-entities-version: 3
   python-version: '3.14'
   # https://issues.apache.org/jira/browse/SPARK-54276
@@ -29,7 +26,6 @@
 4_2_x: &4_2_x
   hadoop-version: hadoop3-hdfs
   spark-version: '4.2'
-  pydantic-version: 2
   etl-entities-version: 3
   python-version: '3.14'
   java-version: 25

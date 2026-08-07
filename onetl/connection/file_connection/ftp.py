@@ -4,11 +4,9 @@ import ftplib  # nosec
 import os
 import textwrap
 from logging import getLogger
+from typing import ClassVar
 
-try:
-    from pydantic.v1 import Field, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, SecretStr
 
 from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
@@ -56,9 +54,7 @@ class FTPExtra(GenericOptions):
 
     use_passive_mode: bool | None = None
     encoding: str = "utf-8"
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
@@ -138,7 +134,7 @@ class FTP(FileConnection, RenameDirMixin):
 
     extra: FTPExtra = Field(default_factory=FTPExtra)
 
-    Extra = FTPExtra
+    Extra: ClassVar = FTPExtra
 
     @property
     def instance_url(self) -> str:
@@ -156,7 +152,7 @@ class FTP(FileConnection, RenameDirMixin):
         Returns a FTP connection object
         """
 
-        extra = self.extra.dict(by_alias=True)
+        extra = self.extra.model_dump(by_alias=True)
         extra.setdefault("debug_level", 0)
 
         session_factory = ftp_session.session_factory(

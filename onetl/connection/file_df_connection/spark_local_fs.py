@@ -4,10 +4,7 @@ import os
 import socket
 from pathlib import Path
 
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from pydantic import field_validator
 
 from onetl.base import PurePathProtocol
 from onetl.connection.file_df_connection.spark_file_df_connection import (
@@ -76,7 +73,8 @@ class SparkLocalFS(SparkFileDFConnection):
         # str should not make network requests
         return "LocalFS"
 
-    @validator("spark")
+    @field_validator("spark", mode="before")
+    @classmethod
     def _validate_spark(cls, spark):
         master = spark.conf.get("spark.master")
         if not master.startswith("local"):

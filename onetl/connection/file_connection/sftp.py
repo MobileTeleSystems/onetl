@@ -6,11 +6,9 @@ import textwrap
 import warnings
 from logging import getLogger
 from stat import S_ISDIR, S_ISREG
+from typing import ClassVar
 
-try:
-    from pydantic.v1 import Field, FilePath, SecretStr, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, FilePath, SecretStr, root_validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, FilePath, SecretStr, model_validator
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
@@ -76,9 +74,7 @@ class SFTPExtra(GenericOptions):
     auth_timeout: float | None = None
     channel_timeout: float | None = None
     compress: bool = False
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
@@ -169,11 +165,12 @@ class SFTP(FileConnection, RenameDirMixin):
     key_file: FilePath | None = None
     extra: SFTPExtra = Field(default_factory=SFTPExtra)
 
-    Extra = SFTPExtra
+    Extra: ClassVar = SFTPExtra
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _extra_fallback(cls, values):
-        extra_dict = cls.Extra.parse(values.get("extra")).dict(exclude_unset=True, by_alias=True)
+        extra_dict = cls.Extra.parse(values.get("extra")).model_dump(exclude_unset=True, by_alias=True)
         for key in ["timeout", "host_key_check", "compress"]:
             if key not in values:
                 continue
@@ -183,7 +180,7 @@ class SFTP(FileConnection, RenameDirMixin):
                 f"Option `{key}` is deprecated since v0.16.0 and will be removed in v1.0.0. "
                 f"Use extra={cls.__name__}.Extra({key}={value!r}) instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
             extra_dict[key] = value
         values["extra"] = cls.Extra.parse(extra_dict)
@@ -214,7 +211,7 @@ class SFTP(FileConnection, RenameDirMixin):
             # Default is RejectPolicy
             client.set_missing_host_key_policy(WarningPolicy())  # noqa: S507
 
-        extra = self.extra.dict(by_alias=True, exclude={"host_key_check"})
+        extra = self.extra.model_dump(by_alias=True, exclude={"host_key_check"})
         client.connect(
             hostname=self.host,
             port=self.port,

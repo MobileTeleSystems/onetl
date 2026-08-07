@@ -209,7 +209,7 @@ def support_hooks(cls: Klass) -> Klass:
     """
 
     has_slots = False
-    for method_name, method in cls.__dict__.items():
+    for method_name, method in cls.__dict__.copy().items():
         if is_slot(method):
             has_slots = True
             setattr(cls, method_name, register_slot(cls, method_name))

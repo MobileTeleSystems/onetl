@@ -11,9 +11,6 @@ on:
       spark-version:
         required: true
         type: string
-      pydantic-version:
-        required: true
-        type: string
       etl-entities-version:
         required: true
         type: string
@@ -39,7 +36,7 @@ on:
 jobs:
   test-greenplum:
     if: github.repository == 'MTSWebServices/onetl'  # prevent running on forks
-    name: Run Greenplum tests (server=${{ inputs.greenplum-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    name: Run Greenplum tests (server=${{ inputs.greenplum-version }}, spark=${{ inputs.spark-version }}, etl-entities=${{ inputs.etl-entities-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
 
     steps:
@@ -83,11 +80,11 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
+          key: ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-
             ${{ runner.os }}-python${{ inputs.python-version }}-
 
       - name: Wait for Grenplum to be ready
@@ -102,7 +99,6 @@ jobs:
           export "PYTEST=coverage run -m pytest --junitxml=reports/junit/greenplum-${RANDOM}.xml"
           make test-spark UV_ARGS="--group test-greenplum" PYTEST_ARGS="-m greenplum"
         env:
-          PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
           ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
           SPARK_VERSION: ${{ inputs.spark-version }}
           ONETL_GP_PACKAGE_VERSION: ${{ inputs.package-version }}
@@ -115,7 +111,6 @@ jobs:
           export "PYTEST=coverage run -m pytest --junitxml=reports/junit/greenplum-pgbouncer-${RANDOM}.xml"
           make test-spark UV_ARGS="--group test-greenplum" PYTEST_ARGS="-m greenplum -k 'tests_core_integration or tests_db_connection_integration'"
         env:
-          PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
           ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
           SPARK_VERSION: ${{ inputs.spark-version }}
           ONETL_GP_PACKAGE_VERSION: ${{ inputs.package-version }}

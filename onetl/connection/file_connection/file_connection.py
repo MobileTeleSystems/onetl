@@ -9,11 +9,7 @@ from logging import getLogger
 from typing import Any
 
 from humanize import naturalsize
-
-try:
-    from pydantic.v1 import PrivateAttr
-except (ImportError, AttributeError):
-    from pydantic import PrivateAttr  # type: ignore[no-redef, assignment]
+from pydantic import PrivateAttr
 
 from onetl.base import (
     BaseFileConnection,
@@ -782,7 +778,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
     def _log_parameters(self):
         log.info("|%s| Using connection parameters:", self.__class__.__name__)
-        parameters = self.dict(exclude_none=True)
+        parameters = self.model_dump(exclude_none=True)
         for attr, value in parameters.items():
             if isinstance(value, os.PathLike):
                 log_with_indent(log, "%s = %s", attr, path_repr(value))

@@ -3,6 +3,8 @@
 import warnings
 from typing import ClassVar
 
+from pydantic import ConfigDict
+
 from onetl._util.classproperty import classproperty
 from onetl._util.spark import get_client_info
 from onetl._util.version import Version
@@ -35,9 +37,7 @@ class PostgresExtra(GenericOptions):
 
     # x2 on batch writes
     reWriteBatchedInserts: str = "true"
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
@@ -130,14 +130,14 @@ class Postgres(JDBCConnection):
     port: int = 5432
     extra: PostgresExtra = PostgresExtra()
 
-    ReadOptions = PostgresReadOptions
-    WriteOptions = PostgresWriteOptions
-    SQLOptions = PostgresSQLOptions
-    FetchOptions = PostgresFetchOptions
-    ExecuteOptions = PostgresExecuteOptions
+    ReadOptions: ClassVar = PostgresReadOptions
+    WriteOptions: ClassVar = PostgresWriteOptions
+    SQLOptions: ClassVar = PostgresSQLOptions
+    FetchOptions: ClassVar = PostgresFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = PostgresExecuteOptions  # type: ignore[misc]
 
-    Extra = PostgresExtra
-    Dialect = PostgresDialect
+    Extra: ClassVar = PostgresExtra
+    Dialect: ClassVar = PostgresDialect
 
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
 
@@ -185,7 +185,7 @@ class Postgres(JDBCConnection):
     @property
     def jdbc_params(self) -> dict[str, str]:
         result = super().jdbc_params
-        result.update(self.extra.dict(by_alias=True))
+        result.update(self.extra.model_dump(by_alias=True))
         # https://www.postgresql.org/docs/current/runtime-config-logging.html#GUC-APPLICATION-NAME
         result["ApplicationName"] = result.get("ApplicationName", get_client_info(self.spark, limit=64))
         return result

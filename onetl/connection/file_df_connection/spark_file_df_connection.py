@@ -5,10 +5,7 @@ from contextlib import AbstractContextManager, ExitStack
 from logging import getLogger
 from typing import TYPE_CHECKING
 
-try:
-    from pydantic.v1 import Field, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, validator  # type: ignore[no-redef, assignment]
+from pydantic import Field, field_validator
 
 from onetl._util.hadoop import get_hadoop_config
 from onetl._util.spark import override_job_description, try_import_pyspark
@@ -38,6 +35,16 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
     """
 
     spark: "SparkSession" = Field(repr=False)
+
+    def __new__(cls, *args, **kwargs):
+        try_import_pyspark()
+
+        from pyspark.sql import SparkSession
+
+        _ = SparkSession
+
+        cls.model_rebuild()
+        return super().__new__(cls)
 
     @slot
     def check(self):
@@ -154,19 +161,8 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         conf = get_hadoop_config(self.spark)
         return path.getFileSystem(conf)
 
+    @field_validator("spark", mode="before")
     @classmethod
-    def _forward_refs(cls) -> dict[str, type]:
-        try_import_pyspark()
-
-        from pyspark.sql import SparkSession
-
-        # avoid importing pyspark unless user called the constructor,
-        # as we allow user to use `Connection.get_packages()` for creating Spark session
-        refs = super()._forward_refs()
-        refs["SparkSession"] = SparkSession
-        return refs
-
-    @validator("spark")
     def _check_spark_session_alive(cls, spark):
         # https://stackoverflow.com/a/36044685
         msg = "Spark session is stopped. Please recreate Spark session."
@@ -181,6 +177,6 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
 
     def _log_parameters(self):
         log.info("|%s| Using connection parameters:", self.__class__.__name__)
-        parameters = self.dict(exclude_none=True, exclude={"spark"})
+        parameters = self.model_dump(exclude_none=True, exclude={"spark"})
         for attr, value in parameters.items():
             log_with_indent(log, "%s = %r", attr, value)

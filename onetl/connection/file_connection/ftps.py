@@ -2,14 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 import ftplib  # nosec
 import textwrap
+from typing import ClassVar
 
 from ftputil import FTPHost
 from ftputil import session as ftp_session
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import Field
 
 try:
     from onetl.connection.file_connection.ftp import FTP, FTPExtra
@@ -55,14 +52,14 @@ class FTPS(FTP):
 
     extra: FTPSExtra = Field(default_factory=FTPSExtra)
 
-    Extra = FTPSExtra
+    Extra: ClassVar = FTPSExtra
 
     def _get_client(self) -> FTPHost:
         """
         Returns a FTPS connection object
         """
 
-        extra = self.extra.dict(by_alias=True)
+        extra = self.extra.model_dump(by_alias=True)
         extra.setdefault("debug_level", 0)
 
         session_factory = ftp_session.session_factory(

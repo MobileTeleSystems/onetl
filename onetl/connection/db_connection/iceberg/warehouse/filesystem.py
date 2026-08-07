@@ -1,10 +1,8 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from pydantic import ValidationInfo, field_validator
 
+from onetl._util.spark import try_import_pyspark
 from onetl.base import PurePathProtocol
 from onetl.connection.db_connection.iceberg.warehouse import IcebergWarehouse
 from onetl.connection.file_df_connection.spark_file_df_connection import (
@@ -93,6 +91,16 @@ class IcebergFilesystemWarehouse(IcebergWarehouse, FrozenModel):
     connection: SparkFileDFConnection
     path: PurePathProtocol
 
+    def __new__(cls, *args, **kwargs):
+        try_import_pyspark()
+
+        from pyspark.sql import SparkSession
+
+        _ = SparkSession
+
+        cls.model_rebuild()
+        return super().__new__(cls)
+
     @slot
     def get_config(self) -> dict[str, str]:
         config = {
@@ -109,9 +117,9 @@ class IcebergFilesystemWarehouse(IcebergWarehouse, FrozenModel):
 
         return config
 
-    @validator("path", pre=True)
-    def _validate_path(cls, path, values):
-        connection = values.get("connection")
-        if isinstance(connection, SparkFileDFConnection):
-            return connection.path_from_string(path)
-        return path
+    @field_validator("path", mode="before")
+    def _validate_path(cls, value, info: ValidationInfo):
+        connection: SparkFileDFConnection | None = info.data.get("connection")
+        if not connection or value is None:
+            return value
+        return connection.path_from_string(value)

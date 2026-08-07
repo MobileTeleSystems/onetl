@@ -4,15 +4,10 @@ import warnings
 from enum import Enum
 from typing import Any
 
-from onetl._util.alias import avoid_alias
-
-try:
-    from pydantic.v1 import Field, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator, validator  # type: ignore[no-redef, assignment]
-
+from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import deprecated
 
+from onetl._util.alias import avoid_alias
 from onetl.base import BaseWritableFileFormat
 from onetl.impl import GenericOptions
 
@@ -89,9 +84,7 @@ class HiveWriteOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        extra = "allow"
-        known_options: frozenset = frozenset()
+    model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     if_exists: HiveTableExistBehavior = Field(  # type: ignore[literal-required]
         default=HiveTableExistBehavior.APPEND,
@@ -339,17 +332,15 @@ class HiveWriteOptions(GenericOptions):
         Used **only** while **creating new table**, or in case of `if_exists=replace_entire_table`
     """
 
-    @validator("sort_by")
-    def _sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):
-        options = values.copy()
-        bucket_by = options.pop("bucket_by", None)
-        if sort_by and not bucket_by:
+    @model_validator(mode="after")
+    def _sort_by_cannot_be_used_without_bucket_by(self):
+        if self.sort_by and not self.bucket_by:
             msg = "`sort_by` option can only be used with non-empty `bucket_by`"
             raise ValueError(msg)
+        return self
 
-        return sort_by
-
-    @root_validator
+    @model_validator(mode="before")
+    @classmethod
     def _partition_overwrite_mode_is_not_allowed(cls, values):
         partition_overwrite_mode = values.get("partitionOverwriteMode") or values.get("partition_overwrite_mode")
         if partition_overwrite_mode:
@@ -369,14 +360,15 @@ class HiveWriteOptions(GenericOptions):
 
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_deprecated(cls, values):
         if "mode" in values:
             warnings.warn(
                 "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
                 "Use `Hive.WriteOptions(if_exists=...)` instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
         return values
 

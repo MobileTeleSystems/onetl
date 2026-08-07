@@ -341,7 +341,7 @@ def test_iceberg_with_rest_catalog_delegated_warehouse(spark_mock):
 
 
 def test_iceberg_rest_catalog_missing_args():
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Iceberg.RESTCatalog()
 
 

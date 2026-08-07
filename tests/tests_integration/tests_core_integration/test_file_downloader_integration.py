@@ -271,7 +271,7 @@ def test_file_downloader_file_filter_file_size(file_connection_with_path_and_fil
     with caplog.at_level(logging.INFO):
         download_result = downloader.run()
         assert "    filters = [" in caplog.text
-        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "        FileSizeRange(min='1B', max=None)," in caplog.text
         assert "    ]" in caplog.text
 
     assert not download_result.failed
@@ -365,7 +365,7 @@ def test_file_downloader_several_file_filters(file_connection_with_path_and_file
         download_result = downloader.run()
         assert "    filters = [" in caplog.text
         assert "        Glob('*.csv')," in caplog.text
-        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "        FileSizeRange(min='1B', max=None)," in caplog.text
         assert "    ]" in caplog.text
 
     assert not download_result.failed

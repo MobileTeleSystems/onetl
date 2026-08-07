@@ -2,10 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from typing import TYPE_CHECKING, ClassVar, Literal
 
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field
 
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
@@ -305,10 +302,7 @@ class JSONLine(ReadWriteFileFormat):
 
         Used only for reading files.
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        extra = "allow"
+    model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     @slot
     def check_if_supported(self, spark: "SparkSession") -> None:
@@ -316,7 +310,7 @@ class JSONLine(ReadWriteFileFormat):
         pass
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True, exclude={"multiLine"})
+        options_dict = self.model_dump(by_alias=True, exclude_none=True, exclude={"multiLine"})
         options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

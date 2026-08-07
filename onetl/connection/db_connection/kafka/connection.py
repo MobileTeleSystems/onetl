@@ -3,12 +3,9 @@
 import json
 import logging
 from contextlib import closing
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
-try:
-    from pydantic.v1 import root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import root_validator, validator  # type: ignore[no-redef, assignment]
+from pydantic import ValidationInfo, field_validator, model_validator
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -238,17 +235,17 @@ class Kafka(DBConnection):
         ```
     """  # noqa: E501
 
-    BasicAuth = KafkaBasicAuth
-    KerberosAuth = KafkaKerberosAuth
-    OAuth2ClientCredentials = KafkaOAuth2ClientCredentials
-    ScramAuth = KafkaScramAuth
-    ReadOptions = KafkaReadOptions
-    WriteOptions = KafkaWriteOptions
-    SSLProtocol = KafkaSSLProtocol
-    Extra = KafkaExtra
-    Dialect = KafkaDialect
-    PlaintextProtocol = KafkaPlaintextProtocol
-    Slots = KafkaSlots
+    BasicAuth: ClassVar = KafkaBasicAuth
+    KerberosAuth: ClassVar = KafkaKerberosAuth
+    OAuth2ClientCredentials: ClassVar = KafkaOAuth2ClientCredentials
+    ScramAuth: ClassVar = KafkaScramAuth
+    ReadOptions: ClassVar = KafkaReadOptions
+    WriteOptions: ClassVar = KafkaWriteOptions
+    SSLProtocol: ClassVar = KafkaSSLProtocol
+    Extra: ClassVar = KafkaExtra
+    Dialect: ClassVar = KafkaDialect
+    PlaintextProtocol: ClassVar = KafkaPlaintextProtocol
+    Slots: ClassVar = KafkaSlots
 
     cluster: Cluster
     addresses: list[str]
@@ -309,7 +306,7 @@ class Kafka(DBConnection):
 
         result_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
         if options:
-            result_options.update(options.dict(by_alias=True, exclude_none=True))
+            result_options.update(options.model_dump(by_alias=True, exclude_none=True))
         result_options["subscribe"] = source
 
         if window and window.expression == "offset":
@@ -370,7 +367,7 @@ class Kafka(DBConnection):
             log.warning("The 'topic' column in the DataFrame will be overridden with value %r", target)
 
         write_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
-        write_options.update(options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}))
+        write_options.update(options.model_dump(by_alias=True, exclude_none=True, exclude={"if_exists"}))
         write_options["topic"] = target
 
         # As of Apache Spark version 3.5.8, the mode 'error' is not functioning as expected.
@@ -613,21 +610,26 @@ class Kafka(DBConnection):
     def __str__(self):
         return f"{self.__class__.__name__}[{self.cluster}]"
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _get_addresses_by_cluster(cls, values):
-        cluster = values.get("cluster")
         addresses = values.get("addresses")
-        if not addresses:
+        if addresses:
+            return values
+
+        cluster = values.get("cluster")
+        if cluster:
             cluster_addresses = cls.Slots.get_cluster_addresses(cluster) or []
             if cluster_addresses:
                 log.debug("|%s| Set cluster %r addresses: %r", cls.__name__, cluster, cluster_addresses)
                 values["addresses"] = cluster_addresses
-            else:
-                msg = "Passed empty parameter 'addresses'"
-                raise ValueError(msg)
-        return values
+                return values
 
-    @validator("cluster")
+        msg = "Passed empty parameter 'addresses'"
+        raise ValueError(msg)
+
+    @field_validator("cluster", mode="before")
+    @classmethod
     def _validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
@@ -642,9 +644,12 @@ class Kafka(DBConnection):
 
         return validated_cluster
 
-    @validator("addresses")
-    def _validate_addresses(cls, value, values):
-        cluster = values.get("cluster")
+    @field_validator("addresses", mode="before")
+    @classmethod
+    def _validate_addresses(cls, value, info: ValidationInfo):
+        cluster = info.data.get("cluster")
+        if not cluster:
+            return value
 
         log.debug("|%s| Normalizing addresses %r names...", cls.__name__, value)
 
@@ -660,7 +665,8 @@ class Kafka(DBConnection):
 
         return validated_addresses
 
-    @validator("spark")
+    @field_validator("spark", mode="before")
+    @classmethod
     def _check_java_class_imported(cls, spark: "SparkSession") -> "SparkSession":
         java_class = "org.apache.spark.sql.kafka010.KafkaSourceProvider"
 
@@ -678,7 +684,7 @@ class Kafka(DBConnection):
 
     def _get_connection_properties(self) -> dict:
         result = {"bootstrap.servers": ",".join(self.addresses)}
-        result.update(self.extra.dict(by_alias=True, exclude_none=True))
+        result.update(self.extra.model_dump(by_alias=True, exclude_none=True))
         result.update(self.protocol.get_options(self))
         if self.auth:
             result.update(self.auth.get_options(self))
@@ -717,4 +723,4 @@ class Kafka(DBConnection):
         log_collection(log, "addresses", self.addresses, max_items=10)
         log_with_indent(log, "protocol = %r", self.protocol)
         log_with_indent(log, "auth = %r", self.auth)
-        log_with_indent(log, "extra = %r", self.extra.dict(by_alias=True, exclude_none=True))
+        log_with_indent(log, "extra = %r", self.extra.model_dump(by_alias=True, exclude_none=True))

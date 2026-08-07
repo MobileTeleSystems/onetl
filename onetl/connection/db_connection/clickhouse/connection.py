@@ -4,6 +4,8 @@ import logging
 import warnings
 from typing import ClassVar
 
+from pydantic import ConfigDict
+
 from onetl._util.classproperty import classproperty
 from onetl._util.spark import get_client_info
 from onetl._util.version import Version
@@ -27,8 +29,7 @@ log = logging.getLogger(__name__)
 
 
 class ClickhouseExtra(GenericOptions):
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
@@ -108,14 +109,14 @@ class Clickhouse(JDBCConnection):
     database: str | None = None
     extra: ClickhouseExtra = ClickhouseExtra()
 
-    Extra = ClickhouseExtra
-    Dialect = ClickhouseDialect
+    Extra: ClassVar = ClickhouseExtra
+    Dialect: ClassVar = ClickhouseDialect
 
-    ReadOptions = ClickhouseReadOptions
-    WriteOptions = ClickhouseWriteOptions
-    SQLOptions = ClickhouseSQLOptions
-    FetchOptions = ClickhouseFetchOptions
-    ExecuteOptions = ClickhouseExecuteOptions
+    ReadOptions: ClassVar = ClickhouseReadOptions
+    WriteOptions: ClassVar = ClickhouseWriteOptions
+    SQLOptions: ClassVar = ClickhouseSQLOptions
+    FetchOptions: ClassVar = ClickhouseFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = ClickhouseExecuteOptions  # type: ignore[misc]
 
     DRIVER: ClassVar[str] = "com.clickhouse.jdbc.ClickHouseDriver"
 
@@ -207,7 +208,7 @@ class Clickhouse(JDBCConnection):
     @property
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
-        result.update(self.extra.dict(by_alias=True))
+        result.update(self.extra.model_dump(by_alias=True))
         # https://github.com/ClickHouse/clickhouse-java/issues/691#issuecomment-975545784
         result["client_name"] = result.get("client_name", get_client_info(self.spark))
         return result

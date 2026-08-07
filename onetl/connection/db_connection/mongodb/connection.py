@@ -6,10 +6,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 from urllib import parse as parser
 
-try:
-    from pydantic.v1 import PrivateAttr, SecretStr, validator
-except (ImportError, AttributeError):
-    from pydantic import PrivateAttr, SecretStr, validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, PrivateAttr, SecretStr, field_validator
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
@@ -43,8 +40,7 @@ log = logging.getLogger(__name__)
 
 
 class MongoDBExtra(GenericOptions):
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
@@ -120,11 +116,11 @@ class MongoDB(DBConnection):
     port: int = 27017
     extra: MongoDBExtra = MongoDBExtra()
 
-    Dialect = MongoDBDialect
-    ReadOptions = MongoDBReadOptions
-    WriteOptions = MongoDBWriteOptions
-    PipelineOptions = MongoDBPipelineOptions
-    Extra = MongoDBExtra
+    Dialect: ClassVar = MongoDBDialect
+    ReadOptions: ClassVar = MongoDBReadOptions
+    WriteOptions: ClassVar = MongoDBWriteOptions
+    PipelineOptions: ClassVar = MongoDBPipelineOptions
+    Extra: ClassVar = MongoDBExtra
 
     _server_version: Version | None = PrivateAttr(default=None)
 
@@ -328,7 +324,7 @@ class MongoDB(DBConnection):
         """
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
 
-        read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
+        read_options = self.PipelineOptions.parse(options).model_dump(by_alias=True, exclude_none=True)
         if pipeline:
             pipeline = self.dialect.prepare_pipeline(pipeline)
 
@@ -394,7 +390,7 @@ class MongoDB(DBConnection):
     ) -> tuple[Any, Any]:
         log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, window.expression)
 
-        read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
+        read_options = self.ReadOptions.parse(options).model_dump(by_alias=True, exclude_none=True)
         read_options.update(self._get_connection_params(source))
 
         # The '_id' field must be specified in the request.
@@ -449,7 +445,7 @@ class MongoDB(DBConnection):
         limit: int | None = None,
         options: MongoDBReadOptions | dict | None = None,
     ) -> "DataFrame":
-        read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
+        read_options = self.ReadOptions.parse(options).model_dump(by_alias=True, exclude_none=True)
         read_options.update(self._get_connection_params(source))
 
         final_where = self.dialect.apply_window(where, window)
@@ -488,7 +484,7 @@ class MongoDB(DBConnection):
         options: MongoDBWriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-        write_options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
+        write_options_dict = write_options.model_dump(by_alias=True, exclude_none=True, exclude={"if_exists"})
         write_options_dict.update(self._get_connection_params(target))
         mode = (
             "overwrite"
@@ -514,7 +510,7 @@ class MongoDB(DBConnection):
 
     @property
     def connection_url(self) -> str:
-        params = self.extra.dict(by_alias=True)
+        params = self.extra.model_dump(by_alias=True)
         sorted_params = [(k, v) for k, v in sorted(params.items(), key=lambda x: x[0].lower())]
         query = parser.urlencode(sorted_params, quote_via=parser.quote)
 
@@ -538,7 +534,8 @@ class MongoDB(DBConnection):
 
         return result
 
-    @validator("spark")
+    @field_validator("spark", mode="before")
+    @classmethod
     def _check_java_class_imported(cls, spark: "SparkSession") -> "SparkSession":
         java_class = "com.mongodb.spark.sql.connector.MongoTableProvider"
 

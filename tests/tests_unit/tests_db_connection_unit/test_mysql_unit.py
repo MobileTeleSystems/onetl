@@ -201,28 +201,28 @@ def test_mysql_with_extra(spark_mock):
 
 
 def test_mysql_without_mandatory_args(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MySQL()
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MySQL(
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MySQL(
             host="some_host",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MySQL(
             host="some_host",
             user="user",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MySQL(
             host="some_host",
             password="passwd",

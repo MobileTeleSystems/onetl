@@ -7,11 +7,7 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from humanize import naturaldelta
-
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from pydantic import field_validator
 
 from onetl._metrics.recorder import SparkMetricsRecorder
 from onetl._util.spark import inject_spark_param, override_job_description, stringify
@@ -104,12 +100,12 @@ class Hive(DBConnection):
 
     cluster: Cluster
 
-    Dialect = HiveDialect
-    WriteOptions = HiveWriteOptions
-    Options = HiveLegacyOptions
-    Slots = HiveSlots
+    Dialect: ClassVar = HiveDialect
+    WriteOptions: ClassVar = HiveWriteOptions
+    Options: ClassVar = HiveLegacyOptions
+    Slots: ClassVar = HiveSlots
     # TODO: remove in v1.0.0
-    slots = HiveSlots
+    slots: ClassVar = HiveSlots
 
     _CHECK_QUERY: ClassVar[str] = "SHOW DATABASES"
 
@@ -410,7 +406,8 @@ class Hive(DBConnection):
 
         return min_value, max_value
 
-    @validator("cluster")
+    @field_validator("cluster", mode="before")
+    @classmethod
     def _validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
@@ -531,7 +528,7 @@ class Hive(DBConnection):
         log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
 
     def _format_write_options(self, write_options: HiveWriteOptions) -> dict:
-        options_dict = write_options.dict(
+        options_dict = write_options.model_dump(
             by_alias=True,
             exclude_unset=True,
             exclude={"if_exists"},
@@ -539,7 +536,7 @@ class Hive(DBConnection):
 
         if isinstance(write_options.format, (WriteOnlyFileFormat, ReadWriteFileFormat)):
             options_dict["format"] = write_options.format.name
-            options_dict.update(write_options.format.dict(exclude={"name"}, exclude_none=True))
+            options_dict.update(write_options.format.model_dump(exclude={"name"}, exclude_none=True))
 
         return options_dict
 
@@ -552,7 +549,7 @@ class Hive(DBConnection):
         write_options = self.WriteOptions.parse(options)
 
         writer = df.write
-        for method, value in write_options.dict(
+        for method, value in write_options.model_dump(
             by_alias=True,
             exclude_none=True,
             exclude={"if_exists", "format", "table_properties"},

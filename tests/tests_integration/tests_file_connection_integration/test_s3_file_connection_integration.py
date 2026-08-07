@@ -21,7 +21,7 @@ def test_s3_file_connection_check_success(caplog, s3_file_connection):
     assert "secret_key = SecretStr('**********')" in caplog.text
     assert s3.secret_key.get_secret_value() not in caplog.text
     assert "session_token =" not in caplog.text
-    assert f"extra = {s3.extra.dict(exclude_none=True)!r}" in caplog.text
+    assert f"extra = {s3.extra.model_dump(exclude_none=True)!r}" in caplog.text
 
     assert "Connection is available." in caplog.text
 

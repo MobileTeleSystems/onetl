@@ -153,35 +153,35 @@ def test_mongodb_with_port(spark_mock):
 
 
 def test_mongodb_without_mandatory_args(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB()
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB(
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB(
             host="some_host",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB(
             host="some_host",
             user="user",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB(
             host="some_host",
             password="passwd",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB(
             host="some_host",
             user="user",
@@ -325,5 +325,5 @@ def test_mongodb_write_options_mode_deprecated(options, value, message):
 
 
 def test_mongodb_write_options_if_exists_wrong_value():
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+    with pytest.raises(ValueError, match="Input should be"):
         MongoDB.WriteOptions(if_exists="wrong_mode")

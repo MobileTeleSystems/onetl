@@ -13,11 +13,11 @@ pytestmark = [pytest.mark.hive, pytest.mark.db_connection, pytest.mark.connectio
 
 def test_hive_missing_args(spark_mock):
     # no spark
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Hive()
 
     # no cluster
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Hive(spark=spark_mock)
 
 
@@ -225,5 +225,5 @@ def test_hive_write_options_mode_deprecated(options, value, message):
 
 
 def test_hive_write_options_if_exists_wrong_value():
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+    with pytest.raises(ValueError, match="Input should be"):
         Hive.WriteOptions(if_exists="wrong_mode")

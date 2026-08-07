@@ -17,7 +17,6 @@ authors = [{name= "MWS Data Bridge", email = "onetools@mts.ru"}]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: Pydantic",
-    "Framework :: Pydantic :: 1",
     "Framework :: Pydantic :: 2",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
@@ -43,9 +42,7 @@ dependencies = [
     "ordered-set",
     "platformdirs",
     "psutil",
-    # https://github.com/pydantic/pydantic/issues/4092
-    # https://github.com/pydantic/pydantic/issues/4498
-    "pydantic>=1.9.2,!=1.10.2,<3",
+    "pydantic>=2.0,<3",
     "pyyaml",
     # https://github.com/python/typing_extensions/pull/188
     "typing-extensions>=4.5.0",
@@ -123,8 +120,6 @@ test-mssql = ["pymssql"]
 test-mysql = ["pymysql[rsa]"]
 test-oracle = ["cx_Oracle"]
 test-postgres = ["psycopg2-binary"]
-test-pydantic-1 = ["pydantic<2"]
-test-pydantic-2 = ["pydantic>=2,<3"]
 test-etl-entities-2 = ["etl-entities<3"]
 test-etl-entities-3 = ["etl-entities>=3.0.2,<4"]
 test-samba = ["pysmb"]
@@ -236,13 +231,7 @@ conflicts = [
     [
         { group = "test-etl-entities-2" },
         { group = "test-etl-entities-3" },
-    ],
-    [
-        { group = "test-etl-entities-2" },
-        { group = "test-etl-entities-3" },
-        { group = "test-pydantic-1" },
-        { group = "test-pydantic-2" },
-    ],
+    ]
 ]
 
 [tool.uv.dependency-groups]

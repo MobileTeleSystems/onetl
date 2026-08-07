@@ -1,24 +1,23 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 
-import re
+from typing import Annotated
 
-try:
-    from pydantic.v1 import StrictStr
-except (ImportError, AttributeError):
-    from pydantic import StrictStr
+from pydantic import StringConstraints
+from typing_extensions import Doc
 
+Cluster = Annotated[
+    str,
+    StringConstraints(pattern="^[a-zA-Z]+([-_]*[a-zA-Z0-9])*$"),
+    Doc(
+        """
+        Cluster name should be in format ``somecluster``, ``some-cluster``, ``some-cluster``.
 
-class Cluster(StrictStr):
-    """Cluster representation
+        .. warning::
 
-    Cluster name should be in format ``somecluster``, ``some-cluster``, ``some-cluster``.
+            Name can have only alphanumeric symbols and ``-``, ``_``.
 
-    .. warning::
-
-        Name can have only alphanumeric symbols and ``-``, ``_``.
-
-        Name cannot be just a numeric value, prefer ``somecluster-001``.
-    """
-
-    regex = re.compile("^[a-zA-Z]+([-_]*[a-zA-Z0-9])*$")
+            Name cannot be just a numeric value, prefer ``somecluster-001``.
+        """,
+    ),
+]

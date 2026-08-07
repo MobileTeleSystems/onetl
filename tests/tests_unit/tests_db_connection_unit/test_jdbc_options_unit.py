@@ -76,7 +76,7 @@ def test_jdbc_read_write_options_populated_by_connection_class(arg, value, optio
     else:
         # FetchOptions & ExecuteOptions does not have such restriction
         options = options_class.parse({arg: value})
-        assert options.dict()[arg] == value
+        assert options.model_dump()[arg] == value
 
 
 @pytest.mark.parametrize(
@@ -174,7 +174,7 @@ def test_jdbc_old_options_allowed_but_deprecated(arg, value):
     with pytest.warns(UserWarning, match=warning_msg):
         options = Postgres.Options.parse({arg: value})
 
-    parsed_value = options.dict().get(arg) or options.dict(by_alias=True).get(arg)
+    parsed_value = options.model_dump().get(arg) or options.model_dump(by_alias=True).get(arg)
     assert parsed_value == value
 
 
@@ -315,7 +315,7 @@ def test_jdbc_write_options_mode_deprecated(options, value, message):
     ],
 )
 def test_jdbc_write_options_mode_wrong(options_class, options):
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+    with pytest.raises(ValueError, match="Input should be"):
         options_class(**options)
 
 

@@ -4,17 +4,12 @@ import logging
 import time
 from typing import TYPE_CHECKING
 
-from onetl._util.alias import avoid_alias
-
-try:
-    from pydantic.v1 import Field, PrivateAttr, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, validator  # type: ignore[no-redef, assignment]
-
 from humanize import naturaldelta
+from pydantic import Field, PrivateAttr, ValidationInfo, field_validator
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._metrics.recorder import SparkMetricsRecorder
+from onetl._util.alias import avoid_alias
 from onetl._util.spark import override_job_description
 from onetl.base import BaseDBConnection
 from onetl.hooks import slot, support_hooks
@@ -110,25 +105,30 @@ class DBWriter(FrozenModel):
 
     _connection_checked: bool = PrivateAttr(default=False)
 
-    @validator("target", always=True)
-    def validate_target(cls, value: str, values):
-        if "connection" not in values:
+    @field_validator("target", mode="before")
+    @classmethod
+    def _validate_target(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
             return value
-        connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_name(value)
 
-    @validator("options", pre=True, always=True)
-    def validate_options(cls, options, values):
-        connection = values.get("connection")
+    @field_validator("options", mode="before")
+    @classmethod
+    def _validate_options(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
+
         write_options_class = getattr(connection, "WriteOptions", None)
         if write_options_class:
-            return write_options_class.parse(options)
+            return write_options_class.parse(value)
 
-        if options:
-            msg = f"{connection.__class__.__name__} does not implement WriteOptions, but {options!r} is passed"
-            raise ValueError(msg)
+        if not value:
+            return None
 
-        return None
+        msg = f"{connection.__class__.__name__} does not implement WriteOptions, but {value!r} is passed"
+        raise ValueError(msg)
 
     @slot
     def run(self, df: "DataFrame") -> None:
@@ -204,7 +204,7 @@ class DBWriter(FrozenModel):
         log.info("|Spark| -> |%s| Writing DataFrame to target using parameters:", self.connection.__class__.__name__)
         log_with_indent(log, "target = '%s'", self.target)
 
-        options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
+        options = self.options.model_dump(by_alias=True, exclude_none=True) if self.options else None
         log_options(log, options)
 
     def _get_write_kwargs(self) -> dict:

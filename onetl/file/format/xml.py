@@ -4,10 +4,7 @@ import logging
 import warnings
 from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -321,11 +318,7 @@ class XML(ReadWriteFileFormat):
 
         Used only for writing files.
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        prohibited_options = frozenset(("path",))  # filled by FileDFReader/FileDFWriter
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=frozenset(("path",)), known_options=[], extra="allow")  # type: ignore[typeddict-unknown-key]
 
     @slot
     @classmethod
@@ -537,7 +530,7 @@ class XML(ReadWriteFileFormat):
         else:
             column_name, column = column, col(column).cast("string")
 
-        options = self.dict(by_alias=True, exclude_none=True)
+        options = self.model_dump(by_alias=True, exclude_none=True)
         version = get_spark_version(spark)
         if version.major >= 4:  # noqa: PLR2004
             from pyspark.sql.functions import from_xml  # type: ignore[attr-defined]
@@ -559,7 +552,7 @@ class XML(ReadWriteFileFormat):
         return Column(jc).alias(column_name)
 
     def _check_unsupported_serialization_options(self):
-        current_options = self.dict(by_alias=True, exclude_none=True)
+        current_options = self.model_dump(by_alias=True, exclude_none=True)
         unsupported_options = current_options.keys() & PARSE_COLUMN_UNSUPPORTED_OPTIONS
         if unsupported_options:
             warnings.warn(
@@ -569,7 +562,7 @@ class XML(ReadWriteFileFormat):
             )
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = self.model_dump(by_alias=True, exclude_none=True)
         options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

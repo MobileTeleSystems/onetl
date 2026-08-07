@@ -3,10 +3,7 @@
 import warnings
 from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field
 
 from onetl._util.alias import avoid_alias
 from onetl._util.spark import stringify
@@ -449,10 +446,7 @@ class CSV(ReadWriteFileFormat):
 
     Default is same as [escape][].
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        extra = "allow"
+    model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     @slot
     @classmethod
@@ -542,7 +536,7 @@ class CSV(ReadWriteFileFormat):
             column_name, column = column, col(column).cast("string")
 
         schema_string = schema.simpleString()
-        options = stringify(self.dict(by_alias=True, exclude_none=True))
+        options = stringify(self.model_dump(by_alias=True, exclude_none=True))
         return from_csv(column, schema_string, options).alias(column_name)
 
     def serialize_column(self, column: "str | Column") -> "Column":
@@ -615,11 +609,11 @@ class CSV(ReadWriteFileFormat):
         else:
             column_name, column = column, col(column)
 
-        options = stringify(self.dict(by_alias=True, exclude_none=True))
+        options = stringify(self.model_dump(by_alias=True, exclude_none=True))
         return to_csv(column, options).alias(column_name)
 
     def _check_unsupported_serialization_options(self):
-        current_options = self.dict(by_alias=True, exclude_none=True)
+        current_options = self.model_dump(by_alias=True, exclude_none=True)
         unsupported_options = current_options.keys() & PARSE_COLUMN_UNSUPPORTED_OPTIONS
         if unsupported_options:
             warnings.warn(
@@ -630,7 +624,7 @@ class CSV(ReadWriteFileFormat):
             )
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = self.model_dump(by_alias=True, exclude_none=True)
         options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

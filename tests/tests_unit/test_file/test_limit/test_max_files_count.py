@@ -5,10 +5,10 @@ from onetl.impl import RemoteDirectory, RemoteFile, RemotePathStat
 
 
 def test_max_files_count_invalid():
-    with pytest.raises(ValueError, match="Limit should be positive number"):
+    with pytest.raises(ValueError, match="Input should be greater than 0"):
         MaxFilesCount(0)
 
-    with pytest.raises(ValueError, match="Limit should be positive number"):
+    with pytest.raises(ValueError, match="Input should be greater than 0"):
         MaxFilesCount(-1)
 
 

@@ -169,7 +169,7 @@ def test_mssql_with_instance_name(spark_mock):
 
 
 def test_mssql_without_database_error(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MSSQL(
             host="some_host",
             user="user",
@@ -218,22 +218,22 @@ def test_mssql_with_extra_prohibited(spark_mock):
 
 
 def test_mssql_without_mandatory_args(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MSSQL()
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MSSQL(
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MSSQL(
             host="some_host",
             database="database",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MSSQL(
             host="some_host",
             database="database",
@@ -241,7 +241,7 @@ def test_mssql_without_mandatory_args(spark_mock):
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MSSQL(
             host="some_host",
             database="database",

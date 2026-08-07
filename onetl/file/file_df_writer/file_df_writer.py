@@ -2,14 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from humanize import naturaldelta
-
-try:
-    from pydantic.v1 import PrivateAttr, validator
-except (ImportError, AttributeError):
-    from pydantic import PrivateAttr, validator  # type: ignore[no-redef, assignment]
+from pydantic import PrivateAttr, ValidationInfo, field_validator, model_validator
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._metrics.recorder import SparkMetricsRecorder
@@ -89,7 +85,7 @@ class FileDFWriter(FrozenModel):
         ```
     """
 
-    Options = FileDFWriterOptions
+    Options: ClassVar = FileDFWriterOptions
 
     connection: BaseFileDFConnection
     format: BaseWritableFileFormat
@@ -173,7 +169,7 @@ class FileDFWriter(FrozenModel):
         log_with_indent(log, "target_path = '%s'", self.target_path)
         log_with_indent(log, "format = %r", self.format)
 
-        options_dict = self.options.dict(exclude_none=True)
+        options_dict = self.options.model_dump(exclude_none=True)
         log_options(log, options_dict)
         log_dataframe_schema(log, df)
 
@@ -182,20 +178,20 @@ class FileDFWriter(FrozenModel):
             log.debug("|%s| Recorded metrics (some values may be missing!):", self.__class__.__name__)
             log_lines(log, str(metrics), level=logging.DEBUG)
 
-    @validator("target_path", pre=True)
-    def _validate_target_path(cls, target_path, values):
-        connection = values.get("connection")
-        if isinstance(connection, BaseFileDFConnection):
-            return connection.path_from_string(target_path)
-        return target_path
+    @field_validator("target_path", mode="before")
+    @classmethod
+    def validate_target_path(cls, value, info: ValidationInfo):
+        connection: BaseFileDFConnection | None = info.data.get("connection")
+        if not connection or value is None:
+            return value
+        return connection.path_from_string(value)
 
-    @validator("format")
-    def _validate_format(cls, format, values):
-        connection = values.get("connection")
-        if isinstance(connection, BaseFileDFConnection):
-            connection.check_if_format_supported(format)
-        return format
-
-    @validator("options")
+    @field_validator("options", mode="before")
+    @classmethod
     def _validate_options(cls, value):
         return cls.Options.parse(value)
+
+    @model_validator(mode="after")
+    def _validate_format(self):
+        self.connection.check_if_format_supported(self.format)
+        return self

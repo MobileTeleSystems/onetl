@@ -2,10 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import warnings
 
-try:
-    from pydantic.v1 import Field, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
+from pydantic import Field, model_validator
 
 from onetl._util.alias import avoid_alias
 from onetl.impl import FileExistBehavior, GenericOptions
@@ -72,13 +69,14 @@ class FileDownloaderOptions(GenericOptions):
     !!! success "Added in 0.8.1"
     """
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_deprecated(cls, values):
         if "mode" in values:
             warnings.warn(
                 "Option `FileDownloader.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
                 "Use `FileDownloader.Options(if_exists=...)` instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
         return values

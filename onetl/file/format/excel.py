@@ -3,10 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, ClassVar
 
-try:
-    from pydantic.v1 import ByteSize, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import ByteSize, SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import ByteSize, ConfigDict, SecretStr
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -211,10 +208,7 @@ class Excel(ReadWriteFileFormat):
 
         Used only for reading files.
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        extra = "allow"
+    model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     @slot
     @classmethod
@@ -299,13 +293,13 @@ class Excel(ReadWriteFileFormat):
 
     @slot
     def apply_to_reader(self, reader: "DataFrameReader") -> "DataFrameReader":
-        options = self.dict(by_alias=True, exclude_none=True)
+        options = self.model_dump(by_alias=True, exclude_none=True)
         if self.workbookPassword:
             options["workbookPassword"] = self.workbookPassword.get_secret_value()
         return reader.format(self.name).options(**options)
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = self.model_dump(by_alias=True, exclude_none=True)
         options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

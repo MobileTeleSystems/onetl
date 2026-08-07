@@ -128,7 +128,7 @@ def test_postgres_with_port(spark_mock):
 
 
 def test_postgres_without_database_error(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Postgres(host="some_host", port=5000, user="user", password="passwd", spark=spark_mock)
 
 
@@ -165,22 +165,22 @@ def test_postgres_with_extra(spark_mock):
 
 
 def test_postgres_without_mandatory_args(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Postgres()
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Postgres(
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Postgres(
             host="some_host",
             database="database",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Postgres(
             host="some_host",
             database="database",
@@ -188,7 +188,7 @@ def test_postgres_without_mandatory_args(spark_mock):
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Postgres(
             host="some_host",
             database="database",

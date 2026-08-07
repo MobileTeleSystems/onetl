@@ -236,28 +236,28 @@ def test_clickhouse_with_extra(spark_mock):
 
 
 def test_clickhouse_without_mandatory_args(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Clickhouse()
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Clickhouse(
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Clickhouse(
             host="some_host",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Clickhouse(
             host="some_host",
             user="user",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Clickhouse(
             host="some_host",
             password="passwd",

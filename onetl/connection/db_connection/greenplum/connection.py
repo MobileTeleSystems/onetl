@@ -7,12 +7,8 @@ import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 from urllib.parse import quote, urlencode, urlparse, urlunparse
 
+from pydantic import ConfigDict, SecretStr, field_validator
 from typing_extensions import deprecated
-
-try:
-    from pydantic.v1 import SecretStr, validator
-except (ImportError, AttributeError):
-    from pydantic import SecretStr, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
@@ -68,10 +64,7 @@ class GreenplumExtra(GenericOptions):
     # avoid closing connections from server side
     # while connector is moving data to executors before insert
     tcpKeepAlive: str = "true"
-
-    class Config:
-        extra = "allow"
-        prohibited_options = JDBCMixinOptions.Config.prohibited_options
+    model_config = ConfigDict(extra="allow", prohibited_options=JDBCMixinOptions.model_config["prohibited_options"])  # type: ignore[typeddict-unknown-key]
 
 
 @support_hooks
@@ -170,14 +163,14 @@ class Greenplum(JDBCMixin, DBConnection):
     port: int = 5432
     extra: GreenplumExtra = GreenplumExtra()
 
-    ReadOptions = GreenplumReadOptions
-    WriteOptions = GreenplumWriteOptions
-    FetchOptions = GreenplumFetchOptions
-    ExecuteOptions = GreenplumExecuteOptions
-    JDBCOptions = JDBCMixinOptions
+    ReadOptions: ClassVar = GreenplumReadOptions
+    WriteOptions: ClassVar = GreenplumWriteOptions
+    FetchOptions: ClassVar = GreenplumFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = GreenplumExecuteOptions  # type: ignore[misc]
+    JDBCOptions: ClassVar = JDBCMixinOptions  # type: ignore[misc]
 
-    Extra = GreenplumExtra
-    Dialect = GreenplumDialect
+    Extra: ClassVar = GreenplumExtra
+    Dialect: ClassVar = GreenplumDialect
 
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
@@ -276,7 +269,7 @@ class Greenplum(JDBCMixin, DBConnection):
     def jdbc_custom_params(self) -> dict:
         result = {
             key: value
-            for key, value in self.extra.dict(by_alias=True).items()
+            for key, value in self.extra.model_dump(by_alias=True).items()
             if not key.startswith(("server.", "pool."))
         }
         # https://www.postgresql.org/docs/current/runtime-config-logging.html#GUC-APPLICATION-NAME
@@ -329,7 +322,7 @@ class Greenplum(JDBCMixin, DBConnection):
         limit: int | None = None,
         options: GreenplumReadOptions | None = None,
     ) -> "DataFrame":
-        read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
+        read_options = self.ReadOptions.parse(options).model_dump(by_alias=True, exclude_none=True)
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         where = self.dialect.apply_window(where, window)
         fake_query_for_log = self.dialect.get_sql_query(table=source, columns=columns, where=where, limit=limit)
@@ -359,7 +352,7 @@ class Greenplum(JDBCMixin, DBConnection):
         options: GreenplumWriteOptions | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-        options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
+        options_dict = write_options.model_dump(by_alias=True, exclude_none=True, exclude={"if_exists"})
 
         self._check_expected_jobs_number(df, action="write")
 
@@ -392,7 +385,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query, level=logging.DEBUG)
 
-        df = self._query_on_driver(query, self.FetchOptions.parse(jdbc_options.dict()))
+        df = self._query_on_driver(query, self.FetchOptions.parse(jdbc_options.model_dump()))
         log.info("|%s| Schema fetched.", self.__class__.__name__)
 
         return df.schema
@@ -427,7 +420,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query)
 
-        df = self._query_on_driver(query, self.FetchOptions.parse(jdbc_options.dict()))
+        df = self._query_on_driver(query, self.FetchOptions.parse(jdbc_options.model_dump()))
         row = df.collect()[0]
         min_value = row["min"]
         max_value = row["max"]
@@ -438,7 +431,8 @@ class Greenplum(JDBCMixin, DBConnection):
 
         return min_value, max_value
 
-    @validator("spark")
+    @field_validator("spark", mode="before")
+    @classmethod
     def _check_java_class_imported(cls, spark):
         java_class = "io.pivotal.greenplum.spark.GreenplumRelationProvider"
 
@@ -459,7 +453,7 @@ class Greenplum(JDBCMixin, DBConnection):
         table: str,
     ) -> dict:
         schema, table_name = table.split(".")
-        extra = self.extra.dict(by_alias=True, exclude_none=True)
+        extra = self.extra.model_dump(by_alias=True, exclude_none=True)
         greenplum_connector_options = {
             key: value for key, value in extra.items() if key.startswith(("server.", "pool."))
         }

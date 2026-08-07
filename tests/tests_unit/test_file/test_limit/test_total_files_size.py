@@ -5,10 +5,10 @@ from onetl.impl import RemoteDirectory, RemoteFile, RemotePathStat
 
 
 def test_total_files_size_invalid():
-    with pytest.raises(ValueError, match="Limit should be positive number"):
+    with pytest.raises(ValueError, match="Input should be greater than 0"):
         TotalFilesSize(0)
 
-    with pytest.raises(ValueError, match="Limit should be positive number"):
+    with pytest.raises(ValueError, match="could not parse value and unit from byte string"):
         TotalFilesSize(-1)
 
     with pytest.raises(ValueError, match="could not parse value and unit from byte string"):

@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+from pydantic import ConfigDict
+
 from onetl.impl import GenericOptions
 
 PROHIBITED_OPTIONS = frozenset(
@@ -32,7 +34,4 @@ class KafkaExtra(GenericOptions):
     for more details
     """
 
-    class Config:
-        strip_prefixes = ("kafka.",)
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(strip_prefixes=("kafka.",), prohibited_options=PROHIBITED_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]

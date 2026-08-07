@@ -8,10 +8,10 @@ def test_file_size_range_invalid():
     with pytest.raises(ValueError, match="Either min or max must be specified"):
         FileSizeRange()
 
-    with pytest.raises(ValueError, match="size cannot be negative"):
+    with pytest.raises(ValueError, match="could not parse value and unit from byte string"):
         FileSizeRange(min=-1)
 
-    with pytest.raises(ValueError, match="size cannot be negative"):
+    with pytest.raises(ValueError, match="could not parse value and unit from byte string"):
         FileSizeRange(max=-1)
 
     with pytest.raises(ValueError, match="Min size cannot be greater than max size"):

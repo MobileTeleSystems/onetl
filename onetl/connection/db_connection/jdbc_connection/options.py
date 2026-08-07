@@ -3,16 +3,11 @@
 import warnings
 from enum import Enum
 
-from onetl._util.alias import avoid_alias
-from onetl.connection.db_connection.jdbc_mixin.options import JDBCFetchOptions
-
-try:
-    from pydantic.v1 import Field, PositiveInt, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, PositiveInt, root_validator  # type: ignore[no-redef, assignment]
-
+from pydantic import ConfigDict, Field, PositiveInt, model_validator
 from typing_extensions import deprecated
 
+from onetl._util.alias import avoid_alias
+from onetl.connection.db_connection.jdbc_mixin.options import JDBCFetchOptions
 from onetl.impl import GenericOptions
 
 # options from spark.read.jdbc which are populated by JDBCConnection methods
@@ -137,10 +132,11 @@ class JDBCReadOptions(JDBCFetchOptions):
     ```
     """
 
-    class Config:
-        known_options = READ_OPTIONS | READ_WRITE_OPTIONS
-        prohibited_options = GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        known_options=READ_OPTIONS | READ_WRITE_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        prohibited_options=GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )
 
     # Options in DataFrameWriter.jdbc() method
     partition_column: str | None = Field(default=None, alias="partitionColumn")
@@ -360,31 +356,27 @@ class JDBCReadOptions(JDBCFetchOptions):
     ```
     """
 
-    @root_validator
-    def _partitioning_mode_actions(cls, values):
-        mode = values["partitioning_mode"]
-        num_partitions = values.get("num_partitions")
-        partition_column = values.get("partition_column")
-        lower_bound = values.get("lower_bound")
-        upper_bound = values.get("upper_bound")
-
-        if not partition_column:
-            if num_partitions == 1:
-                return values
+    @model_validator(mode="after")
+    def _partitioning_mode_actions(self):
+        if not self.partition_column:
+            if self.num_partitions == 1:
+                return self
 
             msg = "You should set partition_column to enable partitioning"
             raise ValueError(msg)
 
-        if num_partitions == 1:
+        if self.num_partitions == 1:
             msg = "You should set num_partitions > 1 to enable partitioning"
             raise ValueError(msg)
 
-        if mode == JDBCPartitioningMode.RANGE:
-            return values
+        if self.partitioning_mode == JDBCPartitioningMode.RANGE:
+            return self
 
-        values["lower_bound"] = lower_bound if lower_bound is not None else 0
-        values["upper_bound"] = upper_bound if upper_bound is not None else num_partitions
-        return values
+        if self.lower_bound is None:
+            object.__setattr__(self, "lower_bound", 0)
+        if self.upper_bound is None:
+            object.__setattr__(self, "upper_bound", self.num_partitions)
+        return self
 
 
 class JDBCWriteOptions(GenericOptions):
@@ -415,10 +407,11 @@ class JDBCWriteOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        known_options = WRITE_OPTIONS | READ_WRITE_OPTIONS
-        prohibited_options = GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        known_options=WRITE_OPTIONS | READ_WRITE_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        prohibited_options=GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )
 
     if_exists: JDBCTableExistBehavior = Field(  # type: ignore[literal-required]
         default=JDBCTableExistBehavior.APPEND,
@@ -543,14 +536,15 @@ class JDBCWriteOptions(GenericOptions):
     [java.sql.Connection](https://docs.oracle.com/javase/8/docs/api/java/sql/Connection.html).
     """
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_deprecated(cls, values):
         if "mode" in values:
             warnings.warn(
                 "Option `WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
                 "Use `WriteOptions(if_exists=...)` instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
         return values
 
@@ -668,22 +662,25 @@ class JDBCSQLOptions(GenericOptions):
     !!! info "Changed in 0.2.0"
         Set explicit default value to `100_000`
     """
+    model_config = ConfigDict(
+        known_options=READ_OPTIONS - {"partitioning_mode"},  # type: ignore[typeddict-unknown-key]
+        prohibited_options=GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS | {"partitioning_mode"},  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )
 
-    class Config:
-        known_options = READ_OPTIONS - {"partitioning_mode"}
-        prohibited_options = GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS | {"partitioning_mode"}
-        extra = "allow"
+    @model_validator(mode="after")
+    def _check_partition_fields(self):
+        if self.num_partitions is None:
+            return self
 
-    @root_validator
-    def _check_partition_fields(cls, values):
-        num_partitions = values.get("num_partitions")
-        lower_bound = values.get("lower_bound")
-        upper_bound = values.get("upper_bound")
+        if self.num_partitions == 1:
+            return self
 
-        if num_partitions is not None and num_partitions > 1 and (lower_bound is None or upper_bound is None):
-            msg = "lowerBound and upperBound must be set if numPartitions > 1"
-            raise ValueError(msg)
-        return values
+        if self.lower_bound is not None and self.upper_bound is not None:
+            return self
+
+        msg = "lowerBound and upperBound must be set if numPartitions > 1"
+        raise ValueError(msg)
 
 
 @deprecated(
@@ -691,10 +688,11 @@ class JDBCSQLOptions(GenericOptions):
     category=UserWarning,
 )
 class JDBCLegacyOptions(GenericOptions):
-    class Config:
-        prohibited_options = GENERIC_PROHIBITED_OPTIONS
-        known_options = READ_OPTIONS | WRITE_OPTIONS | READ_WRITE_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        prohibited_options=GENERIC_PROHIBITED_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        known_options=READ_OPTIONS | WRITE_OPTIONS | READ_WRITE_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )
 
     partition_column: str | None = Field(default=None, alias="partitionColumn")
     num_partitions: PositiveInt = Field(default=1, alias="numPartitions")

@@ -3,10 +3,7 @@
 import warnings
 from enum import Enum
 
-try:
-    from pydantic.v1 import Field, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, model_validator
 
 from onetl._util.alias import avoid_alias
 from onetl.connection.db_connection.jdbc_mixin import (
@@ -99,12 +96,15 @@ class GreenplumReadOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        known_options = READ_OPTIONS | READ_WRITE_OPTIONS
-        prohibited_options = JDBCMixinOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        known_options=READ_OPTIONS | READ_WRITE_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        prohibited_options=JDBCMixinOptions.model_config["prohibited_options"]  # type: ignore[typeddict-unknown-key]
+        | GENERIC_PROHIBITED_OPTIONS
+        | WRITE_OPTIONS,
+        extra="allow",
+    )
 
-    partition_column: str | None = Field(alias="partitionColumn")
+    partition_column: str | None = Field(default=None, alias="partitionColumn")
     """Column used to parallelize reading from a table.
 
     !!! warning
@@ -186,7 +186,7 @@ class GreenplumReadOptions(GenericOptions):
     ```
     """
 
-    num_partitions: int | None = Field(alias="partitions")
+    num_partitions: int | None = Field(default=None, alias="partitions")
     """Number of jobs created by Spark to read the table content in parallel.
 
     See documentation for [partition_column][] for more details
@@ -234,10 +234,13 @@ class GreenplumWriteOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        known_options = WRITE_OPTIONS | READ_WRITE_OPTIONS
-        prohibited_options = JDBCMixinOptions.Config.prohibited_options | GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        known_options=WRITE_OPTIONS | READ_WRITE_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        prohibited_options=JDBCMixinOptions.model_config["prohibited_options"]  # type: ignore[typeddict-unknown-key]
+        | GENERIC_PROHIBITED_OPTIONS
+        | READ_OPTIONS,
+        extra="allow",
+    )
 
     if_exists: GreenplumTableExistBehavior = Field(  # type: ignore[literal-required]
         default=GreenplumTableExistBehavior.APPEND,
@@ -314,14 +317,15 @@ class GreenplumWriteOptions(GenericOptions):
         Renamed `mode` → `if_exists`
     """
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_deprecated(cls, values):
         if "mode" in values:
             warnings.warn(
                 "Option `Greenplum.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
                 "Use `Greenplum.WriteOptions(if_exists=...)` instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
         return values
 

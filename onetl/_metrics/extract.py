@@ -4,10 +4,7 @@ import re
 from datetime import timedelta
 from typing import Any
 
-try:
-    from pydantic.v1 import ByteSize
-except (ImportError, AttributeError):
-    from pydantic import ByteSize  # type: ignore[no-redef, assignment]
+from pydantic import ByteSize, TypeAdapter
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._metrics.driver import SparkDriverMetrics
@@ -31,11 +28,14 @@ def _get_int(data: dict[SparkSQLMetricNames, list[str]], key: Any) -> int | None
         return None
 
 
-def _get_bytes(data: dict[SparkSQLMetricNames, list[str]], key: Any) -> int | None:
+ByteSizeTypeAdapter = TypeAdapter(ByteSize)
+
+
+def _get_bytes(data: dict[SparkSQLMetricNames, list[str]], key: Any) -> ByteSize | None:
     try:
         raw_value = data[key][0]
         normalized_value = NON_BYTE_SIZE.sub("", raw_value)
-        return int(ByteSize.validate(normalized_value))
+        return ByteSizeTypeAdapter.validate_python(normalized_value)
     except (IndexError, KeyError, ValueError, TypeError):
         return None
 

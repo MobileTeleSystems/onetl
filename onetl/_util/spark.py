@@ -6,12 +6,9 @@ from contextlib import contextmanager
 from math import inf
 from typing import TYPE_CHECKING, Any
 
-from onetl._util.version import Version
+from pydantic import SecretStr
 
-try:
-    from pydantic.v1 import SecretStr
-except (ImportError, AttributeError):
-    from pydantic import SecretStr  # type: ignore[no-redef, assignment]
+from onetl._util.version import Version
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession

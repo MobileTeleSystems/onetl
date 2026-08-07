@@ -55,7 +55,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --extra files --group test-spark-3.5 --group test-pydantic-2 --group dev
+          uv sync --extra files --group test-spark-3.5 --group dev
 
       - name: Run linters
         run: |

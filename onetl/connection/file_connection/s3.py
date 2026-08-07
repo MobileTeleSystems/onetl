@@ -8,11 +8,30 @@ import warnings
 from collections.abc import Iterable
 from pathlib import Path
 from pprint import pformat
-from typing import cast
+from typing import ClassVar, Literal, cast
 
+from pydantic import (  # type: ignore[no-redef, assignment]
+    ConfigDict,
+    DirectoryPath,
+    Field,
+    FilePath,
+    SecretStr,
+    model_validator,
+)
+
+from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.exception import DirectoryNotEmptyError
 from onetl.hooks import slot, support_hooks
-from onetl.impl import GenericOptions, RemoteFile
+from onetl.impl import (
+    GenericOptions,
+    Host,
+    LocalPath,
+    RemoteDirectory,
+    RemoteFile,
+    RemotePath,
+    RemotePathStat,
+    path_repr,
+)
 
 try:
     from minio import Minio, commonconfig
@@ -37,23 +56,6 @@ except (ImportError, NameError) as e:
             """,
         ).strip(),
     ) from e
-
-try:
-    from pydantic.v1 import DirectoryPath, Field, FilePath, SecretStr, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import (  # type: ignore[no-redef, assignment]
-        DirectoryPath,
-        Field,
-        FilePath,
-        SecretStr,
-        root_validator,
-        validator,
-    )
-
-from typing import Literal
-
-from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import Host, LocalPath, RemoteDirectory, RemotePath, RemotePathStat, path_repr
 
 log = logging.getLogger(__name__)
 
@@ -88,28 +90,29 @@ class S3Extra(GenericOptions):
         status_forcelist=frozenset({500, 502, 503, 504}),
     )
 
-    ssl_verify: FilePath | DirectoryPath | bool = True
+    ssl_verify: FilePath | DirectoryPath | bool = Field(default=True, validate_default=True)
 
-    @validator("ssl_verify", pre=True, always=True)
-    def _ssl_verify_default_value(cls, value):
-        if not isinstance(value, bool):
-            return value
+    @model_validator(mode="before")
+    @classmethod
+    def _ssl_verify_default_value(cls, values):
+        value = values.get("ssl_verify", True)
+        if value is True:
+            # Try to use default SSL certificates
+            for env_var in ("REQUESTS_CA_BUNDLE", "SSL_CERT_FILE", "SSL_CERT_DIR"):
+                value = os.environ.get(env_var)
+                if not value:
+                    continue
+                values["ssl_verify"] = value
+                return values
 
-        if value is False:
-            return value
+            import certifi
 
-        # Try to use default SSL certificates
-        for env_var in ("REQUESTS_CA_BUNDLE", "SSL_CERT_FILE", "SSL_CERT_DIR"):
-            value = os.environ.get(env_var)
-            if value:
-                return value
+            values["ssl_verify"] = certifi.where()
+            return values
 
-        import certifi
+        return values
 
-        return certifi.where()
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
@@ -204,52 +207,56 @@ class S3(FileConnection):
     """
 
     host: Host
-    port: int | None = None
     bucket: str
     access_key: str
     secret_key: SecretStr
     protocol: Literal["http", "https"] = "https"
+    port: int = 443
     region: str | None = None
     session_token: SecretStr | None = None
     extra: S3Extra = Field(default_factory=S3Extra)
 
-    Extra = S3Extra
+    Extra: ClassVar = S3Extra
 
-    @root_validator
-    def _validate_port(cls, values):
-        if values["port"] is not None:
+    @model_validator(mode="before")
+    @classmethod
+    def _set_port_based_on_protocol(cls, values):
+        port = values.get("port")
+        if port is not None:
             return values
 
-        values["port"] = 443 if values["protocol"] == "https" else 80
+        values["port"] = 443 if values.get("protocol", "https") == "https" else 80
         return values
 
-    @validator("region", always=True)
-    def _region_is_recommended(cls, value):
-        if not value:
-            warnings.warn(
-                f"It is highly recommended to specify {cls.__name__}(region=...) to avoid potential access errors",
-                category=UserWarning,
-                stacklevel=5,
-            )
-        return value
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _ssl_verify_fallback(cls, values):
-        if "ssl_verify" not in values:
+        ssl_verify = values.pop("ssl_verify", None)
+        if ssl_verify is None:
             return values
 
-        ssl_verify = values.pop("ssl_verify")
         warnings.warn(
             "Option `ssl_verify` is deprecated since v0.16.0 and will be removed in v1.0.0. "
             f"Use extra={cls.__name__}.Extra(ssl_verify={ssl_verify!r}) instead",
             category=UserWarning,
-            stacklevel=5,
+            stacklevel=3,
         )
-        extra = cls.Extra.parse(values.get("extra"))
-        extra_dict = extra.dict(exclude_unset=True, by_alias=True)
-        extra_dict["ssl_verify"] = ssl_verify
-        values["extra"] = cls.Extra.parse(extra_dict)
+        values["extra"] = cls.Extra.parse(
+            cls.Extra.parse(values.get("extra")).model_dump(exclude_unset=True, by_alias=True)
+            | {"ssl_verify": ssl_verify}
+        )
         return values
+
+    @model_validator(mode="after")
+    def _region_is_recommended(self):
+        if not self.region:
+            class_name = self.__class__.__name__
+            warnings.warn(
+                f"It is highly recommended to specify {class_name}(region=...) to avoid potential access errors",
+                category=UserWarning,
+                stacklevel=3,
+            )
+        return self
 
     @property
     def instance_url(self) -> str:
@@ -393,7 +400,7 @@ class S3(FileConnection):
         )
 
     def _get_client(self) -> Minio:
-        extra = self.extra.dict(by_alias=True, exclude={"timeout", "retry", "ssl_verify"})
+        extra = self.extra.model_dump(by_alias=True, exclude={"timeout", "retry", "ssl_verify"})
         return Minio(
             endpoint=f"{self.host}:{self.port}",
             access_key=self.access_key,

@@ -1,11 +1,8 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from typing import Any
+from typing import Annotated, Any, ClassVar
 
-try:
-    from pydantic.v1 import AnyUrl, Field
-except (ImportError, AttributeError):
-    from pydantic import AnyUrl, Field  # type: ignore[no-redef, assignment]
+from pydantic import Field, HttpUrl, UrlConstraints
 
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.catalog import IcebergCatalog
@@ -109,11 +106,11 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
         ```
     """
 
-    BasicAuth = IcebergRESTCatalogBasicAuth
-    BearerAuth = IcebergRESTCatalogBearerAuth
-    OAuth2ClientCredentials = IcebergRESTCatalogOAuth2ClientCredentials
+    BasicAuth: ClassVar = IcebergRESTCatalogBasicAuth
+    BearerAuth: ClassVar = IcebergRESTCatalogBearerAuth
+    OAuth2ClientCredentials: ClassVar = IcebergRESTCatalogOAuth2ClientCredentials
 
-    url: AnyUrl
+    url: Annotated[HttpUrl, UrlConstraints(host_required=True, preserve_empty_path=True)]
     headers: dict[str, Any] = Field(default_factory=dict)
     extra: dict[str, Any] = Field(default_factory=dict)
 

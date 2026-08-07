@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from typing import TYPE_CHECKING, ClassVar, Literal
 
+from pydantic import ConfigDict
+
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
 
@@ -97,11 +99,7 @@ class ORC(ReadWriteFileFormat):
 
         Used only for writing files.
     """
-
-    class Config:
-        known_options = ORC_JAVA_OPTIONS
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(known_options=ORC_JAVA_OPTIONS, prohibited_options=PROHIBITED_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
     @slot
     def check_if_supported(self, spark: "SparkSession") -> None:
@@ -109,7 +107,7 @@ class ORC(ReadWriteFileFormat):
         pass
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = self.model_dump(by_alias=True, exclude_none=True)
         options_dict = dict(sorted(options_dict.items()))
         if any("." in field for field in options_dict):
             return f"{self.__class__.__name__}.parse({options_dict})"

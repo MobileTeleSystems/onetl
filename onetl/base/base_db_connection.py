@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from etl_entities.hwm import HWM
 
@@ -106,7 +106,7 @@ class BaseDBConnection(BaseConnection):
     """
 
     spark: "SparkSession"
-    Dialect = BaseDBDialect
+    Dialect: ClassVar = BaseDBDialect
 
     @property
     def dialect(self):

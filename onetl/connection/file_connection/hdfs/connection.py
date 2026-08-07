@@ -5,26 +5,18 @@ import textwrap
 import warnings
 from contextlib import suppress
 from logging import getLogger
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, ClassVar, cast
 
-try:
-    from pydantic.v1 import (
-        Field,
-        FilePath,
-        PrivateAttr,
-        SecretStr,
-        root_validator,
-        validator,
-    )
-except (ImportError, AttributeError):
-    from pydantic import (  # type: ignore[no-redef, assignment]
-        Field,
-        FilePath,
-        PrivateAttr,
-        SecretStr,
-        root_validator,
-        validator,
-    )
+from pydantic import (
+    ConfigDict,
+    Field,
+    FilePath,
+    PrivateAttr,
+    SecretStr,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from onetl._util.alias import avoid_alias
 from onetl.base import PathStatProtocol
@@ -80,9 +72,7 @@ class HDFSExtra(GenericOptions):
 
     timeout: Timeout = Timeout(connect=10, read=60)
     retry: Retry = Retry.DEFAULT
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
@@ -160,7 +150,7 @@ class HDFS(FileConnection, RenameDirMixin):
 
         !!! warning
 
-            You can provide only one of the parameters: `password` or `kinit`.
+            You can provide only one of the parameters: `password` or `keytab`.
             If you provide both, an exception will be raised.
 
     keytab : str, optional
@@ -170,7 +160,7 @@ class HDFS(FileConnection, RenameDirMixin):
 
         !!! warning
 
-            You can provide only one of the parameters: `password` or `kinit`.
+            You can provide only one of the parameters: `password` or `keytab`.
             If you provide both, an exception will be raised.
 
     extra : HDFSExtra, optional
@@ -249,19 +239,21 @@ class HDFS(FileConnection, RenameDirMixin):
         ```
     """
 
+    DEFAULT_WEBHDFS_PORT: ClassVar[int] = 50070
+
     cluster: Cluster | None = None
     host: Host | None = None
-    webhdfs_port: int = Field(alias=avoid_alias("port"), default=50070)  # type: ignore[literal-required]
+    webhdfs_port: int = Field(alias=avoid_alias("port"), default=DEFAULT_WEBHDFS_PORT, validate_default=True)  # type: ignore[literal-required]
     user: str | None = None
     password: SecretStr | None = None
     keytab: FilePath | None = None
     extra: HDFSExtra = Field(default_factory=HDFSExtra)
 
-    Slots = HDFSSlots
+    Slots: ClassVar = HDFSSlots
     # TODO: remove in v1.0.0
-    slots = Slots
+    slots: ClassVar = Slots
 
-    Extra = HDFSExtra
+    Extra: ClassVar = HDFSExtra
 
     _active_host: str | None = PrivateAttr(default=None)
 
@@ -340,7 +332,8 @@ class HDFS(FileConnection, RenameDirMixin):
             self._active_host = None
         return self
 
-    @validator("user", pre=True)
+    @field_validator("user", mode="before")
+    @classmethod
     def _validate_packages(cls, user):
         if user:
             try:
@@ -362,7 +355,8 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return user
 
-    @root_validator
+    @model_validator(mode="before")
+    @classmethod
     def _validate_cluster_or_hostname_set(cls, values):
         host = values.get("host")
         cluster = values.get("cluster")
@@ -373,7 +367,8 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return values
 
-    @validator("cluster")
+    @field_validator("cluster", mode="before")
+    @classmethod
     def _validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
@@ -388,9 +383,10 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return validated_cluster
 
-    @validator("host")
-    def _validate_host_name(cls, host, values):
-        cluster = values.get("cluster")
+    @field_validator("host", mode="before")
+    @classmethod
+    def _validate_host_name(cls, host, info: ValidationInfo):
+        cluster = info.data.get("cluster")
 
         log.debug("|%s| Normalizing namenode %r host...", cls.__name__, host)
         namenode = cls.Slots.normalize_namenode_host(host, cluster) or host
@@ -405,25 +401,26 @@ class HDFS(FileConnection, RenameDirMixin):
                     f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: "
                     f"{sorted(known_namenodes)!r}"
                 )
-                raise ValueError(
-                    msg,
-                )
+                raise ValueError(msg)
 
         return namenode
 
-    @validator("webhdfs_port", always=True)
-    def _validate_port_number(cls, port, values):
+    @model_validator(mode="before")
+    def _validate_port_number(cls, values):
+        port = values.get("port") or values.pop("webhdfs_port", None)
         cluster = values.get("cluster")
-        if cluster:
+
+        if cluster and not port:
             log.debug("|%s| Getting WebHDFS port of cluster %r ...", cls.__name__, cluster)
-            result = cls.Slots.get_webhdfs_port(cluster) or port
-            if result != port:
-                log.debug("|%s|   Got %r", cls.__name__, result)
-            return result
+            port = cls.Slots.get_webhdfs_port(cluster)
+            if port:
+                log.debug("|%s|   Got %r", cls.__name__, port)
 
-        return port
+        values["port"] = port or cls.DEFAULT_WEBHDFS_PORT
+        return values
 
-    @root_validator
+    @model_validator(mode="before")
+    @classmethod
     def _validate_credentials(cls, values):
         user = values.get("user")
         password = values.get("password")
@@ -438,7 +435,8 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _timeout_fallback(cls, values):
         if "timeout" not in values:
             return values
@@ -449,12 +447,11 @@ class HDFS(FileConnection, RenameDirMixin):
             "Option `timeout` is deprecated since v0.16.0 and will be removed in v1.0.0. "
             f"Use extra={cls.__name__}.Extra(timeout={timeout!r}) instead",
             category=UserWarning,
-            stacklevel=5,
+            stacklevel=3,
         )
-        extra = cls.Extra.parse(values.get("extra"))
-        extra_dict = extra.dict(exclude_unset=True, by_alias=True)
-        extra_dict["timeout"] = timeout
-        values["extra"] = cls.Extra.parse(extra_dict)
+        values["extra"] = cls.Extra.parse(
+            cls.Extra.parse(values.get("extra")).model_dump(exclude_unset=True, by_alias=True) | {"timeout": timeout}
+        )
         return values
 
     def _get_active_namenode(self) -> str:
@@ -522,7 +519,7 @@ class HDFS(FileConnection, RenameDirMixin):
     def _get_client(self) -> Client:
         session = self._get_session()
         timeout = (self.extra.timeout.connect_timeout, self.extra.timeout.read_timeout)
-        extra = self.extra.dict(by_alias=True, exclude={"timeout", "retry"})
+        extra = self.extra.model_dump(by_alias=True, exclude={"timeout", "retry"})
         if self.user and (self.keytab or self.password):
             from hdfs.ext.kerberos import KerberosClient
 

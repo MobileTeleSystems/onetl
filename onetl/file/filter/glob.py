@@ -2,10 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import glob
 
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from pydantic import field_validator
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel
@@ -37,14 +34,11 @@ class Glob(BaseFileFilter, FrozenModel):
     ```
     """
 
-    class Config:
-        arbitrary_types_allowed = True
-
     pattern: str
 
     def __init__(self, pattern: str):
         # this is only to allow passing glob as positional argument
-        super().__init__(pattern=pattern)
+        super().__init__(pattern=pattern)  # type: ignore[call-arg]
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.pattern!r})"
@@ -55,10 +49,10 @@ class Glob(BaseFileFilter, FrozenModel):
 
         return path.match(self.pattern)
 
-    @validator("pattern", pre=True)
+    @field_validator("pattern", mode="before")
+    @classmethod
     def _validate_pattern(cls, value: str) -> str:
         if not glob.has_magic(value):
             msg = f"Invalid glob: {value!r}"
             raise ValueError(msg)
-
         return value

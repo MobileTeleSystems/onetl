@@ -30,7 +30,7 @@ def test_reader_deprecated_import():
 
 
 def test_reader_no_connection():
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match=re.compile("field required", re.IGNORECASE)):
         DBReader(target="schema.table")
 
 
