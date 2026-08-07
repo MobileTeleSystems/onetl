@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 import logging
-import sys
 from collections.abc import Callable, Generator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
@@ -297,26 +296,27 @@ class ContextDecorator:
 
         return self
 
-    def __exit__(self, exc_type, value, traceback):
+    def __exit__(self, typ, value, traceback):
         """
         Copy of `contextlib._GeneratorContextManager.__exit__`
         """
-
-        if exc_type is None:
-            try:
-                next(self.gen)
-            except StopIteration:
-                return False
-            msg = "generator didn't stop"
-            raise RuntimeError(msg)
+        if typ is None:
+            # Faster way to run next(self.gen) and check for StopIteration:
+            for _ in self.gen:
+                try:
+                    msg = "generator didn't stop"
+                    raise RuntimeError(msg)
+                finally:
+                    self.gen.close()
+            return False
 
         if value is None:
             # Need to force instantiation so we can reliably
             # tell if we get the same exception back
-            value = value or exc_type()
+            value = typ()
 
         try:
-            self.gen.throw(exc_type, value, traceback)
+            self.gen.throw(typ, value, traceback)
         except StopIteration as exc:
             # Suppress StopIteration *unless* it's the same exception that
             # was passed to throw().  This prevents a StopIteration
@@ -325,30 +325,35 @@ class ContextDecorator:
         except RuntimeError as exc:
             # Don't re-raise the passed in exception. (issue27122)
             if exc is value:
+                exc.__traceback__ = traceback
                 return False
-            # Likewise, avoid suppressing if a StopIteration exception
+            # Avoid suppressing if a StopIteration exception
             # was passed to throw() and later wrapped into a RuntimeError
-            # (see PEP 479).
-            if exc_type is StopIteration and exc.__cause__ is value:
+            # (see PEP 479 for sync generators; async generators also
+            # have this behavior). But do this only if the exception wrapped
+            # by the RuntimeError is actually Stop(Async)Iteration (see
+            # issue29692).
+            if isinstance(value, StopIteration) and exc.__cause__ is value:
+                value.__traceback__ = traceback
                 return False
             raise
-        except:
+        except BaseException as exc:
             # only re-raise if it's *not* the exception that was
             # passed to throw(), because __exit__() must not raise
             # an exception unless __exit__() itself failed.  But throw()
             # has to raise the exception to signal propagation, so this
             # fixes the impedance mismatch between the throw() protocol
             # and the __exit__() protocol.
-            #
-            # This cannot use 'except BaseException as exc' (as in the
-            # async implementation) to maintain compatibility with
-            # Python 2, where old-style class exceptions are not caught
-            # by 'except BaseException'.
-            if sys.exc_info()[1] is value:
-                return False
-            raise
-        msg = "generator didn't stop after throw()"
-        raise RuntimeError(msg)
+            if exc is not value:
+                raise
+            exc.__traceback__ = traceback
+            return False
+
+        try:
+            msg = "generator didn't stop after throw()"
+            raise RuntimeError(msg)
+        finally:
+            self.gen.close()
 
     def process_result(self, result):
         """
