@@ -43,6 +43,7 @@ List of currently supported mechanisms:
 
 - [PLAIN][onetl.connection.db_connection.kafka.kafka_basic_auth.KafkaBasicAuth]. To no confuse this with `PLAINTEXT` connection protocol, onETL uses name `BasicAuth`.
 - [GSSAPI][onetl.connection.db_connection.kafka.kafka_kerberos_auth.KafkaKerberosAuth]. To simplify naming, onETL uses name `KerberosAuth`.
+- [OAUTHBEARER][onetl.connection.db_connection.kafka.kafka_oauth2_client_credentials.KafkaOAuth2ClientCredentials]. OAuth2 Client Credentials authentication requires Spark 3.4 or higher.
 - [SCRAM-SHA-256 or SCRAM-SHA-512][onetl.connection.db_connection.kafka.kafka_scram_auth.KafkaScramAuth] (recommended).
 
 Different mechanisms use different types of credentials (login + password, keytab file, and so on).
