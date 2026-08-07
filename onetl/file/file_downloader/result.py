@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import Field
 
 from onetl.file.file_result import FileResult, FileSet
 from onetl.impl import FailedRemoteFile, LocalPath, RemoteFile, RemotePath

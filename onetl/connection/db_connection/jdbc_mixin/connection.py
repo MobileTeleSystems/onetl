@@ -10,11 +10,7 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, ClassVar, TypeVar
 
 from humanize import naturaldelta
-
-try:
-    from pydantic.v1 import Field, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import Field, SecretStr
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._util.java import get_java_gateway
@@ -188,7 +184,7 @@ class JDBCMixin:
         log_lines(log, query)
 
         call_options = (
-            self.FetchOptions.parse(options.dict())
+            self.FetchOptions.parse(options.model_dump())
             if isinstance(options, JDBCMixinOptions)
             else self.FetchOptions.parse(options)
         )
@@ -259,7 +255,7 @@ class JDBCMixin:
         log_lines(log, statement)
 
         call_options = (
-            self.ExecuteOptions.parse(options.dict())
+            self.ExecuteOptions.parse(options.model_dump())
             if isinstance(options, JDBCMixinOptions)
             else self.ExecuteOptions.parse(options)
         )
@@ -358,7 +354,7 @@ class JDBCMixin:
         Fills up human-readable Options class to a format required by Spark internal methods
         """
         result = self.jdbc_params
-        result.update(options.dict(by_alias=True, **kwargs))
+        result.update(options.model_dump(by_alias=True, **kwargs))
         return stringify(result)
 
     def _options_to_connection_properties(self, options: JDBCFetchOptions | JDBCExecuteOptions):

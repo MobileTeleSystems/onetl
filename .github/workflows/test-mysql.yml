@@ -8,9 +8,6 @@ on:
       spark-version:
         required: true
         type: string
-      pydantic-version:
-        required: true
-        type: string
       etl-entities-version:
         required: true
         type: string
@@ -30,7 +27,7 @@ on:
 
 jobs:
   test-mysql:
-    name: Run MySQL tests (server=${{ inputs.mysql-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    name: Run MySQL tests (server=${{ inputs.mysql-version }}, spark=${{ inputs.spark-version }}, etl-entities=${{ inputs.etl-entities-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
 
     steps:
@@ -68,11 +65,11 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
+          key: ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-
             ${{ runner.os }}-python${{ inputs.python-version }}-
 
       - name: Wait for MySQL to be ready
@@ -87,7 +84,6 @@ jobs:
           export "PYTEST=coverage run -m pytest --junitxml=reports/junit/mysql-${RANDOM}.xml"
           make test-spark UV_ARGS="--group test-mysql" PYTEST_ARGS="-m mysql"
         env:
-          PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
           ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
           SPARK_VERSION: ${{ inputs.spark-version }}
 

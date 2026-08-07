@@ -5,10 +5,7 @@ import os
 import shutil
 from typing import TYPE_CHECKING, cast
 
-try:
-    from pydantic.v1 import Field, PrivateAttr, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
 from onetl._util.file import get_file_hash, readable_local_file
 from onetl._util.spark import stringify
@@ -124,15 +121,15 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
     use_ticket_cache: bool = Field(default=False, alias="useTicketCache")
 
     _keytab_path: LocalPath | None = PrivateAttr(default=None)
-
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        known_options = KNOWN_OPTIONS
-        strip_prefixes = ("kafka.",)
-        extra = "allow"
+    model_config = ConfigDict(
+        prohibited_options=PROHIBITED_OPTIONS,
+        known_options=KNOWN_OPTIONS,
+        strip_prefixes=("kafka.",),
+        extra="allow",  # type: ignore[typeddict-unknown-key]
+    )
 
     def get_jaas_conf(self, kafka: "Kafka") -> str:
-        options = self.dict(
+        options = self.model_dump(
             by_alias=True,
             exclude_none=True,
             exclude={"deploy_keytab"},
@@ -146,7 +143,9 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
 
     def get_options(self, kafka: "Kafka") -> dict:
         result = {
-            key: value for key, value in self.dict(by_alias=True, exclude_none=True).items() if key.startswith("sasl.")
+            key: value
+            for key, value in self.model_dump(by_alias=True, exclude_none=True).items()
+            if key.startswith("sasl.")
         }
         result.update(
             {
@@ -166,18 +165,17 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
                 log.exception("Failed to remove keytab file '%s'", self._keytab_path)
         self._keytab_path = None
 
-    @validator("keytab", pre=True)
+    @field_validator("keytab", mode="before")
+    @classmethod
     def _validate_keytab(cls, value):
         return readable_local_file(LocalPath(value).expanduser().resolve())
 
-    @root_validator
-    def _use_keytab(cls, values):
-        keytab = values.get("keytab")
-        use_keytab = values.get("use_keytab")
-        if use_keytab and not keytab:
+    @model_validator(mode="after")
+    def _check_use_keytab(self):
+        if self.use_keytab and not self.keytab:
             msg = "keytab is required if useKeytab is True"
             raise ValueError(msg)
-        return values
+        return self
 
     def _prepare_keytab(self, kafka: "Kafka") -> str:
         keytab = cast("LocalPath", self.keytab)

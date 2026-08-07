@@ -187,7 +187,7 @@ def test_spark_s3_without_path_style_access(spark_mock_hadoop_3):
 )
 @pytest.mark.parametrize("prefix", ["", "spark.hadoop.", "fs.s3a.", "fs.s3a.bucket.mybucket."])
 def test_spark_s3_extra_allowed_options(name, value, prefix):
-    extra = SparkS3.Extra.parse({prefix + name: value}).dict()
+    extra = SparkS3.Extra.parse({prefix + name: value}).model_dump()
     assert extra[name] == value
 
 

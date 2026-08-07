@@ -155,12 +155,12 @@ def test_oracle_uri_with_service_name(spark_mock):
 
 
 def test_oracle_without_sid_and_service_name(spark_mock):
-    with pytest.raises(ValueError, match="One of parameters ``sid``, ``service_name`` should be set, got none"):
+    with pytest.raises(ValueError, match="One of parameters `sid`, `service_name` should be set, got none"):
         Oracle(host="some_host", user="user", password="passwd", spark=spark_mock)
 
 
 def test_oracle_both_sid_and_service_name(spark_mock):
-    with pytest.raises(ValueError, match="Only one of parameters ``sid``, ``service_name`` can be set, got both"):
+    with pytest.raises(ValueError, match="Only one of parameters `sid`, `service_name` can be set, got both"):
         Oracle(
             host="some_host",
             user="user",
@@ -173,7 +173,7 @@ def test_oracle_both_sid_and_service_name(spark_mock):
 
 @pytest.mark.parametrize("kwargs", [{"sid": "sid"}, {"service_name": "service_name"}, {}])
 def test_oracle_with_database_error(spark_mock, kwargs):
-    with pytest.raises(ValueError, match="extra fields not permitted"):
+    with pytest.raises(ValueError, match="Extra inputs are not permitted"):
         Oracle(
             host="some_host",
             user="user",
@@ -211,22 +211,22 @@ def test_oracle_with_extra(spark_mock):
 
 
 def test_oracle_without_mandatory_args(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Oracle()
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Oracle(
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Oracle(
             host="some_host",
             sid="sid",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Oracle(
             host="some_host",
             sid="sid",
@@ -234,7 +234,7 @@ def test_oracle_without_mandatory_args(spark_mock):
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Oracle(
             host="some_host",
             sid="sid",

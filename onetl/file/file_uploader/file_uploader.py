@@ -6,15 +6,11 @@ import time
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
-from typing import cast
+from typing import ClassVar, cast
 
 from humanize import naturaldelta
 from ordered_set import OrderedSet
-
-try:
-    from pydantic.v1 import PrivateAttr, validator
-except (ImportError, AttributeError):
-    from pydantic import PrivateAttr, validator  # type: ignore[no-redef, assignment]
+from pydantic import PrivateAttr, field_validator
 
 from onetl._util.file import absolute_path, generate_temp_path
 from onetl.base import BaseFileConnection
@@ -143,7 +139,7 @@ class FileUploader(FrozenModel):
         ```
     """
 
-    Options = FileUploaderOptions
+    Options: ClassVar = FileUploaderOptions
 
     connection: BaseFileConnection
 
@@ -390,11 +386,11 @@ class FileUploader(FrozenModel):
             elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
             entity_boundary_log(log, f"{method} ended in %s", elapsed, char="-")
 
-    @validator("local_path", pre=True, always=True)
+    @field_validator("local_path", mode="before")
     def _resolve_local_path(cls, local_path):
         return LocalPath(local_path).expanduser().resolve() if local_path else None
 
-    @validator("target_path", "temp_path", pre=True, always=True)
+    @field_validator("target_path", "temp_path", mode="before")
     def _validate_target_path(cls, value):
         return absolute_path(RemotePath(value)) if value else None
 
@@ -403,7 +399,7 @@ class FileUploader(FrozenModel):
         log_with_indent(log, "local_path = %s", f"'{self.local_path}'" if self.local_path else "None")
         log_with_indent(log, "target_path = '%s'", self.target_path)
         log_with_indent(log, "temp_path = %s", f"'{self.temp_path}'" if self.temp_path else "None")
-        log_options(log, self.options.dict(by_alias=True))
+        log_options(log, self.options.model_dump(by_alias=True))
 
         if self.options.delete_local:
             log.warning("|%s| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!", self.__class__.__name__)

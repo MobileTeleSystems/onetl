@@ -1,12 +1,9 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 
-try:
-    from pydantic.v1 import Field, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
-
 from typing import TYPE_CHECKING
+
+from pydantic import Field, SecretStr
 
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions

@@ -149,7 +149,7 @@ def test_greenplum_with_port(spark_mock):
 
 
 def test_greenplum_without_database_error(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Greenplum(host="some_host", port=5000, user="user", password="passwd", spark=spark_mock)
 
 
@@ -199,22 +199,22 @@ def test_greenplum_with_extra(spark_mock):
 
 
 def test_greenplum_without_mandatory_args(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Greenplum()
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Greenplum(
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Greenplum(
             host="some_host",
             database="database",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Greenplum(
             host="some_host",
             database="database",
@@ -222,7 +222,7 @@ def test_greenplum_without_mandatory_args(spark_mock):
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Greenplum(
             host="some_host",
             database="database",
@@ -355,5 +355,5 @@ def test_greenplum_write_options_mode_deprecated(options, value, message):
 
 
 def test_greenplum_write_options_mode_wrong():
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+    with pytest.raises(ValueError, match="Input should be"):
         Greenplum.WriteOptions(if_exists="wrong_mode")

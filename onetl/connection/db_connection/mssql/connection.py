@@ -3,6 +3,8 @@
 import warnings
 from typing import ClassVar
 
+from pydantic import ConfigDict
+
 from onetl._util.classproperty import classproperty
 from onetl._util.spark import get_client_info
 from onetl._util.version import Version
@@ -26,9 +28,7 @@ from onetl.impl import GenericOptions, Host
 
 
 class MSSQLExtra(GenericOptions):
-    class Config:
-        extra = "allow"
-        prohibited_options = frozenset(("databaseName",))
+    model_config = ConfigDict(extra="allow", prohibited_options=frozenset(("databaseName",)))  # type: ignore[typeddict-unknown-key]
 
 
 @support_hooks
@@ -175,14 +175,14 @@ class MSSQL(JDBCConnection):
     port: int | None = None
     extra: MSSQLExtra = MSSQLExtra()
 
-    ReadOptions = MSSQLReadOptions
-    WriteOptions = MSSQLWriteOptions
-    SQLOptions = MSSQLSQLOptions
-    FetchOptions = MSSQLFetchOptions
-    ExecuteOptions = MSSQLExecuteOptions
+    ReadOptions: ClassVar = MSSQLReadOptions
+    WriteOptions: ClassVar = MSSQLWriteOptions
+    SQLOptions: ClassVar = MSSQLSQLOptions
+    FetchOptions: ClassVar = MSSQLFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = MSSQLExecuteOptions  # type: ignore[misc]
 
-    Extra = MSSQLExtra
-    Dialect = MSSQLDialect
+    Extra: ClassVar = MSSQLExtra
+    Dialect: ClassVar = MSSQLDialect
 
     DRIVER: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
     _CHECK_QUERY: ClassVar[str] = "SELECT 1 AS field"
@@ -256,7 +256,7 @@ class MSSQL(JDBCConnection):
     @property
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
-        result.update(self.extra.dict(by_alias=True))
+        result.update(self.extra.model_dump(by_alias=True))
         result["databaseName"] = self.database
         # https://learn.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-ver16#properties
         result["applicationName"] = result.get("applicationName", get_client_info(self.spark, limit=128))
@@ -264,7 +264,7 @@ class MSSQL(JDBCConnection):
 
     @property
     def instance_url(self) -> str:
-        extra_dict = self.extra.dict(by_alias=True)
+        extra_dict = self.extra.model_dump(by_alias=True)
         instance_name = extra_dict.get("instanceName")
         if instance_name:
             return rf"{self.__class__.__name__.lower()}://{self.host}\{instance_name}/{self.database}"
@@ -274,7 +274,7 @@ class MSSQL(JDBCConnection):
         return f"{self.__class__.__name__.lower()}://{self.host}:{port}/{self.database}"
 
     def __str__(self):
-        extra_dict = self.extra.dict(by_alias=True)
+        extra_dict = self.extra.model_dump(by_alias=True)
         instance_name = extra_dict.get("instanceName")
         if instance_name:
             return rf"{self.__class__.__name__}[{self.host}\{instance_name}/{self.database}]"

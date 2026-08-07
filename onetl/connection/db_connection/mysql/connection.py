@@ -4,6 +4,8 @@ import warnings
 from contextlib import closing
 from typing import ClassVar
 
+from pydantic import ConfigDict
+
 from onetl._util.classproperty import classproperty
 from onetl._util.spark import get_client_info
 from onetl._util.version import Version
@@ -29,9 +31,7 @@ from onetl.impl import GenericOptions, Host
 class MySQLExtra(GenericOptions):
     useUnicode: str = "yes"
     characterEncoding: str = "UTF-8"
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
@@ -107,14 +107,14 @@ class MySQL(JDBCConnection):
     database: str | None = None
     extra: MySQLExtra = MySQLExtra()
 
-    ReadOptions = MySQLReadOptions
-    WriteOptions = MySQLWriteOptions
-    SQLOptions = MySQLSQLOptions
-    FetchOptions = MySQLFetchOptions
-    ExecuteOptions = MySQLExecuteOptions
+    ReadOptions: ClassVar = MySQLReadOptions
+    WriteOptions: ClassVar = MySQLWriteOptions
+    SQLOptions: ClassVar = MySQLSQLOptions
+    FetchOptions: ClassVar = MySQLFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = MySQLExecuteOptions  # type: ignore[misc]
 
-    Extra = MySQLExtra
-    Dialect = MySQLDialect
+    Extra: ClassVar = MySQLExtra
+    Dialect: ClassVar = MySQLDialect
 
     DRIVER: ClassVar[str] = "com.mysql.cj.jdbc.Driver"
 
@@ -167,7 +167,7 @@ class MySQL(JDBCConnection):
     @property
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
-        result.update(self.extra.dict(by_alias=True))
+        result.update(self.extra.model_dump(by_alias=True))
         # https://dev.mysql.com/doc/connector-j/en/connector-j-connp-props-connection.html
         # https://stackoverflow.com/questions/31722323/mysql-connection-with-advanced-attributes-such-as-program-name
         client_info = f"program_name:{get_client_info(self.spark, unsupported=':,')}"

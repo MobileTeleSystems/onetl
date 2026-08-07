@@ -3,10 +3,7 @@
 import warnings
 from enum import Enum
 
-try:
-    from pydantic.v1 import Field, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, model_validator
 
 from onetl._util.alias import avoid_alias
 from onetl.impl import GenericOptions
@@ -124,10 +121,11 @@ class MongoDBPipelineOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        prohibited_options = PIPELINE_PROHIBITED_OPTIONS
-        known_options = KNOWN_READ_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        prohibited_options=PIPELINE_PROHIBITED_OPTIONS,
+        known_options=KNOWN_READ_OPTIONS,
+        extra="allow",  # type: ignore[typeddict-unknown-key]
+    )
 
 
 class MongoDBReadOptions(GenericOptions):
@@ -160,10 +158,7 @@ class MongoDBReadOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        known_options = KNOWN_READ_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, known_options=KNOWN_READ_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
 
 class MongoDBWriteOptions(GenericOptions):
@@ -260,19 +255,16 @@ class MongoDBWriteOptions(GenericOptions):
     !!! info "Changed in 0.9.0"
         Renamed `mode` → `if_exists`
     """
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, known_options=KNOWN_WRITE_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        known_options = KNOWN_WRITE_OPTIONS
-        extra = "allow"
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_deprecated(cls, values):
         if "mode" in values:
             warnings.warn(
                 "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
                 "Use `MongoDB.WriteOptions(if_exists=...)` instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
         return values

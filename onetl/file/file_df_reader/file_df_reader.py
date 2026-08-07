@@ -4,15 +4,11 @@ import logging
 import os
 import time
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from humanize import naturaldelta
 from ordered_set import OrderedSet
-
-try:
-    from pydantic.v1 import PrivateAttr, validator
-except (ImportError, AttributeError):
-    from pydantic import PrivateAttr, validator  # type: ignore[no-redef, assignment]
+from pydantic import PrivateAttr, ValidationInfo, field_validator, model_validator
 
 from onetl._util.spark import override_job_description, try_import_pyspark
 from onetl.base import BaseFileDFConnection, BaseReadableFileFormat, PurePathProtocol
@@ -105,7 +101,7 @@ class FileDFReader(FrozenModel):
         ```
     """
 
-    Options = FileDFReaderOptions
+    Options: ClassVar = FileDFReaderOptions
 
     connection: BaseFileDFConnection
     format: BaseReadableFileFormat
@@ -114,6 +110,16 @@ class FileDFReader(FrozenModel):
     options: FileDFReaderOptions = FileDFReaderOptions()
 
     _connection_checked: bool = PrivateAttr(default=False)
+
+    def __new__(cls, *args, **kwargs):
+        try_import_pyspark()
+
+        from pyspark.sql.types import StructType
+
+        _ = StructType
+
+        cls.model_rebuild()
+        return super().__new__(cls)
 
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> "DataFrame":
@@ -264,7 +270,7 @@ class FileDFReader(FrozenModel):
             empty_df = self.connection.spark.createDataFrame([], self.df_schema)  # type: ignore[attr-defined]
             log_dataframe_schema(log, empty_df)
 
-        options_dict = self.options.dict(exclude_none=True)
+        options_dict = self.options.model_dump(exclude_none=True)
         log_options(log, options_dict)
 
         if files is not None and self.source_path:
@@ -273,26 +279,23 @@ class FileDFReader(FrozenModel):
                 self.__class__.__name__,
             )
 
-    @validator("source_path", pre=True)
-    def _validate_source_path(cls, source_path, values):
-        if source_path is None:
-            return None
+    @field_validator("source_path", mode="before")
+    @classmethod
+    def validate_source_path(cls, value, info: ValidationInfo):
+        connection: BaseFileDFConnection | None = info.data.get("connection")
+        if not connection or value is None:
+            return value
+        return connection.path_from_string(value)
 
-        connection = values.get("connection")
-        if isinstance(connection, BaseFileDFConnection):
-            return connection.path_from_string(source_path)
-        return source_path
-
-    @validator("format")
-    def _validate_format(cls, format, values):
-        connection = values.get("connection")
-        if isinstance(connection, BaseFileDFConnection):
-            connection.check_if_format_supported(format)
-        return format
-
-    @validator("options")
+    @field_validator("options", mode="before")
+    @classmethod
     def _validate_options(cls, value):
         return cls.Options.parse(value)
+
+    @model_validator(mode="after")
+    def _validate_format(self):
+        self.connection.check_if_format_supported(self.format)
+        return self
 
     def _validate_files(
         self,
@@ -317,14 +320,3 @@ class FileDFReader(FrozenModel):
             result.add(file_path)
 
         return result
-
-    @classmethod
-    def _forward_refs(cls) -> dict[str, type]:
-        try_import_pyspark()
-        from pyspark.sql.types import StructType
-
-        # avoid importing pyspark unless user called the constructor,
-        # as we allow user to use `Connection.get_packages()` for creating Spark session
-        refs = super()._forward_refs()
-        refs["StructType"] = StructType
-        return refs

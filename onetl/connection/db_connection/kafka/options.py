@@ -2,10 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from enum import Enum
 
-try:
-    from pydantic.v1 import Field, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, model_validator
 
 from onetl.impl import GenericOptions
 
@@ -96,11 +93,7 @@ class KafkaReadOptions(GenericOptions):
 
     If `False`, column will not be added.
     """
-
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        known_options = KNOWN_READ_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, known_options=KNOWN_READ_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
 
 class KafkaWriteOptions(GenericOptions):
@@ -155,13 +148,14 @@ class KafkaWriteOptions(GenericOptions):
 
     If `False` and dataframe contains `headers` column, an exception will be raised.
     """
+    model_config = ConfigDict(  # type: ignore[typeddict-unknown-key]
+        prohibited_options=PROHIBITED_OPTIONS | KNOWN_READ_OPTIONS,
+        known_options=[],
+        extra="allow",
+    )
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS | KNOWN_READ_OPTIONS
-        known_options: frozenset[str] = frozenset()
-        extra = "allow"
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_restricted(cls, values):
         if "mode" in values:
             msg = "Parameter `mode` is not allowed. Please use `if_exists` parameter instead."

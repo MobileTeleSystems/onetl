@@ -2,10 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import logging
 
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from pydantic import PositiveInt
 
 from onetl.base import BaseFileLimit, PathProtocol
 from onetl.impl import FrozenModel
@@ -42,23 +39,16 @@ class MaxFilesCount(BaseFileLimit, FrozenModel):
     ```
     """
 
-    limit: int
+    limit: PositiveInt
 
     _handled: int = 0
 
     def __init__(self, limit: int):
         # this is only to allow passing glob as positional argument
-        super().__init__(limit=limit)
+        super().__init__(limit=limit)  # type: ignore[call-arg]
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.limit})"
-
-    @validator("limit")
-    def _limit_cannot_be_negative(cls, value):
-        if value <= 0:
-            msg = "Limit should be positive number"
-            raise ValueError(msg)
-        return value
 
     def reset(self):
         self._handled = 0

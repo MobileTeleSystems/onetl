@@ -5,12 +5,9 @@ import textwrap
 from io import BytesIO
 from logging import getLogger
 from pathlib import Path
-from typing import Literal
+from typing import ClassVar, Literal
 
-try:
-    from pydantic.v1 import Field, SecretStr, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr, validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.hooks import slot, support_hooks
@@ -62,9 +59,7 @@ class SambaExtra(GenericOptions):
     operation_timeout: int = 30
     my_name: str = "onetl"
     sign_options: int = SMBConnection.SIGN_WHEN_REQUIRED
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
@@ -156,7 +151,7 @@ class Samba(FileConnection):
     host: Host
     share: str
     protocol: Literal["SMB", "NetBIOS"] = "SMB"
-    port: int | None = None
+    port: int = 445
     domain: str = ""
     auth_type: Literal["NTLMv1", "NTLMv2"] = "NTLMv2"
     user: str | None = None
@@ -164,13 +159,17 @@ class Samba(FileConnection):
 
     extra: SambaExtra = Field(default_factory=SambaExtra)
 
-    Extra = SambaExtra
+    Extra: ClassVar = SambaExtra
 
-    @validator("port", pre=True, always=True)
-    def _set_port_based_on_protocol(cls, port, values):
-        if port is None:
-            return 445 if values.get("protocol") == "SMB" else 139
-        return port
+    @model_validator(mode="before")
+    @classmethod
+    def _set_port_based_on_protocol(cls, values):
+        port = values.get("port")
+        if port is not None:
+            return values
+
+        values["port"] = 445 if values.get("protocol", "SMB") == "SMB" else 139
+        return values
 
     @property
     def instance_url(self) -> str:
@@ -258,7 +257,7 @@ class Samba(FileConnection):
     def _get_client(self) -> SMBConnection:
         is_direct_tcp = self.protocol == "SMB"
         use_ntlm_v2 = self.auth_type == "NTLMv2"
-        extra = self.extra.dict(by_alias=True, exclude={"operation_timeout", "connect_timeout"})
+        extra = self.extra.model_dump(by_alias=True, exclude={"operation_timeout", "connect_timeout"})
         conn = SMBConnection(
             username=self.user,
             password=self.password.get_secret_value() if self.password else None,

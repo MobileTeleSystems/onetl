@@ -4,16 +4,17 @@ import textwrap
 import time
 import warnings
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import frozendict
 from etl_entities.hwm import HWM, ColumnHWM, KeyValueHWM
 from humanize import naturaldelta
 
+# using pydantic v1 for backward compatibility with etl-entities 3.x
 try:
-    from pydantic.v1 import Field, PrivateAttr, root_validator, validator
+    from pydantic.v1 import BaseModel, Field, PrivateAttr, root_validator, validator
 except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
+    from pydantic import BaseModel, Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
 
 from onetl._util.alias import avoid_alias
@@ -27,7 +28,7 @@ from onetl.base import (
 from onetl.exception import NoDataError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import AutoDetectHWM, Edge, Window
-from onetl.impl import FrozenModel, GenericOptions
+from onetl.impl import GenericOptions
 from onetl.log import (
     entity_boundary_log,
     log_collection,
@@ -49,7 +50,7 @@ log = getLogger(__name__)
 
 
 @support_hooks
-class DBReader(FrozenModel):
+class DBReader(BaseModel):
     """Allows you to read data from a table with specified database connection
     and parameters, and return its content as Spark dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
 
@@ -316,9 +317,25 @@ class DBReader(FrozenModel):
     hwm: AutoDetectHWM | ColumnHWM | KeyValueHWM | None = None
     options: GenericOptions | None = None
 
-    AutoDetectHWM = AutoDetectHWM
+    AutoDetectHWM: ClassVar = AutoDetectHWM
+
+    class Config:
+        frozen = True
+        extra = "forbid"
+        smart_union = True
+        arbitrary_types_allowed = True
+        allow_population_by_field_name = True
+        underscore_attrs_are_private = True
 
     _connection_checked: bool = PrivateAttr(default=False)
+
+    def __new__(cls, *args, **kwargs):
+        try_import_pyspark()
+
+        from pyspark.sql.types import StructType
+
+        cls.update_forward_refs(StructType=StructType)
+        return super().__new__(cls)
 
     @validator("source", always=True)
     def validate_source(cls, value: str, values):
@@ -849,7 +866,7 @@ class DBReader(FrozenModel):
         if self.hwm:
             log_hwm(log, self.hwm)
 
-        options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
+        options = self.options.model_dump(by_alias=True, exclude_none=True) if self.options else None
         log_options(log, options)
 
     def _get_read_kwargs(self) -> dict:
@@ -857,14 +874,3 @@ class DBReader(FrozenModel):
             return {"options": self.options}
 
         return {}
-
-    @classmethod
-    def _forward_refs(cls) -> dict[str, type]:
-        try_import_pyspark()
-        from pyspark.sql.types import StructType
-
-        # avoid importing pyspark unless user called the constructor,
-        # as we allow user to use `Connection.get_packages()` for creating Spark session
-        refs = super()._forward_refs()
-        refs["StructType"] = StructType
-        return refs

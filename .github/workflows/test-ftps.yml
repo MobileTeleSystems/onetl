@@ -5,9 +5,6 @@ on:
       ftps-version:
         required: true
         type: string
-      pydantic-version:
-        required: true
-        type: string
       etl-entities-version:
         required: true
         type: string
@@ -24,7 +21,7 @@ on:
 
 jobs:
   test-ftps:
-    name: Run FTPS tests (server=${{ inputs.ftps-version }}, pydantic=${{ inputs.pydantic-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    name: Run FTPS tests (server=${{ inputs.ftps-version }}, etl-entities=${{ inputs.etl-entities-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
 
     steps:
@@ -63,7 +60,6 @@ jobs:
           export "PYTEST=coverage run -m pytest --junitxml=reports/junit/ftps-${RANDOM}.xml"
           make test-no-spark UV_ARGS="--extra ftps" PYTEST_ARGS="-m ftps"
         env:
-          PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
           ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
 
       - name: Dump FTPS logs on failure

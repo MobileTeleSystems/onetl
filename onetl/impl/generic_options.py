@@ -6,11 +6,7 @@ from collections.abc import Iterable
 from fnmatch import fnmatch
 from typing import TypeVar
 
-try:
-    from pydantic.v1 import root_validator
-except (ImportError, AttributeError):
-    from pydantic import root_validator  # type: ignore[no-redef, assignment]
-
+from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
 from onetl.impl.frozen_model import FrozenModel
@@ -20,10 +16,7 @@ T = TypeVar("T", bound="GenericOptions")
 
 
 class GenericOptions(FrozenModel):
-    class Config:
-        strip_prefixes: tuple[str | re.Pattern, ...] = ()
-        known_options: frozenset[str] | None = None
-        prohibited_options: frozenset[str] = frozenset()
+    model_config = ConfigDict()
 
     @classmethod
     def parse(
@@ -41,7 +34,7 @@ class GenericOptions(FrozenModel):
             return cls()
 
         if isinstance(options, dict):
-            return cls.parse_obj(options)
+            return cls.model_validate(options)
 
         if not isinstance(options, cls):
             msg = f"{options.__class__.__name__} is not a {cls.__name__} instance"
@@ -49,9 +42,10 @@ class GenericOptions(FrozenModel):
 
         return options
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _strip_prefixes(cls, values):
-        prefixes = cls.__config__.strip_prefixes  # type: ignore[attr-defined]
+        prefixes = cls.model_config.get("strip_prefixes")  # type: ignore[attr-defined]
         if not prefixes:  # type: ignore[attr-defined]
             return values
 
@@ -80,44 +74,38 @@ class GenericOptions(FrozenModel):
             return prefix.sub("", key, 1), prefix.pattern
         return key, None
 
-    @root_validator
-    def _check_options_allowed(
-        cls,
-        values,
-    ) -> None:
-        prohibited = cls.__config__.prohibited_options  # type: ignore[attr-defined]
+    @model_validator(mode="after")
+    def _check_options_allowed(self):
+        prohibited = self.model_config.get("prohibited_options")
         if not prohibited:
-            return values
+            return self
 
-        unknown_options = set(values) - set(cls.__fields__)
-        if not unknown_options:
-            return values
+        extra_options = set(self.model_extra or {})
+        if not extra_options:
+            return self
 
-        matching_options = sorted(cls._get_matching_options(unknown_options, prohibited))
+        matching_options = sorted(self._get_matching_options(extra_options, prohibited))
         if matching_options:
-            class_name = cls.__name__  # type: ignore[attr-defined]
+            class_name = self.__class__.__name__
             msg = f"Options {matching_options!r} are not allowed to use in a {class_name}"
             raise ValueError(msg)
 
-        return values
+        return self
 
-    @root_validator
-    def _warn_unknown_options(
-        cls,
-        values,
-    ) -> None:
-        class_name = cls.__name__  # type: ignore[attr-defined]
-        known_options = cls.__config__.known_options  # type: ignore[attr-defined]
+    @model_validator(mode="after")
+    def _warn_unknown_options(self):
+        class_name = self.__class__.__name__
+        known_options = self.model_config.get("known_options")
         # None means do nothing
         # empty set means that check is performed only on class attributes
         if known_options is None:
-            return values
+            return self
 
-        current_options = set(values) - set(cls.__fields__)
-        already_known = set(cls._get_matching_options(current_options, known_options))
-        unknown_options = sorted(current_options - already_known)
+        extra_options = set(self.model_extra or {})
+        already_known = set(self._get_matching_options(extra_options, known_options))
+        unknown_options = sorted(extra_options - already_known)
         if not unknown_options:
-            return values
+            return self
 
         log.warning(
             "|%s| Options %s are not known by %s, are you sure they are valid?",
@@ -125,7 +113,7 @@ class GenericOptions(FrozenModel):
             unknown_options,
             class_name,
         )
-        return values
+        return self
 
     @classmethod
     def _get_matching_options(cls, values: Iterable[str], matches: Iterable[str]) -> list[str]:

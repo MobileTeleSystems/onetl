@@ -6,15 +6,11 @@ import time
 from collections.abc import Generator, Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
-from typing import cast
+from typing import ClassVar, cast
 
 from humanize import naturaldelta
 from ordered_set import OrderedSet
-
-try:
-    from pydantic.v1 import Field, PrivateAttr, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, validator  # type: ignore[no-redef, assignment]
+from pydantic import Field, PrivateAttr, field_validator
 
 from onetl._util.file import absolute_path
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
@@ -147,7 +143,7 @@ class FileMover(FrozenModel):
         ```
     """
 
-    Options = FileMoverOptions
+    Options: ClassVar = FileMoverOptions
 
     connection: BaseFileConnection
 
@@ -395,7 +391,7 @@ class FileMover(FrozenModel):
         log_with_indent(log, "target_path = '%s'", self.target_path)
         log_collection(log, "filters", self.filters)
         log_collection(log, "limits", self.limits)
-        log_options(log, self.options.dict(by_alias=True))
+        log_options(log, self.options.model_dump(by_alias=True))
 
         if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
             log.warning("|%s| TARGET DIRECTORY WILL BE CLEANED UP BEFORE MOVING FILES !!!", self.__class__.__name__)
@@ -445,7 +441,8 @@ class FileMover(FrozenModel):
 
         return result
 
-    @validator("source_path", "target_path", pre=True, always=True)
+    @field_validator("source_path", "target_path", mode="before")
+    @classmethod
     def _resolve_target_path(cls, value):
         return absolute_path(RemotePath(value)) if value else None
 

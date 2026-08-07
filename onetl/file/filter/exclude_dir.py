@@ -2,10 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, field_validator
 
 from onetl.base import BaseFileFilter, PathProtocol, PurePathProtocol
 from onetl.impl import FrozenModel, RemotePath
@@ -37,14 +34,13 @@ class ExcludeDir(BaseFileFilter, FrozenModel):
     ```
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     path: PurePathProtocol
 
     def __init__(self, path: str | os.PathLike):
         # this is only to allow passing glob as positional argument
-        super().__init__(path=path)
+        super().__init__(path=path)  # type: ignore[call-arg]
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.path}')"
@@ -55,9 +51,9 @@ class ExcludeDir(BaseFileFilter, FrozenModel):
 
         return self.path not in path.parents
 
-    @validator("path", pre=True)
+    @field_validator("path", mode="before")
+    @classmethod
     def _validate_path(cls, value: str | os.PathLike) -> PurePathProtocol:
         if isinstance(value, PurePathProtocol):
             return value
-
         return RemotePath(os.fspath(value))

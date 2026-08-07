@@ -66,7 +66,7 @@ def test_sftp_connection_with_key_file(request, tmp_path_factory):
 def test_sftp_connection_key_file_does_not_exist():
     from onetl.connection import SFTP
 
-    with pytest.raises(ValueError, match='file or directory at path "/path/to/key_file" does not exist'):
+    with pytest.raises(ValueError, match="Path does not point to a file"):
         SFTP(host="some_host", user="some_user", key_file="/path/to/key_file")
 
 
@@ -82,7 +82,7 @@ def test_sftp_connection_keytab_is_directory(request, tmp_path_factory):
 
     request.addfinalizer(finalizer)
 
-    with pytest.raises(ValueError, match=f'path "{key_file}" does not point to a file'):
+    with pytest.raises(ValueError, match="Path does not point to a file"):
         SFTP(host="some_host", user="some_user", key_file=key_file)
 
 

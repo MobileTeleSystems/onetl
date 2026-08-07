@@ -3,10 +3,7 @@
 import warnings
 from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field
 
 from onetl._util.spark import stringify
 from onetl.file.format.file_format import ReadOnlyFileFormat
@@ -306,10 +303,7 @@ class JSON(ReadOnlyFileFormat):
 
         Used only for reading files and [parse_column][] method.
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        extra = "allow"
+    model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     @slot
     def check_if_supported(self, spark: "SparkSession") -> None:
@@ -397,7 +391,7 @@ class JSON(ReadOnlyFileFormat):
         else:
             column_name, column = column, col(column).cast("string")
 
-        options = stringify(self.dict(by_alias=True, exclude_none=True))
+        options = stringify(self.model_dump(by_alias=True, exclude_none=True))
         return from_json(column, schema, options).alias(column_name)  # type: ignore[arg-type]
 
     def serialize_column(self, column: "str | Column") -> "Column":
@@ -464,11 +458,11 @@ class JSON(ReadOnlyFileFormat):
         else:
             column_name, column = column, col(column)
 
-        options = stringify(self.dict(by_alias=True, exclude_none=True))
+        options = stringify(self.model_dump(by_alias=True, exclude_none=True))
         return to_json(column, options).alias(column_name)
 
     def _check_unsupported_serialization_options(self):
-        current_options = self.dict(by_alias=True, exclude_none=True)
+        current_options = self.model_dump(by_alias=True, exclude_none=True)
         unsupported_options = current_options.keys() & PARSE_COLUMN_UNSUPPORTED_OPTIONS
         if unsupported_options:
             warnings.warn(
@@ -479,7 +473,7 @@ class JSON(ReadOnlyFileFormat):
             )
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True, exclude={"multiLine"})
+        options_dict = self.model_dump(by_alias=True, exclude_none=True, exclude={"multiLine"})
         options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

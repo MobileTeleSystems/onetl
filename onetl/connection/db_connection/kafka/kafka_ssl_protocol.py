@@ -3,10 +3,7 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-try:
-    from pydantic.v1 import Field, SecretStr, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr, validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, SecretStr, field_validator
 
 from onetl._util.alias import avoid_alias
 from onetl._util.file import readable_local_file
@@ -181,14 +178,10 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
         alias=avoid_alias("ssl.truststore.certificates"),
         repr=False,
     )
-
-    class Config:
-        known_options = frozenset(("ssl.*",))
-        strip_prefixes = ("kafka.",)
-        extra = "allow"
+    model_config = ConfigDict(known_options=frozenset(("ssl.*",)), strip_prefixes=("kafka.",), extra="allow")  # type: ignore[typeddict-unknown-key]
 
     def get_options(self, kafka: "Kafka") -> dict:
-        result = self.dict(by_alias=True, exclude_none=True)
+        result = self.model_dump(by_alias=True, exclude_none=True)
         if kafka.auth:
             result["security.protocol"] = "SASL_SSL"
         else:
@@ -199,6 +192,7 @@ class KafkaSSLProtocol(KafkaProtocol, GenericOptions):
         # nothing to cleanup
         pass
 
-    @validator("keystore_location", "truststore_location", pre=True)
+    @field_validator("keystore_location", "truststore_location", mode="before")
+    @classmethod
     def validate_path(cls, value: LocalPath) -> Path:
         return readable_local_file(LocalPath(value).expanduser().resolve())

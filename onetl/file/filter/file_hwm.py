@@ -2,11 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 from etl_entities.hwm import FileHWM
 
+# using pydantic v1 for backward compatibility with etl-entities 3.x
+try:
+    from pydantic.v1 import BaseModel
+except (ImportError, AttributeError):
+    from pydantic import BaseModel  # type: ignore[no-redef, assignment]
+
 from onetl.base import BaseFileFilter, PathProtocol
-from onetl.impl import FrozenModel
 
 
-class FileHWMFilter(BaseFileFilter, FrozenModel):
+class FileHWMFilter(BaseFileFilter, BaseModel):
     """Filter files which are not covered by FileHWM.
 
     !!! warning
@@ -22,6 +27,8 @@ class FileHWMFilter(BaseFileFilter, FrozenModel):
     """
 
     class Config:
+        frozen = True
+        extra = "forbid"
         arbitrary_types_allowed = True
 
     hwm: FileHWM

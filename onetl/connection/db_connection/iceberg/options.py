@@ -3,13 +3,9 @@
 from enum import Enum
 from typing import Any
 
+from pydantic import ConfigDict, Field
+
 from onetl._util.alias import avoid_alias
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
-
 from onetl.impl import GenericOptions
 
 PROHIBITED_OPTIONS = frozenset(
@@ -34,10 +30,7 @@ class IcebergTableExistBehavior(str, Enum):
 class IcebergWriteOptions(GenericOptions):
     """Iceberg source writing options."""
 
-    class Config:
-        extra = "allow"
-        known_options: frozenset = frozenset()
-        prohibited_options = PROHIBITED_OPTIONS
+    model_config = ConfigDict(extra="allow", prohibited_options=PROHIBITED_OPTIONS)  # type: ignore[typeddict-unknown-key]
 
     if_exists: IcebergTableExistBehavior = Field(  # type: ignore[literal-required]
         default=IcebergTableExistBehavior.APPEND,

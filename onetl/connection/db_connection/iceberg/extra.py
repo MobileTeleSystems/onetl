@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+from pydantic import ConfigDict
+
 from onetl.impl import GenericOptions
 
 
@@ -13,5 +15,4 @@ class IcebergExtra(GenericOptions):
     for more details
     """
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")

@@ -14,7 +14,7 @@ def test_sftp_file_connection_check_success(sftp_file_connection, caplog):
     assert f"host = '{sftp.host}'" in caplog.text
     assert f"port = {sftp.port}" in caplog.text
     assert f"user = '{sftp.user}'" in caplog.text
-    assert f"extra = {sftp.extra.dict(exclude_none=True)!r}" in caplog.text
+    assert f"extra = {sftp.extra.model_dump(exclude_none=True)!r}" in caplog.text
     assert "key_file" not in caplog.text
     assert "password = SecretStr('**********')" in caplog.text
     assert sftp.password.get_secret_value() not in caplog.text

@@ -7,11 +7,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from humanize import naturaldelta
-
-try:
-    from pydantic.v1 import SecretStr, validator
-except (ImportError, AttributeError):
-    from pydantic import SecretStr, validator  # type: ignore[no-redef, assignment]
+from pydantic import SecretStr, field_validator
 
 from onetl._util.java import try_import_java_class
 from onetl._util.spark import override_job_description
@@ -66,16 +62,17 @@ class JDBCConnection(JDBCMixin, DBConnection):
     DRIVER: ClassVar[str]
     _CHECK_QUERY: ClassVar[str] = "SELECT 1"
 
-    JDBCOptions = JDBCMixinOptions
-    FetchOptions = JDBCFetchOptions
-    ExecuteOptions = JDBCExecuteOptions
-    Dialect = JDBCDialect
-    ReadOptions = JDBCReadOptions
-    SQLOptions = JDBCSQLOptions
-    WriteOptions = JDBCWriteOptions
-    Options = JDBCLegacyOptions
+    JDBCOptions: ClassVar = JDBCMixinOptions  # type: ignore[misc]
+    FetchOptions: ClassVar = JDBCFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = JDBCExecuteOptions  # type: ignore[misc]
+    Dialect: ClassVar = JDBCDialect
+    ReadOptions: ClassVar = JDBCReadOptions
+    SQLOptions: ClassVar = JDBCSQLOptions
+    WriteOptions: ClassVar = JDBCWriteOptions
+    Options: ClassVar = JDBCLegacyOptions
 
-    @validator("spark")
+    @field_validator("spark", mode="before")
+    @classmethod
     def _check_java_class_imported(cls, spark: "SparkSession") -> "SparkSession":
         try:
             try_import_java_class(spark, cls.DRIVER)
@@ -142,7 +139,9 @@ class JDBCConnection(JDBCMixin, DBConnection):
         if isinstance(options, JDBCReadOptions):
             msg = "Using `ReadOptions` for `sql` method is deprecated, use `SQLOptions` instead."
             warnings.warn(msg, UserWarning, stacklevel=3)
-            options = self.SQLOptions.parse_obj(options.dict(exclude={"partitioning_mode"}, exclude_none=True))
+            options = self.SQLOptions.model_validate(
+                options.model_dump(exclude={"partitioning_mode"}, exclude_none=True)
+            )
 
         query = clear_statement(query)
 
@@ -177,7 +176,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         options: JDBCReadOptions | None = None,
     ) -> "DataFrame":
         if isinstance(options, JDBCLegacyOptions):
-            raw_options = self.ReadOptions.parse(options.dict(exclude_unset=True))
+            raw_options = self.ReadOptions.parse(options.model_dump(exclude_unset=True))
         else:
             raw_options = self.ReadOptions.parse(options)
 
@@ -244,7 +243,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         options: JDBCWriteOptions | None = None,
     ) -> None:
         if isinstance(options, JDBCLegacyOptions):
-            write_options = self.WriteOptions.parse(options.dict(exclude_unset=True))
+            write_options = self.WriteOptions.parse(options.model_dump(exclude_unset=True))
         else:
             write_options = self.WriteOptions.parse(options)
 
@@ -340,7 +339,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
             options.copy(
                 update={"fetchsize": fetchsize},
                 exclude={"partition_column", "lower_bound", "upper_bound", "num_partitions", "partitioning_mode"},
-            ).dict(),
+            ).model_dump(),
         )
 
     def _set_lower_upper_bound(

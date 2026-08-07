@@ -4,14 +4,9 @@ import logging
 import os
 import warnings
 from contextlib import suppress
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Literal
 
-try:
-    from pydantic.v1 import SecretStr, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import SecretStr, root_validator, validator  # type: ignore[no-redef, assignment]
-
-from typing import Literal
+from pydantic import Field, SecretStr, field_validator, model_validator
 
 from onetl._util.hadoop import get_hadoop_config
 from onetl._util.java import try_import_java_class
@@ -188,17 +183,17 @@ class SparkS3(SparkFileDFConnection):
         ```
     """
 
-    Extra = SparkS3Extra
+    Extra: ClassVar = SparkS3Extra
 
     host: Host
-    port: int | None = None
     bucket: str
     protocol: Literal["http", "https"] = "https"
+    port: int = 443
     access_key: str | None = None
     secret_key: SecretStr | None = None
     session_token: SecretStr | None = None
     region: str | None = None
-    path_style_access: bool | None = None
+    path_style_access: bool = Field(validate_default=True)
     extra: SparkS3Extra = SparkS3Extra()
 
     _ROOT_CONFIG_KEYS: ClassVar[list[str]] = [
@@ -373,21 +368,26 @@ class SparkS3(SparkFileDFConnection):
         self._patch_hadoop_conf()
         return super().write_df_as_files(df, path, format=format, options=options)
 
-    @root_validator
-    def _validate_port(cls, values: dict):
-        if values["port"] is not None:
+    @model_validator(mode="before")
+    @classmethod
+    def _set_port_based_on_protocol(cls, values):
+        port = values.get("port")
+        if port is not None:
             return values
 
-        values["port"] = 443 if values["protocol"] == "https" else 80
+        values["port"] = 443 if values.get("protocol", "https") == "https" else 80
         return values
 
-    @root_validator
-    def _set_path_style_access(cls, values: dict):
+    @model_validator(mode="before")
+    @classmethod
+    def _set_path_style_access(cls, values):
         if values.get("path_style_access") is None:
-            values["path_style_access"] = getattr(values["extra"], "path.style.access", False)
+            extra = cls.Extra.parse(values.get("extra"))
+            values["path_style_access"] = getattr(extra, "path.style.access", False)
         return values
 
-    @validator("spark")
+    @field_validator("spark", mode="before")
+    @classmethod
     def _check_java_class_imported(cls, spark: "SparkSession") -> "SparkSession":
         java_class = "org.apache.hadoop.fs.s3a.S3AFileSystem"
 
@@ -404,15 +404,16 @@ class SparkS3(SparkFileDFConnection):
 
         return spark
 
-    @validator("region", always=True)
-    def _region_is_recommended(cls, value):
-        if not value:
+    @model_validator(mode="after")
+    def _region_is_recommended(self):
+        if not self.region:
+            class_name = self.__class__.__name__
             warnings.warn(
-                f"It is highly recommended to specify {cls.__name__}(region=...) to avoid potential access errors",
+                f"It is highly recommended to specify {class_name}(region=...) to avoid potential access errors",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
-        return value
+        return self
 
     def _get_hadoop_config_prefix(self) -> str:
         return f"fs.s3a.bucket.{self.bucket}"
@@ -449,7 +450,7 @@ class SparkS3(SparkFileDFConnection):
         if self.path_style_access:
             conf[f"{prefix}.path.style.access"] = "true"
 
-        for key, value in self.extra.dict(by_alias=True, exclude_none=True).items():
+        for key, value in self.extra.model_dump(by_alias=True, exclude_none=True).items():
             conf[f"{prefix}.{key}"] = value
 
         # https://hadoop.apache.org/docs/r3.4.1/hadoop-aws/tools/hadoop-aws/index.html

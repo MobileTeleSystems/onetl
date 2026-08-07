@@ -239,12 +239,7 @@ def test_kafka_empty_addresses(spark_mock):
 
 
 def test_kafka_empty_cluster(spark_mock):
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            "cluster\n  field required (type=value_error.missing)",
-        ),
-    ):
+    with pytest.raises(ValueError, match=" Field required"):
         Kafka(
             spark=spark_mock,
             addresses=["192.168.1.1"],
@@ -286,7 +281,7 @@ def test_kafka_invalid_extras(option, value):
     ],
 )
 def test_kafka_valid_extras(option, value):
-    extra_dict = KafkaExtra.parse({option: value}).dict()
+    extra_dict = KafkaExtra.parse({option: value}).model_dump()
     assert extra_dict["group.id"] == value
 
 
@@ -478,12 +473,12 @@ def test_kafka_oauth2_client_credentials_missing_field(missing_field):
     }
     kwargs.pop(missing_field)
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Kafka.OAuth2ClientCredentials(**kwargs)
 
 
 def test_kafka_oauth2_client_credentials_invalid_endpoint():
-    with pytest.raises(ValueError, match="invalid or missing URL scheme"):
+    with pytest.raises(ValueError, match="Input should be a valid URL"):
         Kafka.OAuth2ClientCredentials(
             client_id="client-id",
             client_secret="client-secret",
@@ -846,7 +841,7 @@ def test_kafka_write_options_mode_restricted(options, message):
     ],
 )
 def test_kafka_write_options_mode_wrong(options):
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+    with pytest.raises(ValueError, match="Input should be"):
         Kafka.WriteOptions(**options)
 
 

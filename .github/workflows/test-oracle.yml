@@ -15,9 +15,6 @@ on:
       spark-version:
         required: true
         type: string
-      pydantic-version:
-        required: true
-        type: string
       etl-entities-version:
         required: true
         type: string
@@ -37,7 +34,7 @@ on:
 
 jobs:
   test-oracle:
-    name: Run Oracle tests (server=${{ inputs.oracle-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    name: Run Oracle tests (server=${{ inputs.oracle-version }}, spark=${{ inputs.spark-version }}, etl-entities=${{ inputs.etl-entities-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
 
     steps:
@@ -87,11 +84,11 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
+          key: ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-
             ${{ runner.os }}-python${{ inputs.python-version }}-
 
       - name: Wait for Oracle to be ready
@@ -107,8 +104,7 @@ jobs:
           retry_on: error
           max_attempts: 3
           command: |
-            export PYDANTIC_VERSION=${{ inputs.pydantic-version }}
-            exrort ETL_ENTITIES_VERSION=${{ inputs.etl-entities-version }}
+            export ETL_ENTITIES_VERSION=${{ inputs.etl-entities-version }}
             export SPARK_VERSION=${{ inputs.spark-version }}
             export ONETL_ORA_CLIENT_PATH=$(realpath ./oracle/instantclient_21_10)
             export LD_LIBRARY_PATH=${ONETL_ORA_CLIENT_PATH}:${LD_LIBRARY_PATH}

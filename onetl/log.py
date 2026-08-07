@@ -425,11 +425,10 @@ def log_options(
     --------
 
     ```python
+    options = Options(some="value", abc=1, bcd=None, cde=True, feg=SomeEnum.VALUE)
     log_options(
         logger,
-        Options(some="value", abc=1, bcd=None, cde=True, feg=SomeEnum.VALUE).dict(
-            by_alias=True
-        ),
+        options.model_dump(by_alias=True),
     )
     log_options(logger, None)
     ```

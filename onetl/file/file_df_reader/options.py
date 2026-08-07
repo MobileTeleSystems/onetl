@@ -3,10 +3,7 @@
 
 from typing import TYPE_CHECKING
 
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field
 
 from onetl.base import FileDFReadOptions
 from onetl.hooks import slot, support_hooks
@@ -39,8 +36,7 @@ class FileDFReaderOptions(FileDFReadOptions, GenericOptions):
     ```
     """
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
     recursive: bool | None = Field(default=None, alias="recursiveFileLookup")
     """If `True`, perform recursive file lookup.
@@ -64,5 +60,5 @@ class FileDFReaderOptions(FileDFReadOptions, GenericOptions):
         pyspark.sql.DataFrameReader
             Reader with options applied.
         """
-        options = self.dict(by_alias=True, exclude_none=True)
+        options = self.model_dump(by_alias=True, exclude_none=True)
         return reader.options(**options)

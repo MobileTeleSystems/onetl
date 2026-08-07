@@ -4,12 +4,9 @@ import getpass
 import logging
 import os
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
-try:
-    from pydantic.v1 import Field, PrivateAttr, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, validator  # type: ignore[no-redef, assignment]
+from pydantic import Field, PrivateAttr, ValidationInfo, field_validator, model_validator
 
 from onetl._util.alias import avoid_alias
 from onetl.base import PurePathProtocol
@@ -144,11 +141,13 @@ class SparkHDFS(SparkFileDFConnection):
         ```
     """
 
-    Slots = SparkHDFSSlots
+    DEFAULT_IPC_PORT: ClassVar[int] = 8020
+
+    Slots: ClassVar = SparkHDFSSlots
 
     cluster: Cluster
     host: Host | None = None
-    ipc_port: int = Field(default=8020, alias=avoid_alias("port"))  # type: ignore[literal-required]
+    ipc_port: int = Field(alias=avoid_alias("port"), default=DEFAULT_IPC_PORT, validate_default=True)  # type: ignore[literal-required]
 
     _active_host: str | None = PrivateAttr(default=None)
 
@@ -253,7 +252,8 @@ class SparkHDFS(SparkFileDFConnection):
         log.info("|%s|   Got %r", cls.__name__, current_cluster)
         return cls(cluster=current_cluster, spark=spark)  # type: ignore[arg-type]
 
-    @validator("cluster")
+    @field_validator("cluster", mode="before")
+    @classmethod
     def _validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
@@ -268,37 +268,43 @@ class SparkHDFS(SparkFileDFConnection):
 
         return validated_cluster
 
-    @validator("host")
-    def _validate_host_name(cls, host, values):
-        cluster = values.get("cluster")
+    @field_validator("host", mode="before")
+    @classmethod
+    def _validate_host_name(cls, host, info: ValidationInfo):
+        cluster = info.data.get("cluster")
+        if not cluster:
+            return host
 
         log.debug("|%s| Normalizing namenode %r host...", cls.__name__, host)
         namenode = cls.Slots.normalize_namenode_host(host, cluster) or host
         if namenode != host:
             log.debug("|%s|   Got %r", cls.__name__, namenode)
 
-        log.debug("|%s| Checking if %r is a known namenode of cluster %r ...", cls.__name__, namenode, cluster)
-        known_namenodes = cls.Slots.get_cluster_namenodes(cluster)
-        if known_namenodes and namenode not in known_namenodes:
-            msg = (
-                f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: "
-                f"{sorted(known_namenodes)!r}"
-            )
-            raise ValueError(msg)
+        if cluster:
+            log.debug("|%s| Checking if %r is a known namenode of cluster %r ...", cls.__name__, namenode, cluster)
+            known_namenodes = cls.Slots.get_cluster_namenodes(cluster)
+            if known_namenodes and namenode not in known_namenodes:
+                msg = (
+                    f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: "
+                    f"{sorted(known_namenodes)!r}"
+                )
+                raise ValueError(msg)
 
         return namenode
 
-    @validator("ipc_port", always=True)
-    def _validate_port_number(cls, port, values):
+    @model_validator(mode="before")
+    def _validate_port_number(cls, values):
+        port = values.get("port") or values.pop("ipc_port", None)
         cluster = values.get("cluster")
-        if cluster:
-            log.debug("|%s| Getting IPC port of cluster %r ...", cls.__name__, cluster)
-            result = cls.Slots.get_ipc_port(cluster) or port
-            if result != port:
-                log.debug("|%s|   Got %r", cls.__name__, result)
-            return result
 
-        return port
+        if cluster and not port:
+            log.debug("|%s| Getting IPC port of cluster %r ...", cls.__name__, cluster)
+            port = cls.Slots.get_ipc_port(cluster)
+            if port:
+                log.debug("|%s|   Got %r", cls.__name__, port)
+
+        values["port"] = port or cls.DEFAULT_IPC_PORT
+        return values
 
     def _get_active_namenode(self) -> str:
         class_name = self.__class__.__name__

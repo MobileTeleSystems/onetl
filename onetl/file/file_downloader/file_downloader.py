@@ -9,16 +9,17 @@ import warnings
 from collections.abc import Generator, Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 from etl_entities.hwm import FileHWM, FileListHWM
 from humanize import naturaldelta
 from ordered_set import OrderedSet
 
+# using pydantic v1 for backward compatibility with etl-entities 3.x
 try:
-    from pydantic.v1 import Field, PrivateAttr, root_validator, validator
+    from pydantic.v1 import BaseModel, Field, PrivateAttr, root_validator, validator
 except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
+    from pydantic import BaseModel, Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
 
 
 from onetl._util.file import absolute_path, generate_temp_path
@@ -33,7 +34,6 @@ from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedRemoteFile,
     FileExistBehavior,
-    FrozenModel,
     LocalPath,
     RemoteFile,
     RemotePath,
@@ -65,7 +65,7 @@ class FileDownloadStatus(Enum):
 
 
 @support_hooks
-class FileDownloader(FrozenModel):
+class FileDownloader(BaseModel):
     """Allows you to download files from a remote source with specified file connection
     and parameters, and return an object with download result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
 
@@ -259,8 +259,6 @@ class FileDownloader(FrozenModel):
         ```
     """
 
-    Options = FileDownloaderOptions
-
     connection: BaseFileConnection
 
     local_path: LocalPath
@@ -274,6 +272,14 @@ class FileDownloader(FrozenModel):
     hwm_type: Any | None = Field(default=None, deprecated=True)
 
     options: FileDownloaderOptions = FileDownloaderOptions()
+    Options: ClassVar = FileDownloaderOptions
+
+    class Config:
+        frozen = True
+        extra = "forbid"
+        arbitrary_types_allowed = True
+        allow_population_by_field_name = True
+        underscore_attrs_are_private = True
 
     _connection_checked: bool = PrivateAttr(default=False)
 
@@ -703,7 +709,7 @@ class FileDownloader(FrozenModel):
         log_collection(log, "limits", self.limits)
         if self.hwm:
             log_hwm(log, self.hwm)
-        log_options(log, self.options.dict(by_alias=True))
+        log_options(log, self.options.model_dump(by_alias=True))
 
         if self.options.delete_source:
             log.warning("|%s| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!", self.__class__.__name__)

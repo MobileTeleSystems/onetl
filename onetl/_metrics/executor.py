@@ -4,11 +4,7 @@ import os
 from datetime import timedelta
 
 from humanize import naturalsize, precisedelta
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import Field
 
 from onetl.impl import BaseModel
 

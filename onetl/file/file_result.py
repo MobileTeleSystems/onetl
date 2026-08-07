@@ -5,15 +5,10 @@ from collections.abc import Iterable
 from typing import Generic, TypeVar
 
 from humanize import naturalsize
-
-from onetl.base.path_protocol import PathProtocol
-
-try:
-    from pydantic.v1 import Field, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, validator  # type: ignore[no-redef, assignment]
+from pydantic import Field, field_validator
 
 from onetl.base import PurePathProtocol
+from onetl.base.path_protocol import PathProtocol
 from onetl.exception import (
     EmptyFilesError,
     FailedFilesError,
@@ -54,7 +49,8 @@ class FileResult(BaseModel, Generic[SuccessfulPath_co, FailedPath_co, MissingPat
     missing: FileSet[MissingPath_co] = Field(default_factory=lambda: FileSet({}))
     "Unknown paths which cannot be handled"
 
-    @validator("successful", "failed", "skipped", "missing")
+    @field_validator("successful", "failed", "skipped", "missing", mode="before")
+    @classmethod
     def validate_container(cls, value: Iterable[PurePathProtocol]) -> FileSet[PurePathProtocol]:
         return FileSet(value)
 

@@ -3,13 +3,18 @@
 import logging
 import time
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from humanize import naturaldelta
+from pydantic import field_validator
 
+from onetl._metrics.recorder import SparkMetricsRecorder
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
+from onetl._util.spark import get_pyspark_version, get_spark_version, override_job_description, stringify
+from onetl._util.sql import clear_statement
 from onetl._util.version import Version
+from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.iceberg.catalog import (
     IcebergCatalog,
     IcebergFilesystemCatalog,
@@ -30,16 +35,6 @@ from onetl.connection.db_connection.iceberg.warehouse.delegated import (
     IcebergDelegatedWarehouse,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
-
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
-
-from onetl._metrics.recorder import SparkMetricsRecorder
-from onetl._util.spark import get_pyspark_version, get_spark_version, override_job_description, stringify
-from onetl._util.sql import clear_statement
-from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
@@ -215,16 +210,16 @@ class Iceberg(DBConnection):
     warehouse: IcebergWarehouse | None = None
     extra: IcebergExtra = IcebergExtra()
 
-    FilesystemCatalog = IcebergFilesystemCatalog
-    RESTCatalog = IcebergRESTCatalog
+    FilesystemCatalog: ClassVar = IcebergFilesystemCatalog
+    RESTCatalog: ClassVar = IcebergRESTCatalog
 
-    FilesystemWarehouse = IcebergFilesystemWarehouse
-    S3Warehouse = IcebergS3Warehouse
-    DelegatedWarehouse = IcebergDelegatedWarehouse
+    FilesystemWarehouse: ClassVar = IcebergFilesystemWarehouse
+    S3Warehouse: ClassVar = IcebergS3Warehouse
+    DelegatedWarehouse: ClassVar = IcebergDelegatedWarehouse
 
-    WriteOptions = IcebergWriteOptions
+    WriteOptions: ClassVar = IcebergWriteOptions
 
-    Dialect = IcebergDialect
+    Dialect: ClassVar = IcebergDialect
 
     @property
     def _check_query(self) -> str:
@@ -254,7 +249,7 @@ class Iceberg(DBConnection):
         catalog_config = {
             **self.catalog.get_config(),
             **(self.warehouse.get_config() if self.warehouse else {}),
-            **self.extra.dict(),
+            **self.extra.model_dump(),
         }
         catalog_prefix = f"spark.sql.catalog.{self.catalog_name}"
         spark_config = {catalog_prefix: "org.apache.iceberg.spark.SparkCatalog"}
@@ -320,7 +315,8 @@ class Iceberg(DBConnection):
     def __str__(self):
         return f"{self.__class__.__name__}[{self.catalog_name}]"
 
-    @validator("spark")
+    @field_validator("spark", mode="before")
+    @classmethod
     def _check_java_class_imported(cls, spark: "SparkSession") -> "SparkSession":
         java_class = "org.apache.iceberg.spark.SparkSessionCatalog"
 
@@ -653,7 +649,7 @@ class Iceberg(DBConnection):
         log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
 
     def _format_write_options(self, write_options: IcebergWriteOptions) -> dict:
-        return write_options.dict(
+        return write_options.model_dump(
             by_alias=True,
             exclude_unset=True,
             exclude={"if_exists"},

@@ -2,15 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 from typing import Any, Literal
 
-from onetl.hooks import slot, support_hooks
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import Field
 
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.warehouse import IcebergWarehouse
+from onetl.hooks import slot, support_hooks
 from onetl.impl import FrozenModel
 
 

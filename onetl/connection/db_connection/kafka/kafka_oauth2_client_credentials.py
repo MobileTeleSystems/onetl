@@ -1,11 +1,8 @@
 # SPDX-FileCopyrightText: 2026-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
-try:
-    from pydantic.v1 import AnyUrl, Field, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import AnyUrl, Field, SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import Field, HttpUrl, SecretStr, UrlConstraints
 
 from onetl._util.spark import get_spark_version
 from onetl._util.version import Version
@@ -60,7 +57,7 @@ class KafkaOAuth2ClientCredentials(KafkaAuth, GenericOptions):
 
     client_id: str
     client_secret: SecretStr
-    oauth2_token_endpoint: AnyUrl
+    oauth2_token_endpoint: Annotated[HttpUrl, UrlConstraints(host_required=True, preserve_empty_path=True)]
     scopes: list[str] = Field(default_factory=list)
 
     @staticmethod

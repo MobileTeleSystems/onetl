@@ -16,7 +16,7 @@ def test_samba_file_connection_check_success(samba_file_connection, caplog):
     assert f"protocol = '{samba.protocol}'" in caplog.text
     assert f"user = '{samba.user}'" in caplog.text
     assert f"share = '{samba.share}'" in caplog.text
-    assert f"extra = {samba.extra.dict(exclude_none=True)!r}" in caplog.text
+    assert f"extra = {samba.extra.model_dump(exclude_none=True)!r}" in caplog.text
     assert "password = SecretStr('**********')" in caplog.text
     assert samba.password.get_secret_value() not in caplog.text
 

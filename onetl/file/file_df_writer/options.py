@@ -4,10 +4,7 @@ from collections.abc import Iterable
 from enum import Enum
 from typing import TYPE_CHECKING
 
-try:
-    from pydantic.v1 import Field, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, model_validator
 
 from onetl.base import FileDFWriteOptions
 from onetl.hooks import slot, support_hooks
@@ -54,9 +51,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
     ```
     """
 
-    class Config:
-        extra = "allow"
-        prohibited_options = frozenset(("partitionOverwriteMode",))
+    model_config = ConfigDict(extra="allow", prohibited_options=frozenset(("partitionOverwriteMode",)))  # type: ignore[typeddict-unknown-key]
 
     if_exists: FileDFExistBehavior = FileDFExistBehavior.APPEND
     """Behavior for existing target directory.
@@ -215,7 +210,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
         pyspark.sql.DataFrameWriter
             Writer with options applied.
         """
-        for method, value in self.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}).items():
+        for method, value in self.model_dump(by_alias=True, exclude_none=True, exclude={"if_exists"}).items():
             # <value> is the arguments that will be passed to the <method>
             # format orc, parquet methods and format simultaneously
             if hasattr(writer, method):
@@ -239,14 +234,16 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
 
         return writer
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_restricted(cls, values):
         if "mode" in values:
             msg = "Parameter `mode` is not allowed. Please use `if_exists` parameter instead."
             raise ValueError(msg)
         return values
 
-    @root_validator
+    @model_validator(mode="before")
+    @classmethod
     def _partition_overwrite_mode_is_not_allowed(cls, values):
         partition_overwrite_mode = values.get("partitionOverwriteMode") or values.get("partition_overwrite_mode")
         if partition_overwrite_mode:

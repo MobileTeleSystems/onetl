@@ -39,5 +39,5 @@ def test_writer_target_alias(spark_mock):
 
 
 def test_writer_no_connection():
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         DBWriter(target="schema.table")

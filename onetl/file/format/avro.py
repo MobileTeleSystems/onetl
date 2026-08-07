@@ -5,10 +5,7 @@ import logging
 import warnings
 from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
-try:
-    from pydantic.v1 import Field, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator, validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -242,11 +239,7 @@ class Avro(ReadWriteFileFormat):
 
         Used only for reading files and by [parse_column][].
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, known_options=[], extra="allow")  # type: ignore[typeddict-unknown-key]
 
     @slot
     @classmethod
@@ -307,14 +300,14 @@ class Avro(ReadWriteFileFormat):
 
     @slot
     def apply_to_reader(self, reader: "DataFrameReader") -> "DataFrameReader":
-        options = self.dict(by_alias=True, exclude_none=True, exclude={"schema"})
+        options = self.model_dump(by_alias=True, exclude_none=True, exclude={"schema"})
         if self.schema_dict:
             options["avroSchema"] = json.dumps(self.schema_dict)
         return reader.format(self.name).options(**options)
 
     @slot
     def apply_to_writer(self, writer: "DataFrameWriter") -> "DataFrameWriter":
-        options = self.dict(by_alias=True, exclude_none=True, exclude={"schema"})
+        options = self.model_dump(by_alias=True, exclude_none=True, exclude={"schema"})
         if self.schema_dict:
             options["avroSchema"] = json.dumps(self.schema_dict)
         return writer.format(self.name).options(**options)
@@ -525,12 +518,12 @@ class Avro(ReadWriteFileFormat):
         return to_avro(column, schema).alias(column_name)
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = self.model_dump(by_alias=True, exclude_none=True)
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"
 
     def _check_unsupported_parse_options(self):
-        current_options = self.dict(by_alias=True, exclude_none=True)
+        current_options = self.model_dump(by_alias=True, exclude_none=True)
         unsupported_options = current_options.keys() & PARSE_COLUMN_UNSUPPORTED_OPTIONS
         if unsupported_options:
             warnings.warn(
@@ -540,7 +533,7 @@ class Avro(ReadWriteFileFormat):
             )
 
     def _check_unsupported_serialization_options(self):
-        current_options = self.dict(by_alias=True, exclude_none=True)
+        current_options = self.model_dump(by_alias=True, exclude_none=True)
         unsupported_options = current_options.keys() & SERIALIZE_COLUMN_UNSUPPORTED_OPTIONS
         if unsupported_options:
             warnings.warn(
@@ -549,20 +542,19 @@ class Avro(ReadWriteFileFormat):
                 stacklevel=2,
             )
 
-    @validator("schema_dict", pre=True)
+    @field_validator("schema_dict", mode="before")
+    @classmethod
     def _parse_schema_from_json(cls, value):
         if isinstance(value, (str, bytes)):
             return json.loads(value)
         return value
 
-    @root_validator(pre=True)
-    def _check_schema(cls, values):
-        schema_dict = values.get("schema_dict")
-        schema_url = values.get("schema_url")
-        if schema_dict and schema_url:
+    @model_validator(mode="after")
+    def _check_schema(self):
+        if self.schema_dict and self.schema_url:
             msg = "Parameters `avroSchema` and `avroSchemaUrl` are mutually exclusive."
             raise ValueError(msg)
-        return values
+        return self
 
     def _get_schema_json(self) -> str:
         if self.schema_dict:

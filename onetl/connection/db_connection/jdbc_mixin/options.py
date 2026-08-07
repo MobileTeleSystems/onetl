@@ -1,11 +1,7 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+from pydantic import ConfigDict, Field
 from typing_extensions import deprecated
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
 
 from onetl.impl import GenericOptions
 
@@ -46,9 +42,7 @@ class JDBCOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
     query_timeout: int | None = Field(default=None, alias="queryTimeout")
     """The number of seconds the driver will wait for a statement to execute.
@@ -95,9 +89,7 @@ class JDBCFetchOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
     query_timeout: int | None = Field(default=None, alias="queryTimeout")
     """The number of seconds the driver will wait for a statement to execute.
@@ -142,9 +134,7 @@ class JDBCExecuteOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
     query_timeout: int | None = Field(default=None, alias="queryTimeout")
     """The number of seconds the driver will wait for a statement to execute.

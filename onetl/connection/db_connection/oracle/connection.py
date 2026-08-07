@@ -10,14 +10,10 @@ from decimal import Decimal
 from textwrap import indent
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from onetl._util.spark import get_client_info
-
-try:
-    from pydantic.v1 import root_validator
-except (ImportError, AttributeError):
-    from pydantic import root_validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, model_validator
 
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import get_client_info
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
@@ -69,8 +65,7 @@ class ErrorPosition:
 
 
 class OracleExtra(GenericOptions):
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
@@ -177,14 +172,14 @@ class Oracle(JDBCConnection):
     service_name: str | None = None
     extra: OracleExtra = OracleExtra()
 
-    ReadOptions = OracleReadOptions
-    WriteOptions = OracleWriteOptions
-    SQLOptions = OracleSQLOptions
-    FetchOptions = OracleFetchOptions
-    ExecuteOptions = OracleExecuteOptions
+    ReadOptions: ClassVar = OracleReadOptions
+    WriteOptions: ClassVar = OracleWriteOptions
+    SQLOptions: ClassVar = OracleSQLOptions
+    FetchOptions: ClassVar = OracleFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = OracleExecuteOptions  # type: ignore[misc]
 
-    Extra = OracleExtra
-    Dialect = OracleDialect
+    Extra: ClassVar = OracleExtra
+    Dialect: ClassVar = OracleDialect
 
     DRIVER: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
     _CHECK_QUERY: ClassVar[str] = "SELECT 1 FROM dual"
@@ -251,7 +246,7 @@ class Oracle(JDBCConnection):
     @property
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
-        result.update(self.extra.dict(by_alias=True))
+        result.update(self.extra.model_dump(by_alias=True))
         # https://stackoverflow.com/questions/35072134/why-am-i-getting-format-error-property-is-vsession-program-connecting-to-o/35072449#35072449
         result["v$session.program"] = result.get("v$session.program", get_client_info(self.spark, limit=48))
         return result
@@ -293,20 +288,17 @@ class Oracle(JDBCConnection):
             max_value = int(max_value)
         return min_value, max_value
 
-    @root_validator
-    def _only_one_of_sid_or_service_name(cls, values):
-        sid = values.get("sid")
-        service_name = values.get("service_name")
-
-        if sid and service_name:
-            msg = "Only one of parameters ``sid``, ``service_name`` can be set, got both"
+    @model_validator(mode="after")
+    def _only_one_of_sid_or_service_name(self):
+        if self.sid and self.service_name:
+            msg = "Only one of parameters `sid`, `service_name` can be set, got both"
             raise ValueError(msg)
 
-        if not sid and not service_name:
-            msg = "One of parameters ``sid``, ``service_name`` should be set, got none"
+        if not self.sid and not self.service_name:
+            msg = "One of parameters `sid`, `service_name` should be set, got none"
             raise ValueError(msg)
 
-        return values
+        return self
 
     def _call_with_count_on_driver(
         self,

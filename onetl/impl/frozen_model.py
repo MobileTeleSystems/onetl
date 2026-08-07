@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+from pydantic import ConfigDict
+
 from onetl.impl.base_model import BaseModel
 
 
 class FrozenModel(BaseModel):
-    class Config:
-        smart_union = True
-        frozen = True
+    model_config = ConfigDict(frozen=True)

@@ -3,11 +3,7 @@
 import os
 from typing import Any, Literal
 
-try:
-    from pydantic.v1 import Field, SecretStr, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr, validator  # type: ignore[no-redef, assignment]
-
+from pydantic import Field, SecretStr, field_validator, model_validator
 
 from onetl._util.spark import stringify
 from onetl._util.version import Version
@@ -84,8 +80,8 @@ class IcebergS3Warehouse(IcebergWarehouse, FrozenModel):
 
     path: PurePathProtocol
     host: str
-    port: int | None = None
     protocol: Literal["http", "https"] = "https"
+    port: int = 443
     bucket: str
     region: str
     path_style_access: bool = False
@@ -93,6 +89,16 @@ class IcebergS3Warehouse(IcebergWarehouse, FrozenModel):
     secret_key: SecretStr | None = None
     session_token: SecretStr | None = None
     extra: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _set_port_based_on_protocol(cls, values):
+        port = values.get("port")
+        if port is not None:
+            return values
+
+        values["port"] = 443 if values.get("protocol", "https") == "https" else 80
+        return values
 
     @slot
     def get_config(self) -> dict[str, str]:
@@ -141,6 +147,7 @@ class IcebergS3Warehouse(IcebergWarehouse, FrozenModel):
         version = Version(package_version).min_digits(3)
         return [f"org.apache.iceberg:iceberg-aws-bundle:{version}"]
 
-    @validator("path", pre=True)
-    def _validate_path(cls, path, values):
+    @field_validator("path", mode="before")
+    @classmethod
+    def _validate_path(cls, path):
         return RemotePath(os.fspath(path))
