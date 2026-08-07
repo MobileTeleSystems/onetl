@@ -3,6 +3,7 @@ import secrets
 import shutil
 import sys
 import textwrap
+import warnings
 from pathlib import Path
 
 import pytest
@@ -193,7 +194,7 @@ def test_hwm_store_yaml_cleanup_file_name(qualified_name, file_name):
 
 
 def test_hwm_store_no_deprecation_warning_yaml_hwm_store():
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         from onetl.hwm.store import YAMLHWMStore
 
         YAMLHWMStore()
