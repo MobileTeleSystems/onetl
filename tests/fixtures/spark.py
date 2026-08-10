@@ -82,7 +82,7 @@ def maven_packages(request):  # noqa: C901, PLR0912
     if "avro" in markers:
         packages.extend(Avro.get_packages())
 
-    if "kafka" in markers:
+    if {"kafka", "kafka_oauth"} & markers:
         packages.extend(Kafka.get_packages())
 
     if "s3" in markers:

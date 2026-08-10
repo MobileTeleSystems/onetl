@@ -120,6 +120,22 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
+  tests-kafka-oauth:
+    name: Run Kafka OAuth tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
+    needs: [get-matrix]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.get-matrix.outputs.matrix-kafka-oauth) }}
+
+    uses: ./.github/workflows/test-kafka-oauth.yml
+    with:
+      spark-version: ${{ matrix.spark-version }}
+      pydantic-version: ${{ matrix.pydantic-version }}
+      java-version: ${{ matrix.java-version }}
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
   tests-local-fs:
     name: Run LocalFS tests (spark=${{ matrix.spark-version }}, pydantic=${{ matrix.pydantic-version }}, java=${{ matrix.java-version }}, python=${{ matrix.python-version }}, os=${{ matrix.os }})
     needs: [get-matrix]
@@ -361,6 +377,7 @@ jobs:
       - tests-clickhouse
       - tests-hive-and-iceberg
       - tests-kafka
+      - tests-kafka-oauth
       - tests-local-fs
       - tests-mongodb
       - tests-mssql

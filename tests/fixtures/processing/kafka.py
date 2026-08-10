@@ -70,6 +70,30 @@ class KafkaProcessing(BaseProcessing):
     def sasl_port(self) -> int:
         return int(os.environ["ONETL_KAFKA_PLAINTEXT_SASL_PORT"])
 
+    @property
+    def oauth_host(self) -> str:
+        return os.environ["ONETL_KAFKA_OAUTH_HOST"]
+
+    @property
+    def oauth_port(self) -> int:
+        return int(os.environ["ONETL_KAFKA_OAUTH_PORT"])
+
+    @property
+    def oauth_client_id(self) -> str:
+        return os.environ["ONETL_KAFKA_OAUTH_CLIENT_ID"]
+
+    @property
+    def oauth_client_secret(self) -> str:
+        return os.environ["ONETL_KAFKA_OAUTH_CLIENT_SECRET"]
+
+    @property
+    def oauth_token_endpoint(self) -> str:
+        return os.environ["ONETL_KAFKA_OAUTH_TOKEN_ENDPOINT"]
+
+    @property
+    def oauth_scopes(self) -> list[str]:
+        return os.environ["ONETL_KAFKA_OAUTH_SCOPE"].split()
+
     def create_schema(self, schema: str) -> None:
         pass
 
