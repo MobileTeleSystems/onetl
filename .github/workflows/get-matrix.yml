@@ -12,6 +12,8 @@ on:
         value: ${{ jobs.get-matrix.outputs.matrix-hive }}
       matrix-kafka:
         value: ${{ jobs.get-matrix.outputs.matrix-kafka }}
+      matrix-kafka-oauth:
+        value: ${{ jobs.get-matrix.outputs.matrix-kafka-oauth }}
       matrix-local-fs:
         value: ${{ jobs.get-matrix.outputs.matrix-local-fs }}
       matrix-mongodb:
@@ -52,6 +54,7 @@ jobs:
       matrix-greenplum: ${{ toJson(fromJson(steps.matrix-greenplum.outputs.result)[steps.key-greenplum.outputs.key]) }}
       matrix-hive: ${{ toJson(fromJson(steps.matrix-hive.outputs.result)[steps.key-hive.outputs.key]) }}
       matrix-kafka: ${{ toJson(fromJson(steps.matrix-kafka.outputs.result)[steps.key-kafka.outputs.key]) }}
+      matrix-kafka-oauth: ${{ toJson(fromJson(steps.matrix-kafka-oauth.outputs.result)[steps.key-kafka.outputs.key]) }}
       matrix-local-fs: ${{ toJson(fromJson(steps.matrix-local-fs.outputs.result)[steps.key-local-fs.outputs.key]) }}
       matrix-mongodb: ${{ toJson(fromJson(steps.matrix-mongodb.outputs.result)[steps.key-mongodb.outputs.key]) }}
       matrix-mssql: ${{ toJson(fromJson(steps.matrix-mssql.outputs.result)[steps.key-mssql.outputs.key]) }}
@@ -259,6 +262,12 @@ jobs:
         uses: mikefarah/yq@v4.53.3
         with:
           cmd: yq -o=json '.matrix' .github/workflows/data/kafka/matrix.yml
+
+      - name: Get Kafka OAuth matrix
+        id: matrix-kafka-oauth
+        uses: mikefarah/yq@v4.53.3
+        with:
+          cmd: yq -o=json '.matrix' .github/workflows/data/kafka/oauth-matrix.yml
 
       - name: Check if LocalFS files are changed
         id: changed-local-fs
