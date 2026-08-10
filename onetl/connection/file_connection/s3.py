@@ -313,12 +313,8 @@ class S3(FileConnection):
             # self.list_dir may return large list
             # self._scan_entries return an iterator, which have to be iterated at least once
             for _entry in self._scan_entries(remote_dir):
-                msg = "|%s| Cannot delete non-empty directory %s"
-                raise DirectoryNotEmptyError(
-                    msg,
-                    self.__class__.__name__,
-                    directory_info,
-                )
+                msg = f"|{self.__class__.__name__}| Cannot delete non-empty directory {directory_info}"
+                raise DirectoryNotEmptyError(msg)
 
             log.debug("|%s| Directory to remove: %s", self.__class__.__name__, directory_info)
             self._remove_dir(remote_dir)
