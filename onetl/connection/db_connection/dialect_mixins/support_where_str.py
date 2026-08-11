@@ -21,6 +21,6 @@ class SupportWhereStr:
                 f"{self.connection.__class__.__name__} requires 'where' parameter type to be 'str', "
                 f"got {where.__class__.__name__!r}"
             )
-            raise TypeError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         return where

@@ -7,15 +7,9 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import frozendict
-from etl_entities.hwm import HWM, ColumnHWM, KeyValueHWM
+from etl_entities.hwm import HWM, ColumnHWM, HWMTypeRegistry, KeyValueHWM
 from humanize import naturaldelta
-
-# using pydantic v1 for backward compatibility with etl-entities 3.x
-try:
-    from pydantic.v1 import BaseModel, Field, PrivateAttr, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import BaseModel, Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
-
+from pydantic import Field, PrivateAttr, ValidationInfo, field_validator, model_validator
 
 from onetl._util.alias import avoid_alias
 from onetl._util.process import get_process_info
@@ -28,7 +22,7 @@ from onetl.base import (
 from onetl.exception import NoDataError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import AutoDetectHWM, Edge, Window
-from onetl.impl import GenericOptions
+from onetl.impl import FrozenModel, GenericOptions
 from onetl.log import (
     entity_boundary_log,
     log_collection,
@@ -50,7 +44,7 @@ log = getLogger(__name__)
 
 
 @support_hooks
-class DBReader(BaseModel):
+class DBReader(FrozenModel):
     """Allows you to read data from a table with specified database connection
     and parameters, and return its content as Spark dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
 
@@ -308,24 +302,14 @@ class DBReader(BaseModel):
 
     connection: BaseDBConnection
     source: str = Field(alias=avoid_alias("table"))  # type: ignore[literal-required]
-    columns: list[str] | None = Field(default=None, min_items=1)
-    where: Any | None = None
-    hint: Any | None = None
-    df_schema: "StructType | None" = None
-    hwm_column: str | tuple[str, str] | None = Field(deprecated=True, default=None)
-    hwm_expression: str | None = Field(deprecated=True, default=None)
-    hwm: AutoDetectHWM | ColumnHWM | KeyValueHWM | None = None
-    options: GenericOptions | None = None
+    columns: list[str] | None = Field(default=None, min_length=1, validate_default=True)
+    where: Any | None = Field(default=None, validate_default=True)
+    hint: Any | None = Field(default=None, validate_default=True)
+    df_schema: "StructType | None" = Field(default=None, validate_default=True)
+    hwm: AutoDetectHWM | ColumnHWM | KeyValueHWM | None = Field(default=None, validate_default=True)
+    options: GenericOptions | None = Field(default=None, validate_default=True)
 
     AutoDetectHWM: ClassVar = AutoDetectHWM
-
-    class Config:
-        frozen = True
-        extra = "forbid"
-        smart_union = True
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
-        underscore_attrs_are_private = True
 
     _connection_checked: bool = PrivateAttr(default=False)
 
@@ -334,59 +318,73 @@ class DBReader(BaseModel):
 
         from pyspark.sql.types import StructType
 
-        cls.update_forward_refs(StructType=StructType)
+        _ = StructType
+
+        cls.model_rebuild()
         return super().__new__(cls)
 
-    @validator("source", always=True)
-    def validate_source(cls, value: str, values):
-        if "connection" not in values:
+    @field_validator("source", mode="before")
+    @classmethod
+    def _validate_source(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
             return value
-        connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_name(value)
 
-    @validator("columns", always=True, pre=True)
-    def validate_columns(cls, value: str | list[str] | None, values: dict) -> list[str] | None:
-        if "connection" not in values:
-            return value  # type: ignore[return-value]
-        connection: BaseDBConnection = values["connection"]
+    @field_validator("columns", mode="before")
+    @classmethod
+    def _validate_columns(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
         return connection.dialect.validate_columns(value)
 
-    @validator("where", always=True)
-    def validate_where(cls, value: Any, values: dict) -> Any:
-        if "connection" not in values:
-            return value  # type: ignore[return-value]
-        connection: BaseDBConnection = values["connection"]
+    @field_validator("where", mode="before")
+    @classmethod
+    def _validate_where(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
         result = connection.dialect.validate_where(value)
         if isinstance(result, dict):
             return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
         return result
 
-    @validator("hint", always=True)
-    def validate_hint(cls, value: Any, values: dict) -> Any:
-        if "connection" not in values:
-            return value  # type: ignore[return-value]
-        connection: BaseDBConnection = values["connection"]
+    @field_validator("hint", mode="before")
+    @classmethod
+    def _validate_hint(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
         result = connection.dialect.validate_hint(value)
         if isinstance(result, dict):
             return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
         return result
 
-    @validator("df_schema", always=True)
-    def validate_df_schema(cls, value: "StructType | None", values: dict) -> "StructType | None":
-        if "connection" not in values:
-            return value  # type: ignore[return-value]
-        connection: BaseDBConnection = values["connection"]
+    @field_validator("df_schema", mode="before")
+    @classmethod
+    def _validate_df_schema(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
         return connection.dialect.validate_df_schema(value)
 
-    @root_validator(skip_on_failure=True)
-    def validate_hwm(cls, values: dict) -> dict:
-        connection: BaseDBConnection = values["connection"]
-        source: str = values["source"]
-        hwm_column: str | tuple[str, str] | None = values.get("hwm_column")
-        hwm_expression: str | None = values.get("hwm_expression")
+    @model_validator(mode="before")
+    @classmethod
+    def _deprecated_hwm_column_to_hwm(cls, values: dict) -> dict:
+        connection: BaseDBConnection | None = values.get("connection")
+        if not connection:
+            return values
+
+        source = values.get("source")
+        if not source:
+            return values
+
+        hwm_column: str | tuple[str, str] | None = values.pop("hwm_column", None)
+        hwm_expression: str | None = values.pop("hwm_expression", None)
         hwm: HWM | None = values.get("hwm")
 
-        if hwm_column is not None:
+        if hwm_column:
             if hwm:
                 msg = "Please pass either DBReader(hwm=...) or DBReader(hwm_column=...), not both"
                 raise ValueError(msg)
@@ -432,14 +430,35 @@ class DBReader(BaseModel):
                 expression=hwm_expression or hwm_column,
             )
 
-        if hwm and not hwm.expression:
+        values["hwm"] = hwm
+        return values
+
+    # etl-entities v1 uses pydantic v1 models
+    # which are not compatible with pydantic v2.
+    # using a plain validator here
+    @field_validator("hwm", mode="plain")
+    @classmethod
+    def _validate_hwm(cls, hwm, info: ValidationInfo):
+        if not hwm:
+            return None
+
+        if not isinstance(hwm, (ColumnHWM, KeyValueHWM, AutoDetectHWM)):
+            hwm = HWMTypeRegistry.parse(hwm)
+
+        if not isinstance(hwm, (ColumnHWM, KeyValueHWM, AutoDetectHWM)):
+            msg = f"Expected ColumnHWM or KeyValueHWM, got {hwm.__class__.__name__}"
+            raise ValueError(msg)  # noqa: TRY004
+
+        hwm = cast("ColumnHWM | KeyValueHWM | AutoDetectHWM", hwm)
+        if not hwm.expression:
             msg = "`hwm.expression` cannot be None"
             raise ValueError(msg)
 
-        if hwm and not hwm.entity:
+        source = info.data.get("source")
+        if not hwm.entity:
             hwm = hwm.copy(update={"entity": source})
 
-        if hwm and hwm.entity != source:
+        if hwm.entity != source:
             error_message = textwrap.dedent(
                 f"""
                 Passed `hwm.source` is different from `source`.
@@ -455,20 +474,25 @@ class DBReader(BaseModel):
             )
             raise ValueError(error_message)
 
-        values["hwm"] = connection.dialect.validate_hwm(hwm)
-        values["hwm_column"] = None
-        values["hwm_expression"] = None
-        return values
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return hwm
 
-    @validator("options", pre=True, always=True)
-    def validate_options(cls, options, values):
-        connection = values.get("connection")
+        return connection.dialect.validate_hwm(hwm)
+
+    @field_validator("options", mode="before")
+    @classmethod
+    def _validate_options(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
+
         read_options_class = getattr(connection, "ReadOptions", None)
         if read_options_class:
-            return read_options_class.parse(options)
+            return read_options_class.parse(value)
 
-        if options:
-            msg = f"{connection.__class__.__name__} does not implement ReadOptions, but {options!r} is passed"
+        if value:
+            msg = f"{connection.__class__.__name__} does not implement ReadOptions, but {value!r} is passed"
             raise ValueError(msg)
 
         return None

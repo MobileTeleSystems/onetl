@@ -13,7 +13,6 @@ from etl_entities.hwm_store import (
     register_hwm_store_class,
 )
 from platformdirs import user_data_dir
-from pydantic.v1 import BaseModel
 
 from onetl.hooks import slot, support_hooks
 from onetl.impl import LocalPath
@@ -155,15 +154,15 @@ class YAMLHWMStore(BaseHWMStore):
     ITEMS_DELIMITER_PATTERN: ClassVar[re.Pattern] = re.compile("[#@|]+")
     PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:/\\]+")
 
-    if issubclass(BaseHWMStore, BaseModel):
+    if hasattr(BaseHWMStore, "model_config"):
+        # pydantic v2
+        model_config: ClassVar = {"frozen": True, "extra": "forbid"}
+    else:
 
         class Config:
             # pydantic v1
             frozen = True
             extra = "forbid"
-    else:
-        # pydantic v2
-        model_config: ClassVar = {"frozen": True, "extra": "forbid"}
 
     def __init__(self, path: os.PathLike | str = DATA_PATH / "yml_hwm_store", encoding="utf-8"):
         path = LocalPath(path).expanduser().resolve()
