@@ -6,7 +6,7 @@ import re
 import textwrap
 import warnings
 
-from pydantic import ConfigDict, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from typing_extensions import deprecated
 
 from onetl.base import BaseFileFilter, PathProtocol
@@ -86,8 +86,6 @@ class FileFilter(BaseFileFilter, FrozenModel):
     FileFilter()  # will raise ValueError, at least one argument should be passed
     ```
     """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     glob: str | None = None
     regexp: re.Pattern | None = None

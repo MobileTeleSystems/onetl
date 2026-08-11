@@ -1,14 +1,10 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from etl_entities.hwm import FileHWM
-
-# using pydantic v1 for backward compatibility with etl-entities 3.x
-try:
-    from pydantic.v1 import BaseModel
-except (ImportError, AttributeError):
-    from pydantic import BaseModel  # type: ignore[no-redef, assignment]
+from pydantic import field_validator
 
 from onetl.base import BaseFileFilter, PathProtocol
+from onetl.impl import BaseModel
 
 
 class FileHWMFilter(BaseFileFilter, BaseModel):
@@ -26,12 +22,17 @@ class FileHWMFilter(BaseFileFilter, BaseModel):
         File HWM instance
     """
 
-    class Config:
-        frozen = True
-        extra = "forbid"
-        arbitrary_types_allowed = True
-
     hwm: FileHWM
+
+    # etl-entities v1 uses pydantic v1 models
+    # which are not compatible with pydantic v2.
+    # using a plain validator here
+    @field_validator("hwm", mode="plain")
+    @classmethod
+    def validate_hwm(cls, value):
+        if not isinstance(value, FileHWM):
+            return FileHWM.parse_obj(value)
+        return value
 
     def match(self, path: PathProtocol) -> bool:
         if path.is_dir():

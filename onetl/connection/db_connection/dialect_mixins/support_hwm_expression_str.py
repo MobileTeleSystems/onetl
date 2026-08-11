@@ -20,6 +20,6 @@ class SupportHWMExpressionStr:
                 f"{self.connection.__class__.__name__} requires 'hwm.expression' parameter type to be 'str', "
                 f"got {hwm.expression.__class__.__name__!r}"
             )
-            raise TypeError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         return hwm

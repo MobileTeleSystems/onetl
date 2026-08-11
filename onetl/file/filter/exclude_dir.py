@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 
-from pydantic import ConfigDict, field_validator
+from pydantic import field_validator
 
 from onetl.base import BaseFileFilter, PathProtocol, PurePathProtocol
 from onetl.impl import FrozenModel, RemotePath
@@ -33,8 +33,6 @@ class ExcludeDir(BaseFileFilter, FrozenModel):
 
     ```
     """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     path: PurePathProtocol
 

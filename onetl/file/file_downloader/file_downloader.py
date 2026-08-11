@@ -9,18 +9,12 @@ import warnings
 from collections.abc import Generator, Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
-from typing import Any, ClassVar, cast
+from typing import ClassVar, cast
 
-from etl_entities.hwm import FileHWM, FileListHWM
+from etl_entities.hwm import FileHWM, FileListHWM, HWMTypeRegistry
 from humanize import naturaldelta
 from ordered_set import OrderedSet
-
-# using pydantic v1 for backward compatibility with etl-entities 3.x
-try:
-    from pydantic.v1 import BaseModel, Field, PrivateAttr, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import BaseModel, Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
-
+from pydantic import Field, PrivateAttr, ValidationInfo, field_validator, model_validator
 
 from onetl._util.file import absolute_path, generate_temp_path
 from onetl._util.process import get_process_info
@@ -34,6 +28,7 @@ from onetl.hooks import slot, support_hooks
 from onetl.impl import (
     FailedRemoteFile,
     FileExistBehavior,
+    FrozenModel,
     LocalPath,
     RemoteFile,
     RemotePath,
@@ -65,7 +60,7 @@ class FileDownloadStatus(Enum):
 
 
 @support_hooks
-class FileDownloader(BaseModel):
+class FileDownloader(FrozenModel):
     """Allows you to download files from a remote source with specified file connection
     and parameters, and return an object with download result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
 
@@ -268,18 +263,10 @@ class FileDownloader(BaseModel):
     filters: list[BaseFileFilter] = Field(default_factory=list, alias="filter")
     limits: list[BaseFileLimit] = Field(default_factory=list, alias="limit")
 
-    hwm: FileHWM | None = None
-    hwm_type: Any | None = Field(default=None, deprecated=True)
+    hwm: FileHWM | None = Field(default=None, validate_default=True)
 
     options: FileDownloaderOptions = FileDownloaderOptions()
     Options: ClassVar = FileDownloaderOptions
-
-    class Config:
-        frozen = True
-        extra = "forbid"
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
-        underscore_attrs_are_private = True
 
     _connection_checked: bool = PrivateAttr(default=False)
 
@@ -538,22 +525,30 @@ class FileDownloader(BaseModel):
             elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
             entity_boundary_log(log, f"{method} ended in %s", elapsed, char="-")
 
-    @validator("local_path", "temp_path", pre=True, always=True)
+    @field_validator("local_path", "temp_path", mode="before")
+    @classmethod
     def _resolve_local_path(cls, value):
         return LocalPath(value).expanduser().resolve() if value else None
 
-    @validator("source_path", pre=True, always=True)
+    @field_validator("source_path", mode="before")
+    @classmethod
     def _validate_source_path(cls, value):
         return absolute_path(RemotePath(value)) if value else None
 
-    @root_validator(skip_on_failure=True)
-    def _validate_hwm(cls, values):
-        connection = values["connection"]
-        source_path = values.get("source_path")
-        hwm_type = values.get("hwm_type")
-        hwm = values.get("hwm")
+    @model_validator(mode="before")
+    @classmethod
+    def _hwm_type_to_hwm(cls, values):
+        connection = values.get("connection")
+        if not connection:
+            return values
 
-        if (hwm or hwm_type) and not source_path:
+        hwm_type = values.pop("hwm_type", None)
+        hwm = values.get("hwm")
+        if not hwm and not hwm_type:
+            return values
+
+        source_path = values.get("source_path")
+        if not source_path:
             msg = "If `hwm` is passed, `source_path` must be specified"
             raise ValueError(msg)
 
@@ -580,10 +575,31 @@ class FileDownloader(BaseModel):
                 directory=source_path,
             )
 
-        if hwm and not hwm.entity:
+        values["hwm"] = hwm
+        return values
+
+    # etl-entities v1 uses pydantic v1 models
+    # which are not compatible with pydantic v2.
+    # using a plain validator here
+    @field_validator("hwm", mode="plain")
+    @classmethod
+    def _validate_hwm(cls, hwm, info: ValidationInfo):
+        if not hwm:
+            return None
+
+        if not isinstance(hwm, FileHWM):
+            hwm = HWMTypeRegistry.parse(hwm)
+
+        if not isinstance(hwm, FileHWM):
+            msg = f"Expected FileHWM, got {hwm.__class__.__name__}"
+            raise ValueError(msg)  # noqa: TRY004
+
+        hwm = cast("FileHWM", hwm)
+        source_path = info.data.get("source_path")
+        if not hwm.entity:
             hwm = hwm.copy(update={"entity": source_path})
 
-        if hwm and hwm.entity != source_path:
+        if hwm.entity != source_path:
             error_message = textwrap.dedent(
                 f"""
                 Passed `hwm.directory` is different from `source_path`.
@@ -599,11 +615,10 @@ class FileDownloader(BaseModel):
             )
             raise ValueError(error_message)
 
-        values["hwm"] = hwm
-        values["hwm_type"] = None
-        return values
+        return hwm
 
-    @validator("filters", pre=True)
+    @field_validator("filters", mode="before")
+    @classmethod
     def _validate_filters(cls, filters):
         if filters is None:
             warnings.warn(
@@ -623,7 +638,8 @@ class FileDownloader(BaseModel):
 
         return filters
 
-    @validator("limits", pre=True)
+    @field_validator("limits", mode="before")
+    @classmethod
     def _validate_limits(cls, limits):
         if limits is None:
             warnings.warn(
