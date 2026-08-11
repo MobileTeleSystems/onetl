@@ -21,7 +21,7 @@ updates:
       - type:dependency
     versioning-strategy: increase-if-necessary
     ignore:
-      - dependency-name: autodoc-pydantic
+      - dependency-name: etl-entities
         update-types: [version-update:semver-major]
       - dependency-name: pydantic
         update-types: [version-update:semver-major]
