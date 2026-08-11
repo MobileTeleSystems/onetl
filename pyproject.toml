@@ -35,7 +35,7 @@ classifiers = [
 keywords = ["Spark", "ETL", "JDBC", "HWM"]
 requires-python = ">=3.10"
 dependencies = [
-    "etl-entities>=2.6.1,!=3.0.0,!=3.0.1,<4",
+    "etl-entities!=3.0.0,!=3.0.1,<4,>=2.6.1",
     "evacuator>=1.0,<1.1",
     "frozendict",
     "humanize",
@@ -120,8 +120,8 @@ test-mssql = ["pymssql"]
 test-mysql = ["pymysql[rsa]"]
 test-oracle = ["cx_Oracle"]
 test-postgres = ["psycopg2-binary"]
-test-etl-entities-2 = ["etl-entities<3"]
-test-etl-entities-3 = ["etl-entities>=3.0.2,<4"]
+test-etl-entities-2 = ["etl-entities<4"]
+test-etl-entities-3 = ["etl-entities<4,>=3.0.2"]
 test-samba = ["pysmb"]
 "test-spark-3.2" = [
     "pyspark~=3.2.4",
