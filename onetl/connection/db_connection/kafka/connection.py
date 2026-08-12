@@ -5,7 +5,7 @@ import logging
 from contextlib import closing
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from pydantic import ValidationInfo, field_validator, model_validator
+from pydantic import Field, ValidationInfo, field_validator
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -74,8 +74,19 @@ class Kafka(DBConnection):
     addresses : list[str]
         A list of broker addresses, for example `["192.168.1.10:9092", "192.168.1.11:9092"]`.
 
-    cluster : str
-        Cluster name. Used for HWM and lineage.
+        !!! warning
+
+            You should pass at least one of these arguments: `cluster`, `addresses`.
+
+    cluster : str, optional
+        Cluster name.
+
+        This can be used to get broker addresses dynamically, if `addresses` is not set.
+        Requires [Slots.get_cluster_addresses][onetl.connection.db_connection.kafka.slots.KafkaSlots.get_cluster_addresses] hook to be bound.
+
+        !!! warning
+
+            You should pass at least one of these arguments: `cluster`, `addresses`.
 
     auth : KafkaAuth, optional
         Kafka authentication mechanism. `None` means anonymous auth.
@@ -104,6 +115,7 @@ class Kafka(DBConnection):
             },
         )
         ```
+
         !!! warning
 
             Options that populated from connection
@@ -131,7 +143,6 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
             auth=Kafka.ScramAuth(
                 user="me",
                 password="abc",
@@ -150,7 +161,6 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
             auth=Kafka.KerberosAuth(
                 principal="me@example.com",
                 keytab="/path/to/keytab",
@@ -171,7 +181,6 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
             protocol=Kafka.SSLProtocol(
                 # read client certificate and private key from file
                 keystore_type="PEM",
@@ -201,7 +210,6 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
             protocol=Kafka.SSLProtocol(
                 # read server public certificate from file
                 truststore_type="PEM",
@@ -226,7 +234,6 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
             protocol=...,
             auth=...,
             extra={"max.request.size": 1024 * 1024},  # <--
@@ -247,8 +254,8 @@ class Kafka(DBConnection):
     PlaintextProtocol: ClassVar = KafkaPlaintextProtocol
     Slots: ClassVar = KafkaSlots
 
-    cluster: Cluster
-    addresses: list[str]
+    cluster: Cluster | None = None
+    addresses: list[str] = Field(default_factory=list, min_length=1, validate_default=True)
     auth: KafkaAuth | None = None
     protocol: KafkaProtocol = PlaintextProtocol()
     extra: KafkaExtra = KafkaExtra()
@@ -604,29 +611,15 @@ class Kafka(DBConnection):
         return min_offsets, max_offsets
 
     @property
-    def instance_url(self):
-        return "kafka://" + self.cluster
+    def instance_url(self) -> str:
+        if self.cluster:
+            return "kafka://" + self.cluster
+        return "kafka://" + ",".join(sorted(self.addresses))
 
     def __str__(self):
-        return f"{self.__class__.__name__}[{self.cluster}]"
-
-    @model_validator(mode="before")
-    @classmethod
-    def _get_addresses_by_cluster(cls, values):
-        addresses = values.get("addresses")
-        if addresses:
-            return values
-
-        cluster = values.get("cluster")
-        if cluster:
-            cluster_addresses = cls.Slots.get_cluster_addresses(cluster) or []
-            if cluster_addresses:
-                log.debug("|%s| Set cluster %r addresses: %r", cls.__name__, cluster, cluster_addresses)
-                values["addresses"] = cluster_addresses
-                return values
-
-        msg = "Passed empty parameter 'addresses'"
-        raise ValueError(msg)
+        if self.cluster:
+            return f"{self.__class__.__name__}[{self.cluster}]"
+        return f"{self.__class__.__name__}[" + ",".join(sorted(self.addresses)) + "]"
 
     @field_validator("cluster", mode="before")
     @classmethod
@@ -648,22 +641,23 @@ class Kafka(DBConnection):
     @classmethod
     def _validate_addresses(cls, value, info: ValidationInfo):
         cluster = info.data.get("cluster")
-        if not cluster:
-            return value
 
         log.debug("|%s| Normalizing addresses %r names...", cls.__name__, value)
 
-        validated_addresses = [cls.Slots.normalize_address(address, cluster) or address for address in value]
-        if validated_addresses != value:
-            log.debug("|%s| Got %r", cls.__name__, validated_addresses)
+        addresses = [cls.Slots.normalize_address(address, cluster) or address for address in value]
+        if addresses != value:
+            log.debug("|%s| Got %r", cls.__name__, addresses)
 
-        cluster_addresses = set(cls.Slots.get_cluster_addresses(cluster) or [])
-        unknown_addresses = set(validated_addresses) - cluster_addresses
-        if cluster_addresses and unknown_addresses:
-            msg = f"Cluster {cluster!r} does not contain addresses {unknown_addresses!r}"
+        known = []
+        if cluster:
+            known = cls.Slots.get_cluster_addresses(cluster) or []
+
+        unknown = (set(addresses) - set(known)) if known else set()
+        if unknown:
+            msg = f"Cluster {cluster!r} does not contain addresses {sorted(unknown)!r}"
             raise ValueError(msg)
 
-        return validated_addresses
+        return addresses or known
 
     @field_validator("spark", mode="before")
     @classmethod

@@ -33,7 +33,6 @@ def test_kafka_strategy_incremental(
 
     kafka = Kafka(
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
         spark=spark,
     )
 
@@ -132,7 +131,6 @@ def test_kafka_strategy_incremental_nothing_to_read(
 
     kafka = Kafka(
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
         spark=spark,
     )
 
@@ -252,7 +250,6 @@ def test_kafka_strategy_incremental_with_new_partition(
 
     kafka = Kafka(
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
         spark=spark,
     )
 

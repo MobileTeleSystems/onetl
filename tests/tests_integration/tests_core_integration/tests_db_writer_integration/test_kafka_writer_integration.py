@@ -69,7 +69,6 @@ def test_kafka_writer(spark, kafka_processing, kafka_spark_df):
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     writer = DBWriter(
@@ -98,7 +97,6 @@ def test_kafka_writer_no_value_column_error(spark, kafka_processing, kafka_spark
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     writer = DBWriter(
@@ -136,7 +134,6 @@ def test_kafka_writer_invalid_column_error(
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     writer = DBWriter(
@@ -159,7 +156,6 @@ def test_kafka_writer_key_column(spark, kafka_processing, kafka_spark_df):
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     writer = DBWriter(
@@ -185,7 +181,6 @@ def test_kafka_writer_topic_column(spark, kafka_processing, caplog, kafka_spark_
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     writer = DBWriter(
@@ -210,7 +205,6 @@ def test_kafka_writer_partition_column(spark, kafka_processing, kafka_spark_df):
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     writer = DBWriter(
@@ -232,7 +226,6 @@ def test_kafka_writer_headers(spark, kafka_processing, kafka_spark_df):
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     writer = DBWriter(
@@ -258,7 +251,6 @@ def test_kafka_writer_headers_without_include_headers_fail(spark, kafka_processi
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     writer = DBWriter(
@@ -280,7 +272,6 @@ def test_kafka_writer_mode(spark, kafka_processing, kafka_spark_df):
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     writer = DBWriter(
@@ -307,7 +298,6 @@ def test_kafka_writer_mode_error(spark, kafka_processing, kafka_spark_df):
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     writer = DBWriter(
