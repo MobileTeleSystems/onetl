@@ -78,9 +78,9 @@ class KafkaSlots:
 
     @slot
     @staticmethod
-    def normalize_address(address: str, cluster: str) -> str | None:
+    def normalize_address(address: str, cluster: str | None) -> str | None:
         """
-        Normalize the given broker address for a specific Kafka cluster.
+        Normalize the given broker address.
 
         This can be used to format the broker address according to specific rules, such as adding default ports.
 
@@ -90,8 +90,10 @@ class KafkaSlots:
         ----------
         address : str
             The original broker address.
-        cluster : str
+        cluster : str, optional
             The Kafka cluster name for which the address should be normalized.
+
+            !!! info "Since 0.17.0 this parameter is optional"
 
         Returns
         -------

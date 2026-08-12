@@ -139,115 +139,46 @@ def test_kafka_read_options_allowed(option, value):
     assert getattr(options, option) == value
 
 
+def test_kafka_empty_addresses(spark_mock):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("List should have at least 1 item after validation"),
+    ):
+        Kafka(spark=spark_mock)
+
+
+def test_kafka_with_addresses(spark_mock):
+    conn = Kafka(
+        spark=spark_mock,
+        addresses=["192.168.1.2", "192.168.1.1"],
+    )
+    assert not conn.auth
+    assert conn.addresses == ["192.168.1.2", "192.168.1.1"]
+    assert conn.cluster is None
+
+    assert conn.instance_url == "kafka://192.168.1.1,192.168.1.2"
+    assert str(conn) == "Kafka[192.168.1.1,192.168.1.2]"
+
+
+def test_kafka_with_cluster_and_addresses(spark_mock):
+    conn = Kafka(
+        spark=spark_mock,
+        cluster="some_cluster",
+        addresses=["192.168.1.2", "192.168.1.1"],
+    )
+
+    assert conn.addresses == ["192.168.1.2", "192.168.1.1"]
+    assert conn.cluster == "some_cluster"
+
+    assert conn.instance_url == "kafka://some_cluster"
+    assert str(conn) == "Kafka[some_cluster]"
+
+
 @pytest.mark.parametrize("value", [True, False])
 @pytest.mark.parametrize("options_class", [Kafka.ReadOptions, Kafka.WriteOptions])
 def test_kafka_options_include_headers(options_class, value):
     options = options_class(includeHeaders=value)
     assert options.include_headers == value
-
-
-def test_kafka_basic_auth_get_jaas_conf(spark_mock):
-    conn = Kafka(
-        spark=spark_mock,
-        cluster="some_cluster",
-        addresses=["192.168.1.1"],
-        auth=Kafka.BasicAuth(
-            user="user",
-            password="passwd",
-        ),
-    )
-
-    assert conn.auth.user == "user"
-    assert conn.cluster == "some_cluster"
-    assert conn.auth.password != "passwd"
-    assert conn.auth.password.get_secret_value() == "passwd"
-    assert conn.addresses == ["192.168.1.1"]
-
-    assert conn.instance_url == "kafka://some_cluster"
-    assert str(conn) == "Kafka[some_cluster]"
-
-
-def test_kafka_anon_auth(spark_mock):
-    conn = Kafka(
-        spark=spark_mock,
-        cluster="some_cluster",
-        addresses=["192.168.1.1"],
-    )
-    assert not conn.auth
-    assert conn.cluster == "some_cluster"
-    assert conn.addresses == ["192.168.1.1"]
-
-    assert conn.instance_url == "kafka://some_cluster"
-    assert str(conn) == "Kafka[some_cluster]"
-
-
-@pytest.mark.parametrize("digest", ["SHA-256", "SHA-512"])
-def test_kafka_scram_auth(spark_mock, digest):
-    conn = Kafka(
-        spark=spark_mock,
-        cluster="some_cluster",
-        addresses=["192.168.1.1"],
-        auth=Kafka.ScramAuth(
-            user="user",
-            password="passwd",
-            digest=digest,
-        ),
-    )
-
-    assert conn.auth.user == "user"
-    assert conn.cluster == "some_cluster"
-    assert conn.auth.password != "passwd"
-    assert conn.auth.password.get_secret_value() == "passwd"
-    assert conn.auth.digest == digest
-    assert conn.addresses == ["192.168.1.1"]
-
-    assert conn.instance_url == "kafka://some_cluster"
-    assert str(conn) == "Kafka[some_cluster]"
-
-
-def test_kafka_auth_keytab(spark_mock, create_keytab):
-    conn = Kafka(
-        spark=spark_mock,
-        cluster="some_cluster",
-        addresses=["192.168.1.1"],
-        auth=Kafka.KerberosAuth(
-            principal="user",
-            keytab=create_keytab,
-        ),
-    )
-
-    assert conn.auth.principal == "user"
-    assert conn.cluster == "some_cluster"
-    assert conn.addresses == ["192.168.1.1"]
-
-    assert conn.instance_url == "kafka://some_cluster"
-    assert str(conn) == "Kafka[some_cluster]"
-
-
-def test_kafka_empty_addresses(spark_mock):
-    with pytest.raises(
-        ValueError,
-        match=re.escape("Passed empty parameter 'addresses'"),
-    ):
-        Kafka(
-            spark=spark_mock,
-            password="passwd",
-            user="user",
-            cluster="some_cluster",
-            addresses=[],
-        )
-
-
-def test_kafka_empty_cluster(spark_mock):
-    with pytest.raises(ValueError, match=" Field required"):
-        Kafka(
-            spark=spark_mock,
-            addresses=["192.168.1.1"],
-            auth=Kafka.BasicAuth(
-                password="passwd",
-                user="user",
-            ),
-        )
 
 
 @pytest.mark.parametrize(
@@ -502,7 +433,7 @@ def test_kafka_scram_auth_unknown_options(option, caplog):
 
 
 @pytest.mark.parametrize("digest", ["SHA-256", "SHA-512"])
-def test_kafka_scram_auth_get_jaas_conf(spark_mock, digest):
+def test_kafka_scram_auth(spark_mock, digest):
     kafka = Kafka(
         spark=spark_mock,
         addresses=["some_address"],
@@ -751,6 +682,21 @@ def test_kafka_normalize_cluster_name_hook(request, spark_mock):
     assert Kafka(cluster="KAFKA-CLUSTER", spark=spark_mock, addresses=["192.168.1.1"]).cluster == "kafka-cluster"
 
 
+def test_kafka_no_get_known_clusters_hook(spark_mock):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("List should have at least 1 item after validation"),
+    ):
+        Kafka(
+            spark=spark_mock,
+            cluster="some_cluster",  # without hook there is no source for addresses
+            auth=Kafka.BasicAuth(
+                password="passwd",
+                user="user",
+            ),
+        )
+
+
 def test_kafka_get_known_clusters_hook(request, spark_mock):
     @Kafka.Slots.get_known_clusters.bind
     @hook
@@ -769,7 +715,7 @@ def test_kafka_get_known_clusters_hook(request, spark_mock):
 def test_kafka_normalize_address_hook(request, spark_mock):
     @Kafka.Slots.normalize_address.bind
     @hook
-    def normalize_address(address: str, cluster: str):
+    def normalize_address(address: str, cluster: str | None):
         if cluster == "kafka-cluster":
             return f"{address}:9093"
         if cluster == "local":
@@ -797,7 +743,8 @@ def test_kafka_get_cluster_addresses_hook(request, spark_mock):
         "192.168.1.2",
     ]
 
-    with pytest.raises(ValueError, match=r"Cluster 'kafka-cluster' does not contain addresses \{'192.168.1.3'\}"):
+    msg = "Cluster 'kafka-cluster' does not contain addresses ['192.168.1.3']"
+    with pytest.raises(ValueError, match=re.escape(msg)):
         Kafka(cluster="kafka-cluster", spark=spark_mock, addresses=["192.168.1.1", "192.168.1.3"])
 
 

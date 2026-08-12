@@ -78,7 +78,6 @@ def test_kafka_reader(spark, processing, kafka_dataframe_schema, kafka_topic):
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     reader = DBReader(
@@ -100,7 +99,6 @@ def test_kafka_reader_columns_and_types_without_headers(spark, processing, kafka
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     reader = DBReader(
@@ -120,7 +118,6 @@ def test_kafka_reader_columns_and_types_with_headers(spark, processing, kafka_sc
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     # Check that the DataFrame also has a "headers" column when includeHeaders=True
@@ -142,7 +139,6 @@ def test_kafka_reader_topic_does_not_exist(spark, processing):
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     reader = DBReader(
@@ -162,7 +158,6 @@ def test_kafka_reader_with_group_id(group_id_option, spark, processing, kafka_da
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
         extra={group_id_option: "test"},
     )
 
@@ -189,7 +184,6 @@ def test_kafka_reader_snapshot_nothing_to_read(spark, processing, kafka_datafram
     kafka = Kafka(
         spark=spark,
         addresses=[f"{processing.host}:{processing.port}"],
-        cluster="cluster",
     )
 
     reader = DBReader(

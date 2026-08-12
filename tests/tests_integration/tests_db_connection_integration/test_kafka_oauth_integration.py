@@ -12,7 +12,6 @@ def test_kafka_oauth2_client_credentials_read_write(spark, processing):
     topic = f"oauth_{secrets.token_hex(5)}"
     kafka = Kafka(
         addresses=[f"{processing.oauth_host}:{processing.oauth_port}"],
-        cluster="cluster",
         spark=spark,
         auth=Kafka.OAuth2ClientCredentials(
             client_id=processing.oauth_client_id,
@@ -34,7 +33,6 @@ def test_kafka_oauth2_client_credentials_read_write(spark, processing):
 def test_kafka_oauth2_client_credentials_invalid_secret(spark, processing):
     kafka = Kafka(
         addresses=[f"{processing.oauth_host}:{processing.oauth_port}"],
-        cluster="cluster",
         spark=spark,
         auth=Kafka.OAuth2ClientCredentials(
             client_id=processing.oauth_client_id,

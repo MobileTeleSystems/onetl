@@ -14,7 +14,6 @@ def test_kafka_check_plaintext_anonymous(spark, caplog):
 
     kafka = Kafka(
         addresses=[f"{kafka_processing.host}:{kafka_processing.port}"],
-        cluster="cluster",
         spark=spark,
     )
     with caplog.at_level(logging.INFO):
@@ -23,7 +22,7 @@ def test_kafka_check_plaintext_anonymous(spark, caplog):
     assert "|Kafka|" in caplog.text
     assert "addresses = [" in caplog.text
     assert f"'{kafka_processing.host}:{kafka_processing.port}'" in caplog.text
-    assert "cluster = 'cluster'" in caplog.text
+    assert "cluster = None" in caplog.text
     assert "protocol = KafkaPlaintextProtocol()" in caplog.text
     assert "auth = None" in caplog.text
     assert "extra = {}" in caplog.text
@@ -38,7 +37,6 @@ def test_kafka_check_plaintext_basic_auth(spark, caplog):
 
     kafka = Kafka(
         addresses=[f"{kafka_processing.host}:{kafka_processing.sasl_port}"],
-        cluster="cluster",
         spark=spark,
         auth=Kafka.BasicAuth(
             username=kafka_processing.user,
@@ -51,7 +49,7 @@ def test_kafka_check_plaintext_basic_auth(spark, caplog):
     assert "|Kafka|" in caplog.text
     assert "addresses = [" in caplog.text
     assert f"'{kafka_processing.host}:{kafka_processing.sasl_port}'" in caplog.text
-    assert "cluster = 'cluster'" in caplog.text
+    assert "cluster = None" in caplog.text
     assert "protocol = KafkaPlaintextProtocol()" in caplog.text
     assert f"auth = KafkaBasicAuth(user='{kafka_processing.user}', password=SecretStr('**********'))" in caplog.text
     assert "extra = {}" in caplog.text
@@ -67,7 +65,6 @@ def test_kafka_check_plaintext_scram_auth(digest, spark, caplog):
 
     kafka = Kafka(
         addresses=[f"{kafka_processing.host}:{kafka_processing.sasl_port}"],
-        cluster="cluster",
         spark=spark,
         auth=Kafka.ScramAuth(
             username=kafka_processing.user,
@@ -81,7 +78,7 @@ def test_kafka_check_plaintext_scram_auth(digest, spark, caplog):
     assert "|Kafka|" in caplog.text
     assert "addresses = [" in caplog.text
     assert f"'{kafka_processing.host}:{kafka_processing.sasl_port}'" in caplog.text
-    assert "cluster = 'cluster'" in caplog.text
+    assert "cluster = None" in caplog.text
     assert "protocol = KafkaPlaintextProtocol()" in caplog.text
     assert (
         f"auth = KafkaScramAuth(user='{kafka_processing.user}', password=SecretStr('**********'), digest='{digest}')"
@@ -95,7 +92,6 @@ def test_kafka_check_plaintext_scram_auth(digest, spark, caplog):
 def test_kafka_check_error(spark):
     kafka = Kafka(
         addresses=["fake:9092"],
-        cluster="cluster",
         spark=spark,
     )
     with pytest.raises(RuntimeError, match="Connection is unavailable"):
