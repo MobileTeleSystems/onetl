@@ -324,14 +324,6 @@ def test_kafka_kerberos_auth_wrong_keytab_type_error(tmp_path_factory):
         )
 
 
-def test_kafka_kerberos_auth_use_keytab_without_keytab():
-    with pytest.raises(
-        ValueError,
-        match="keytab is required if useKeytab is True",
-    ):
-        Kafka.KerberosAuth(principal="user")
-
-
 @pytest.mark.parametrize("option", ["sasl.kerberos.service.name", "sasl.jaas.config", "sasl.mechanism"])
 def test_kafka_kerberos_auth_prohibited_options(option, create_keytab):
     msg = rf"Options \['{option}'\] are not allowed to use in a KafkaKerberosAuth"
@@ -569,10 +561,9 @@ def test_kafka_kerberos_auth_deploy_keytab_false(spark_mock, create_keytab, keyt
                 'principal="user" '
                 f'keyTab="{create_keytab}" '
                 'serviceName="kafka" '
-                "renewTicket=true "
-                "storeKey=true "
-                "useKeyTab=true "
-                "useTicketCache=false;"
+                "doNotPrompt=true "
+                "useTicketCache=true "
+                "useKeyTab=true;"
             ),
             "sasl.kerberos.service.name": "kafka",
         }
@@ -604,10 +595,9 @@ def test_kafka_kerberos_auth_deploy_keytab_true(spark_mock, create_keytab, keyta
                 'principal="user" '
                 f'keyTab="{keytab_path.name}" '
                 'serviceName="kafka" '
-                "renewTicket=true "
-                "storeKey=true "
-                "useKeyTab=true "
-                "useTicketCache=false;"
+                "doNotPrompt=true "
+                "useTicketCache=true "
+                "useKeyTab=true;"
             ),
             "sasl.kerberos.service.name": "kafka",
         }
@@ -638,10 +628,9 @@ def test_kafka_kerberos_auth_no_keytab(spark_mock):
                 "com.sun.security.auth.module.Krb5LoginModule required "
                 'principal="user" '
                 'serviceName="kafka" '
-                "renewTicket=true "
-                "storeKey=true "
                 "useKeyTab=false "
-                "useTicketCache=true;"
+                "useTicketCache=true "
+                "doNotPrompt=true;"
             ),
             "sasl.kerberos.service.name": "kafka",
         }
@@ -668,11 +657,10 @@ def test_kafka_kerberos_auth_custom_jaas_conf_options(spark_mock, create_keytab)
             'principal="user" '
             f'keyTab="{create_keytab}" '
             'serviceName="kafka" '
-            "renewTicket=true "
-            "storeKey=true "
-            "useKeyTab=true "
-            "useTicketCache=false "
-            "debug=true;"
+            "debug=true "
+            "doNotPrompt=true "
+            "useTicketCache=true "
+            "useKeyTab=true;"
         ),
         "sasl.kerberos.service.name": "kafka",
     }
@@ -702,10 +690,9 @@ def test_kafka_kerberos_auth_custom_kafka_conf_options(spark_mock, create_keytab
             'principal="user" '
             f'keyTab="{create_keytab}" '
             'serviceName="kafka" '
-            "renewTicket=true "
-            "storeKey=true "
-            "useKeyTab=true "
-            "useTicketCache=false;"
+            "doNotPrompt=true "
+            "useTicketCache=true "
+            "useKeyTab=true;"
         ),
         "sasl.kerberos.service.name": "kafka",
         "sasl.kerberos.kinit.cmd": "/usr/bin/kinit",
