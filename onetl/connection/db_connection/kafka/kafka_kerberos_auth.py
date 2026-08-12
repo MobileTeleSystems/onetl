@@ -5,7 +5,7 @@ import os
 import shutil
 from typing import TYPE_CHECKING, cast
 
-from pydantic import ConfigDict, Field, PrivateAttr, field_validator, model_validator
+from pydantic import ConfigDict, Field, PrivateAttr, field_validator
 
 from onetl._util.file import get_file_hash, readable_local_file
 from onetl._util.spark import stringify
@@ -20,16 +20,12 @@ log = logging.getLogger(__name__)
 
 KNOWN_OPTIONS = frozenset(
     (
-        "clearPass",
         "debug",
-        "doNotPrompt",
-        "isInitiator",
         "refreshKrb5Config",
         "renewTGT",
-        "storePass",
+        "storeKey",
         "ticketCache",
-        "tryFirstPass",
-        "useFirstPass",
+        "useTicketCache",
         "sasl.kerberos.*",
     ),
 )
@@ -86,11 +82,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
     ```python
     from onetl.connection import Kafka
 
-    auth = Kafka.KerberosAuth(
-        principal="user",
-        use_keytab=False,
-        use_ticket_cache=True,
-    )
+    auth = Kafka.KerberosAuth(principal="user")
     ```
     Pass custom options for JAAS config and Kafka SASL:
 
@@ -115,10 +107,6 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
     keytab: LocalPath | None = Field(default=None, alias="keyTab")
     deploy_keytab: bool = True
     service_name: str = Field(default="kafka", alias="serviceName")
-    renew_ticket: bool = Field(default=True, alias="renewTicket")
-    store_key: bool = Field(default=True, alias="storeKey")
-    use_keytab: bool = Field(default=True, alias="useKeyTab")
-    use_ticket_cache: bool = Field(default=False, alias="useTicketCache")
 
     _keytab_path: LocalPath | None = PrivateAttr(default=None)
     model_config = ConfigDict(
@@ -134,8 +122,14 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
             exclude_none=True,
             exclude={"deploy_keytab"},
         )
+        options.setdefault("doNotPrompt", True)  # default False
+        options.setdefault("useTicketCache", True)  # default False
+
         if self.keytab:
+            options["useKeyTab"] = True
             options["keyTab"] = self._prepare_keytab(kafka)
+        else:
+            options["useKeyTab"] = False
 
         jaas_conf = stringify({key: value for key, value in options.items() if not key.startswith("sasl.")}, quote=True)
         jaas_conf_items = [f"{key}={value}" for key, value in jaas_conf.items()]
@@ -169,13 +163,6 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
     @classmethod
     def _validate_keytab(cls, value):
         return readable_local_file(LocalPath(value).expanduser().resolve())
-
-    @model_validator(mode="after")
-    def _check_use_keytab(self):
-        if self.use_keytab and not self.keytab:
-            msg = "keytab is required if useKeytab is True"
-            raise ValueError(msg)
-        return self
 
     def _prepare_keytab(self, kafka: "Kafka") -> str:
         keytab = cast("LocalPath", self.keytab)
