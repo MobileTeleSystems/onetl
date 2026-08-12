@@ -49,7 +49,7 @@ class SparkHDFSSlots:
 
     @slot
     @staticmethod
-    def normalize_namenode_host(host: str, cluster: str) -> str | None:
+    def normalize_namenode_host(host: str, cluster: str | None) -> str | None:
         """
         Normalize namenode host passed into SparkHDFS constructor.
 
@@ -62,8 +62,10 @@ class SparkHDFSSlots:
         host : str
             Namenode host (raw)
 
-        cluster : str
+        cluster : str, optional
             Cluster name (normalized)
+
+            !!! info "Since 0.17.0 this parameter is optional"
 
         Returns
         -------
@@ -204,7 +206,7 @@ class SparkHDFSSlots:
     @staticmethod
     def get_ipc_port(cluster: str) -> int | None:
         """
-        Get IPC port number for a specific cluster.
+        Get IPC port number.
 
         Used by constructor to automatically set port number if omitted.
 
@@ -241,7 +243,7 @@ class SparkHDFSSlots:
 
     @slot
     @staticmethod
-    def is_namenode_active(host: str, cluster: str) -> bool | None:
+    def is_namenode_active(host: str, cluster: str | None) -> bool | None:
         """
         Check whether a namenode of a specified cluster is active (=not standby) or not.
 
@@ -262,8 +264,10 @@ class SparkHDFSSlots:
         host : str
             Namenode host (normalized)
 
-        cluster : str
+        cluster : str, optional
             Cluster name (normalized)
+
+            !!! info "Since 0.17.0 this parameter is optional"
 
         Returns
         -------

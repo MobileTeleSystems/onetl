@@ -155,7 +155,7 @@ class Hive(DBConnection):
 
     @property
     def instance_url(self) -> str:
-        return self.cluster
+        return "hive://" + self.cluster
 
     def __str__(self):
         return f"{self.__class__.__name__}[{self.cluster}]"
