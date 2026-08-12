@@ -23,7 +23,7 @@ def test_hive_missing_args(spark_mock):
 
 def test_hive_instance_url(spark_mock):
     hive = Hive(cluster="some-cluster", spark=spark_mock)
-    assert hive.instance_url == "some-cluster"
+    assert hive.instance_url == "hive://some-cluster"
 
 
 def test_hive_spark_stopped(spark_stopped):

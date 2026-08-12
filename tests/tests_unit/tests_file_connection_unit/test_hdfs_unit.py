@@ -36,7 +36,7 @@ def test_hdfs_connection_with_cluster():
     assert not conn.user
     assert not conn.password
     assert not conn.keytab
-    assert conn.instance_url == "rnd-dwh"
+    assert conn.instance_url == "hdfs://rnd-dwh"
     assert str(conn) == "HDFS[rnd-dwh]"
 
 
@@ -46,7 +46,7 @@ def test_hdfs_connection_with_cluster_and_host():
     conn = HDFS(cluster="rnd-dwh", host="some-host.domain.com")
     assert conn.cluster == "rnd-dwh"
     assert conn.host == "some-host.domain.com"
-    assert conn.instance_url == "rnd-dwh"
+    assert conn.instance_url == "hdfs://rnd-dwh"
     assert str(conn) == "HDFS[rnd-dwh]"
 
 

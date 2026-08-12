@@ -4,7 +4,7 @@ import getpass
 import logging
 import os
 from contextlib import suppress
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from pydantic import Field, PrivateAttr, ValidationInfo, field_validator, model_validator
 
@@ -145,7 +145,7 @@ class SparkHDFS(SparkFileDFConnection):
 
     Slots: ClassVar = SparkHDFSSlots
 
-    cluster: Cluster
+    cluster: Cluster | None = None
     host: Host | None = None
     ipc_port: int = Field(alias=avoid_alias("port"), default=DEFAULT_IPC_PORT, validate_default=True)  # type: ignore[literal-required]
 
@@ -156,11 +156,15 @@ class SparkHDFS(SparkFileDFConnection):
         return RemotePath(os.fspath(path))
 
     @property
-    def instance_url(self):
-        return self.cluster
+    def instance_url(self) -> str:
+        if self.cluster:
+            return "hdfs://" + self.cluster
+        return f"hdfs://{self.host}"
 
     def __str__(self):
-        return f"HDFS[{self.cluster}]"
+        if self.cluster:
+            return f"HDFS[{self.cluster}]"
+        return f"HDFS[{self.host}]"
 
     def __enter__(self):
         return self
@@ -252,6 +256,18 @@ class SparkHDFS(SparkFileDFConnection):
         log.info("|%s|   Got %r", cls.__name__, current_cluster)
         return cls(cluster=current_cluster, spark=spark)  # type: ignore[arg-type]
 
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_cluster_or_hostname_set(cls, values):
+        host = values.get("host")
+        cluster = values.get("cluster")
+
+        if not cluster and not host:
+            msg = "You should pass either host or cluster name"
+            raise ValueError(msg)
+
+        return values
+
     @field_validator("cluster", mode="before")
     @classmethod
     def _validate_cluster_name(cls, cluster):
@@ -272,8 +288,6 @@ class SparkHDFS(SparkFileDFConnection):
     @classmethod
     def _validate_host_name(cls, host, info: ValidationInfo):
         cluster = info.data.get("cluster")
-        if not cluster:
-            return host
 
         log.debug("|%s| Normalizing namenode %r host...", cls.__name__, host)
         namenode = cls.Slots.normalize_namenode_host(host, cluster) or host
@@ -308,22 +322,23 @@ class SparkHDFS(SparkFileDFConnection):
 
     def _get_active_namenode(self) -> str:
         class_name = self.__class__.__name__
-        log.info("|%s| Detecting active namenode of cluster %r ...", class_name, self.cluster)
+        cluster = cast("str", self.cluster)
+        log.info("|%s| Detecting active namenode of cluster %r ...", class_name, cluster)
 
-        namenodes = self.Slots.get_cluster_namenodes(self.cluster)
+        namenodes = self.Slots.get_cluster_namenodes(cluster)
         if not namenodes:
-            msg = f"Cannot get list of namenodes for a cluster {self.cluster!r}"
+            msg = f"Cannot get list of namenodes for a cluster {cluster!r}"
             raise RuntimeError(msg)
 
         nodes_len = len(namenodes)
         for i, namenode in enumerate(namenodes, start=1):
             log.debug("|%s|   Trying namenode %r (%d of %d) ...", class_name, namenode, i, nodes_len)
-            if self.Slots.is_namenode_active(namenode, self.cluster):
+            if self.Slots.is_namenode_active(namenode, cluster):
                 log.info("|%s|     Node %r is active!", class_name, namenode)
                 return namenode
             log.debug("|%s|     Node %r is not active, skipping", class_name, namenode)
 
-        msg = f"Cannot detect active namenode for cluster {self.cluster!r}"
+        msg = f"Cannot detect active namenode for cluster {cluster!r}"
         raise RuntimeError(msg)
 
     def _get_host(self) -> str:

@@ -312,7 +312,7 @@ class HDFS(FileConnection, RenameDirMixin):
     @property
     def instance_url(self) -> str:
         if self.cluster:
-            return self.cluster
+            return "hdfs://" + self.cluster
         return f"hdfs://{self.host}:{self.webhdfs_port}"
 
     def __str__(self):
@@ -476,32 +476,26 @@ class HDFS(FileConnection, RenameDirMixin):
         raise RuntimeError(msg)
 
     def _get_host(self) -> str:
-        host = cast("str", self.host)
-
-        if not host and self.cluster:
+        if not self.host:
             return self._get_active_namenode()
 
         # host is passed explicitly or cluster not set
         class_name = self.__class__.__name__
         if self.cluster:
-            log.info("|%s| Detecting if namenode %r of cluster %r is active...", class_name, host, self.cluster)
+            log.info("|%s| Detecting if namenode %r of cluster %r is active...", class_name, self.host, self.cluster)
         else:
-            log.info("|%s| Detecting if namenode %r is active...", class_name, host)
+            log.info("|%s| Detecting if namenode %r is active...", class_name, self.host)
 
-        is_active = self.Slots.is_namenode_active(cast("str", host), self.cluster)
+        is_active = self.Slots.is_namenode_active(self.host, self.cluster)
         if is_active:
-            log.info("|%s|   Namenode %r is active!", class_name, host)
-            return host
+            log.info("|%s|   Namenode %r is active!", class_name, self.host)
+            return self.host
 
         if is_active is None:
             log.debug("|%s|   No hooks, skip validation", class_name)
-            return host
+            return self.host
 
-        if self.cluster:
-            msg = f"Host {host!r} is not an active namenode of cluster {self.cluster!r}"
-            raise RuntimeError(msg)
-
-        msg = f"Host {host!r} is not an active namenode"
+        msg = f"Host {self.host!r} is not an active namenode of cluster {self.cluster!r}"
         raise RuntimeError(msg)
 
     def _get_conn_str(self) -> str:
