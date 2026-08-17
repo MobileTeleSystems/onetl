@@ -89,6 +89,7 @@ plugins:
   #         name: Русский
   #         build: false
   - towncrier
+  - git-revision-date-localized
 
 markdown_extensions:
   - footnotes
