@@ -24,11 +24,11 @@ class FileSizeRange(BaseFileFilter, FrozenModel):
     Parameters
     ----------
 
-    min : int | str, optional
+    min
 
         Minimal allowed file size. `None` means no limit.
 
-    max : int | str, optional
+    max
 
         Maximum allowed file size. `None` means no limit.
 

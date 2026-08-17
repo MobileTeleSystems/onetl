@@ -50,18 +50,34 @@ plugins:
         python:
           paths: [..]
           options:
+            show_bases: false
             show_source: false
-            show_root_heading: false
+            show_root_heading: true
             show_root_toc_entry: false
             show_root_full_path: false
             heading_level: 3
             docstring_style: numpy
             docstring_section_style: list
-            inherited_members: true
+            inherited_members: false
+            show_if_no_docstring: false
+            show_docstring_attributes: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            unwrap_annotated: true
+            parameter_headings: true
+            show_labels: false
+            scoped_crossrefs: true
+            docstring_options:
+              warn_unknown_params: false
+              warn_missing_types: false
             extensions:
               - scripts/griffe_expand_refs.py:ExpandShortRefs
-              - griffe_inherited_docstrings
-            # - griffe_pydantic: {schema: false}
+              - griffe_fieldz:
+                  include_inherited: true
+                  include_private: false
+                  add_fields_to: docstring-parameters
+                  remove_fields_from_members: true
+                  strip_annotated: true
   # - i18n:
   #     docs_structure: folder
   #     languages:

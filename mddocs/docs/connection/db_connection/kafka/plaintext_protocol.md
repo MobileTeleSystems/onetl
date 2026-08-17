@@ -4,4 +4,3 @@
 ::: onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol
     options:
         inherited_members: true
-        show_root_heading: true

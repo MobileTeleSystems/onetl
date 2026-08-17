@@ -15,5 +15,3 @@ build:
       - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH python -m pip list -v
     pre_build:
       - python mddocs/scripts/generate_anchors.py
-      - python mddocs/scripts/fix_refs.py
-      - python mddocs/scripts/links2anchors.py

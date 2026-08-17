@@ -27,18 +27,18 @@ class RenameDirMixin(BaseFileConnection):
 
         Parameters
         ----------
-        source_dir_path : os.PathLike | str
+        source_dir_path
             Old directory path
 
-        target_dir_path : os.PathLike | str
+        target_dir_path
             New directory path
 
-        replace : bool, optional
+        replace
             If `True`, existing directory will be replaced.
 
         Returns
         -------
-        PathWithStatsProtocol
+        :
             New directory path with stats.
 
         Raises

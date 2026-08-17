@@ -39,4 +39,3 @@ Method above accepts [OracleWriteOptions][onetl.connection.db_connection.oracle.
 ::: onetl.connection.db_connection.oracle.options.OracleWriteOptions
     options:
         inherited_members: true
-        show_root_heading: true

@@ -112,7 +112,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         options: JDBCSQLOptions | dict | None = None,
     ) -> "DataFrame":
         """
-        **Lazily** execute SELECT statement **on Spark executor** and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        **Lazily** execute SELECT statement **on Spark executor** and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Same as `spark.read.jdbc(query)`.
 
@@ -120,18 +120,17 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
         Parameters
         ----------
-        query : str
+        query
 
             SQL query to be executed.
 
-        options : dict, [SQLOptions][], optional
+        options
 
             Spark options to be used while fetching data.
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame
-
+        :
             Spark dataframe
 
         """

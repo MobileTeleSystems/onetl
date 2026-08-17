@@ -28,28 +28,42 @@ from onetl.impl import GenericOptions, Host
 
 
 class PostgresExtra(GenericOptions):
-    # allows automatic conversion from text to target column type during write
+    """
+    Extra options for Postgres connection.
+
+    You can pass here any property supported by
+    [Postgres JDBC driver](https://jdbc.postgresql.org/documentation/use/),
+    even if it is not mentioned in this documentation.
+    """
+
     stringtype: str = "unspecified"
+    """
+    Allow automatic conversion from text to target column type during write.
+    """
 
-    # avoid closing connections from server side
-    # while connector is moving data to executors before insert
     tcpKeepAlive: str = "true"
+    """
+    Avoid closing connections from server side while connector is moving data to executors before insert.
+    """
 
-    # x2 on batch writes
     reWriteBatchedInserts: str = "true"
+    """
+    x2 performance on batch writes
+    """
+
     model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class Postgres(JDBCConnection):
-    """PostgreSQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """PostgreSQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on Maven package [org.postgresql:postgresql:42.7.11](https://mvnrepository.com/artifact/org.postgresql/postgresql/42.7.11)
     ([official Postgres JDBC driver](https://jdbc.postgresql.org/)).
 
     !!! info "See also"
 
-        Before using this connector please take into account [postgres-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-postgres-prerequisites][]
 
     !!! success "Added in 0.1.0"
 
@@ -58,29 +72,26 @@ class Postgres(JDBCConnection):
     host : str
         Host of Postgres database. For example: `test.postgres.domain.com` or `193.168.1.11`
 
-    port : int, default: 5432
+    port
         Port of Postgres database
 
-    user : str
+    user
         User for database connection
 
-    password : str
+    password
         Password for database connection
 
-    database : str
+    database
         Database in RDBMS, NOT schema
 
         See [this page](https://www.educba.com/postgresql-database-vs-schema/) for more details
 
-    spark : pyspark.sql.SparkSession
+    spark
         Spark session
 
-    extra : dict, optional
+    extra
         Extra parameters passed directly to JDBC driver.
-        For example: `{"ssl": "false"}`
-
-        See [Postgres JDBC driver properties documentation](https://jdbc.postgresql.org/documentation/use/)
-        for more details
+        For example: `{"ssl": "false"}`.
 
     Examples
     --------
@@ -145,13 +156,13 @@ class Postgres(JDBCConnection):
     @classmethod
     def get_packages(cls, package_version: str | None = None) -> list[str]:
         """
-        Get package names to be downloaded by Spark.  Allows specifying a custom JDBC driver version. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark.  Allows specifying a custom JDBC driver version. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
         Parameters
         ----------
-        package_version : str, optional
+        package_version
             Specifies the version of the PostgreSQL JDBC driver to use.  Defaults to `42.7.11`.
 
         Examples

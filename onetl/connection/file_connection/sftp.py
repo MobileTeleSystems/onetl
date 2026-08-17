@@ -50,17 +50,17 @@ class SFTPExtra(GenericOptions):
 
     Parameters
     ---------
-    host_key_check : bool, optional
+    host_key_check
         Set to `True` to validate the SSH server's host key.
-    timeout : float, optional
+    timeout
         Optional timeout (in seconds) for the TCP connect.
-    banner_timeout : float, optional
+    banner_timeout
         Optional timeout (in seconds) for the SSH banner.
-    auth_timeout : float, optional
+    auth_timeout
         Optional timeout (in seconds) for the SSH authentication.
-    channel_timeout : float, optional
+    channel_timeout
         Optional timeout (in seconds) for the SSH channel.
-    compress : bool, optional
+    compress
         Set to `True` to enable compression.
 
         !!! warning
@@ -79,7 +79,7 @@ class SFTPExtra(GenericOptions):
 
 @support_hooks
 class SFTP(FileConnection, RenameDirMixin):
-    """SFTP file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """SFTP file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Paramiko library](https://pypi.org/project/paramiko/).
 
@@ -93,28 +93,28 @@ class SFTP(FileConnection, RenameDirMixin):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     !!! success "Added in 0.1.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of SFTP source. For example: `192.168.1.19`
 
-    port : int, default: 22
+    port
         Port of SFTP source
 
-    user : str
+    user
         User, which have access to the file source. For example: `someuser`
 
-    password : str, optional
+    password
         Password for SFTP connection, optional.
 
-    key_file : str, optional
+    key_file
         Path to private key file, optional.
 
-    extra : SFTPExtra, optional
+    extra
         Extra options for SFTP connection
 
     Examples

@@ -36,38 +36,38 @@ class MySQLExtra(GenericOptions):
 
 @support_hooks
 class MySQL(JDBCConnection):
-    """MySQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """MySQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on Maven package [com.mysql:mysql-connector-j:9.7.0](https://mvnrepository.com/artifact/com.mysql/mysql-connector-j/9.7.0)
     ([official MySQL JDBC driver](https://dev.mysql.com/doc/connector-j/en/)).
 
     !!! info "See also"
 
-        Before using this connector please take into account [mysql-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-mysql-prerequisites][]
 
     !!! success "Added in 0.1.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of MySQL database. For example: `mysql0012.domain.com` or `192.168.1.11`
 
-    port : int, default: 3306
+    port
         Port of MySQL database
 
-    user : str
+    user
         User for database connection
 
-    password : str
+    password
         Password for database connection
 
-    database : str, optional
+    database
         Default database (schema) to connect
 
-    spark : pyspark.sql.SparkSession
+    spark
         Spark session
 
-    extra : dict, optional
+    extra
         Extra parameters passed directly to JDBC driver.
         For example: `{"useSSL": "false", "allowPublicKeyRetrieval": "true"}`
 
@@ -123,13 +123,13 @@ class MySQL(JDBCConnection):
     def get_packages(cls, package_version: str | None = None) -> list[str]:
         """
         Get package names to be downloaded by Spark.
-        Allows specifying a custom JDBC driver version for MySQL. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Allows specifying a custom JDBC driver version for MySQL. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
         Parameters
         ----------
-        package_version : str, optional
+        package_version
             Specifies the version of the MySQL JDBC driver to use. Defaults to `9.7.0`.
 
             !!! success "Added in 0.11.0"

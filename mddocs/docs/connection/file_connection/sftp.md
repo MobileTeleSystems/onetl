@@ -3,7 +3,6 @@
 
 ::: onetl.connection.file_connection.sftp.SFTP
     options:
-        show_root_heading: true
         members:
             - check
             - path_exists
@@ -24,7 +23,6 @@
 
 ::: onetl.connection.file_connection.sftp.SFTPExtra
     options:
-        show_root_heading: true
         members:
           - host_key_check
           - timeout

@@ -30,7 +30,7 @@ class FileDFReadOptions(ABC):
 
         Returns
         -------
-        pyspark.sql.DataFrameReader
+        :
             DataFrameReader with options applied.
 
         contextlib.AbstractContextManager[DataFrameReader]
@@ -55,7 +55,7 @@ class FileDFWriteOptions(ABC):
 
         Returns
         -------
-        pyspark.sql.DataFrameWriter
+        :
             DataFrameWriter with options applied.
 
         contextlib.AbstractContextManager[DataFrameWriter]
@@ -79,7 +79,7 @@ class BaseFileDFConnection(BaseConnection):
         format: BaseReadableFileFormat | BaseWritableFileFormat,
     ) -> None:
         """
-        Validate if specific file format is supported. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Validate if specific file format is supported. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
@@ -92,7 +92,7 @@ class BaseFileDFConnection(BaseConnection):
     @abstractmethod
     def path_from_string(self, path: os.PathLike | str) -> PurePathProtocol:
         """
-        Convert path from string to object. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Convert path from string to object. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
         """
@@ -115,7 +115,7 @@ class BaseFileDFConnection(BaseConnection):
         options: FileDFReadOptions | None = None,
     ) -> "DataFrame":
         """
-        Read files in some paths list as dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Read files in some paths list as dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
         """
@@ -129,7 +129,7 @@ class BaseFileDFConnection(BaseConnection):
         options: FileDFWriteOptions | None = None,
     ) -> None:
         """
-        Write dataframe as files in some path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Write dataframe as files in some path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
         """

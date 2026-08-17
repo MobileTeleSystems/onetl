@@ -25,7 +25,7 @@ PARQUET_LIBRARY_OPTIONS = frozenset(
 @support_hooks
 class Parquet(ReadWriteFileFormat):
     """
-    Parquet file format (columnar). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    Parquet file format (columnar). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark Parquet Files](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html) file format.
 

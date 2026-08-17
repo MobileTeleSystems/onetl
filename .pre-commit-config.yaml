@@ -98,14 +98,6 @@ repos:
         pass_filenames: false
         priority: 8
 
-      - id: links2anchors
-        name: links2anchors
-        entry: python mddocs/scripts/links2anchors.py
-        language: system
-        types: [markdown]
-        pass_filenames: false
-        priority: 8
-
       - id: generate_anchors
         name: generate_anchors
         entry: python mddocs/scripts/generate_anchors.py

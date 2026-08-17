@@ -50,11 +50,11 @@ def default_hwm_store_class(klass: type[BaseHWMStore]) -> type[BaseHWMStore]:
 @register_hwm_store_class("yaml")
 @support_hooks
 class YAMLHWMStore(BaseHWMStore):
-    r"""YAML **local store** for HWM values. Used as default HWM store. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    r"""YAML **local store** for HWM values. Used as default HWM store. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Parameters
     ----------
-    path : os.PathLike | str
+    path
 
         Folder name there HWM value files will be stored.
 
@@ -64,7 +64,7 @@ class YAMLHWMStore(BaseHWMStore):
         * `C:\Documents and Settings\<User>\Application Data\oneTools\onETL\yml_hwm_store` on Windows
         * `~/Library/Application Support/onETL/yml_hwm_store` on MacOS
 
-    encoding : str, default: "utf-8"
+    encoding
 
         Encoding of files with HWM value
 

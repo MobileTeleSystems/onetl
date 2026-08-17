@@ -26,7 +26,7 @@ PARSE_COLUMN_UNSUPPORTED_OPTIONS = {
 @support_hooks
 class JSON(ReadOnlyFileFormat):
     """
-    JSON file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    JSON file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark JSON](https://spark.apache.org/docs/latest/sql-data-sources-json.html) file format.
 
@@ -233,7 +233,7 @@ class JSON(ReadOnlyFileFormat):
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
     primitivesAsString: bool | None = None
@@ -320,16 +320,16 @@ class JSON(ReadOnlyFileFormat):
 
         Parameters
         ----------
-        column : str | pyspark.sql.Column
+        column
             The name of the column or the column object containing JSON strings/bytes to parse.
 
-        schema : pyspark.sql.types.StructType | pyspark.sql.types.ArrayType | pyspark.sql.types.MapType
+        schema
             The schema to apply when parsing the JSON data.
             This defines the structure of the output DataFrame column.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with deserialized data, with the same structure as the provided schema.
             Column name is the same as input column.
 
@@ -403,12 +403,12 @@ class JSON(ReadOnlyFileFormat):
 
         Parameters
         ----------
-        column : str | pyspark.sql.Column
+        column
             The name of the column or the column object containing the data to serialize to JSON format.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with string JSON data. Column name is the same as input column.
 
         Examples
@@ -445,7 +445,7 @@ class JSON(ReadOnlyFileFormat):
         |-- key: string (nullable = true)
         |-- value: string (nullable = true)
         ```
-        """  # noqa: E501
+        """
         from pyspark.sql import Column, SparkSession
         from pyspark.sql.functions import col, to_json
 

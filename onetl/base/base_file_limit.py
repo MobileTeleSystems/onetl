@@ -11,7 +11,7 @@ class BaseFileLimit(ABC):
     """
     Base file limit interface.
 
-    Limits used by several onETL components, including [file-downloader][] and [file-mover][],
+    Limits used by several onETL components, including [onetl.file.file_downloader.file_downloader.FileDownloader][] and [onetl.file.file_mover.file_mover.FileMover][],
     to determine if internal loop should be stopped.
 
     Unlike file filters, limits have internal state which can be updated or reset.
@@ -28,7 +28,7 @@ class BaseFileLimit(ABC):
 
         Returns
         -------
-        Self
+        :
             Returns a filter of the same type, but with non-reached state.
 
             It could be the same filter or a new one, this is an implementation detail.
@@ -54,12 +54,12 @@ class BaseFileLimit(ABC):
 
         Parameters
         ----------
-        path : onetl.base.path_protocol.PathProtocol
+        path
             Path to check
 
         Returns
         -------
-        bool
+        :
             `True` if limit is reached, `False` otherwise.
 
         Examples
@@ -91,7 +91,7 @@ class BaseFileLimit(ABC):
 
         Returns
         -------
-        bool
+        :
             `True` if limit is reached, `False` otherwise.
 
         Examples

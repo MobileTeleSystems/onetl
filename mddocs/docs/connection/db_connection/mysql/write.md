@@ -44,4 +44,3 @@ Method above accepts [MySQL.WriteOptions][onetl.connection.db_connection.mysql.o
     options:
         inherited_members: true
         members: true
-        show_root_heading: true

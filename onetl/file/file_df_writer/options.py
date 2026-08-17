@@ -83,7 +83,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
             * Directory does not exist
                 Directory is created using all the provided options (`format`, `partition_by`, etc).
 
-            * Directory exists, does not contain partitions, but [partition_by][] is set
+            * Directory exists, does not contain partitions, but partition_by is set
                 Data is appended to a directory, but to partitioned directory structure.
 
                 !!! warning
@@ -92,7 +92,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
                     but Spark will ignore those files while reading,
                     unless using `recursive=True`.
 
-            * Directory exists and contains partitions, but [partition_by][] is not set
+            * Directory exists and contains partitions, but partition_by is not set
                 Data is appended to a directory, but to the root of
                 directory instead of nested partition directories.
 
@@ -101,7 +101,7 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
                     Spark will ignore such files while reading, unless using `recursive=True`.
 
             * Directory exists and contains partitions,
-                but with different partitioning schema than [partition_by][]
+                but with different partitioning schema than partition_by
                 Data is appended to a directory with new partitioning schema.
 
                 !!! warning
@@ -109,15 +109,15 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
                     Spark cannot read directory with multiple partitioning schemas,
                     unless using `recursive=True` to disable partition scanning.
 
-            * Directory exists and partitioned according [partition_by][],
+            * Directory exists and partitioned according partition_by,
                 but partition is present only in dataframe
                 New partition directory is created.
 
-            * Directory exists and partitioned according [partition_by][],
+            * Directory exists and partitioned according partition_by,
                 partition is present in both dataframe and directory
                 New files are added to existing partition directory, existing files are sill present.
 
-            * Directory exists and partitioned according [partition_by][],
+            * Directory exists and partitioned according partition_by,
                 but partition is present only in directory, not dataframe
                 Existing partition is left intact.
 
@@ -137,14 +137,14 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
                 Directory is created using all the provided options
                 (`format`, `partition_by`, etc).
 
-            * Directory exists, does not contain partitions, but [partition_by][] is set
+            * Directory exists, does not contain partitions, but partition_by is set
                 Directory **will be deleted**, and will be created with partitions.
 
-            * Directory exists and contains partitions, but [partition_by][] is not set
+            * Directory exists and contains partitions, but partition_by is not set
                 Directory **will be deleted**, and will be created with partitions.
 
             * Directory exists and contains partitions,
-                but with different partitioning schema than [partition_by][]
+                but with different partitioning schema than partition_by
                 Data is appended to a directory with new partitioning schema.
 
                 !!! warning
@@ -152,16 +152,16 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
                     Spark cannot read directory with multiple partitioning schemas,
                     unless using `recursive=True` to disable partition scanning.
 
-            * Directory exists and partitioned according [partition_by][],
+            * Directory exists and partitioned according partition_by,
                 but partition is present only in dataframe
                 New partition directory is created.
 
-            * Directory exists and partitioned according [partition_by][],
+            * Directory exists and partitioned according partition_by,
                 partition is present in both dataframe and directory
                 Partition directory **will be deleted**,
                 and new one is created with files containing data from dataframe.
 
-            * Directory exists and partitioned according [partition_by][],
+            * Directory exists and partitioned according partition_by,
                 but partition is present only in directory, not dataframe
                 Existing partition is left intact.
 
@@ -203,11 +203,11 @@ class FileDFWriterOptions(FileDFWriteOptions, GenericOptions):
     @slot
     def apply_to_writer(self, writer: "DataFrameWriter") -> "DataFrameWriter":
         """
-        Apply provided format to `pyspark.sql.DataFrameWriter`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Apply provided format to `pyspark.sql.DataFrameWriter`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Returns
         -------
-        pyspark.sql.DataFrameWriter
+        :
             Writer with options applied.
         """
         for method, value in self.model_dump(by_alias=True, exclude_none=True, exclude={"if_exists"}).items():

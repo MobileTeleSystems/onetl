@@ -22,16 +22,16 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
 
     Parameters
     ----------
-    url : str
+    url
         REST catalog server URL
 
-    headers : dict[str, str], optional
+    headers
         Additional HTTP headers to include in requests
 
-    extra : dict[str, str], optional
+    extra
         Additional configuration parameters
 
-    auth : IcebergRESTCatalogAuth, optional
+    auth
         Authentication configuration
 
     Examples

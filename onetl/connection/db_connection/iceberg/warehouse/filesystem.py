@@ -26,10 +26,10 @@ class IcebergFilesystemWarehouse(IcebergWarehouse, FrozenModel):
 
     Parameters
     ----------
-    connection : SparkFileDFConnection
+    connection
         File connection for data storage
 
-    path : str
+    path
         Warehouse path
 
     Examples

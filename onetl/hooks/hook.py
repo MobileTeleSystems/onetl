@@ -29,7 +29,7 @@ class HookPriority(int, Enum):
     "Hooks with this priority will run first."
 
     NORMAL = 0
-    "Hooks with this priority will run after [FIRST][] but before [LAST][]."
+    "Hooks with this priority will run after [onetl.hooks.hook.HookPriority.FIRST][] but before [onetl.hooks.hook.HookPriority.LAST][]."
 
     LAST = 1
     "Hooks with this priority will run last."
@@ -44,18 +44,17 @@ class Hook(Generic[P, T]):
 
     Parameters
     ----------
+    callback
 
-        callback : typing.Callable
+        Some callable object which will be wrapped into a Hook, like function or ContextManager class.
 
-            Some callable object which will be wrapped into a Hook, like function or ContextManager class.
+    enabled
 
-        enabled : bool
+        Will hook be executed or not. Useful for debugging.
 
-            Will hook be executed or not. Useful for debugging.
+    priority
 
-        priority : HookPriority
-
-            Changes hooks priority, see `HookPriority` documentation.
+        Changes hooks priority, see `HookPriority` documentation.
 
     Examples
     --------

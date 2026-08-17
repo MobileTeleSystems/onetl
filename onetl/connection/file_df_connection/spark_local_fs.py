@@ -17,7 +17,7 @@ from onetl.impl import LocalPath
 @support_hooks
 class SparkLocalFS(SparkFileDFConnection):
     """
-    Spark connection to local filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    Spark connection to local filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark Generic File Data Source](https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html).
 
@@ -26,7 +26,7 @@ class SparkLocalFS(SparkFileDFConnection):
         To use SparkHDFS connector you should have PySpark installed (or injected to `sys.path`)
         BEFORE creating the connector instance.
 
-        See [install-spark][] installation instruction for more details.
+        See [DBR-onetl-install-spark][] installation instruction for more details.
 
     !!! warning
 
@@ -42,7 +42,7 @@ class SparkLocalFS(SparkFileDFConnection):
 
     Parameters
     ----------
-    spark : pyspark.sql.SparkSession
+    spark
         Spark session
 
     Examples

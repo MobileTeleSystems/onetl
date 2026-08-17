@@ -232,7 +232,7 @@ After pull request is created, it get a corresponding number, e.g. 123 (`pr_numb
 for changelog management.
 
 To submit a change note about your PR, add a text file into the
-[docs/changelog/RELEASE_TEMPLATE](changelog/RELEASE_TEMPLATE.md) folder. It should contain an
+[docs/changelog/RELEASE_TEMPLATE](./changelog/RELEASE_TEMPLATE.md) folder. It should contain an
 explanation of what applying this PR will change in the way
 end-users interact with the project. One sentence is usually
 enough but feel free to add as many details as you feel necessary

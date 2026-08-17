@@ -64,9 +64,9 @@ class HDFSExtra(GenericOptions):
 
     Parameters
     ---------
-    timeout : urllib3.util.timeout.Timeout, optional
+    timeout
         Timeout for requests,  see [urllib3 documentation](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Timeout).
-    retry : urllib3.util.retry.Retry, optional
+    retry
         Retry for requests, see [urllib3 documentation](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry).
     """
 
@@ -77,7 +77,7 @@ class HDFSExtra(GenericOptions):
 
 @support_hooks
 class HDFS(FileConnection, RenameDirMixin):
-    """HDFS file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """HDFS file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Powered by [HDFS Python client](https://pypi.org/project/hdfs/).
 
@@ -91,18 +91,18 @@ class HDFS(FileConnection, RenameDirMixin):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     !!! note
 
         To access Hadoop cluster with Kerberos installed, you should have `kinit` executable
         in some path in `PATH` environment variable.
 
-        See [install-kerberos][] instruction for more details.
+        See [DBR-onetl-install-kerberos-support][] instruction for more details.
 
     Parameters
     ----------
-    cluster : str, optional
+    cluster
         Hadoop cluster name. For example: `rnd-dwh`.
 
         Used for:
@@ -117,7 +117,7 @@ class HDFS(FileConnection, RenameDirMixin):
 
         !!! success "Added in 0.7.0"
 
-    host : str, optional
+    host
         Hadoop namenode host. For example: `namenode1.domain.com`.
 
         Should be an active namenode (NOT standby).
@@ -131,19 +131,19 @@ class HDFS(FileConnection, RenameDirMixin):
 
             You should pass at least one of these arguments: `cluster`, `host`.
 
-    webhdfs_port : int, default: 50070
+    webhdfs_port
         Port of Hadoop namenode (WebHDFS protocol).
 
         If omitted, but there are some hooks bound to
         [Slots.get_webhdfs_port][onetl.connection.file_connection.hdfs.slots.HDFSSlots.get_webhdfs_port] slot,
         onETL will try to detect port number for a specific `cluster`.
 
-    user : str, optional
+    user
         User, which have access to the file source. For example: `someuser`.
 
         If set, Kerberos auth will be used. Otherwise an anonymous connection is created.
 
-    password : str, optional
+    password
         User password.
 
         Used for generating Kerberos ticket.
@@ -153,7 +153,7 @@ class HDFS(FileConnection, RenameDirMixin):
             You can provide only one of the parameters: `password` or `keytab`.
             If you provide both, an exception will be raised.
 
-    keytab : str, optional
+    keytab : os.PathLike | str, optional
         LocalPath to keytab file.
 
         Used for generating Kerberos ticket.
@@ -163,7 +163,7 @@ class HDFS(FileConnection, RenameDirMixin):
             You can provide only one of the parameters: `password` or `keytab`.
             If you provide both, an exception will be raised.
 
-    extra : HDFSExtra, optional
+    extra
         Extra options passed to underlying HDFS client.
 
     Examples
@@ -203,7 +203,7 @@ class HDFS(FileConnection, RenameDirMixin):
 
     === "Use cluster name to detect active namenode"
 
-        Can be used only if some third-party plugin provides [hdfs-slots][] implementation
+        Can be used only if some third-party plugin provides [DBR-onetl-connection-file-connection-hdfs-slots][] implementation
 
         ```python
         from onetl.connection import HDFS
@@ -261,7 +261,7 @@ class HDFS(FileConnection, RenameDirMixin):
     @classmethod
     def get_current(cls, **kwargs):
         """
-        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Automatically sets up current cluster name as `cluster`.
 
@@ -275,16 +275,16 @@ class HDFS(FileConnection, RenameDirMixin):
         Parameters
         ----------
         user : str
-            User which has access to HDFS. See [HDFS][] constructor documentation.
+            User which has access to HDFS.
 
         password : str | None
-            User password for Kerberos. See [HDFS][] constructor documentation.
+            User password for Kerberos.
 
         keytab : str | None
-            Path to keytab file for Kerberos. See [HDFS][] constructor documentation.
+            Path to keytab file for Kerberos.
 
         extra : HDFSExtra, optional
-            Extra options passed to underlying HDFS client. See [HDFS][] constructor documentation.
+            Extra options passed to underlying HDFS client.
 
         Examples
         --------

@@ -62,18 +62,18 @@ class FileDownloadStatus(Enum):
 @support_hooks
 class FileDownloader(FrozenModel):
     """Allows you to download files from a remote source with specified file connection
-    and parameters, and return an object with download result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    and parameters, and return an object with download result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! note
 
-        FileDownloader can return different results depending on [strategy][]
+        FileDownloader can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
     !!! note
 
         This class is used to download files **only** from remote directory to the local one.
 
         It does NOT support direct file transfer between filesystems, like `FTP -> SFTP`.
-        You should use FileDownloader + [file-uploader][] to implement `FTP -> local dir -> SFTP`.
+        You should use FileDownloader + [onetl.file.file_uploader.file_uploader.FileUploader][] to implement `FTP -> local dir -> SFTP`.
 
     !!! success "Added in 0.1.0"
 
@@ -82,19 +82,19 @@ class FileDownloader(FrozenModel):
 
     Parameters
     ----------
-    connection : FileConnection
-        Class which contains File system connection properties. See [file-connections][] section.
+    connection
+        Class which contains File system connection properties. See [DBR-onetl-connection-file-connection-file-connections][] section.
 
-    local_path : os.PathLike | str
+    local_path
         Local path where you download files
 
-    source_path : os.PathLike | str, optional
+    source_path
         Remote path to download files from.
 
         Could be `None`, but only if you pass absolute file paths directly to
         [run][] method
 
-    temp_path : os.PathLike | str, optional
+    temp_path
         If set, this path will be used for downloading a file, and then renaming it to the target file path.
         If `None` is passed, files are downloaded directly to `target_path`.
 
@@ -114,8 +114,8 @@ class FileDownloader(FrozenModel):
 
         !!! success "Added in 0.5.0"
 
-    filters : list[onetl.base.base_file_filter.BaseFileFilter]
-        Return only files/directories matching these filters. See [file-filters][]
+    filters
+        Return only files/directories matching these filters. See [DBR-onetl-file-filters][]
 
         !!! info "Changed in 0.3.0"
             Replaces old `source_path_pattern: str` and `exclude_dirs: str` options.
@@ -123,21 +123,21 @@ class FileDownloader(FrozenModel):
         !!! info "Changed in 0.8.0"
             Renamed `filter` → `filters`
 
-    limits : list[onetl.base.base_file_limit.BaseFileLimit]
+    limits
         Apply limits to the list of files/directories, and stop if one of the limits is reached.
-        See [file-limits][]
+        See [DBR-onetl-file-limits][]
 
         !!! success "Added in 0.4.0"
 
         !!! info "Changed in 0.8.0"
             Renamed `limit` → `limits`
 
-    options : onetl.file.file_downloader.options.FileDownloaderOptions, optional
+    options
         File downloading options.
 
         !!! success "Added in 0.3.0"
 
-    hwm : type[HWM],optional
+    hwm
 
         HWM class to detect changes in incremental run.
         See [File HWM](https://etl-entities.readthedocs.io/en/stable/hwm/file/index.html)
@@ -273,18 +273,18 @@ class FileDownloader(FrozenModel):
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: C901
         """
-        Method for downloading files from source to local directory. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Method for downloading files from source to local directory. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
-            This method can return different results depending on [strategy][]
+            This method can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
         !!! success "Added in 0.1.0"
 
         Parameters
         ----------
 
-        files : Iterable[str | os.PathLike] | None, default `None`
+        files
             File list to download.
 
             If empty, download files from `source_path` to `local_path`,
@@ -297,8 +297,7 @@ class FileDownloader(FrozenModel):
 
         Returns
         -------
-        [DownloadResult][onetl.file.file_downloader.download_result.DownloadResult]
-
+        :
             Download result object
 
         Raises
@@ -454,11 +453,11 @@ class FileDownloader(FrozenModel):
     def view_files(self) -> FileSet[RemoteFile]:
         """
         Get file list in the `source_path`,
-        after `filter`, `limit` and `hwm` applied (if any). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        after `filter`, `limit` and `hwm` applied (if any). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
-            This method can return different results depending on [strategy][]
+            This method can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
         !!! success "Added in 0.3.0"
 
@@ -474,7 +473,7 @@ class FileDownloader(FrozenModel):
 
         Returns
         -------
-        FileSet[RemoteFile]
+        :
             Set of files in `source_path`, which will be downloaded by [run][] method
 
         Examples

@@ -5,7 +5,7 @@ from onetl.hooks import slot, support_hooks
 
 @support_hooks
 class HiveSlots:
-    """[Slots][slot-decorator] that could be implemented by third-party plugins.
+    """[Slots][DBR-onetl-hooks-design-high-level-design] that could be implemented by third-party plugins.
 
     !!! success "Added in 0.7.0"
     """
@@ -14,7 +14,7 @@ class HiveSlots:
     @staticmethod
     def normalize_cluster_name(cluster: str) -> str | None:
         """
-        Normalize cluster name passed into Hive constructor. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Normalize cluster name passed into Hive constructor. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         If hooks didn't return anything, cluster name is left intact.
 
@@ -22,12 +22,12 @@ class HiveSlots:
 
         Parameters
         ----------
-        cluster : str
+        cluster
             Cluster name (raw)
 
         Returns
         -------
-        str | None
+        :
             Normalized cluster name.
 
             If hook cannot be applied to a specific cluster, it should return `None`.
@@ -51,7 +51,7 @@ class HiveSlots:
     @staticmethod
     def get_known_clusters() -> set[str] | None:
         """
-        Return collection of known clusters. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Return collection of known clusters. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Cluster passed into Hive constructor should be present in this list.
         If hooks didn't return anything, no validation will be performed.
@@ -60,7 +60,7 @@ class HiveSlots:
 
         Returns
         -------
-        set[str] | None
+        :
             Collection of cluster names (normalized).
 
             If hook cannot be applied, it should return `None`.
@@ -84,16 +84,16 @@ class HiveSlots:
     @staticmethod
     def get_current_cluster() -> str | None:
         """
-        Get current cluster name. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get current cluster name. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
-        Used in [check][] method to verify that connection is created only from the same cluster.
+        Used in [onetl.connection.db_connection.hive.connection.Hive.check][] method to verify that connection is created only from the same cluster.
         If hooks didn't return anything, no validation will be performed.
 
         !!! success "Added in 0.7.0"
 
         Returns
         -------
-        str | None
+        :
             Current cluster name (normalized).
 
             If hook cannot be applied, it should return `None`.

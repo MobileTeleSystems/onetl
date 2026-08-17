@@ -29,19 +29,33 @@ log = logging.getLogger(__name__)
 
 
 class ClickhouseExtra(GenericOptions):
+    """
+    Extra options for Clickhouse connection.
+
+    You can pass here any parameters supported by Clickhouse JDBC,
+    even if it is not mentioned in this documentation.
+
+    See:
+
+    * [Clickhouse JDBC driver properties documentation](https://clickhouse.com/docs/en/integrations/java#configuration)
+    * [Clickhouse core settings documentation](https://clickhouse.com/docs/en/operations/settings/settings)
+    * [Clickhouse query complexity documentation](https://clickhouse.com/docs/en/operations/settings/query-complexity)
+    * [Clickhouse query level settings](https://clickhouse.com/docs/en/operations/settings/query-level)
+    """
+
     model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class Clickhouse(JDBCConnection):
-    """Clickhouse JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Clickhouse JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on Maven package [com.clickhouse:clickhouse-jdbc:0.7.2](https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc/0.7.2)
     ([official Clickhouse JDBC driver](https://github.com/ClickHouse/clickhouse-jdbc)).
 
     !!! info "See also"
 
-        Before using this connector please take into account [clickhouse-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-clickhouse-prerequisites][]
 
     !!! success "Added in 0.1.0"
 
@@ -68,13 +82,6 @@ class Clickhouse(JDBCConnection):
     extra : dict, optional
         Extra parameters passed directly to JDBC driver.
         For example: `{"continueBatchOnError": "false"}`.
-
-        See:
-
-        * [Clickhouse JDBC driver properties documentation](https://clickhouse.com/docs/en/integrations/java#configuration)
-        * [Clickhouse core settings documentation](https://clickhouse.com/docs/en/operations/settings/settings)
-        * [Clickhouse query complexity documentation](https://clickhouse.com/docs/en/operations/settings/query-complexity)
-        * [Clickhouse query level settings](https://clickhouse.com/docs/en/operations/settings/query-level)
 
     Examples
     --------
@@ -128,7 +135,7 @@ class Clickhouse(JDBCConnection):
         apache_http_client_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Allows specifying custom JDBC and Apache HTTP Client versions.
 
@@ -136,7 +143,7 @@ class Clickhouse(JDBCConnection):
 
         Parameters
         ----------
-        package_version : str, optional
+        package_version
             ClickHouse JDBC version client packages. Defaults to `0.7.2`.
 
             Versions 0.8.0-0.9.2 are not supported,
@@ -144,7 +151,7 @@ class Clickhouse(JDBCConnection):
 
             !!! success "Added in 0.11.0"
 
-        apache_http_client_version : str, optional
+        apache_http_client_version
             Apache HTTP Client version package. Defaults to `5.4.2`.
 
             Used only if `package_version` is in range `0.5.0-0.7.0`.

@@ -25,11 +25,11 @@ class FileModifiedTime(BaseFileFilter, FrozenModel):
     Parameters
     ----------
 
-    since : datetime, optional
+    since
 
         Minimal allowed file modification time. `None` means no limit.
 
-    until : datetime, optional
+    until
 
         Maximum allowed file modification time. `None` means no limit.
 

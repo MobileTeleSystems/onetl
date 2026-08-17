@@ -28,16 +28,16 @@ class KafkaOAuth2ClientCredentials(KafkaAuth, GenericOptions):
 
     Parameters
     ----------
-    client_id : str
+    client_id
         OAuth2 client ID.
 
-    client_secret : str
+    client_secret
         OAuth2 client secret.
 
-    oauth2_token_endpoint : str
+    oauth2_token_endpoint
         OAuth2 endpoint used to fetch access tokens.
 
-    scopes : list[str], default: []
+    scopes
         OAuth2 scopes to request.
 
     Examples

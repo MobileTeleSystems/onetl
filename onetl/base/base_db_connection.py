@@ -132,7 +132,7 @@ class BaseDBConnection(BaseConnection):
         limit: int | None = None,
     ) -> "DataFrame":
         """
-        Reads the source to dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Reads the source to dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! info "Changed in 0.9.0"
             Renamed `read_df` → `read_source_as_df`
@@ -145,7 +145,7 @@ class BaseDBConnection(BaseConnection):
         target: str,
     ) -> None:
         """
-        Saves dataframe to a specific target. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Saves dataframe to a specific target. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! info "Changed in 0.9.0"
             Renamed `write_df` → `write_df_to_target`

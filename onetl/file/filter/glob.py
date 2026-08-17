@@ -17,7 +17,7 @@ class Glob(BaseFileFilter, FrozenModel):
     Parameters
     ----------
 
-    pattern : str
+    pattern
 
         Pattern (e.g. `*.csv`) for which any **file** (only file) path should match
 

@@ -61,23 +61,33 @@ EXTRA_OPTIONS = frozenset(
 
 
 class GreenplumExtra(GenericOptions):
-    # avoid closing connections from server side
-    # while connector is moving data to executors before insert
+    """
+    Extra options for Postgres connection.
+
+    You can pass here any parameters supported by
+    [Postgres JDBC driver properties documentation](https://jdbc.postgresql.org/documentation/use/),
+    even if it is not mentioned in this documentation.
+    """
+
     tcpKeepAlive: str = "true"
+    """
+    Avoid closing connections from server side while connector is moving data to executors before insert.
+    """
+
     model_config = ConfigDict(extra="allow", prohibited_options=JDBCMixinOptions.model_config["prohibited_options"])  # type: ignore[typeddict-unknown-key]
 
 
 @support_hooks
 @deprecated("Deprecated in 0.15.1 and will be removed in 1.0.0", category=None)
 class Greenplum(JDBCMixin, DBConnection):
-    """Greenplum connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Greenplum connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on package `io.pivotal:greenplum-spark:2.2.0`
     ([VMware Greenplum connector for Spark](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/index.html)).
 
     !!! info "See also"
 
-        Before using this connector please take into account [greenplum-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-greenplum-prerequisites][]
 
     !!! success "Added in 0.5.0"
 
@@ -154,7 +164,7 @@ class Greenplum(JDBCMixin, DBConnection):
         spark=spark,
     ).check()
     ```
-    """  # noqa: E501
+    """
 
     host: Host
     user: str
@@ -192,7 +202,7 @@ class Greenplum(JDBCMixin, DBConnection):
         package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning
 
@@ -202,17 +212,17 @@ class Greenplum(JDBCMixin, DBConnection):
 
         Parameters
         ----------
-        scala_version : str, optional
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
 
-        spark_version : str, optional
+        spark_version
             Spark version.
 
             Used only if `scala_version=None`.
 
-        package_version : str, optional, default `2.2.0`
+        package_version
             Package version in format `major.minor.patch`
 
             !!! success "Added in 0.10.1"

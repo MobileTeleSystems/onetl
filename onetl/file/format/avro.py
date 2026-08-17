@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 @support_hooks
 class Avro(ReadWriteFileFormat):
     """
-    Avro file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    Avro file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark Avro](https://spark.apache.org/docs/latest/sql-data-sources-avro.html) file format.
 
@@ -249,7 +249,7 @@ class Avro(ReadWriteFileFormat):
         scala_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         See [Maven package index](https://mvnrepository.com/artifact/org.apache.spark/spark-avro)
         for all available packages.
@@ -258,12 +258,12 @@ class Avro(ReadWriteFileFormat):
 
         Parameters
         ----------
-        spark_version : str, optional
+        spark_version
             Spark version in format `major.minor.patch`.
 
             If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
 
-        scala_version : str, optional
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
@@ -334,13 +334,13 @@ class Avro(ReadWriteFileFormat):
 
         Parameters
         ----------
-        column : str | pyspark.sql.Column
+        column
             The name of the column or the column object containing Avro bytes to deserialize.
             Schema should match the provided Avro schema.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with deserialized data. Schema is matching the provided Avro schema.
             Column name is the same as input column.
 
@@ -398,7 +398,7 @@ class Avro(ReadWriteFileFormat):
         |    |-- name: string (nullable = true)
         |    |-- age: integer (nullable = true)
         ```
-        """  # noqa: E501
+        """
         from pyspark.sql import Column, SparkSession
         from pyspark.sql.functions import col
 
@@ -441,12 +441,12 @@ class Avro(ReadWriteFileFormat):
 
         Parameters
         ----------
-        column : str | pyspark.sql.Column
+        column
             The name of the column or the column object containing the data to serialize to Avro format.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with binary Avro data. Column name is the same as input column.
 
         Raises
@@ -499,7 +499,7 @@ class Avro(ReadWriteFileFormat):
         |-- key: string (nullable = true)
         |-- value: binary (nullable = true)
         ```
-        """  # noqa: E501
+        """
         from pyspark.sql import Column, SparkSession
         from pyspark.sql.functions import col
 

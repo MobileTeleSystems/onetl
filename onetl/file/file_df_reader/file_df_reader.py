@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 @support_hooks
 class FileDFReader(FrozenModel):
     """Allows you to read files from a source path with specified file connection
-    and parameters, and return a Spark DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    and parameters, and return a Spark DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! warning
 
@@ -44,22 +44,22 @@ class FileDFReader(FrozenModel):
 
     Parameters
     ----------
-    connection : onetl.base.base_file_df_connection.BaseFileDFConnection
-        File DataFrame connection. See [file-df-connections][] section.
+    connection
+        File DataFrame connection. See [DBR-onetl-connection-file-df-connection-file-dataframe-connections][] section.
 
-    format : onetl.base.base_file_format.BaseReadableFileFormat
+    format
         File format to read.
 
-    source_path : os.PathLike | str, optional
+    source_path
         Directory path to read data from.
 
         Could be `None`, but only if you pass file paths directly to
         [run][] method
 
-    df_schema : pyspark.sql.types.StructType, optional
+    df_schema
         Spark DataFrame schema.
 
-    options : onetl.file.file_df_reader.options.FileDFReaderOptions, optional
+    options
         Common reading options.
 
     Examples
@@ -124,22 +124,21 @@ class FileDFReader(FrozenModel):
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> "DataFrame":
         """
-        Method for reading files as DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Method for reading files as DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
         Parameters
         ----------
 
-        files : Iterator[str | os.PathLike] | None, default `None`
+        files
             File list to read.
 
             If empty, read files from `source_path`.
 
         Returns
         -------
-        df : pyspark.sql.DataFrame
-
+        :
             Spark DataFrame
 
         Examples

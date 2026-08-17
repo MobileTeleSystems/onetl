@@ -15,10 +15,10 @@ class IcebergRESTCatalogBasicAuth(IcebergRESTCatalogAuth, FrozenModel):
 
     Parameters
     ----------
-    user : str
+    user
         Username for authentication.
 
-    password : str
+    password
         Password for authentication.
 
     Examples

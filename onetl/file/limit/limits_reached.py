@@ -19,7 +19,7 @@ def limits_reached(limits: "Iterable[BaseFileLimit]") -> bool:
 
     Parameters
     ----------
-    limits : Iterable[onetl.base.base_file_limit.BaseFileLimit]
+    limits
         Limits to test.
 
     Returns

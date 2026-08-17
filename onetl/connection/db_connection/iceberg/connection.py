@@ -48,11 +48,11 @@ log = logging.getLogger(__name__)
 
 @support_hooks
 class Iceberg(DBConnection):
-    """Iceberg connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Iceberg connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! info "See also"
 
-        Before using this connector please take into account [iceberg-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-iceberg-prerequisites][]
 
     !!! success "Added in 0.14.0"
 
@@ -61,32 +61,14 @@ class Iceberg(DBConnection):
     catalog_name : str
         Catalog name. Arbitrary string used by Spark to identify catalog and tables (`mycatalog.myschema.mytable`).
 
-    catalog : onetl.connection.db_connection.iceberg.catalog.IcebergCatalog
+    catalog : IcebergCatalog
         Iceberg catalog configuration
 
-    warehouse : onetl.connection.db_connection.iceberg.warehouse.IcebergWarehouse
+    warehouse : IcebergWarehouse
         Iceberg warehouse configuration
 
-    extra : dict, optional
+    extra : IcebergExtra, optional
         A dictionary of additional properties to be used when configuring Iceberg catalog.
-
-        These are Iceberg-specific properties that control behavior of the catalog.
-        See [Iceberg Spark configuration documentation](https://iceberg.apache.org/docs/latest/spark-configuration/)
-
-        Pass properties **without catalog prefix**. For example:
-
-        ```python
-        extra = {
-            "cache-enabled": "true",
-            "cache.expiration-interval-ms": "40000",
-        }
-        ```
-        This will be translated to:
-
-        ```ini
-        spark.sql.catalog.my_catalog.cache-enabled = 'true'
-        spark.sql.catalog.my_catalog.cache.expiration-interval-ms = '40000'
-        ```
     spark : pyspark.sql.SparkSession
         Spark session
 
@@ -265,29 +247,29 @@ class Iceberg(DBConnection):
         scala_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         See [Maven package index](https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-spark)
         for all available packages.
 
         Parameters
         ----------
-        package_version : str
+        package_version
             Iceberg package version in format `major.minor.patch`.
 
-        spark_version : str, optional
+        spark_version
             Spark version in format `major.minor`.
 
             If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
 
-        scala_version : str, optional
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
 
         Returns
         -------
-        list[str]
+        :
             List of Maven coordinates.
 
         Examples
@@ -358,20 +340,19 @@ class Iceberg(DBConnection):
         query: str,
     ) -> "DataFrame":
         """
-        Lazily execute SELECT statement and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Lazily execute SELECT statement and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Same as `spark.sql(query)`.
 
         Parameters
         ----------
-        query : str
+        query
 
             SQL query to be executed.
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame
-
+        :
             Spark dataframe
         """
 
@@ -417,11 +398,11 @@ class Iceberg(DBConnection):
         statement: str,
     ) -> None:
         """
-        Execute DDL or DML statement. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Execute DDL or DML statement. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Parameters
         ----------
-        statement : str
+        statement
 
             Statement to be executed.
         """

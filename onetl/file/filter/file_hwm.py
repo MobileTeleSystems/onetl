@@ -17,7 +17,7 @@ class FileHWMFilter(BaseFileFilter, BaseModel):
     Parameters
     ----------
 
-    hwm : etl_entities.hwm.FileHWM
+    hwm
 
         File HWM instance
     """

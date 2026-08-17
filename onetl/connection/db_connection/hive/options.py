@@ -126,7 +126,7 @@ class HiveWriteOptions(GenericOptions):
                     rows from dataframe, so duplicated rows can be created.
 
                     To implement deduplication, write data to staging table first,
-                    and then perform some deduplication logic using [sql][].
+                    and then perform some deduplication logic using [onetl.connection.db_connection.hive.connection.Hive.sql][].
 
             * Table exists and partitioned according [partition_by][],
                 but partition is present only in table, not dataframe

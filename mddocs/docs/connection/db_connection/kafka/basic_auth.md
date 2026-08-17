@@ -4,4 +4,3 @@
 ::: onetl.connection.db_connection.kafka.kafka_basic_auth.KafkaBasicAuth
     options:
         inherited_members: true
-        show_root_heading: true

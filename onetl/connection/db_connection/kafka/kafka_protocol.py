@@ -21,12 +21,12 @@ class KafkaProtocol(ABC):
 
         Parameters
         ----------
-        kafka : onetl.connection.db_connection.kafka.connection.Kafka
+        kafka
             Connection instance
 
         Returns
         -------
-        dict:
+        :
             Kafka client options
         """
         ...
@@ -40,7 +40,7 @@ class KafkaProtocol(ABC):
 
         Parameters
         ----------
-        kafka : onetl.connection.db_connection.kafka.connection.Kafka
+        kafka
             Connection instance
         """
         ...

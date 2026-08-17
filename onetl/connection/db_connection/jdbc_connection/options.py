@@ -147,24 +147,24 @@ class JDBCReadOptions(JDBCFetchOptions):
         to avoid performance issues.
 
     !!! note
-        Column type depends on [partitioning_mode][].
+        Column type depends on `partitioning_mode`.
 
         * `partitioning_mode="range"` requires column to be an integer,
           date or timestamp (can be NULL, but not recommended).
         * `partitioning_mode="hash"` accepts any column type (NOT NULL).
         * `partitioning_mode="mod"` requires column to be an integer (NOT NULL).
 
-    See documentation for [partitioning_mode][] for more details"""
+    See documentation for `partitioning_mode` for more details"""
 
     num_partitions: PositiveInt = Field(default=1, alias="numPartitions")
     """Number of jobs created by Spark to read the table content in parallel.
-    See documentation for [partitioning_mode][] for more details"""
+    See documentation for `partitioning_mode` for more details"""
 
     lower_bound: int | None = Field(default=None, alias="lowerBound")
-    """See documentation for [partitioning_mode][] for more details"""
+    """See documentation for `partitioning_mode` for more details"""
 
     upper_bound: int | None = Field(default=None, alias="upperBound")
-    """See documentation for [partitioning_mode][] for more details"""
+    """See documentation for `partitioning_mode` for more details"""
 
     session_init_statement: str | None = Field(default=None, alias="sessionInitStatement")
     '''After each database session is opened to the remote DB and before starting to read data,
@@ -217,7 +217,7 @@ class JDBCReadOptions(JDBCFetchOptions):
     Possible values:
 
     * `range` (default)
-        Allocate each executor a range of values from column passed into [partition_column][].
+        Allocate each executor a range of values from column passed into `partition_column`.
 
         ??? note "Spark generates for each executor an SQL query"
 
@@ -251,16 +251,16 @@ class JDBCReadOptions(JDBCFetchOptions):
 
         !!! note
 
-            [lower_bound][], [upper_bound][] and [num_partitions][] are used just to
+            `lower_bound`, `upper_bound` and `num_partitions` are used just to
             calculate the partition stride, **NOT** for filtering the rows in table.
-            So all rows in the table will be returned (unlike *Incremental* [strategy][]).
+            So all rows in the table will be returned (unlike *Incremental* [strategy][DBR-onetl-strategy-read-strategies]).
 
         !!! note
 
-            All queries are executed in parallel. To execute them sequentially, use *Batch* [strategy][].
+            All queries are executed in parallel. To execute them sequentially, use *Batch* [strategy][DBR-onetl-strategy-read-strategies].
 
     * `hash`
-        Allocate each executor a set of values based on hash of the [partition_column][] column.
+        Allocate each executor a set of values based on hash of the `partition_column` column.
 
         ??? note "Spark generates for each executor an SQL query"
 
@@ -290,7 +290,7 @@ class JDBCReadOptions(JDBCFetchOptions):
             or expression based on this function call. Usually such functions accepts any column type as an input.
 
     * `mod`
-        Allocate each executor a set of values based on modulus of the [partition_column][] column.
+        Allocate each executor a set of values based on modulus of the `partition_column` column.
 
         ??? note "Spark generates for each executor an SQL query"
 
@@ -443,7 +443,7 @@ class JDBCWriteOptions(GenericOptions):
                     implement deduplication using unique indexes or constraints.
 
                     Instead, write to staging table and perform deduplication
-                    using [execute][] method.
+                    using `execute` method.
 
     * `replace_entire_table`
         **Table is dropped and then created, or truncated**.
@@ -613,10 +613,10 @@ class JDBCSQLOptions(GenericOptions):
     """Number of jobs created by Spark to read the table content in parallel."""
 
     lower_bound: int | None = Field(default=None, alias="lowerBound")
-    """Defines the lower boundary for partitioning the query's data. Mandatory if [partition_column][] is set"""
+    """Defines the lower boundary for partitioning the query's data. Mandatory if `partition_column` is set"""
 
     upper_bound: int | None = Field(default=None, alias="upperBound")
-    """Sets the lower boundary for data partitioning. Mandatory if [partition_column][] is set"""
+    """Sets the lower boundary for data partitioning. Mandatory if `partition_column` is set"""
 
     session_init_statement: str | None = Field(default=None, alias="sessionInitStatement")
     '''After each database session is opened to the remote DB and before starting to read data,

@@ -40,48 +40,53 @@ log = logging.getLogger(__name__)
 
 
 class MongoDBExtra(GenericOptions):
+    """
+    Extra options for MongoDB connection.
+
+    You can pass here any property supported by
+    [MongoDB Client](https://www.mongodb.com/docs/manual/reference/connection-string/#std-label-connections-connection-options),
+    even if it is not mentioned in this documentation.
+    """
+
     model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class MongoDB(DBConnection):
-    """MongoDB connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """MongoDB connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on package [org.mongodb.spark:mongo-spark-connector:10.6.1](https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector_2.12/10.6.1)
     ([MongoDB connector for Spark](https://www.mongodb.com/docs/spark-connector/current/))
 
     !!! info "See also"
 
-        Before using this connector please take into account [mongodb-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-mongodb-prerequisites][]
 
     !!! success "Added in 0.7.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of MongoDB. For example: `test.mongodb.com` or `193.168.1.17`
 
-    port : int, default: 27017
+    port
         Port of MongoDB
 
-    user : str
+    user
         User for database connection
 
-    password : str
+    password
         Password for database connection
 
-    database : str
+    database
         Database in MongoDB
 
-    extra : dict, optional
-        Extra parameters passed directly to MongoDB client.
-        For example: `{"tls": "false"}`
-
-        See [Connection string options documentation](https://www.mongodb.com/docs/manual/reference/connection-string/#std-label-connections-connection-options)
-        for more details.
-
-    spark : pyspark.sql.SparkSession
+    spark
         Spark session
+
+    extra
+        Extra parameters passed directly to MongoDB client.
+        For example: `{"tls": "false"}`.
 
     Examples
     --------
@@ -137,7 +142,7 @@ class MongoDB(DBConnection):
         package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Allows specifying custom MongoDB Spark connector versions.
 
@@ -145,17 +150,17 @@ class MongoDB(DBConnection):
 
         Parameters
         ----------
-        scala_version : str, optional
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
 
-        spark_version : str, optional
+        spark_version
             Spark version in format `major.minor`.
 
             Used only if `scala_version=None`. If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
 
-        package_version : str, optional
+        package_version
             Specifies the version of the MongoDB Spark connector to use. Defaults to `10.6.1`.
 
             !!! success "Added in 0.11.0"
@@ -225,7 +230,7 @@ class MongoDB(DBConnection):
         options: MongoDBPipelineOptions | dict | None = None,
     ):
         """
-        Execute a pipeline for a specific collection, and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Execute a pipeline for a specific collection, and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Almost like [Aggregation pipeline syntax](https://www.mongodb.com/docs/manual/core/aggregation-pipeline/)
         in MongoDB:
@@ -237,7 +242,7 @@ class MongoDB(DBConnection):
 
         !!! note
 
-            This method does not support [strategy][],
+            This method does not support [strategy][DBR-onetl-strategy-read-strategies],
             use [DBReader][onetl.db.db_reader.db_reader.DBReader] instead
 
         !!! success "Added in 0.7.0"
@@ -245,17 +250,17 @@ class MongoDB(DBConnection):
         Parameters
         ----------
 
-        collection : str
+        collection
             Collection name.
 
-        pipeline : dict | list[dict], optional
+        pipeline
             Pipeline containing a database query.
             See [Aggregation pipeline syntax](https://www.mongodb.com/docs/manual/core/aggregation-pipeline/).
 
-        df_schema : StructType, optional
+        df_schema
             Schema describing the resulting DataFrame.
 
-        options : PipelineOptions | dict, optional
+        options
             Additional pipeline options,
             see [MongoDB.PipelineOptions][onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions].
 

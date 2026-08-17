@@ -45,10 +45,10 @@ class FTPExtra(GenericOptions):
 
     Parameters
     ---------
-    use_passive_mode : bool, optional
+    use_passive_mode
         Set to `True` to use passive mode, ``False`` to use active mode, ``None`` for autodetect
 
-    encoding : str, default: "utf-8"
+    encoding
         File path encoding
     """
 
@@ -59,7 +59,7 @@ class FTPExtra(GenericOptions):
 
 @support_hooks
 class FTP(FileConnection, RenameDirMixin):
-    """FTP file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """FTP file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [FTPUtil library](https://pypi.org/project/ftputil/).
 
@@ -73,29 +73,29 @@ class FTP(FileConnection, RenameDirMixin):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     !!! success "Added in 0.1.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of FTP source. For example: `ftp.domain.com`
 
-    port : int, default: 21
+    port
         Port of FTP source
 
-    user : str, optional
+    user
         User, which have access to the file source. For example: `someuser`.
 
         `None` means that the user is anonymous.
 
-    password : str, optional
+    password
         Password for file source connection.
 
         `None` means that the user is anonymous.
 
-    extra : FTPExtra, optional
+    extra
         Extra options
 
     Examples

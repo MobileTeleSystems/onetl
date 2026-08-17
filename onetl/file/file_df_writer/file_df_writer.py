@@ -31,20 +31,20 @@ log = logging.getLogger(__name__)
 @support_hooks
 class FileDFWriter(FrozenModel):
     """Allows you to write Spark DataFrame as files in a target path of specified file connection
-    with parameters. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    with parameters. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Parameters
     ----------
-    connection : onetl.base.base_file_df_connection.BaseFileDFConnection
-        File DataFrame connection. See [file-df-connections][] section.
+    connection
+        File DataFrame connection. See [DBR-onetl-connection-file-df-connection-file-dataframe-connections][] section.
 
-    format : onetl.base.base_file_format.BaseWritableFileFormat
+    format
         File format to write.
 
-    target_path : os.PathLike | str
+    target_path
         Directory path to write data to.
 
-    options : onetl.file.file_df_writer.options.FileDFWriterOptions, optional
+    options
         Common writing options.
 
     Examples
@@ -97,15 +97,14 @@ class FileDFWriter(FrozenModel):
     @slot
     def run(self, df: "DataFrame") -> None:
         """
-        Method for writing DataFrame as files. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Method for writing DataFrame as files. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
             Method does support only **batching** DataFrames.
 
         Parameters
         ----------
-
-        df : pyspark.sql.dataframe.DataFrame
+        df
             Spark dataframe
 
         Examples

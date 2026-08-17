@@ -15,7 +15,7 @@ class IcebergRESTCatalogBearerAuth(IcebergRESTCatalogAuth, FrozenModel):
 
     Parameters
     ----------
-    access_token : str
+    access_token
         [Access token](https://www.oauth.com/oauth2-servers/access-tokens/) for authentication.
 
     Examples

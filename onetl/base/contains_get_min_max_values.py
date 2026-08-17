@@ -19,5 +19,5 @@ class ContainsGetMinMaxValues(Protocol):
         where: Any | None = None,
     ) -> tuple[Any, Any]:
         """
-        Get MIN and MAX values for the column in the source. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get MIN and MAX values for the column in the source. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
         """

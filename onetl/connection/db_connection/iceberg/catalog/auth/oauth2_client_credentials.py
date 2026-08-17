@@ -22,27 +22,27 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
 
     Parameters
     ----------
-    client_secret : str
+    client_secret
         OAuth2 client secret.
 
-    client_id : str, optional
+    client_id
         OAuth2 client ID. In most OAuth2 server implementations it is [mandatory](https://www.oauth.com/oauth2-servers/client-registration/client-id-secret/).
 
-    token_refresh_interval : timedelta, optional
+    token_refresh_interval
         Interval for [automatic token refresh](https://www.oauth.com/oauth2-servers/access-tokens/refreshing-access-tokens/).
         Default: 1 hour. Set to `None` to disable automatic refresh.
 
-    oauth2_token_endpoint : str, optional
+    oauth2_token_endpoint
         OAuth2 endpoint for fetching tokens. If not provided, uses the REST catalog's
         `v1/oauth/tokens` endpoint.
 
-    scopes : List[str], default: []
+    scopes
         [OAuth2 scopes](https://www.oauth.com/oauth2-servers/scope/) to request.
 
-    audience : str, optional
+    audience
         OAuth2 `audience` param.
 
-    resource : str, optional
+    resource
         OAuth2 `resource` param.
 
     Examples

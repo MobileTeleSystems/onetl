@@ -48,11 +48,16 @@ class ExpandShortRefs(Extension):
         self._pending = still_pending
 
     def on_class_members(self, *, cls, **kwargs):
-        available = {name: member.path for name, member in cls.members.items()}
+        members = {name: member for name, member in cls.members.items()}
+        attributes = {name: attr for name, attr in cls.attributes.items()}
 
         def replace(m):
             name = m.group(1)
-            return f"[{name}][{available[name]}]" if name in available else m.group(0)
+            if name in attributes:
+                return f"[{name}][{cls.path}({name})]"
+            if name in members:
+                return f"[{name}][{members[name].path}]"
+            return m.group(0)
 
         _rewrite(cls.docstring, replace)
         for member in cls.members.values():

@@ -65,7 +65,7 @@ class IcebergWriteOptions(GenericOptions):
                     rows from dataframe, so duplicated rows can be created.
 
                     To implement deduplication, write data to staging table first,
-                    and then perform some deduplication logic using [sql][].
+                    and then perform some deduplication logic using [sql][DBR-onetl-connection-db-connection-iceberg-sql-reading-from-iceberg-using-iceberg-sql] method.
 
             * Table exists and partitioned, but some partitions are present only in table, not dataframe
                 Existing partitions are left intact.

@@ -45,13 +45,13 @@ class SambaExtra(GenericOptions):
 
     Parameters
     ---------
-    connect_timeout : int, default: 60
+    connect_timeout
         Timeout (in seconds) for establishing TCP connection.
-    operation_timeout : int, default: 30
+    operation_timeout
         Timeout (in seconds) for the client operations.
-    my_name : str, default: "onetl"
+    my_name
         Client name.
-    sign_options : int, default: `SMBConnection.SIGN_WHEN_REQUIRED`
+    sign_options
         Sign options.
     """
 
@@ -64,7 +64,7 @@ class SambaExtra(GenericOptions):
 
 @support_hooks
 class Samba(FileConnection):
-    """Samba file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Samba file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [pysmb library](https://pypi.org/project/pysmb/).
 
@@ -80,36 +80,36 @@ class Samba(FileConnection):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     Parameters
     ----------
-    host : str
+    host
         Host of Samba source. For example: `mydomain.com`.
 
-    share : str
+    share
         The name of the share on the Samba server.
 
-    protocol : str, default: "SMB"
+    protocol
         The protocol to use for the connection. Either `SMB` or `NetBIOS`.
         Affects the default port and the `is_direct_tcp` flag in `SMBConnection`.
 
-    port : int, default: 445
+    port
         Port of Samba source.
 
-    domain : str, optional
+    domain
         Windows workgroup name. Empty strings means use `host` as domain name.
 
-    auth_type : str, default: "NTLMv2"
+    auth_type
         The authentication type to use. Either `NTLMv2` (recommended) or `NTLMv1` (Windows XP).
 
-    user : str, optional
+    user
         User, which have access to the file source. Can be `None` for anonymous connection.
 
-    password : str, optional
+    password
         Password for file source connection. Can be `None` for anonymous connection.
 
-    extra : SambaExtra, optional
+    extra
         Extra options for Samba connection.
 
     Examples

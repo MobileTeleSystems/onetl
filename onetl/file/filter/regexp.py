@@ -18,7 +18,7 @@ class Regexp(BaseFileFilter, FrozenModel):
     Parameters
     ----------
 
-    pattern : re.Pattern
+    pattern
 
         Regular expression (e.g. `\d+\.csv`) for which any **file** (only file) path should match.
 
@@ -35,7 +35,7 @@ class Regexp(BaseFileFilter, FrozenModel):
     regexp = Regexp(r"\d+\.csv")
 
     ```
-    Create regexp filter from [re.Pattern][]:
+    Create regexp filter from compiled regexp:
 
     ```python
     import re

@@ -59,11 +59,11 @@ class WebDAVExtra(GenericOptions):
 
     Parameters
     ---------
-    timeout : urllib3.util.timeout.Timeout, optional
+    timeout
         Timeout for requests,  see [urllib3 documentation](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Timeout).
-    retry : urllib3.util.retry.Retry, optional
+    retry
         Retry for requests, see [urllib3 documentation](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry).
-    ssl_verify : Union[FilePath, DirectoryPath, bool], optional
+    ssl_verify
         One of:
 
         - a path to a file with SSL certificate.
@@ -102,7 +102,7 @@ class WebDAVExtra(GenericOptions):
 
 @support_hooks
 class WebDAV(FileConnection, RenameDirMixin):
-    """WebDAV file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """WebDAV file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [WebdavClient3 library](https://pypi.org/project/webdavclient3/).
 
@@ -116,28 +116,28 @@ class WebDAV(FileConnection, RenameDirMixin):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     !!! success "Added in 0.6.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of WebDAV source. For example: `webdav.domain.com`
 
-    user : str
+    user
         User, which have access to the file source. For example: `someuser`
 
-    password : str
+    password
         Password for file source connection
 
-    protocol : str, default: "https"
+    protocol
         Connection protocol. Allowed values: `https` or `http`
 
-    port : int, optional
+    port
         Connection port
 
-    extra : WebDAVExtra, optional
+    extra
         Extra options passed to WebDAV client
 
     Examples

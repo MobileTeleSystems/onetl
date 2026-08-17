@@ -46,14 +46,14 @@ class FileUploadStatus(Enum):
 @support_hooks
 class FileUploader(FrozenModel):
     """Allows you to upload files to a remote source with specified file connection
-    and parameters, and return an object with upload result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    and parameters, and return an object with upload result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! note
 
         This class is used to upload files **only** from local directory to the remote one.
 
         It does NOT support direct file transfer between filesystems, like `FTP -> SFTP`.
-        You should use [file-downloader][] + FileUploader to implement `FTP -> local dir -> SFTP`.
+        You should use [onetl.file.file_downloader.file_downloader.FileDownloader][] + FileUploader to implement `FTP -> local dir -> SFTP`.
 
     !!! warning
 
@@ -66,13 +66,13 @@ class FileUploader(FrozenModel):
 
     Parameters
     ----------
-    connection : onetl.base.BaseFileConnection
-        Class which contains File system connection properties. See [file-connections][] section.
+    connection
+        Class which contains File system connection properties. See [DBR-onetl-connection-file-connection-file-connections][] section.
 
-    target_path : os.PathLike | str
+    target_path
         Remote path where want you upload files to
 
-    local_path : os.PathLike | str, optional
+    local_path
         The local directory from which the data is loaded.
 
         Could be `None`, but only if you pass absolute file paths directly to
@@ -80,7 +80,7 @@ class FileUploader(FrozenModel):
 
         !!! success "Added in 0.3.0"
 
-    temp_path : os.PathLike | str, optional
+    temp_path
         If set, this path will be used for uploading a file, and then renaming it to the target file path.
         If `None` (default since v0.5.0) is passed, files are uploaded directly to `target_path`.
 
@@ -101,7 +101,7 @@ class FileUploader(FrozenModel):
         !!! info "Changed in 0.5.0"
             Default changed from `/tmp` to `None`
 
-    options : onetl.file.file_uploader.options.FileUploaderOptions, optional
+    options
         File upload options.
 
     Examples
@@ -155,21 +155,21 @@ class FileUploader(FrozenModel):
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:
         """
-        Method for uploading files to remote host. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Method for uploading files to remote host. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.1.0"
 
         Parameters
         ----------
 
-        files : Iterator[str | os.PathLike] | None, default `None`
+        files
             File list to upload.
 
             If empty, upload files from `local_path`.
 
         Returns
         -------
-        [UploadResult][onetl.file.file_uploader.upload_result.UploadResult]
+        :
 
             Upload result object
 
@@ -324,7 +324,7 @@ class FileUploader(FrozenModel):
     @slot
     def view_files(self) -> FileSet[LocalPath]:
         """
-        Get file list in the `local_path`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get file list in the `local_path`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.3.0"
 
@@ -340,7 +340,7 @@ class FileUploader(FrozenModel):
 
         Returns
         -------
-        FileSet[LocalPath]
+        :
             Set of files in `local_path`
 
         Examples

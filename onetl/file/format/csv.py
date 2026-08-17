@@ -29,7 +29,7 @@ PARSE_COLUMN_UNSUPPORTED_OPTIONS = {
 @support_hooks
 class CSV(ReadWriteFileFormat):
     """
-    CSV file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    CSV file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark CSV](https://spark.apache.org/docs/latest/sql-data-sources-csv.html) file format.
 
@@ -157,7 +157,7 @@ class CSV(ReadWriteFileFormat):
     !!! note
 
         Used only for reading files, and only if user haven't provider explicit DataFrame schema.
-        Ignored by [parse_column][] function.
+        Ignored by [parse_column][] method.
     """
 
     samplingRatio: float | None = Field(default=None, ge=0, le=1)
@@ -167,7 +167,7 @@ class CSV(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
     comment: str | None = Field(default=None, max_length=1)
@@ -191,7 +191,7 @@ class CSV(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
     escapeQuotes: bool | None = None
@@ -314,7 +314,7 @@ class CSV(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
     dateFormat: str | None = Field(default=None, min_length=1)
@@ -446,6 +446,7 @@ class CSV(ReadWriteFileFormat):
 
     Default is same as [escape][].
     """
+
     model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     @slot
@@ -468,16 +469,16 @@ class CSV(ReadWriteFileFormat):
 
         Parameters
         ----------
-        column : str | pyspark.sql.Column
+        column
             The name of the column or the column object containing CSV strings/bytes to parse.
 
-        schema : pyspark.sql.types.StructType
+        schema
             The schema to apply when parsing the CSV data.
             This defines the structure of the output DataFrame column.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with deserialized data, with the same structure as the provided schema.
             Column name is the same as input column.
 
@@ -520,7 +521,7 @@ class CSV(ReadWriteFileFormat):
         |    |-- name: string (nullable = true)
         |    |-- age: integer (nullable = true)
         ```
-        """  # noqa: E501
+        """
 
         from pyspark.sql import Column, SparkSession
 
@@ -552,12 +553,12 @@ class CSV(ReadWriteFileFormat):
 
         Parameters
         ----------
-        column : str | pyspark.sql.Column
+        column
             The name of the column or the Column object containing the data to serialize to CSV.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with string CSV data. Column name is the same as input column.
 
         Examples
@@ -594,7 +595,7 @@ class CSV(ReadWriteFileFormat):
         |-- id: integer (nullable = true)
         |-- value: string (nullable = true)
         ```
-        """  # noqa: E501
+        """
 
         from pyspark.sql import Column, SparkSession
 

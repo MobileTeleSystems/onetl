@@ -66,4 +66,3 @@ writer.run(write_df)
 ::: onetl.connection.db_connection.kafka.options.KafkaWriteOptions
     options:
         inherited_members: true
-        show_root_heading: true

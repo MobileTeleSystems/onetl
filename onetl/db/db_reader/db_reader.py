@@ -46,11 +46,11 @@ log = getLogger(__name__)
 @support_hooks
 class DBReader(FrozenModel):
     """Allows you to read data from a table with specified database connection
-    and parameters, and return its content as Spark dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    and parameters, and return its content as Spark dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! note
 
-        DBReader can return different results depending on [strategy][]
+        DBReader can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
     !!! note
 
@@ -64,10 +64,10 @@ class DBReader(FrozenModel):
 
     Parameters
     ----------
-    connection : onetl.connection.BaseDBConnection
-        Class which contains DB connection properties. See [db-connections][] section
+    connection
+        Class which contains DB connection properties. See [DBR-onetl-connection-db-connection-db-connections][] section
 
-    source : str
+    source
         Table/collection/etc name to read data from.
 
         If connection has schema support, you need to specify the full name of the source
@@ -76,7 +76,7 @@ class DBReader(FrozenModel):
         !!! info "Changed in 0.7.0"
             Renamed `table` → `source`
 
-    columns : list[str], optional
+    columns
         The list of columns to be read.
 
         If RDBMS supports any kind of expressions, you can pass them too.
@@ -103,7 +103,7 @@ class DBReader(FrozenModel):
             Syntax `DBReader(columns="col1, col2")` (string instead of list) is not supported,
             and will be removed in v1.0.0
 
-    where : Any, optional
+    where
         Custom `where` for SQL query or MongoDB pipeline.
 
         `where` syntax depends on the source. For example, SQL sources
@@ -124,7 +124,7 @@ class DBReader(FrozenModel):
 
             Some sources does not support data filtering.
 
-    hwm : type[HWM],optional
+    hwm
         HWM class to be used as [HWM](https://etl-entities.readthedocs.io/en/stable/hwm/index.html) value.
 
         ```python
@@ -151,7 +151,7 @@ class DBReader(FrozenModel):
         !!! info "Changed in 0.10.0"
             Replaces deprecated `hwm_column` and `hwm_expression`  attributes
 
-    hint : Any, optional
+    hint
         Hint expression used for querying the data.
 
         `hint` syntax depends on the source. For example, SQL sources
@@ -170,7 +170,7 @@ class DBReader(FrozenModel):
 
             Some sources does not support hints.
 
-    df_schema : StructType, optional
+    df_schema
         Spark DataFrame schema, used for proper type casting of the rows.
 
         ```python
@@ -203,7 +203,7 @@ class DBReader(FrozenModel):
 
             Some sources does not support passing dataframe schema.
 
-    options : dict, onetl.connection.BaseDBConnection.ReadOptions, optional
+    options
         Spark read options, like partitioning mode.
 
         ```python
@@ -277,7 +277,7 @@ class DBReader(FrozenModel):
 
     === "Incremental reading"
 
-        See [strategy][] for more examples
+        See [strategy][DBR-onetl-strategy-read-strategies] for more examples
 
         ```python
         from onetl.strategy import IncrementalStrategy
@@ -499,16 +499,16 @@ class DBReader(FrozenModel):
 
     @slot
     def has_data(self) -> bool:
-        """Returns `True` if there is some data in the source, `False` otherwise. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        """Returns `True` if there is some data in the source, `False` otherwise. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
-            This method can return different results depending on [strategy][]
+            This method can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
         !!! warning
 
             If [hwm](https://etl-entities.readthedocs.io/en/stable/hwm/index.html) is used,
-            then method should be called inside [strategy][] context.
+            then method should be called inside [strategy][DBR-onetl-strategy-read-strategies] context.
             And vise-versa, if HWM is not used, this method should not be called within strategy.
 
         !!! success "Added in 0.10.0"
@@ -572,16 +572,16 @@ class DBReader(FrozenModel):
 
     @slot
     def raise_if_no_data(self) -> None:
-        """Raises exception `NoDataError` if source does not contain any data. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        """Raises exception `NoDataError` if source does not contain any data. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
-            This method can return different results depending on [strategy][]
+            This method can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
         !!! warning
 
             If [hwm](https://etl-entities.readthedocs.io/en/stable/hwm/index.html) is used,
-            then method should be called inside [strategy][] context.
+            then method should be called inside [strategy][DBR-onetl-strategy-read-strategies] context.
             And vise-versa, if HWM is not used, this method should not be called within strategy.
 
         !!! success "Added in 0.10.0"
@@ -612,23 +612,23 @@ class DBReader(FrozenModel):
     @slot
     def run(self) -> "DataFrame":
         """
-        Reads data from source table and saves as Spark dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Reads data from source table and saves as Spark dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
-            This method can return different results depending on [strategy][]
+            This method can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
         !!! warning
 
             If [hwm](https://etl-entities.readthedocs.io/en/stable/index.html) is used,
-            then method should be called inside [strategy][] context.
+            then method should be called inside [strategy][DBR-onetl-strategy-read-strategies] context.
             And vise-versa, if HWM is not used, this method should not be called within strategy.
 
         !!! success "Added in 0.1.0"
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame
+        :
             Spark dataframe
 
         Examples

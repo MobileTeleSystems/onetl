@@ -41,4 +41,3 @@ Method above accepts [Postgres.WriteOptions][onetl.connection.db_connection.post
 ::: onetl.connection.db_connection.postgres.options.PostgresWriteOptions
     options:
         inherited_members: true
-        show_root_heading: true

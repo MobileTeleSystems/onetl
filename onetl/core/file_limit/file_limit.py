@@ -21,7 +21,7 @@ class FileLimit(BaseFileLimit, FrozenModel):
     Parameters
     ----------
 
-    count_limit : int, default = 100
+    count_limit
 
         Number of downloaded files at a time.
 

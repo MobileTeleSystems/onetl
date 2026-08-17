@@ -21,18 +21,18 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def path_exists(self, path: os.PathLike | str) -> bool:
         """
-        Check if specified path exists on remote filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/).
+        Check if specified path exists on remote filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks].
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             Path to check
 
         Returns
         -------
-        bool
+        :
             `True` if path exists, `False` otherwise
 
         Examples
@@ -51,18 +51,18 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def is_file(self, path: os.PathLike | str) -> bool:
         """
-        Check if specified path is a file. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Check if specified path is a file. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             Path to check
 
         Returns
         -------
-        bool
+        :
             `True` if path is a file, `False` otherwise.
 
         Raises
@@ -84,18 +84,18 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def is_dir(self, path: os.PathLike | str) -> bool:
         """
-        Check if specified path is a directory. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Check if specified path is a directory. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             Path to check
 
         Returns
         -------
-        bool
+        :
             `True` if path is a directory, `False` otherwise.
 
         Raises
@@ -117,18 +117,18 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def get_stat(self, path: os.PathLike | str) -> PathStatProtocol:
         """
-        Returns stats for a specific path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Returns stats for a specific path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             Path to get stats for
 
         Returns
         -------
-        PathStatProtocol
+        :
             Stats object
 
         Raises
@@ -150,18 +150,18 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def resolve_dir(self, path: os.PathLike | str) -> PathWithStatsProtocol:
         """
-        Returns directory at specific path, with stats. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Returns directory at specific path, with stats. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             Path to resolve
 
         Returns
         -------
-        PathWithStatsProtocol
+        :
             Directory path with stats
 
         Raises
@@ -187,18 +187,18 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def resolve_file(self, path: os.PathLike | str) -> PathWithStatsProtocol:
         """
-        Returns file at specific path, with stats. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Returns file at specific path, with stats. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             Path to resolve
 
         Returns
         -------
-        PathWithStatsProtocol
+        :
             File path with stats
 
         Raises
@@ -224,18 +224,18 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def create_dir(self, path: os.PathLike | str) -> PathWithStatsProtocol:
         """
-        Creates directory tree on remote filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Creates directory tree on remote filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             Directory path
 
         Returns
         -------
-        PathWithStatsProtocol
+        :
             Created directory with stats
 
         Raises
@@ -256,7 +256,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def remove_file(self, path: os.PathLike | str) -> bool:
         """
-        Removes file on remote filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Removes file on remote filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         If file does not exist, no exception is raised.
 
@@ -269,12 +269,12 @@ class BaseFileConnection(BaseConnection):
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             File path
 
         Returns
         -------
-        bool
+        :
             `True` if file was removed, `False` if file does not exist in the first place.
 
         Raises
@@ -298,7 +298,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def remove_dir(self, path: os.PathLike | str, *, recursive: bool = False) -> bool:
         """
-        Remove directory or directory tree. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Remove directory or directory tree. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         If directory does not exist, no exception is raised.
 
@@ -306,17 +306,17 @@ class BaseFileConnection(BaseConnection):
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             Directory path to remove
 
-        recursive : bool, optional
+        recursive
             If `True`, remove directory tree recursively (including files and subdirectories).
 
             If `False`, remove only directory itself. Directory should be empty.
 
         Returns
         -------
-        bool
+        :
             `True` if directory was removed, `False` if directory does not exist in the first place.
 
         Raises
@@ -355,7 +355,7 @@ class BaseFileConnection(BaseConnection):
         replace: bool = False,
     ) -> PathWithStatsProtocol:
         """
-        Rename or move file on remote filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Rename or move file on remote filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning
 
@@ -365,18 +365,18 @@ class BaseFileConnection(BaseConnection):
 
         Parameters
         ----------
-        source_file_path : os.PathLike | str
+        source_file_path
             Old file path
 
-        target_file_path : os.PathLike | str
+        target_file_path
             New file path
 
-        replace : bool, optional
+        replace
             If `True`, existing file will be replaced.
 
         Returns
         -------
-        PathWithStatsProtocol
+        :
             New file path with stats.
 
         Raises
@@ -412,7 +412,7 @@ class BaseFileConnection(BaseConnection):
         limits: Iterable[BaseFileLimit] | None = None,
     ) -> list[PathWithStatsProtocol]:
         """
-        Return list of child files/directories in a specific directory. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Return list of child files/directories in a specific directory. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
@@ -421,19 +421,19 @@ class BaseFileConnection(BaseConnection):
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             Directory path to list contents.
 
-        filters : list[onetl.base.base_file_filter.BaseFileFilter], optional
-            Return only files/directories matching these filters. See [file-filters][]
+        filters
+            Return only files/directories matching these filters. See [DBR-onetl-file-filters][]
 
-        limits : list[onetl.base.base_file_limit.BaseFileLimit], optional
+        limits
             Apply limits to the list of files/directories, and stop if one of the limits is reached.
-            See [file-limits][]
+            See [DBR-onetl-file-limits][]
 
         Returns
         -------
-        list[PathWithStatsProtocol]
+        :
             Directory contents.
 
         Raises
@@ -466,7 +466,7 @@ class BaseFileConnection(BaseConnection):
         limits: Iterable[BaseFileLimit] | None = None,
     ) -> Iterable[tuple[PathWithStatsProtocol, list[PathWithStatsProtocol], list[PathWithStatsProtocol]]]:
         """
-        Walk into directory tree, and iterate over its content in all nesting levels. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Walk into directory tree, and iterate over its content in all nesting levels. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Just like `os.walk`, but with additional filter/limit logic.
 
@@ -477,22 +477,22 @@ class BaseFileConnection(BaseConnection):
 
         Parameters
         ----------
-        root : os.PathLike | str
+        root
             Directory path to walk into.
 
-        topdown : bool
+        topdown
             If `True`, walk in top-down order, otherwise walk in bottom-up order.
 
-        filters : list[onetl.base.base_file_filter.BaseFileFilter], optional
-            Return only files/directories matching these filters. See [file-filters][].
+        filters
+            Return only files/directories matching these filters. See [DBR-onetl-file-filters][].
 
-        limits : list[onetl.base.base_file_limit.BaseFileLimit], optional
+        limits
             Apply limits to the list of files/directories, and immediately stop if any of these limits is reached.
-            See [file-limits][].
+            See [DBR-onetl-file-limits][].
 
         Returns
         -------
-        Iterable[tuple]
+        :
             Like `os.walk`, but all the paths are not strings, instead path classes with embedded stats are returned.
 
         Raises
@@ -529,29 +529,29 @@ class BaseFileConnection(BaseConnection):
         replace: bool = True,
     ) -> PathWithStatsProtocol:
         """
-        Downloads file from the remote filesystem to a local path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Downloads file from the remote filesystem to a local path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning
 
             Supports only one file download per call.
-            Directory download is **NOT** supported, use [file-downloader][] instead.
+            Directory download is **NOT** supported, use [onetl.file.file_downloader.file_downloader.FileDownloader][] instead.
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        remote_file_path : os.PathLike | str
+        remote_file_path
             Remote file path to read from
 
-        local_file_path : os.PathLike | str
+        local_file_path
             Local file path to create
 
-        replace : bool, optional
+        replace
             If `True`, existing file will be replaced
 
         Returns
         -------
-        PathWithStatsProtocol
+        :
             Local file with stats.
 
         Raises
@@ -596,29 +596,29 @@ class BaseFileConnection(BaseConnection):
         replace: bool = False,
     ) -> PathWithStatsProtocol:
         """
-        Uploads local file to a remote filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Uploads local file to a remote filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning
 
             Supports only one file upload per call.
-            Directory upload is **NOT** supported, use [file-uploader][] instead.
+            Directory upload is **NOT** supported, use [onetl.file.file_uploader.file_uploader.FileUploader][] instead.
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        local_file_path : os.PathLike | str
+        local_file_path
             Local file path to read from
 
-        remote_file_path : os.PathLike | str
+        remote_file_path
             Remote file path to create
 
-        replace : bool, optional
+        replace
             If `True`, existing file will be replaced
 
         Returns
         -------
-        PathWithStatsProtocol
+        :
             Remote file with stats.
 
         Raises
@@ -657,21 +657,21 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def read_text(self, path: os.PathLike | str, encoding: str = "utf-8") -> str:
         r"""
-        Returns string content of a file at specific path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Returns string content of a file at specific path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             File path to read
 
-        encoding : str, default: "utf-8"
+        encoding
             File content encoding
 
         Returns
         -------
-        str
+        :
             File content.
 
         Raises
@@ -694,18 +694,18 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def read_bytes(self, path: os.PathLike | str) -> bytes:
         """
-        Returns binary content of a file at specific path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Returns binary content of a file at specific path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             File path to read
 
         Returns
         -------
-        bytes
+        :
             File content.
 
         Raises
@@ -733,7 +733,7 @@ class BaseFileConnection(BaseConnection):
         encoding: str = "utf-8",
     ) -> PathWithStatsProtocol:
         r"""
-        Writes string content to a file at specific path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Writes string content to a file at specific path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning
 
@@ -743,18 +743,18 @@ class BaseFileConnection(BaseConnection):
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             File path to write
 
-        content : str
+        content
             File content
 
-        encoding : str, default: "utf-8"
+        encoding
             File content encoding
 
         Returns
         -------
-        PathWithStatsProtocol
+        :
             File path with stats after write.
 
         Raises
@@ -780,7 +780,7 @@ class BaseFileConnection(BaseConnection):
     @abstractmethod
     def write_bytes(self, path: os.PathLike | str, content: bytes) -> PathWithStatsProtocol:
         """
-        Writes bytes content to a file at specific path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Writes bytes content to a file at specific path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning
 
@@ -790,15 +790,15 @@ class BaseFileConnection(BaseConnection):
 
         Parameters
         ----------
-        path : os.PathLike | str
+        path
             File path to write
 
-        content : bytes
+        content
             File content
 
         Returns
         -------
-        PathWithStatsProtocol
+        :
             File path with stats after write.
 
         Raises

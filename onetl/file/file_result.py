@@ -31,10 +31,10 @@ class FileResult(BaseModel, Generic[SuccessfulPath_co, FailedPath_co, MissingPat
 
     Container for file paths, divided into certain categories:
 
-    * :obj`successful`
-    * :obj`failed`
-    * :obj`skipped`
-    * :obj`missing`
+    * [successful][]
+    * [failed][]
+    * [skipped][]
+    * [missing][]
     """
 
     successful: FileSet[SuccessfulPath_co] = Field(default_factory=lambda: FileSet({}))

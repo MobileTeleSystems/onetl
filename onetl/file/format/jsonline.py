@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 @support_hooks
 class JSONLine(ReadWriteFileFormat):
     """
-    JSONLine file format (each line of file contains a JSON object). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    JSONLine file format (each line of file contains a JSON object). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark JSON](https://spark.apache.org/docs/latest/sql-data-sources-json.html) file format.
 

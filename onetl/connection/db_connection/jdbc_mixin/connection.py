@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, ClassVar, TypeVar
 
 from humanize import naturaldelta
 from pydantic import Field, SecretStr
+from typing_extensions import Self
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._util.java import get_java_gateway
@@ -92,9 +93,9 @@ class JDBCMixin:
         }
 
     @slot
-    def close(self):
+    def close(self) -> Self:
         """
-        Close all connections, opened by `.fetch()`, `.execute()` or `.check()` methods. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Close all connections, opened by `.fetch()`, `.execute()` or `.check()` methods. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning "Deprecated since 0.13.0"
             Connections are now closed immediately. Method is now no-op.
@@ -105,7 +106,7 @@ class JDBCMixin:
 
         Returns
         -------
-        Self
+        :
             Connection itself.
 
         Examples
@@ -145,7 +146,7 @@ class JDBCMixin:
         options: JDBCFetchOptions | dict | None = None,
     ) -> "DataFrame":
         """
-        **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Works almost the same like [sql][], but Spark executor is not used.
 
@@ -158,11 +159,11 @@ class JDBCMixin:
 
         Parameters
         ----------
-        query : str
+        query
 
             SQL query to be executed.
 
-        options : dict, [FetchOptions][], optional
+        options
 
             Options to be passed directly to JDBC driver, like `fetchsize` or `queryTimeout`
 
@@ -172,8 +173,7 @@ class JDBCMixin:
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame
-
+        :
             Spark dataframe
         """
 
@@ -217,7 +217,7 @@ class JDBCMixin:
         options: JDBCExecuteOptions | dict | None = None,
     ) -> "DataFrame | None":
         """
-        **Immediately** execute DDL, DML or procedure/function **on Spark driver**. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        **Immediately** execute DDL, DML or procedure/function **on Spark driver**. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         There is no method like this in `pyspark.sql.SparkSession` object,
         but Spark internal methods works almost the same (but on executor side).
@@ -226,11 +226,11 @@ class JDBCMixin:
 
         Parameters
         ----------
-        statement : str
+        statement
 
             Statement to be executed.
 
-        options : dict, [JDBCExecuteOptions][], optional
+        options
 
             Options to be passed directly to JDBC driver, like `queryTimeout`
 
@@ -240,9 +240,8 @@ class JDBCMixin:
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame, optional
-
-            Spark DataFrame.
+        :
+            Spark dataframe, optional.
 
             DataFrame is returned only if input is DML statement with `RETURNING ...` clause,
             or a procedure/function call. In other cases returns `None`.

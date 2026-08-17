@@ -7,6 +7,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, ClassVar, cast
 
 from pydantic import Field, PrivateAttr, ValidationInfo, field_validator, model_validator
+from typing_extensions import Self
 
 from onetl._util.alias import avoid_alias
 from onetl.base import PurePathProtocol
@@ -26,26 +27,26 @@ log = logging.getLogger(__name__)
 @support_hooks
 class SparkHDFS(SparkFileDFConnection):
     """
-    Spark connection to HDFS. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    Spark connection to HDFS. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark Generic File Data Source](https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html).
 
     !!! info "See also"
 
-        Before using this connector please take into account [spark-hdfs-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-file-df-connection-spark-hdfs-prerequisites][]
 
     !!! note
 
         Supports only reading files as Spark DataFrame and writing DataFrame to files.
 
         Does NOT support file operations, like create, delete, rename, etc. For these operations,
-        use [HDFS][onetl.connection.file_connection.hdfs.connection.HDFS] connection.
+        use [onetl.connection.file_connection.hdfs.connection.HDFS][] connection.
 
     !!! success "Added in 0.9.0"
 
     Parameters
     ----------
-    cluster : str
+    cluster
         Cluster name.
 
         Used for:
@@ -54,7 +55,7 @@ class SparkHDFS(SparkFileDFConnection):
                 if latter is passed and if some hooks are bound to
                 [Slots.get_cluster_namenodes][onetl.connection.file_df_connection.spark_hdfs.slots.SparkHDFSSlots.get_cluster_namenodes].
 
-    host : str, optional
+    host
         Hadoop namenode host. For example: `namenode1.domain.com`.
 
         Should be an active namenode (NOT standby).
@@ -65,14 +66,14 @@ class SparkHDFS(SparkFileDFConnection):
         [Slots.is_namenode_active][onetl.connection.file_df_connection.spark_hdfs.slots.SparkHDFSSlots.is_namenode_active],
         onETL will iterate over cluster namenodes to detect which one is active.
 
-    ipc_port : int, default: 8020
+    ipc_port
         Port of Hadoop namenode (IPC protocol).
 
         If omitted, but there are some hooks bound to
         [Slots.get_ipc_port][onetl.connection.file_df_connection.spark_hdfs.slots.SparkHDFSSlots.get_ipc_port],
         onETL will try to detect port number for a specific `cluster`.
 
-    spark : pyspark.sql.SparkSession
+    spark
         Spark session
 
     Examples
@@ -130,7 +131,7 @@ class SparkHDFS(SparkFileDFConnection):
 
     === "Use cluster name to detect active namenode"
 
-        Can be used only if some third-party plugin provides [spark-hdfs-slots][] implementation
+        Can be used only if some third-party plugin provides [DBR-onetl-connection-file-df-connection-spark-hdfs-slots][] implementation
 
         ```python
         # Create Spark session
@@ -173,9 +174,9 @@ class SparkHDFS(SparkFileDFConnection):
         self.close()
 
     @slot
-    def close(self):
+    def close(self) -> Self:
         """
-        Close all connections created to HDFS. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Close all connections created to HDFS. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
@@ -183,7 +184,7 @@ class SparkHDFS(SparkFileDFConnection):
 
         Returns
         -------
-        Self
+        :
             Connection itself.
 
         Examples
@@ -216,7 +217,7 @@ class SparkHDFS(SparkFileDFConnection):
     @classmethod
     def get_current(cls, spark: "SparkSession"):
         """
-        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Automatically sets up current cluster name as `cluster`.
 
@@ -230,8 +231,7 @@ class SparkHDFS(SparkFileDFConnection):
         Parameters
         ----------
         spark : pyspark.sql.SparkSession
-
-            See [SparkHDFS][] constructor documentation.
+            Spark session
 
         Examples
         --------

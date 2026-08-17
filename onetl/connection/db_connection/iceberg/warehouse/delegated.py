@@ -12,7 +12,7 @@ from onetl.impl import FrozenModel
 
 @support_hooks
 class IcebergDelegatedWarehouse(IcebergWarehouse, FrozenModel):
-    """Delegate configuring Iceberg warehouse to Iceberg catalog. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Delegate configuring Iceberg warehouse to Iceberg catalog. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Used by some Iceberg catalog implementations like:
       * [Lakekeeper](https://docs.lakekeeper.io/docs/latest/storage/#s3)
@@ -24,13 +24,13 @@ class IcebergDelegatedWarehouse(IcebergWarehouse, FrozenModel):
 
     Parameters
     ----------
-    name : str, optional
+    name
         Warehouse name/alias, if supported by specific Iceberg catalog
 
-    access_delegation : "vended-credentials" | "remote-signing"
+    access_delegation
         Value of [X-Iceberg-Access-Delegation](https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/open-api/rest-catalog-open-api.yaml#L1854) header.
 
-    extra : dict[str, str], optional
+    extra
         Additional configuration parameters
 
     Examples
@@ -61,7 +61,7 @@ class IcebergDelegatedWarehouse(IcebergWarehouse, FrozenModel):
             extra={"client.region": "us-east-1"},
         )
         ```
-    """  # noqa: E501
+    """
 
     name: str | None = None
     access_delegation: Literal["vended-credentials", "remote-signing"]

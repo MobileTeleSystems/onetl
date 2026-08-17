@@ -37,11 +37,11 @@ log = logging.getLogger(__name__)
 
 @support_hooks
 class Hive(DBConnection):
-    """Spark connection with Hive MetaStore support. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Spark connection with Hive MetaStore support. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! info "See also"
 
-        Before using this connector please take into account [hive-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-hive-prerequisites][]
 
     !!! success "Added in 0.1.0"
 
@@ -113,7 +113,7 @@ class Hive(DBConnection):
     @classmethod
     def get_current(cls, spark: "SparkSession"):
         """
-        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
@@ -124,7 +124,7 @@ class Hive(DBConnection):
 
         Parameters
         ----------
-        spark : pyspark.sql.SparkSession
+        spark
             Spark session
 
         Examples
@@ -191,7 +191,7 @@ class Hive(DBConnection):
         query: str,
     ) -> "DataFrame":
         """
-        Lazily execute SELECT statement and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Lazily execute SELECT statement and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Same as `spark.sql(query)`.
 
@@ -199,14 +199,13 @@ class Hive(DBConnection):
 
         Parameters
         ----------
-        query : str
+        query
 
             SQL query to be executed.
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame
-
+        :
             Spark dataframe
         """
 
@@ -252,13 +251,13 @@ class Hive(DBConnection):
         statement: str,
     ) -> None:
         """
-        Execute DDL or DML statement. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Execute DDL or DML statement. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.2.0"
 
         Parameters
         ----------
-        statement : str
+        statement
 
             Statement to be executed.
         """

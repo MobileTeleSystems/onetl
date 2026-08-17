@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 
 class TotalFilesSize(BaseFileLimit, FrozenModel):
-    """Limits the total size of files handled by [file-downloader][] or [file-mover][].
+    """Limits the total size of files handled by [onetl.file.file_downloader.file_downloader.FileDownloader][] or [onetl.file.file_mover.file_mover.FileMover][].
 
     Calculates the sum of downloaded/moved files size (`.stat().st_size`),
     and checks that this sum is less or equal to specified limit.
@@ -34,7 +34,7 @@ class TotalFilesSize(BaseFileLimit, FrozenModel):
     Parameters
     ----------
 
-    limit : int | str
+    limit
         Maximum total size of files to be handled. Can be an integer (bytes) or a string like `1GiB`.
 
     Examples

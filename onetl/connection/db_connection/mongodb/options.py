@@ -91,7 +91,7 @@ class MongoDBCollectionExistBehavior(str, Enum):
 class MongoDBPipelineOptions(GenericOptions):
     """Aggregation pipeline options for MongoDB connector.
 
-    The only difference from [MongoDB.ReadOptions][MongoDBReadOptions]
+    The only difference from [MongoDB.ReadOptions][onetl.connection.db_connection.mongodb.options.MongoDBReadOptions]
     that latter does not allow to pass the `hint` parameter.
 
     !!! warning

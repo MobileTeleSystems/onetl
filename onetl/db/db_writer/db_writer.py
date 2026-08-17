@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 
 @support_hooks
 class DBWriter(FrozenModel):
-    """Class specifies schema and table where you can write your dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Class specifies schema and table where you can write your dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! success "Added in 0.1.0"
 
@@ -39,10 +39,10 @@ class DBWriter(FrozenModel):
 
     Parameters
     ----------
-    connection : onetl.connection.DBConnection
-        Class which contains DB connection properties. See [db-connections][] section.
+    connection
+        Class which contains DB connection properties. See [DBR-onetl-connection-db-connection-db-connections][] section.
 
-    target : str
+    target
         Table/collection/etc name to write data to.
 
         If connection has schema support, you need to specify the full name of the source
@@ -51,7 +51,7 @@ class DBWriter(FrozenModel):
         !!! info "Changed in 0.7.0"
             Renamed `table` → `target`
 
-    options : dict | WriteOptions, optional
+    options
         Spark write options. Can be in form of special `WriteOptions` object or a dict.
 
         For example:
@@ -133,7 +133,7 @@ class DBWriter(FrozenModel):
     @slot
     def run(self, df: "DataFrame") -> None:
         """
-        Method for writing your df to specified target. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Method for writing your df to specified target. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
             Method does support only **batching** DataFrames.
@@ -142,7 +142,7 @@ class DBWriter(FrozenModel):
 
         Parameters
         ----------
-        df : pyspark.sql.dataframe.DataFrame
+        df
             Spark dataframe
 
         Examples

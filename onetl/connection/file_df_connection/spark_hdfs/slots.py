@@ -5,7 +5,7 @@ from onetl.hooks import slot, support_hooks
 
 @support_hooks
 class SparkHDFSSlots:
-    """Spark HDFS slots that could be implemented by third-party plugins.
+    """[Slots][DBR-onetl-hooks-design-high-level-design] that could be implemented by third-party plugins.
 
     !!! success "Added in 0.9.0"
     """
@@ -22,12 +22,12 @@ class SparkHDFSSlots:
 
         Parameters
         ----------
-        cluster : str
+        cluster
             Cluster name
 
         Returns
         -------
-        str | None
+        :
             Normalized cluster name.
 
             If hook cannot be applied to a specific cluster, it should return `None`.
@@ -59,17 +59,17 @@ class SparkHDFSSlots:
 
         Parameters
         ----------
-        host : str
+        host=
             Namenode host (raw)
 
-        cluster : str, optional
+        cluster
             Cluster name (normalized)
 
             !!! info "Since 0.17.0 this parameter is optional"
 
         Returns
         -------
-        str | None
+        :
             Normalized namenode host name.
 
             If hook cannot be applied to a specific host name, it should return `None`.
@@ -108,7 +108,7 @@ class SparkHDFSSlots:
 
         Returns
         -------
-        set[str] | None
+        :
             Collection of cluster names (in normalized form).
 
             If hook cannot be applied, it should return `None`.
@@ -141,12 +141,12 @@ class SparkHDFSSlots:
 
         Parameters
         ----------
-        cluster : str
+        cluster
             Cluster name (normalized)
 
         Returns
         -------
-        set[str] | None
+        :
             Collection of host names (in normalized form).
 
             If hook cannot be applied, it should return `None`.
@@ -181,7 +181,7 @@ class SparkHDFSSlots:
 
         Returns
         -------
-        str | None
+        :
             Current cluster name (in normalized form).
 
             If hook cannot be applied, it should return `None`.
@@ -214,12 +214,12 @@ class SparkHDFSSlots:
 
         Parameters
         ----------
-        cluster : str
+        cluster
             Cluster name (normalized)
 
         Returns
         -------
-        int | None
+        :
             IPC port number.
 
             If hook cannot be applied, it should return `None`.
@@ -255,23 +255,23 @@ class SparkHDFSSlots:
 
             * If SparkHDFS connection is created with `host`
 
-                [check][] will determine whether this host is active.
+                [onetl.connection.file_connection.hdfs.connection.HDFS.check][] will determine whether this host is active.
 
         !!! success "Added in 0.9.0"
 
         Parameters
         ----------
-        host : str
+        host
             Namenode host (normalized)
 
-        cluster : str, optional
+        cluster
             Cluster name (normalized)
 
             !!! info "Since 0.17.0 this parameter is optional"
 
         Returns
         -------
-        bool | None
+        :
             `True` if namenode is active, `False` if not.
 
             If hook cannot be applied, it should return `None`.

@@ -17,7 +17,7 @@ class ExcludeDir(BaseFileFilter, FrozenModel):
     Parameters
     ----------
 
-    path : os.PathLike | str
+    path
 
         Path to directory which should be excluded.
 

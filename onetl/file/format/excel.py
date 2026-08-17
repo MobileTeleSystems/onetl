@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 @support_hooks
 class Excel(ReadWriteFileFormat):
     """
-    Excel file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    Excel file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark Excel](https://github.com/crealytics/spark-excel) file format.
 
@@ -219,7 +219,7 @@ class Excel(ReadWriteFileFormat):
         scala_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning
 
@@ -233,16 +233,16 @@ class Excel(ReadWriteFileFormat):
 
         Parameters
         ----------
-        package_version : str
+        package_version
             Package version in format `major.minor.patch`.
 
             !!! info "Changed in 0.14.0"
                 This parameter is now mandatory.
 
-        spark_version : str
+        spark_version
             Spark version in format `major.minor.patch`.
 
-        scala_version : str, optional
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.

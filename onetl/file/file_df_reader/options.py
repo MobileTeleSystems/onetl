@@ -53,11 +53,11 @@ class FileDFReaderOptions(FileDFReadOptions, GenericOptions):
     @slot
     def apply_to_reader(self, reader: "DataFrameReader") -> "DataFrameReader":
         """
-        Apply provided format to `pyspark.sql.DataFrameReader`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Apply provided format to `pyspark.sql.DataFrameReader`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Returns
         -------
-        pyspark.sql.DataFrameReader
+        :
             Reader with options applied.
         """
         options = self.model_dump(by_alias=True, exclude_none=True)

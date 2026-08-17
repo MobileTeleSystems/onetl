@@ -25,7 +25,7 @@ ORC_JAVA_OPTIONS = frozenset(
 @support_hooks
 class ORC(ReadWriteFileFormat):
     """
-    ORC file format (columnar). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    ORC file format (columnar). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark ORC Files](https://spark.apache.org/docs/latest/sql-data-sources-orc.html) file format.
 

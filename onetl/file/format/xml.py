@@ -25,7 +25,7 @@ PARSE_COLUMN_UNSUPPORTED_OPTIONS = {"inferSchema", "samplingRatio"}
 @support_hooks
 class XML(ReadWriteFileFormat):
     """
-    XML file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    XML file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Databricks Spark XML](https://github.com/databricks/spark-xml) file format.
 
@@ -139,7 +139,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
     mode: Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"] | None = None
@@ -153,7 +153,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
     columnNameOfCorruptRecord: str | None = None
@@ -189,7 +189,7 @@ class XML(ReadWriteFileFormat):
         ```
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
     inferSchema: bool | None = None
@@ -199,7 +199,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
     samplingRatio: float | None = Field(default=None, ge=0, le=1)
@@ -209,7 +209,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
     charset: str | None = None
@@ -218,7 +218,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
     valueTag: str | None = None
@@ -228,7 +228,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
     attributePrefix: str | None = None
@@ -239,7 +239,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
     excludeAttribute: bool | None = None
@@ -249,7 +249,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
     wildcardColName: str | None = None
@@ -263,7 +263,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
     ignoreNamespace: bool | None = None
@@ -273,7 +273,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
     rowValidationXSDPath: str | None = None
@@ -295,7 +295,7 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
     declaration: str | None = None
@@ -329,7 +329,7 @@ class XML(ReadWriteFileFormat):
         package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
@@ -339,17 +339,17 @@ class XML(ReadWriteFileFormat):
 
         Parameters
         ----------
-        spark_version : str, optional
+        spark_version
             Spark version in format `major.minor.patch`.
 
             If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
 
-        scala_version : str, optional
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
 
-        package_version : str, optional
+        package_version
             Package version in format `major.minor.patch`. Default is `0.18.0`.
 
             See [Maven index](https://mvnrepository.com/artifact/com.databricks/spark-xml)
@@ -464,16 +464,16 @@ class XML(ReadWriteFileFormat):
 
         Parameters
         ----------
-        column : str | pyspark.sql.Column
+        column
             The name of the column or the column object containing XML strings/bytes to parse.
 
-        schema : pyspark.sql.type.StructType
+        schema
             The schema to apply when parsing the XML data.
             This defines the structure of the output DataFrame column.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with deserialized data, with the same structure as the provided schema.
             Column name is the same as input column.
 

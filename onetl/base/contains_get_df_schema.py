@@ -18,6 +18,6 @@ class ContainsGetDFSchemaMethod(Protocol):
         columns: list[str] | None = None,
     ) -> "StructType":
         """
-        Description of the dataframe schema. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Description of the dataframe schema. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
         """
         ...

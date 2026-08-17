@@ -6,6 +6,7 @@ from contextlib import closing
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import Field, ValidationInfo, field_validator
+from typing_extensions import Self
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -60,7 +61,7 @@ class Kafka(DBConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [kafka-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-kafka-prerequisites][]
 
     !!! note
 
@@ -71,14 +72,14 @@ class Kafka(DBConnection):
     Parameters
     ----------
 
-    addresses : list[str]
+    addresses
         A list of broker addresses, for example `["192.168.1.10:9092", "192.168.1.11:9092"]`.
 
         !!! warning
 
             You should pass at least one of these arguments: `cluster`, `addresses`.
 
-    cluster : str, optional
+    cluster
         Cluster name.
 
         This can be used to get broker addresses dynamically, if `addresses` is not set.
@@ -88,13 +89,13 @@ class Kafka(DBConnection):
 
             You should pass at least one of these arguments: `cluster`, `addresses`.
 
-    auth : KafkaAuth, optional
+    auth
         Kafka authentication mechanism. `None` means anonymous auth.
 
-    protocol : KafkaProtocol, default: [PlaintextProtocol][onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol]
+    protocol
         Kafka security protocol.
 
-    extra : dict, optional
+    extra
         A dictionary of additional properties to be used when connecting to Kafka.
 
         These are Kafka-specific properties that control behavior of the producer or consumer. See:
@@ -240,7 +241,7 @@ class Kafka(DBConnection):
             spark=spark,
         ).check()
         ```
-    """  # noqa: E501
+    """
 
     BasicAuth: ClassVar = KafkaBasicAuth
     KerberosAuth: ClassVar = KafkaKerberosAuth
@@ -441,19 +442,19 @@ class Kafka(DBConnection):
         scala_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         See [Maven package index](https://mvnrepository.com/artifact/org.apache.spark/spark-sql-kafka-0-10)
         for all available packages.
 
         Parameters
         ----------
-        spark_version : str, optional
+        spark_version
             Spark version in format `major.minor.patch`.
 
             If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
 
-        scala_version : str, optional
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
@@ -479,7 +480,7 @@ class Kafka(DBConnection):
     @classmethod
     def get_exclude_packages(cls) -> list[str]:
         """
-        Get package names to be excluded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be excluded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.13.0"
 
@@ -515,9 +516,9 @@ class Kafka(DBConnection):
         self.close()
 
     @slot
-    def close(self):
+    def close(self) -> Self:
         """
-        Close all connections created to Kafka. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Close all connections created to Kafka. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
@@ -525,7 +526,7 @@ class Kafka(DBConnection):
 
         Returns
         -------
-        Self
+        :
             Connection itself
 
         Examples

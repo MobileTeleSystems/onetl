@@ -10,6 +10,7 @@ from typing import Any
 
 from humanize import naturalsize
 from pydantic import PrivateAttr
+from typing_extensions import Self
 
 from onetl.base import (
     BaseFileConnection,
@@ -67,9 +68,9 @@ class FileConnection(BaseFileConnection, FrozenModel):
         return self._clients_cache.client
 
     @slot
-    def close(self):
+    def close(self) -> Self:
         """
-        Close all connections, opened by other methods call. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Close all connections, opened by other methods call. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
@@ -77,7 +78,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Returns
         -------
-        Self
+        :
             Connection itself.
 
         Examples
@@ -573,12 +574,12 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Parameters
         ----------
-        path : RemotePath
+        path
             Path to the source directory
 
         Returns
         -------
-        Iterable
+        :
             Iterable entries
 
         Examples
@@ -616,7 +617,8 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Returns
         -------
-        str
+        :
+            Entry name
 
         Examples
         --------
@@ -644,7 +646,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
     @abstractmethod
     def _is_dir_entry(self, top: RemotePath, entry) -> bool:
         """
-        Returns `True` if the object that describes the entry is a directory.
+        Check if the object that describes the entry is a directory.
 
         If entry object does not contain such information, you could construct a path
         from `top / entry.name` and pass it into [_is_dir][] method.
@@ -652,14 +654,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Parameters
         ----------
-        top : RemotePath
+        top
             Root directory
         entry
             One of the elements retrieved from the list (returned by [_scan_entries][]).
 
         Returns
         -------
-        bool
+        :
+            `True` if entry is directory.
 
         Examples
         --------
@@ -686,7 +689,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
     @abstractmethod
     def _is_file_entry(self, top: RemotePath, entry) -> bool:
         """
-        Returns `True` if the object that describes the entry is a file.
+        Check if the object that describes the entry is a file.
 
         If entry object does not contain such information, you could construct a path
         from `top / entry.name` and pass it into [_is_file][] method.
@@ -694,14 +697,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Parameters
         ----------
-        top : RemotePath
+        top
             Root directory
         entry
             One of the elements retrieved from the list (returned by [_scan_entries][]).
 
         Returns
         -------
-        bool
+        :
+            `True` if entry is directory.
 
         Examples
         --------
@@ -739,14 +743,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Parameters
         ----------
-        top : RemotePath
+        top
             Root directory.
         entry
             One of the elements retrieved from the list (returned by [_scan_entries][]).
 
         Returns
         -------
-        PathStatProtocol
+        :
+            An object containing information about file
 
         Examples
         --------

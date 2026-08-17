@@ -39,7 +39,7 @@ def get_hooks_hierarchy(cls: type, method_name: str) -> HookCollection:
     Return all hooks registered for a specific method,
     sorted by priority and class nested level.
 
-    See [hooks-design][] for more details.
+    See [DBR-onetl-hooks-design-high-level-design][] for more details.
     """
 
     hooks_by_priority: dict[tuple[HookPriority, int], HookCollection] = defaultdict(HookCollection)
@@ -63,7 +63,7 @@ def bind_hook(method: Callable, inp=None):
     """
     Bind a hook to the slot.
 
-    See [hooks-design][] for more details.
+    See [DBR-onetl-hooks-design-high-level-design][] for more details.
 
     !!! success "Added in 0.7.0"
 
@@ -468,7 +468,7 @@ def is_slot(method: Callable) -> bool:
 
 
 class Slot(Protocol):
-    """Protocol which is implemented by a method after applying [slot][] decorator.
+    """Protocol which is implemented by a method after applying [`@slot` decorator][DBR-onetl-hooks-slot-decorator].
 
     !!! success "Added in 0.7.0"
     """

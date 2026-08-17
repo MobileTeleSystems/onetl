@@ -65,44 +65,56 @@ class ErrorPosition:
 
 
 class OracleExtra(GenericOptions):
+    """
+    Extra options for Oracle connection.
+
+    You can pass here any property supported by Oracle JDBC driver,
+    even if it is not mentioned in this documentation.
+
+    See:
+
+    * [Oracke JDBC Driver documentation](https://docs.oracle.com/en/database/oracle/oracle-database/23/jajdb/oracle/jdbc/OracleDriver.html)
+    * [Oracle server documentation](https://docs.oracle.com/cd/A97335_02/apps.102/a83724/basic1.htm#1024018)
+    """
+
     model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class Oracle(JDBCConnection):
-    """Oracle JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Oracle JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on Maven package [com.oracle.database.jdbc:ojdbc8:23.26.1.0.0](https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8/23.26.1.0.0)
     ([official Oracle JDBC driver](https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html)).
 
     !!! info "See also"
 
-        Before using this connector please take into account [oracle-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-oracle-prerequisites][]
 
     !!! success "Added in 0.1.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of Oracle database. For example: `test.oracle.domain.com` or `193.168.1.10`
 
-    port : int, default: 1521
+    port
         Port of Oracle database
 
-    user : str
+    user
         User for database connection
 
-    password : str
+    password
         Password for database connection
 
-    sid : str, optional
+    sid
         Sid of oracle database. For example: `XE`
 
         !!! warning
 
             You should provide either `sid` or `service_name`, not both of them
 
-    service_name : str, optional
+    service_name
         Specifies one or more names by which clients can connect to the instance.
 
         For example: `PDB1`.
@@ -111,17 +123,12 @@ class Oracle(JDBCConnection):
 
             You should provide either `sid` or `service_name`, not both of them
 
-    spark : pyspark.sql.SparkSession
+    spark
         Spark session
 
-    extra : dict, optional
+    extra
         Extra parameters passed directly to JDBC driver.
-        For example: `{"remarksReporting": "false"}`
-
-        See official documentation:
-
-        * [Connection parameters](https://docs.oracle.com/en/database/oracle/oracle-database/23/jajdb/oracle/jdbc/OracleDriver.html)
-        * [Connection properties](https://docs.oracle.com/cd/A97335_02/apps.102/a83724/basic1.htm#1024018)
+        For example: `{"remarksReporting": "false"}`.
 
     Examples
     --------
@@ -192,15 +199,15 @@ class Oracle(JDBCConnection):
         package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Allows specifying custom JDBC driver versions for Oracle.
 
         Parameters
         ----------
-        java_version : str, optional
+        java_version
             Java major version, defaults to "8". Must be "8" or "11".
-        package_version : str, optional
+        package_version
             Specifies the version of the Oracle JDBC driver to use. Defaults to "23.26.1.0.0".
 
         Examples

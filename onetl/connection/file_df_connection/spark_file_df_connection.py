@@ -142,7 +142,7 @@ class SparkFileDFConnection(BaseFileDFConnection, FrozenModel):
         """
         Return default path.
 
-        Used by [check][] method to check connection availability.
+        Used by `.check()` method to check connection availability.
         """
 
     def _get_spark_default_path(self):

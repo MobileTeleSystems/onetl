@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 class MaxFilesCount(BaseFileLimit, FrozenModel):
-    """Limits the total number of files handled by [file-downloader][] or [file-mover][].
+    """Limits the total number of files handled by [onetl.file.file_downloader.file_downloader.FileDownloader][] or [onetl.file.file_mover.file_mover.FileMover][].
 
     All files until specified limit (including) will be downloaded/moved, but `limit+1` will not.
 
@@ -23,7 +23,7 @@ class MaxFilesCount(BaseFileLimit, FrozenModel):
     Parameters
     ----------
 
-    limit : int
+    limit
         Maximum number of files to be handled.
 
     Examples

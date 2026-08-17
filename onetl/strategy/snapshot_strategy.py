@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 class SnapshotStrategy(BaseStrategy):
-    """Snapshot strategy for [db-reader][]/[file-downloader][].
+    """Snapshot strategy for [onetl.db.db_reader.db_reader.DBReader][]/[onetl.file.file_downloader.file_downloader.FileDownloader][].
 
     Used for fetching all the rows/files from a source. Does not support HWM.
 
@@ -17,14 +17,14 @@ class SnapshotStrategy(BaseStrategy):
 
         This is a default strategy.
 
-    For [db-reader][]:
+    For [onetl.db.db_reader.db_reader.DBReader][]:
         Every snapshot run is executing the simple query which fetches all the table data:
 
     ```sql
     SELECT id, data FROM public.mydata;
     ```
 
-    For [file-downloader][]:
+    For [onetl.file.file_downloader.file_downloader.FileDownloader][]:
         Every snapshot run is downloading all the files (from the source, or user-defined list):
 
     ```bash
@@ -49,7 +49,7 @@ class SnapshotStrategy(BaseStrategy):
     Examples
     --------
 
-    ???+ example "Snapshot run with [db-reader][]"
+    ???+ example "Snapshot run with [onetl.db.db_reader.db_reader.DBReader][]"
 
         ```python
         from onetl.db import DBReader, DBWriter
@@ -73,7 +73,7 @@ class SnapshotStrategy(BaseStrategy):
         # SELECT id, data FROM public.mydata;
         ```
 
-    ??? example "Snapshot run with [file-downloader][]"
+    ??? example "Snapshot run with [onetl.file.file_downloader.file_downloader.FileDownloader][]"
 
         ```python
         from onetl.file import FileDownloader
@@ -95,11 +95,11 @@ class SnapshotStrategy(BaseStrategy):
 
 
 class SnapshotBatchStrategy(BatchHWMStrategy):
-    """Snapshot batch strategy for [db-reader][].
+    """Snapshot batch strategy for [onetl.db.db_reader.db_reader.DBReader][].
 
     !!! note
 
-        Cannot be used with [file-downloader][]
+        Cannot be used with [onetl.file.file_downloader.file_downloader.FileDownloader][]
 
     Same as [SnapshotStrategy][onetl.strategy.snapshot_strategy.SnapshotStrategy],
     but reads data from the source in sequential batches (1..N) like:
@@ -119,17 +119,17 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
     !!! note
 
         This strategy uses HWM column value to filter data for each batch,
-        but does **NOT** save it into [HWM Store][hwm].
+        but does **NOT** save it into [HWM Store][DBR-onetl-hwm-store-hwm].
         So every run starts from the beginning, not from the previous HWM value.
 
     !!! note
 
         If you only need to reduce number of rows read by Spark from opened cursor,
-        use [onetl.connection.db_connection.postgres.Postgres.ReadOptions.fetchsize][] instead
+        use [onetl.connection.db_connection.postgres.options.PostgresReadOptions(fetchsize)][] instead
 
     !!! warning
 
-        Not every [DB connection][db-connections]
+        Not every [DB connection][DBR-onetl-connection-db-connection-db-connections]
         supports batch strategy. For example, Kafka connection doesn't support it.
         Make sure the connection you use is compatible with the SnapshotBatchStrategy.
 
@@ -137,7 +137,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
     Parameters
     ----------
-    step : Any
+    step
 
         Step size used for generating batch SQL queries like:
 
@@ -158,7 +158,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
 
             For example, for `TIMESTAMP` column `step` type should be `datetime.timedelta`, not `int`
 
-    start : Any, optional
+    start
 
         If passed, the value will be used for generating WHERE clauses with `hwm.expression` filter,
         as a start value for the first batch.
@@ -176,7 +176,7 @@ class SnapshotBatchStrategy(BatchHWMStrategy):
             `start` should be the same type as `hwm.expression` value,
             e.g. `datetime.datetime` for `TIMESTAMP` column, `datetime.date` for `DATE`, and so on
 
-    stop : Any, optional
+    stop
 
         If passed, the value will be used for generating WHERE clauses with `hwm.expression` filter,
         as a stop value for the last batch.

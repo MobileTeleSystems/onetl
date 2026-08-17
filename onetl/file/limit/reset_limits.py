@@ -17,7 +17,7 @@ def reset_limits(limits: "Iterable[BaseFileLimit]") -> "list[BaseFileLimit]":
 
     Parameters
     ----------
-    limits : Iterable[onetl.base.base_file_limit.BaseFileLimit]
+    limits
         Limits to reset.
 
     Returns

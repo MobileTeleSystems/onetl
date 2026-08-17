@@ -51,14 +51,14 @@ class FileMoveStatus(Enum):
 @support_hooks
 class FileMover(FrozenModel):
     """Allows you to move files between different directories in a filesystem,
-    and return an object with move result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    and return an object with move result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! note
 
         This class is used to move files **only** within the same connection,
 
         It does NOT support direct file transfer between filesystems, like `FTP -> SFTP`.
-        You should use [file-downloader][] + [file-uploader][] to implement `FTP -> local dir -> SFTP`.
+        You should use [onetl.file.file_downloader.file_downloader.FileDownloader][] + [onetl.file.file_uploader.file_uploader.FileUploader][] to implement `FTP -> local dir -> SFTP`.
 
     !!! warning
 
@@ -68,26 +68,26 @@ class FileMover(FrozenModel):
 
     Parameters
     ----------
-    connection : FileConnection
-        Class which contains File system connection properties. See [file-connections][] section.
+    connection
+        Class which contains File system connection properties. See [DBR-onetl-connection-file-connection-file-connections][] section.
 
-    target_path : os.PathLike | str
+    target_path
         Remote path to move files to
 
-    source_path : os.PathLike | str, optional
+    source_path
         Remote path to move files from.
 
         Could be `None`, but only if you pass absolute file paths directly to
         [run][] method
 
-    filters : list[onetl.base.base_file_filter.BaseFileFilter]
-        Return only files/directories matching these filters. See [file-filters][]
+    filters
+        Return only files/directories matching these filters. See [DBR-onetl-file-filters][]
 
-    limits : list[onetl.base.base_file_limit.BaseFileLimit]
+    limits
         Apply limits to the list of files/directories, and stop if one of the limits is reached.
-        See [file-limits][]
+        See [DBR-onetl-file-limits][]
 
-    options : onetl.file.file_mover.options.FileMoverOptions | dict,optional
+    options
         File moving options.
 
     Examples
@@ -160,14 +160,14 @@ class FileMover(FrozenModel):
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> MoveResult:
         """
-        Method for moving files from source to target directory. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Method for moving files from source to target directory. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
         Parameters
         ----------
 
-        files : Iterable[str | os.PathLike],optional
+        files
             File list to move.
 
             If empty, move files from `source_path` to `target_path`,
@@ -178,7 +178,7 @@ class FileMover(FrozenModel):
 
         Returns
         -------
-        [MoveResult][onetl.file.file_mover.move_result.MoveResult]
+        :
 
             Move result object
 
@@ -321,7 +321,7 @@ class FileMover(FrozenModel):
     def view_files(self) -> FileSet[RemoteFile]:
         """
         Get file list in the `source_path`,
-        after `filter` and `limit` applied (if any). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        after `filter` and `limit` applied (if any). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.8.0"
 
@@ -337,7 +337,7 @@ class FileMover(FrozenModel):
 
         Returns
         -------
-        FileSet[RemoteFile]
+        :
             Set of files in `source_path`, which will be moved by [run][] method
 
         Examples

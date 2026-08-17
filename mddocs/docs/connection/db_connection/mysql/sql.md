@@ -66,4 +66,3 @@ Especially if there are indexes or partitions for columns used in `where` clause
     options:
         inherited_members: true
         members: true
-        show_root_heading: true

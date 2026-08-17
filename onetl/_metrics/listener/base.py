@@ -15,7 +15,7 @@ class BaseSparkListener:
     """Base no-op SparkListener implementation.
 
     See [SparkListener](https://spark.apache.org/docs/3.5.8/api/java/org/apache/spark/scheduler/SparkListener.html) interface.
-    """  # noqa: E501
+    """
 
     spark: "SparkSession"
 

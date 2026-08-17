@@ -162,11 +162,11 @@ class GreenplumReadOptions(GenericOptions):
 
             [num_partitions][] is used just to
             calculate the partition stride, **NOT** for filtering the rows in table.
-            So all rows in the table will be returned (unlike *Incremental* [strategy][]).
+            So all rows in the table will be returned (unlike *Incremental* [strategy][DBR-onetl-strategy-read-strategies]).
 
         !!! note
 
-            All queries are executed in parallel. To execute them sequentially, use *Batch* [strategy][].
+            All queries are executed in parallel. To execute them sequentially, use *Batch* [strategy][DBR-onetl-strategy-read-strategies].
 
     !!! warning
 
@@ -272,7 +272,7 @@ class GreenplumWriteOptions(GenericOptions):
                     implement deduplication using unique indexes or constraints.
 
                     Instead, write to staging table and perform deduplication
-                    using [execute][] method.
+                    using [execute][DBR-onetl-connection-db-connection-greenplum-execute-use-greenplum-execute] method.
 
     * `replace_entire_table`
         **Table is dropped and then created**.
