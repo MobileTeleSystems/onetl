@@ -9,7 +9,7 @@ pytest_plugins = [
     "tests.fixtures.processing.fixtures.kafka",
     "tests.fixtures.create_keytab",
     "tests.fixtures.global_hwm_store",
-    "tests.fixtures.hwm_delta",
+    "tests.fixtures.hwm_with_value",
     "tests.fixtures.spark_mock",
     "tests.fixtures.spark",
     "tests.fixtures.connections.base",

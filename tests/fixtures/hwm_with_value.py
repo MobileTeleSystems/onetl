@@ -1,5 +1,5 @@
 import secrets
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 
 import pytest
 from etl_entities.hwm import (
@@ -44,7 +44,7 @@ HWMS_WITH_VALUE = [
             expression=secrets.token_hex(5),
             value=date(year=2023, month=8, day=15),
         ),
-        timedelta(days=31),
+        date(year=2023, month=8, day=16),
     ),
     (
         ColumnDateTimeHWM(
@@ -53,7 +53,7 @@ HWMS_WITH_VALUE = [
             expression=secrets.token_hex(5),
             value=datetime(year=2023, month=8, day=15, hour=11, minute=22, second=33),
         ),
-        timedelta(seconds=50),
+        datetime(year=2023, month=8, day=15, hour=11, minute=22, second=43),
     ),
     (
         FileListHWM(
@@ -91,5 +91,5 @@ HWMS_WITH_VALUE = [
 
 
 @pytest.fixture(params=HWMS_WITH_VALUE)
-def hwm_delta(request):
+def hwm_with_value(request):
     return request.param

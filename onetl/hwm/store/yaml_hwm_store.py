@@ -55,7 +55,6 @@ class YAMLHWMStore(BaseHWMStore):
     Parameters
     ----------
     path
-
         Folder name there HWM value files will be stored.
 
         Default:
@@ -65,8 +64,10 @@ class YAMLHWMStore(BaseHWMStore):
         * `~/Library/Application Support/onETL/yml_hwm_store` on MacOS
 
     encoding
-
         Encoding of files with HWM value
+
+    keep_history
+        Keep history of old HWM values in YAML file
 
     Examples
     --------
@@ -100,10 +101,11 @@ class YAMLHWMStore(BaseHWMStore):
     # "~/.local/share/onETL/id__public.mydata__postgres_postgres.domain.com_5432__myprocess__myhostname.yml"
     # with encoding="utf-8" and save a serialized HWM values to this file
     ```
+
     With all options
 
     ```python
-    with YAMLHWMStore(path="/my/store", encoding="utf-8"):
+    with YAMLHWMStore(path="/my/store", encoding="utf-8", keep_history=True):
         with IncrementalStrategy():
             df = reader.run()
             writer.run(df)
@@ -112,8 +114,8 @@ class YAMLHWMStore(BaseHWMStore):
     # "/my/store/id__public.mydata__postgres_postgres.domain.com_5432__myprocess__myhostname.yml"
     # with encoding="utf-8" and save a serialized HWM values to this file
     ```
-    File content example:
 
+    File content example:
     ```yaml
     - column:
         name: id
@@ -150,6 +152,7 @@ class YAMLHWMStore(BaseHWMStore):
 
     path: LocalPath = DATA_PATH / "yml_hwm_store"
     encoding: str = "utf-8"
+    keep_history: bool = True
 
     ITEMS_DELIMITER_PATTERN: ClassVar[re.Pattern] = re.compile("[#@|]+")
     PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:/\\]+")
@@ -164,13 +167,20 @@ class YAMLHWMStore(BaseHWMStore):
             frozen = True
             extra = "forbid"
 
-    def __init__(self, path: os.PathLike | str = DATA_PATH / "yml_hwm_store", encoding="utf-8"):
+    def __init__(
+        self,
+        *,
+        path: os.PathLike | str = DATA_PATH / "yml_hwm_store",
+        encoding="utf-8",
+        keep_history: bool = True,
+    ):
         path = LocalPath(path).expanduser().resolve()
         path.mkdir(parents=True, exist_ok=True)
 
         super().__init__(
             path=path,
             encoding=encoding,
+            keep_history=keep_history,
         )
 
     @slot
@@ -188,7 +198,10 @@ class YAMLHWMStore(BaseHWMStore):
     def set_hwm(self, hwm: HWM) -> LocalPath:
         """Save HWM value. Returns path to the YAML file."""
         data = self._load(hwm.name)
-        self._dump(hwm.name, [hwm.serialize(), *data])
+        to_save: list[dict] = [hwm.serialize()]
+        if self.keep_history:
+            to_save.extend(data)
+        self._dump(hwm.name, to_save)
         return self.get_file_path(hwm.name)
 
     @classmethod
