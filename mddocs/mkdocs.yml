@@ -90,6 +90,8 @@ plugins:
   #         build: false
   - towncrier
   - git-revision-date-localized
+  - privacy:
+      enabled: !ENV [READTHEDOCS, false]
 
 markdown_extensions:
   - footnotes
