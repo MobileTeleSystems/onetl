@@ -46,7 +46,7 @@ class SparkMetricsListener(BaseSparkListener):
         between Python thread and Java thread.
         """
         self.reset()
-        return super().__enter__()
+        return super(SparkMetricsListener, self).__enter__()
 
     def onOtherEvent(self, event):  # noqa: N802
         class_name = event.getClass().getName()
