@@ -23,7 +23,7 @@ FILE_TYPE_DETECTORS = {
 }
 
 
-@dataclass
+@dataclass(slots=True)
 class PathRepr:
     path: str
     kind: str | None = None

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
         def exception(self) -> Exception: ...
 else:
 
-    @dataclass(eq=False, frozen=True)
+    @dataclass(eq=False, frozen=True, slots=True)
     class RemoteFile(PathContainer[RemotePath]):
         """
         Representation of existing remote file with stat
@@ -62,7 +62,7 @@ else:
         def parents(self) -> list[RemoteDirectory]:
             return [RemoteDirectory(parent) for parent in self.path.parents]
 
-    @dataclass(eq=False, frozen=True)
+    @dataclass(eq=False, frozen=True, slots=True)
     class FailedRemoteFile(RemoteFile):
         """
         Representation of existing remote file with stat and attached exception object

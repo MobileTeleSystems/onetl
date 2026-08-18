@@ -16,7 +16,7 @@ if TYPE_CHECKING:
         def exception(self) -> Exception: ...
 else:
 
-    @dataclass(eq=False, frozen=True)
+    @dataclass(eq=False, frozen=True, slots=True)
     class FailedLocalFile(PathContainer[LocalPath]):
         """
         Representation of existing local file with stat and attached exception object

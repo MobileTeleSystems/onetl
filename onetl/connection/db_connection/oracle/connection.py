@@ -52,7 +52,7 @@ CREATE_DDL_PATTERN = re.compile(
 )
 
 
-@dataclass
+@dataclass(slots=True)
 class ErrorPosition:
     line: int
     position: int

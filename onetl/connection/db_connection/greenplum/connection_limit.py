@@ -4,7 +4,7 @@ import textwrap
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(slots=True)
 class GreenplumConnectionLimit:
     maximum: int
     reserved: int

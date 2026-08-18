@@ -10,7 +10,7 @@ from onetl.base import PurePathProtocol
 PurePath = TypeVar("PurePath", bound=PurePathProtocol)
 
 
-@dataclass(eq=False, frozen=True)
+@dataclass(eq=False, frozen=True, slots=True)
 class PathContainer(Generic[PurePath]):
     """
     Read-only container for `pathlib.PurePath`-like classes with some custom logic.
