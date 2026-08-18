@@ -298,6 +298,6 @@ class MSSQL(JDBCConnection):
             # https://learn.microsoft.com/en-us/sql/connect/jdbc/reference/setreadonly-method-sqlserverconnection?view=sql-server-ver16
             # Instead, we should change connection type via option:
             # https://github.com/microsoft/mssql-jdbc/issues/484
-            options = options.copy(update={"ApplicationIntent": "ReadOnly"})
+            options = options.model_copy(update={"ApplicationIntent": "ReadOnly"})
 
         return super()._get_jdbc_connection(options, read_only=read_only)

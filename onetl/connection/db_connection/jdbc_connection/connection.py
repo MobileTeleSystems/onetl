@@ -210,7 +210,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
             alias = "generated_" + secrets.token_hex(5)
             alias_escaped = self.dialect.escape_column(alias)
             aliased_column = self.dialect.aliased(partition_column, alias_escaped)
-            read_options = read_options.copy(update={"partition_column": alias_escaped})
+            read_options = read_options.model_copy(update={"partition_column": alias_escaped})
             new_columns.append(aliased_column)
 
         where = self.dialect.apply_window(where, window)
