@@ -191,6 +191,7 @@
     * [Hooks global state](hooks/global_state.md)
 * [Changelog](changelog/index.md)
     * [Next release](changelog/NEXT_RELEASE.md)
+    * [0.17.0](changelog/0.17.0.md)
     * [0.16.2](changelog/0.16.2.md)
     * [0.16.1](changelog/0.16.1.md)
     * [0.16.0](changelog/0.16.0.md)

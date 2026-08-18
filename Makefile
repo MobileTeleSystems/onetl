@@ -132,5 +132,5 @@ docs-generate-changelog: ##@Docs Generate changelog
 	awk '/##/,0' "mddocs/docs/changelog/${VERSION}.md" > temp && mv temp "mddocs/docs/changelog/${VERSION}.md"
 
 	# Update Changelog Index and Navigation
-	sed "s#\(.*NEXT_RELEASE.*\)#\1\n- [${VERSION} (${DATE})][DBR-onetl-changelog-${VERSION_ANCHOR}]#" "mddocs/docs/changelog/index.md" > temp && mv temp "mddocs/docs/changelog/index.md"
+	sed "s#\(.*NEXT_RELEASE.*\)#\1\n- [${VERSION} (${DATE})][DBR-onetl-changelog-${VERSION}]#" "mddocs/docs/changelog/index.md" > temp && mv temp "mddocs/docs/changelog/index.md"
 	sed "s#\(.*NEXT_RELEASE.*\)#\1\n    * [${VERSION}](changelog/${VERSION}.md)#" "mddocs/docs/nav.md" > temp && mv temp "mddocs/docs/nav.md"
