@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 from contextlib import suppress
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 from onetl._util.java import get_java_gateway, start_callback_server
 
@@ -17,7 +17,8 @@ class BaseSparkListener:
     See [SparkListener](https://spark.apache.org/docs/3.5.8/api/java/org/apache/spark/scheduler/SparkListener.html) interface.
     """
 
-    spark: "SparkSession"
+    spark: "SparkSession" = field(repr=False)
+    _java_listener: Any = field(init=False, default=None, repr=False)
 
     def activate(self):
         start_callback_server(self.spark)
@@ -40,7 +41,7 @@ class BaseSparkListener:
             spark_context.removeSparkListener(self._java_listener)
 
         with suppress(Exception):
-            del self._java_listener
+            self._java_listener = None
 
     def __enter__(self):
         self.activate()

@@ -26,7 +26,7 @@ class SparkMetricsListener(BaseSparkListener):
         # we cannot override execution_id property as it set by Spark
         # we also cannot use job tags, as they were implemented only in Spark 3.5+
         self.spark.sparkContext.setLocalProperty(self.THREAD_ID_KEY, self._thread_id)
-        return super().activate()
+        return super(SparkMetricsListener, self).activate()
 
     def reset(self):
         self._recorded_executions.clear()
