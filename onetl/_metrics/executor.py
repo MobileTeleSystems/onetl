@@ -1,17 +1,16 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 import os
+from dataclasses import dataclass, field
 from datetime import timedelta
 
 from humanize import naturalsize, precisedelta
-from pydantic import Field
-
-from onetl.impl import BaseModel
 
 
-class SparkExecutorMetrics(BaseModel):
-    total_run_time: timedelta = Field(default_factory=timedelta)
-    total_cpu_time: timedelta = Field(default_factory=timedelta)
+@dataclass(slots=True)
+class SparkExecutorMetrics:
+    total_run_time: timedelta = field(default_factory=timedelta)
+    total_cpu_time: timedelta = field(default_factory=timedelta)
     peak_memory_bytes: int = 0
     memory_spilled_bytes: int = 0
     disk_spilled_bytes: int = 0

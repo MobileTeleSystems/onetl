@@ -1,17 +1,17 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 import os
+from dataclasses import dataclass
 
 from humanize import naturalsize
-
-from onetl.impl import BaseModel
 
 # Metrics themselves are considered a part of driver result,
 # ignore if result is smaller than 1MB
 MIN_DRIVER_BYTES = 1_000_000
 
 
-class SparkDriverMetrics(BaseModel):
+@dataclass(slots=True)
+class SparkDriverMetrics:
     in_memory_bytes: int = 0
 
     @property

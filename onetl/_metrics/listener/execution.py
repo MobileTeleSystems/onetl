@@ -43,7 +43,7 @@ class SparkSQLMetricNames(str, Enum):
         return set(cls.__members__.values())
 
 
-@dataclass
+@dataclass(slots=True)
 class SparkListenerExecution:
     id: int
     description: str | None = None

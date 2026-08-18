@@ -17,7 +17,7 @@ class SparkListenerJobStatus(str, Enum):
         return self.value
 
 
-@dataclass
+@dataclass(slots=True)
 class SparkListenerJob:
     id: int
     description: str | None = None

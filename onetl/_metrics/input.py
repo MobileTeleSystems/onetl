@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 import os
+from dataclasses import dataclass
 from pprint import pformat
 
 from humanize import naturalsize
 
-from onetl.impl import BaseModel
 
-
-class SparkInputMetrics(BaseModel):
+@dataclass(slots=True)
+class SparkInputMetrics:
     read_rows: int = 0
     read_files: int = 0
     read_partitions: int = 0

@@ -2,23 +2,22 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 import textwrap
-
-from pydantic import Field
+from dataclasses import dataclass, field
 
 from onetl._metrics.driver import SparkDriverMetrics
 from onetl._metrics.executor import SparkExecutorMetrics
 from onetl._metrics.input import SparkInputMetrics
 from onetl._metrics.output import SparkOutputMetrics
-from onetl.impl import BaseModel
 
 INDENT = " " * 4
 
 
-class SparkCommandMetrics(BaseModel):
-    input: SparkInputMetrics = Field(default_factory=SparkInputMetrics)
-    output: SparkOutputMetrics = Field(default_factory=SparkOutputMetrics)
-    driver: SparkDriverMetrics = Field(default_factory=SparkDriverMetrics)
-    executor: SparkExecutorMetrics = Field(default_factory=SparkExecutorMetrics)
+@dataclass(slots=True)
+class SparkCommandMetrics:
+    input: SparkInputMetrics = field(default_factory=SparkInputMetrics)
+    output: SparkOutputMetrics = field(default_factory=SparkOutputMetrics)
+    driver: SparkDriverMetrics = field(default_factory=SparkDriverMetrics)
+    executor: SparkExecutorMetrics = field(default_factory=SparkExecutorMetrics)
 
     @property
     def is_empty(self) -> bool:

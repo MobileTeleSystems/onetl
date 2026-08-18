@@ -13,9 +13,9 @@ from onetl._metrics.listener.execution import (
 KNOWN_METRICS = SparkSQLMetricNames.values()
 
 
-@dataclass
+@dataclass(slots=True)
 class SparkMetricsListener(BaseSparkListener):
-    THREAD_ID_KEY = "python.thread.id"
+    THREAD_ID_KEY: ClassVar[str] = "python.thread.id"
     SQL_START_CLASS_NAME: ClassVar[str] = "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart"
     SQL_STOP_CLASS_NAME: ClassVar[str] = "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd"
 

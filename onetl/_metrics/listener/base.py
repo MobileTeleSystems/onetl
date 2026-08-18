@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pyspark.sql import SparkSession
 
 
-@dataclass
+@dataclass(slots=True)
 class BaseSparkListener:
     """Base no-op SparkListener implementation.
 

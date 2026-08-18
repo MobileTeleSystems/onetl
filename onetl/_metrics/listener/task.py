@@ -15,7 +15,7 @@ class SparkListenerTaskStatus(str, Enum):
         return self.value
 
 
-@dataclass
+@dataclass(slots=True)
 class SparkListenerTaskInputMetrics:
     bytes_read: int = 0
     records_read: int = 0
@@ -28,7 +28,7 @@ class SparkListenerTaskInputMetrics:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class SparkListenerTaskOutputMetrics:
     bytes_written: int = 0
     records_written: int = 0
@@ -41,7 +41,7 @@ class SparkListenerTaskOutputMetrics:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class SparkListenerTaskMetrics:
     """Python representation of Spark TaskMetrics object.
 
@@ -73,7 +73,7 @@ class SparkListenerTaskMetrics:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class SparkListenerTask:
     id: int
     status: SparkListenerTaskStatus = SparkListenerTaskStatus.PENDING

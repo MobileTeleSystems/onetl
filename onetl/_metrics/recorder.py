@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 
 class SparkMetricsRecorder:
+    __slots__ = ("_listener",)
+
     def __init__(self, spark: "SparkSession"):
         self._listener = SparkMetricsListener(spark=spark)
 
