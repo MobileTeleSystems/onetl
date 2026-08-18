@@ -1,12 +1,15 @@
 import re
 import secrets
+import sys
 import textwrap
 
 import pytest
-from frozendict import frozendict
 
 from onetl.connection import Hive
 from onetl.db import DBReader
+
+if sys.version_info < (3, 15):
+    from frozendict import frozendict
 
 pytestmark = pytest.mark.hive
 

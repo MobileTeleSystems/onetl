@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+import sys
 import textwrap
 import time
 import warnings
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-import frozendict
 from etl_entities.hwm import HWM, ColumnHWM, HWMTypeRegistry, KeyValueHWM
 from humanize import naturaldelta
 from pydantic import Field, PrivateAttr, ValidationInfo, field_validator, model_validator
@@ -35,6 +35,9 @@ from onetl.log import (
 from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 from onetl.strategy.hwm_strategy import HWMStrategy
 from onetl.strategy.strategy_manager import StrategyManager
+
+if sys.version_info < (3, 15):
+    from frozendict import frozendict
 
 if TYPE_CHECKING:
     from pyspark.sql.dataframe import DataFrame
@@ -347,7 +350,7 @@ class DBReader(FrozenModel):
             return value
         result = connection.dialect.validate_where(value)
         if isinstance(result, dict):
-            return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
+            return frozendict(result)  # type: ignore[attr-defined, operator]
         return result
 
     @field_validator("hint", mode="before")
@@ -358,7 +361,7 @@ class DBReader(FrozenModel):
             return value
         result = connection.dialect.validate_hint(value)
         if isinstance(result, dict):
-            return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
+            return frozendict(result)  # type: ignore[attr-defined, operator]
         return result
 
     @field_validator("df_schema", mode="before")
