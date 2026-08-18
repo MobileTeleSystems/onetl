@@ -390,7 +390,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
         query = self.dialect.get_sql_query(source, columns=columns, limit=0, compact=True)
-        jdbc_options = self.ReadOptions.parse(options).copy(update={"fetchsize": 0})
+        jdbc_options = self.ReadOptions.parse(options).model_copy(update={"fetchsize": 0})
 
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query, level=logging.DEBUG)
@@ -410,7 +410,7 @@ class Greenplum(JDBCMixin, DBConnection):
         options: GreenplumReadOptions | None = None,
     ) -> tuple[Any, Any]:
         log.info("|%s| Getting min and max values for %r ...", self.__class__.__name__, window.expression)
-        jdbc_options = self.ReadOptions.parse(options).copy(update={"fetchsize": 1})
+        jdbc_options = self.ReadOptions.parse(options).model_copy(update={"fetchsize": 1})
 
         query = self.dialect.get_sql_query(
             table=source,
@@ -494,7 +494,7 @@ class Greenplum(JDBCMixin, DBConnection):
         if read_only:
             # To properly support pgbouncer, we have to create connection with readOnly option set.
             # See https://github.com/pgjdbc/pgjdbc/issues/848
-            options = options.copy(update={"readOnly": True})
+            options = options.model_copy(update={"readOnly": True})
 
         connection_properties = self._options_to_connection_properties(options)
         jvm = self.spark._jvm  # type: ignore[attr-defined]  # noqa: SLF001
