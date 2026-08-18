@@ -5,8 +5,8 @@
 - PostgreSQL server versions:
     - Officially declared: 9.1 - 18
     - Actually tested: 9.4.26, 18.3
-- Spark versions: 3.2.x - 4.1.x
-- Java versions: 8 - 22
+- Spark versions: 3.2.x -- 4.2.x
+- Java versions: 8 -- 25
 
 See [official documentation](https://jdbc.postgresql.org/download/).
 

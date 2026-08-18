@@ -41,4 +41,3 @@ Method above accepts [MSSQL.WriteOptions][onetl.connection.db_connection.mssql.o
 ::: onetl.connection.db_connection.mssql.options.MSSQLWriteOptions
     options:
         inherited_members: true
-        show_root_heading: true

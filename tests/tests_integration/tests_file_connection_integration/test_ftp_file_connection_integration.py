@@ -14,7 +14,7 @@ def test_ftp_file_connection_check_success(ftp_file_connection, caplog):
     assert f"host = '{ftp.host}'" in caplog.text
     assert f"port = {ftp.port}" in caplog.text
     assert f"user = '{ftp.user}'" in caplog.text
-    assert f"extra = {ftp.extra.dict(exclude_none=True)!r}" in caplog.text
+    assert f"extra = {ftp.extra.model_dump(exclude_none=True)!r}" in caplog.text
     assert "password = SecretStr('**********')" in caplog.text
     assert ftp.password.get_secret_value() not in caplog.text
 

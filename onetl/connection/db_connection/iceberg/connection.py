@@ -1,13 +1,20 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Union
+import time
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, ClassVar
 
+from humanize import naturaldelta
+from pydantic import field_validator
+
+from onetl._metrics.recorder import SparkMetricsRecorder
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
+from onetl._util.spark import get_pyspark_version, get_spark_version, override_job_description, stringify
+from onetl._util.sql import clear_statement
 from onetl._util.version import Version
+from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.connection.db_connection.iceberg.catalog import (
     IcebergCatalog,
     IcebergFilesystemCatalog,
@@ -28,16 +35,6 @@ from onetl.connection.db_connection.iceberg.warehouse.delegated import (
     IcebergDelegatedWarehouse,
 )
 from onetl.exception import MISSING_JVM_CLASS_MSG
-
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
-
-from onetl._metrics.recorder import SparkMetricsRecorder
-from onetl._util.spark import get_spark_version, override_job_description, stringify
-from onetl._util.sql import clear_statement
-from onetl.connection.db_connection.db_connection import DBConnection
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
@@ -46,17 +43,16 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
-
 log = logging.getLogger(__name__)
 
 
 @support_hooks
 class Iceberg(DBConnection):
-    """Iceberg connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Iceberg connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! info "See also"
 
-        Before using this connector please take into account [iceberg-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-iceberg-prerequisites][]
 
     !!! success "Added in 0.14.0"
 
@@ -65,46 +61,32 @@ class Iceberg(DBConnection):
     catalog_name : str
         Catalog name. Arbitrary string used by Spark to identify catalog and tables (`mycatalog.myschema.mytable`).
 
-    catalog : [IcebergCatalog][]
+    catalog : IcebergCatalog
         Iceberg catalog configuration
 
-    warehouse : [IcebergWarehouse][]
+    warehouse : IcebergWarehouse
         Iceberg warehouse configuration
 
-    extra : dict | None, default: `None`
+    extra : IcebergExtra, optional
         A dictionary of additional properties to be used when configuring Iceberg catalog.
-
-        These are Iceberg-specific properties that control behavior of the catalog.
-        See [Iceberg Spark configuration documentation](https://iceberg.apache.org/docs/latest/spark-configuration/)
-
-        Pass properties **without catalog prefix**. For example:
-
-        ```python
-        extra = {
-            "cache-enabled": "true",
-            "cache.expiration-interval-ms": "40000",
-        }
-        ```
-        This will be translated to:
-
-        ```ini
-        spark.sql.catalog.my_catalog.cache-enabled = 'true'
-        spark.sql.catalog.my_catalog.cache.expiration-interval-ms = '40000'
-        ```
-    spark : `pyspark.sql.SparkSession`
+    spark : pyspark.sql.SparkSession
         Spark session
 
     Examples
     --------
 
     === "REST catalog with Bearer token auth, S3 warehouse with explicit credentials"
+
         ```python
         from onetl.connection import Iceberg
         from pyspark.sql import SparkSession
 
+        iceberg_version = "1.10.0"
+
         maven_packages = [
-            *Iceberg.get_packages(package_version="1.10.0", spark_version="3.5"),
-            *Iceberg.S3Warehouse.get_packages(package_version="1.10.0"),
+            *Iceberg.get_packages(package_version=iceberg_version),
+            # required to use S3 warehouse
+            *Iceberg.S3Warehouse.get_packages(package_version=iceberg_version),
         ]
         spark = (
             SparkSession.builder.appName("spark-app-name")
@@ -134,15 +116,19 @@ class Iceberg(DBConnection):
             ),
         )
         ```
+
     === "REST catalog with OAuth2 client credentials, S3 warehouse with vended credentials"
+
         ```python
         from onetl.connection import Iceberg
         from pyspark.sql import SparkSession
 
+        iceberg_version = "1.10.0"
+
         maven_packages = [
-            *Iceberg.get_packages(package_version="1.10.0", spark_version="3.5"),
+            *Iceberg.get_packages(package_version=iceberg_version),
             # required to use S3 warehouse
-            *Iceberg.S3Warehouse.get_packages(package_version="1.10.0"),
+            *Iceberg.S3Warehouse.get_packages(package_version=iceberg_version),
         ]
         spark = (
             SparkSession.builder.appName("spark-app-name")
@@ -168,12 +154,15 @@ class Iceberg(DBConnection):
             ),
         )
         ```
+
     === "HDFS Filesystem catalog, HDFS warehouse"
+
         ```python
         from onetl.connection import Iceberg, SparkHDFS
         from pyspark.sql import SparkSession
 
-        maven_packages = Iceberg.get_packages(package_version="1.10.0", spark_version="3.5.8")
+        iceberg_version = "1.10.0"
+        maven_packages = Iceberg.get_packages(package_version=iceberg_version)
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -200,19 +189,19 @@ class Iceberg(DBConnection):
 
     catalog_name: str
     catalog: IcebergCatalog
-    warehouse: Optional[IcebergWarehouse] = None
+    warehouse: IcebergWarehouse | None = None
     extra: IcebergExtra = IcebergExtra()
 
-    FilesystemCatalog = IcebergFilesystemCatalog
-    RESTCatalog = IcebergRESTCatalog
+    FilesystemCatalog: ClassVar = IcebergFilesystemCatalog
+    RESTCatalog: ClassVar = IcebergRESTCatalog
 
-    FilesystemWarehouse = IcebergFilesystemWarehouse
-    S3Warehouse = IcebergS3Warehouse
-    DelegatedWarehouse = IcebergDelegatedWarehouse
+    FilesystemWarehouse: ClassVar = IcebergFilesystemWarehouse
+    S3Warehouse: ClassVar = IcebergS3Warehouse
+    DelegatedWarehouse: ClassVar = IcebergDelegatedWarehouse
 
-    WriteOptions = IcebergWriteOptions
+    WriteOptions: ClassVar = IcebergWriteOptions
 
-    Dialect = IcebergDialect
+    Dialect: ClassVar = IcebergDialect
 
     @property
     def _check_query(self) -> str:
@@ -221,11 +210,11 @@ class Iceberg(DBConnection):
     def __init__(
         self,
         *,
-        spark: SparkSession,
+        spark: "SparkSession",
         catalog_name: str,
         catalog: IcebergCatalog,
-        warehouse: Optional[IcebergWarehouse] = None,
-        extra: Union[IcebergExtra, Dict[str, Any], None] = None,
+        warehouse: IcebergWarehouse | None = None,
+        extra: IcebergExtra | dict[str, Any] | None = None,
     ):
         super().__init__(
             spark=spark,
@@ -242,7 +231,7 @@ class Iceberg(DBConnection):
         catalog_config = {
             **self.catalog.get_config(),
             **(self.warehouse.get_config() if self.warehouse else {}),
-            **self.extra.dict(),
+            **self.extra.model_dump(),
         }
         catalog_prefix = f"spark.sql.catalog.{self.catalog_name}"
         spark_config = {catalog_prefix: "org.apache.iceberg.spark.SparkCatalog"}
@@ -254,31 +243,33 @@ class Iceberg(DBConnection):
     def get_packages(
         cls,
         package_version: str,
-        spark_version: str,
+        spark_version: str | None = None,
         scala_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         See [Maven package index](https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-spark)
         for all available packages.
 
         Parameters
         ----------
-        package_version : str
+        package_version
             Iceberg package version in format `major.minor.patch`.
 
-        spark_version : str
+        spark_version
             Spark version in format `major.minor`.
 
-        scala_version : str, optional
+            If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
+
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
 
         Returns
         -------
-        list[str]
+        :
             List of Maven coordinates.
 
         Examples
@@ -287,12 +278,13 @@ class Iceberg(DBConnection):
         from onetl.connection import Iceberg
 
         # Note: Iceberg 1.10.0 requires Java 11+
-        Iceberg.get_packages(package_version="1.10.0", spark_version="3.5.8")
+        # Note: Iceberg 1.11.0 requires Java 17+
+        Iceberg.get_packages(package_version="1.10.0")
         ```
         """
 
         version = Version(package_version).min_digits(3)
-        spark_ver = Version(spark_version).min_digits(2)
+        spark_ver = Version(spark_version).min_digits(2) if spark_version else get_pyspark_version()
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         return [
             f"org.apache.iceberg:iceberg-spark-runtime-{spark_ver.format('{0}.{1}')}_{scala_ver.format('{0}.{1}')}:{version}",
@@ -305,17 +297,18 @@ class Iceberg(DBConnection):
     def __str__(self):
         return f"{self.__class__.__name__}[{self.catalog_name}]"
 
-    @validator("spark")
-    def _check_java_class_imported(cls, spark: SparkSession) -> SparkSession:
+    @field_validator("spark", mode="before")
+    @classmethod
+    def _check_java_class_imported(cls, spark: "SparkSession") -> "SparkSession":
         java_class = "org.apache.iceberg.spark.SparkSessionCatalog"
 
         try:
             try_import_java_class(spark, java_class)
         except Exception as e:
-            spark_version = get_spark_version(spark).format("{0}.{1}.{2}")
+            spark_version = get_spark_version(spark).format("{0}.{1}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
-                package_source=cls.__class__.__name__,
+                package_source=cls.__name__,  # type: ignore[attr-defined]
                 args=f"spark_version='{spark_version}'",
             )
             raise ValueError(msg) from e
@@ -345,22 +338,21 @@ class Iceberg(DBConnection):
     def sql(
         self,
         query: str,
-    ) -> DataFrame:
+    ) -> "DataFrame":
         """
-        Lazily execute SELECT statement and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Lazily execute SELECT statement and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Same as `spark.sql(query)`.
 
         Parameters
         ----------
-        query : str
+        query
 
             SQL query to be executed.
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame
-
+        :
             Spark dataframe
         """
 
@@ -369,12 +361,16 @@ class Iceberg(DBConnection):
         log.info("|%s| Executing SQL query:", self.__class__.__name__)
         log_lines(log, query)
 
-        with SparkMetricsRecorder(self.spark) as recorder:
+        with (
+            SparkMetricsRecorder(self.spark) as recorder,
+            override_job_description(self.spark, f"{self}.sql()"),
+        ):
+            started = time.perf_counter()
             try:
-                with override_job_description(self.spark, f"{self}.sql()"):
-                    df = self._execute_sql(query)
+                df = self._execute_sql(query)
             except Exception:
-                log.exception("|%s| Query failed", self.__class__.__name__)
+                elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+                log.exception("|%s| Query failed after %s!", self.__class__.__name__, elapsed)
 
                 metrics = recorder.metrics()
                 if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
@@ -384,7 +380,8 @@ class Iceberg(DBConnection):
                     log_lines(log, str(metrics), level=logging.DEBUG)
                 raise
 
-            log.info("|Spark| DataFrame successfully created from SQL statement")
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+            log.info("|Spark| DataFrame successfully created from SQL statement in %s", elapsed)
 
             metrics = recorder.metrics()
             if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
@@ -401,11 +398,11 @@ class Iceberg(DBConnection):
         statement: str,
     ) -> None:
         """
-        Execute DDL or DML statement. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Execute DDL or DML statement. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Parameters
         ----------
-        statement : str
+        statement
 
             Statement to be executed.
         """
@@ -415,12 +412,17 @@ class Iceberg(DBConnection):
         log.info("|%s| Executing statement:", self.__class__.__name__)
         log_lines(log, statement)
 
-        with SparkMetricsRecorder(self.spark) as recorder:
+        with (
+            SparkMetricsRecorder(self.spark) as recorder,
+            override_job_description(self.spark, f"{self}.execute()"),
+        ):
+            started = time.perf_counter()
             try:
-                with override_job_description(self.spark, f"{self}.execute()"):
-                    self._execute_sql(statement).collect()
+                self._execute_sql(statement).collect()
             except Exception:
-                log.exception("|%s| Execution failed", self.__class__.__name__)
+                elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+                log.exception("|%s| Execution failed after %s!", self.__class__.__name__, elapsed)
+
                 metrics = recorder.metrics()
                 if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
                     # as SparkListener results are not guaranteed to be received in time,
@@ -429,7 +431,8 @@ class Iceberg(DBConnection):
                     log_lines(log, str(metrics), level=logging.DEBUG)
                 raise
 
-            log.info("|%s| Execution succeeded", self.__class__.__name__)
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+            log.info("|%s| Execution succeeded in %s", self.__class__.__name__, elapsed)
 
             metrics = recorder.metrics()
             if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
@@ -441,7 +444,7 @@ class Iceberg(DBConnection):
     @slot
     def write_df_to_target(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         target: str,
         options: IcebergWriteOptions | None = None,
     ) -> None:
@@ -470,14 +473,15 @@ class Iceberg(DBConnection):
     @slot
     def read_source_as_df(  # noqa: PLR0913
         self,
+        *,
         source: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
-        df_schema: StructType | None = None,
+        df_schema: "StructType | None" = None,
         window: Window | None = None,
         limit: int | None = None,
-    ) -> DataFrame:
+    ) -> "DataFrame":
         query = self.dialect.get_sql_query(
             table=self._normalize_table_name(source),
             columns=columns,
@@ -492,7 +496,7 @@ class Iceberg(DBConnection):
         self,
         source: str,
         columns: list[str] | None = None,
-    ) -> StructType:
+    ) -> "StructType":
         source = self._normalize_table_name(source)
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
         query = self.dialect.get_sql_query(source, columns=columns, where=0, compact=True)
@@ -545,7 +549,7 @@ class Iceberg(DBConnection):
 
         return min_value, max_value
 
-    def _execute_sql(self, query: str) -> DataFrame:
+    def _execute_sql(self, query: str) -> "DataFrame":
         return self.spark.sql(query)
 
     def _target_exist(self, name: str) -> bool:
@@ -572,7 +576,7 @@ class Iceberg(DBConnection):
 
     def _save_as_table(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         table: str,
         options: IcebergWriteOptions | dict | None = None,
     ) -> None:
@@ -600,7 +604,7 @@ class Iceberg(DBConnection):
 
     def _insert_into(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         table: str,
         options: IcebergWriteOptions | dict | None = None,
     ) -> None:
@@ -626,7 +630,7 @@ class Iceberg(DBConnection):
         log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
 
     def _format_write_options(self, write_options: IcebergWriteOptions) -> dict:
-        return write_options.dict(
+        return write_options.model_dump(
             by_alias=True,
             exclude_unset=True,
             exclude={"if_exists"},

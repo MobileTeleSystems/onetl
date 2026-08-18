@@ -6,6 +6,7 @@ SPARK_EXTERNAL_IP := $(shell docker network inspect onetl_onetl --format '{{ (in
 VERSION := $(shell cat onetl/VERSION)
 DATE := $(shell date --rfc-3339=date)
 SPARK_VERSION ?= 3.5
+ETL_ENTITIES_VERSION ?= 3
 VIRTUAL_ENV ?= .venv
 PYTHON = ${VIRTUAL_ENV}/bin/python
 PIP = ${VIRTUAL_ENV}/bin/pip
@@ -53,6 +54,7 @@ venv-install: ##@Env Install requirements to venv
 		--group test-oracle \
 		--group test-postgres \
 		--group test-spark-${SPARK_VERSION} \
+		--group test-etl-entities-${ETL_ENTITIES_VERSION} \
 		$(UV_ARGS)
 
 	${UV} pip install --no-deps sphinx-plantuml
@@ -63,6 +65,7 @@ test-spark: ##@Run tests with Spark
 		$(UV_ARGS) \
 		--group test \
 		--group test-spark-${SPARK_VERSION} \
+		--group test-etl-entities-${ETL_ENTITIES_VERSION} \
 			${PYTEST} \
 			$(PYTEST_ARGS)
 
@@ -71,6 +74,7 @@ test-no-spark: ##@Run tests without Spark installed
 	uv run \
 		$(UV_ARGS) \
 		--group test \
+		--group test-etl-entities-${ETL_ENTITIES_VERSION} \
 			${PYTEST} \
 				$(PYTEST_ARGS)
 
@@ -80,6 +84,7 @@ test-core: ##@Run core tests
 		$(UV_ARGS) \
 		--group test \
 		--group test-spark-${SPARK_VERSION} \
+		--group test-etl-entities-${ETL_ENTITIES_VERSION} \
 		--with-editable tests/libs/dummy \
 		--with-editable tests/libs/failing \
 			${PYTEST} \
@@ -92,6 +97,7 @@ test-doctest: ##@Run documentation tests
 		$(UV_ARGS) \
 		--group test \
 		--group test-spark-${SPARK_VERSION} \
+		--group test-etl-entities-${ETL_ENTITIES_VERSION} \
 			${PYTEST} \
 				--doctest-modules onetl/_util onetl/hooks onetl/file/filter onetl/file/limit onetl/hwm/store/hwm_class_registry.py \
 				$(PYTEST_ARGS)
@@ -126,5 +132,5 @@ docs-generate-changelog: ##@Docs Generate changelog
 	awk '/##/,0' "mddocs/docs/changelog/${VERSION}.md" > temp && mv temp "mddocs/docs/changelog/${VERSION}.md"
 
 	# Update Changelog Index and Navigation
-	sed "s#\(.*NEXT_RELEASE.*\)#\1\n- [${VERSION} (${DATE})][DBR-onetl-changelog-${VERSION_ANCHOR}]#" "mddocs/docs/changelog/index.md" > temp && mv temp "mddocs/docs/changelog/index.md"
+	sed "s#\(.*NEXT_RELEASE.*\)#\1\n- [${VERSION} (${DATE})][DBR-onetl-changelog-${VERSION}]#" "mddocs/docs/changelog/index.md" > temp && mv temp "mddocs/docs/changelog/index.md"
 	sed "s#\(.*NEXT_RELEASE.*\)#\1\n    * [${VERSION}](changelog/${VERSION}.md)#" "mddocs/docs/nav.md" > temp && mv temp "mddocs/docs/nav.md"

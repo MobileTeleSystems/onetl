@@ -1,15 +1,10 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 from textwrap import dedent
 from typing import Any, ClassVar
 
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from pydantic import field_validator
 
 from onetl.hwm import Edge
 from onetl.strategy.hwm_strategy import HWMStrategy
@@ -27,12 +22,12 @@ class BatchHWMStrategy(HWMStrategy):
 
     MAX_ITERATIONS: ClassVar[int] = 100
 
-    @validator("step", always=True)
-    def step_is_not_none(cls, step):
+    @field_validator("step", mode="before")
+    @classmethod
+    def _step_is_not_none(cls, step):
         if not step:
             msg = f"'step' argument of {cls.__name__} cannot be empty!"
             raise ValueError(msg)
-
         return step
 
     def __iter__(self):

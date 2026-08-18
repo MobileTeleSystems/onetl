@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+from pydantic import ConfigDict
+
 from onetl.impl import GenericOptions
 
 PROHIBITED_OPTIONS = frozenset(
@@ -23,16 +25,15 @@ PROHIBITED_OPTIONS = frozenset(
 
 class KafkaExtra(GenericOptions):
     """
-    This class is responsible for validating additional options that are passed from the user
-    to the Kafka connection. These extra options are configurations that can be provided to the
-    Kafka, which aren't part of the core connection options.
+    Extra options for Kafka connection.
 
-    See Connection [producer options documentation](https://kafka.apache.org/documentation/#producerconfigs),
-    [consumer options documentation](https://kafka.apache.org/documentation/#consumerconfigs)
-    for more details
+    You can pass here any parameters supported by Kafka consumer or producer,
+    even if it is not mentioned in this documentation.
+
+    See:
+
+    * [Producer options documentation](https://kafka.apache.org/documentation/#producerconfigs)
+    * [consumer options documentation](https://kafka.apache.org/documentation/#consumerconfigs)
     """
 
-    class Config:
-        strip_prefixes = ("kafka.",)
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(strip_prefixes=("kafka.",), prohibited_options=PROHIBITED_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]

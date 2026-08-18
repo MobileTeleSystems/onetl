@@ -17,15 +17,10 @@ authors = [{name= "MWS Data Bridge", email = "onetools@mts.ru"}]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: Pydantic",
-    "Framework :: Pydantic :: 1",
     "Framework :: Pydantic :: 2",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -38,23 +33,19 @@ classifiers = [
     "Typing :: Typed",
 ]
 keywords = ["Spark", "ETL", "JDBC", "HWM"]
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 dependencies = [
-    "etl-entities>=2.5,<2.7",
+    "etl-entities>=2.6.1,!=3.0.0,!=3.0.1,<4",
     "evacuator>=1.0,<1.1",
-    "frozendict",
+    "frozendict; python_version < '3.15'",
     "humanize",
-    # 3.5.0 fails with "entry_points() got an unexpected keyword argument 'group'"
-    "importlib_metadata>=3.6.0",
     "ordered-set",
     "platformdirs",
-    # https://github.com/pydantic/pydantic/issues/4092
-    # https://github.com/pydantic/pydantic/issues/4498
-    "pydantic>=1.9.2,!=1.10.2,<3",
+    "psutil",
+    "pydantic>=2.0,<3",
     "pyyaml",
     # https://github.com/python/typing_extensions/pull/188
-    "typing_extensions>=4.5.0,!=4.6.1; python_version == '3.7'",
-    "typing_extensions>=4.5.0; python_version > '3.7'",
+    "typing-extensions>=4.5.0",
 ]
 dynamic = ["version"]
 
@@ -124,16 +115,16 @@ all = [
 test-clickhouse = ["clickhouse-driver"]
 test-greenplum = ["psycopg2-binary"]
 test-kafka = ["confluent-kafka"]
-test-mongodb = ["pymongo"]
+test-mongodb = ["pymongo<4.0"]
 test-mssql = ["pymssql"]
 test-mysql = ["pymysql[rsa]"]
 test-oracle = ["cx_Oracle"]
 test-postgres = ["psycopg2-binary"]
-test-pydantic-1 = ["pydantic<2"]
-test-pydantic-2 = ["pydantic>=2,<3"]
+test-etl-entities-2 = ["etl-entities<3"]
+test-etl-entities-3 = ["etl-entities>=3.0.2,<4"]
 test-samba = ["pysmb"]
 "test-spark-3.2" = [
-    "pyspark==3.2.4",
+    "pyspark~=3.2.4",
     "numpy>=1.16,<1.24",
     "pandas>=1.0,<2",
     "pyarrow>=1.0",
@@ -141,7 +132,7 @@ test-samba = ["pysmb"]
     "setuptools",
 ]
 "test-spark-3.3" = [
-    "pyspark==3.3.4",
+    "pyspark~=3.3.4",
     "numpy>=1.16,<1.24",
     "pandas>=1.0,<2",
     "pyarrow>=1.0",
@@ -149,7 +140,7 @@ test-samba = ["pysmb"]
     "setuptools",
 ]
 "test-spark-3.4" = [
-    "pyspark==3.4.4",
+    "pyspark~=3.4.4",
     "numpy>=1.16",
     "pandas>=1.0",
     "pyarrow>=1.0",
@@ -157,7 +148,7 @@ test-samba = ["pysmb"]
     "setuptools",
 ]
 "test-spark-3.5" = [
-    "pyspark==3.5.8",
+    "pyspark~=3.5.8",
     "numpy>=1.16",
     "pandas>=1.0",
     "pyarrow>=4.0",
@@ -165,7 +156,7 @@ test-samba = ["pysmb"]
     "setuptools",
 ]
 "test-spark-4.0" = [
-    "pyspark==4.0.1",
+    "pyspark~=4.0.4",
     "numpy>=1.24",
     "pandas>=2.0",
     "pyarrow>=11.0",
@@ -173,10 +164,22 @@ test-samba = ["pysmb"]
     "setuptools",
 ]
 "test-spark-4.1" = [
-    "pyspark==4.1.1",
-    "numpy>=1.24",
-    "pandas>=2.0",
-    "pyarrow>=11.0",
+    "pyspark~=4.1.3",
+    # Upgrading numpy leads to error:
+    # .venv/lib/python3.12/site-packages/numpy/__init__.pyi:737: error: Type statement is only supported in Python 3.12 and greater
+    "numpy>=1.24,<2.5",
+    "pandas>=2.2",
+    "pyarrow>=15.0",
+    "sqlalchemy",
+    "setuptools",
+]
+"test-spark-4.2" = [
+    "pyspark~=4.2.0",
+    # Upgrading numpy leads to error:
+    # .venv/lib/python3.12/site-packages/numpy/__init__.pyi:737: error: Type statement is only supported in Python 3.12 and greater
+    "numpy>=1.24,<2.5",
+    "pandas>=2.2",
+    "pyarrow>=18.0",
     "sqlalchemy",
     "setuptools",
 ]
@@ -193,23 +196,24 @@ test = [
     "filelock",
 ]
 dev = [
-    "ruff~=0.15.4",
-    "mypy~=1.19.0",
-    "prek~=0.3.1",
+    "mypy~=2.3.0",
+    "prek~=0.4.12",
+    "ruff~=0.16.1",
     "types-Deprecated~=1.3.1",
     "types-PyYAML~=6.0.12",
     "types-requests~=2.33.0",
 ]
 docs = [
-    "mkdocs>=1.6,<2",
-    "mkdocs-material>=9.5,<10",
-    "mkdocs-autorefs>=1.0,<2",
-    "mkdocs-literate-nav>=0.6,<1",
-    "mkdocstrings-python>=2.0,<3",
-    "griffe-inherited-docstrings>=1.0,<2",
-    "mkdocs-macros-plugin>=1.0,<2",
-    "pymdown-extensions>=10.0,<11",
-    "mkdocs-towncrier>=0.1.5,<1",
+    "mkdocs[i18n]~=1.6.1",
+    "mkdocs-material~=9.7.1",
+    "mkdocs-autorefs~=1.4.3",
+    "mkdocs-literate-nav~=0.6.3",
+    "mkdocstrings-python~=2.0.5",
+    "griffe-inherited-docstrings~=1.1.3",
+    "griffe-fieldz~=0.5.0",
+    "mkdocs-git-revision-date-localized-plugin~=1.5.3",
+    "pymdown-extensions~=11.0",
+    "mkdocs-towncrier~=0.1.5",
     "towncrier~=25.8.0",
     "setuptools<82",
 ]
@@ -224,17 +228,15 @@ conflicts = [
         { group = "test-spark-3.5" },
         { group = "test-spark-4.0" },
         { group = "test-spark-4.1" },
+        { group = "test-spark-4.2" },
     ],
     [
-        { group = "test-pydantic-1" },
-        { group = "test-pydantic-2" },
+        { group = "test-etl-entities-2" },
+        { group = "test-etl-entities-3" },
     ]
 ]
 
 [tool.uv.dependency-groups]
-"test-spark-3.5" = {requires-python = ">=3.8"}
-"test-spark-4.0" = {requires-python = ">=3.9"}
-"test-spark-4.1" = {requires-python = ">=3.10"}
 dev = {requires-python = ">=3.12"}
 docs = {requires-python = ">=3.11"}
 
@@ -243,7 +245,7 @@ docs = {requires-python = ">=3.11"}
 cx-oracle = ["setuptools<82"]
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py310"
 line-length = 120
 extend-exclude = ["mddocs/", "Makefile"]
 
@@ -264,9 +266,8 @@ ignore = [
     "TC002",
     "TC003",
     "TD",
-    "UP006",
-    "UP007",
-    "UP045",
+    "CPY001",
+    "E501",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -292,17 +293,16 @@ ignore = [
     "BLE001",
     "PERF203",
     "FURB171",
+    "PLR0917",
+    "ISC004",
 ]
 "tests/tests_unit/test_hooks/*" = ["C901"]
 "tests/libs/*" = ["INP001"]
 "mddocs/scripts/rst2md.py" = ["T201", "INP001", "C901", "PLR0915", "PLR0912"]
-"mddocs/scripts/fix_refs.py" = ["E501", "T201", "INP001"]
 "mddocs/scripts/generate_anchors.py" = ["T201", "INP001"]
-"mddocs/scripts/griffe_expand_refs.py" = ["INP001"]
-"mddocs/scripts/links2anchors.py" = ["T201", "INP001"]
 
 [tool.mypy]
-python_version = "3.7"
+python_version = "3.10"
 plugins = ["pydantic.mypy"]
 strict_optional = true
 ignore_missing_imports = true

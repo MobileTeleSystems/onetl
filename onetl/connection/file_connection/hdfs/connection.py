@@ -1,36 +1,22 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 import textwrap
 import warnings
 from contextlib import suppress
 from logging import getLogger
-from typing import TYPE_CHECKING, Optional, Tuple, cast
+from typing import TYPE_CHECKING, ClassVar, cast
 
-from etl_entities.instance import Cluster, Host
-
-from onetl.impl.generic_options import GenericOptions
-
-try:
-    from pydantic.v1 import (
-        Field,
-        FilePath,
-        PrivateAttr,
-        SecretStr,
-        root_validator,
-        validator,
-    )
-except (ImportError, AttributeError):
-    from pydantic import (  # type: ignore[no-redef, assignment]
-        Field,
-        FilePath,
-        PrivateAttr,
-        SecretStr,
-        root_validator,
-        validator,
-    )
+from pydantic import (
+    ConfigDict,
+    Field,
+    FilePath,
+    PrivateAttr,
+    SecretStr,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from onetl._util.alias import avoid_alias
 from onetl.base import PathStatProtocol
@@ -39,7 +25,7 @@ from onetl.connection.file_connection.hdfs.slots import HDFSSlots
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
 from onetl.connection.kerberos_helpers import kinit
 from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath, RemotePathStat
+from onetl.impl import Cluster, GenericOptions, Host, LocalPath, RemotePath, RemotePathStat
 
 try:
     from hdfs import Client, InsecureClient  # noqa: F401
@@ -66,7 +52,7 @@ except (ImportError, NameError) as err:
     ) from err
 
 log = getLogger(__name__)
-ENTRY_TYPE = Tuple[str, dict]
+ENTRY_TYPE = tuple[str, dict]
 
 
 class HDFSExtra(GenericOptions):
@@ -78,22 +64,20 @@ class HDFSExtra(GenericOptions):
 
     Parameters
     ---------
-    timeout : urllib3.util.timeout.Timeout, optional
+    timeout
         Timeout for requests,  see [urllib3 documentation](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Timeout).
-    retry : urllib3.util.retry.Retry, optional
+    retry
         Retry for requests, see [urllib3 documentation](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry).
     """
 
     timeout: Timeout = Timeout(connect=10, read=60)
     retry: Retry = Retry.DEFAULT
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class HDFS(FileConnection, RenameDirMixin):
-    """HDFS file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """HDFS file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Powered by [HDFS Python client](https://pypi.org/project/hdfs/).
 
@@ -107,18 +91,18 @@ class HDFS(FileConnection, RenameDirMixin):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     !!! note
 
         To access Hadoop cluster with Kerberos installed, you should have `kinit` executable
         in some path in `PATH` environment variable.
 
-        See [install-kerberos][] instruction for more details.
+        See [DBR-onetl-install-kerberos-support][] instruction for more details.
 
     Parameters
     ----------
-    cluster : str, optional
+    cluster
         Hadoop cluster name. For example: `rnd-dwh`.
 
         Used for:
@@ -133,7 +117,7 @@ class HDFS(FileConnection, RenameDirMixin):
 
         !!! success "Added in 0.7.0"
 
-    host : str, optional
+    host
         Hadoop namenode host. For example: `namenode1.domain.com`.
 
         Should be an active namenode (NOT standby).
@@ -147,45 +131,46 @@ class HDFS(FileConnection, RenameDirMixin):
 
             You should pass at least one of these arguments: `cluster`, `host`.
 
-    webhdfs_port : int, default: `50070`
+    webhdfs_port
         Port of Hadoop namenode (WebHDFS protocol).
 
         If omitted, but there are some hooks bound to
         [Slots.get_webhdfs_port][onetl.connection.file_connection.hdfs.slots.HDFSSlots.get_webhdfs_port] slot,
         onETL will try to detect port number for a specific `cluster`.
 
-    user : str, optional
+    user
         User, which have access to the file source. For example: `someuser`.
 
         If set, Kerberos auth will be used. Otherwise an anonymous connection is created.
 
-    password : str, default: `None`
+    password
         User password.
 
         Used for generating Kerberos ticket.
 
         !!! warning
 
-            You can provide only one of the parameters: `password` or `kinit`.
+            You can provide only one of the parameters: `password` or `keytab`.
             If you provide both, an exception will be raised.
 
-    keytab : str, default: `None`
+    keytab : os.PathLike | str, optional
         LocalPath to keytab file.
 
         Used for generating Kerberos ticket.
 
         !!! warning
 
-            You can provide only one of the parameters: `password` or `kinit`.
+            You can provide only one of the parameters: `password` or `keytab`.
             If you provide both, an exception will be raised.
 
-    extra: HDFSExtra, optional
+    extra
         Extra options passed to underlying HDFS client.
 
     Examples
     --------
 
     === "Create HDFS connection with user+password"
+
         ```python
         from onetl.connection import HDFS
 
@@ -195,7 +180,9 @@ class HDFS(FileConnection, RenameDirMixin):
             password="*****",
         ).check()
         ```
+
     === "Create HDFS connection with user+keytab"
+
         ```python
         from onetl.connection import HDFS
 
@@ -205,15 +192,18 @@ class HDFS(FileConnection, RenameDirMixin):
             keytab="/path/to/keytab",
         ).check()
         ```
+
     === "Create HDFS connection without auth"
+
         ```python
         from onetl.connection import HDFS
 
         hdfs = HDFS(host="namenode1.domain.com").check()
         ```
+
     === "Use cluster name to detect active namenode"
 
-        Can be used only if some third-party plugin provides [hdfs-slots][] implementation
+        Can be used only if some third-party plugin provides [DBR-onetl-connection-file-connection-hdfs-slots][] implementation
 
         ```python
         from onetl.connection import HDFS
@@ -224,6 +214,7 @@ class HDFS(FileConnection, RenameDirMixin):
             password="*****",
         ).check()
         ```
+
     === "Configure timeout & number of retries"
 
         ```python
@@ -242,34 +233,35 @@ class HDFS(FileConnection, RenameDirMixin):
                     total=3,
                     backoff_factor=0.2,
                     status_forcelist=[429, 500, 502, 503, 504],
-                    allowed_methods=["HEAD", "GET", "PUT", "OPTIONS"],
                 ),
             ),
         ).check()
         ```
     """
 
-    cluster: Optional[Cluster] = None
-    host: Optional[Host] = None
-    webhdfs_port: int = Field(alias=avoid_alias("port"), default=50070)  # type: ignore[literal-required]
-    user: Optional[str] = None
-    password: Optional[SecretStr] = None
-    keytab: Optional[FilePath] = None
+    DEFAULT_WEBHDFS_PORT: ClassVar[int] = 50070
+
+    cluster: Cluster | None = None
+    host: Host | None = None
+    webhdfs_port: int = Field(alias=avoid_alias("port"), default=DEFAULT_WEBHDFS_PORT, validate_default=True)  # type: ignore[literal-required]
+    user: str | None = None
+    password: SecretStr | None = None
+    keytab: FilePath | None = None
     extra: HDFSExtra = Field(default_factory=HDFSExtra)
 
-    Slots = HDFSSlots
+    Slots: ClassVar = HDFSSlots
     # TODO: remove in v1.0.0
-    slots = Slots
+    slots: ClassVar = Slots
 
-    Extra = HDFSExtra
+    Extra: ClassVar = HDFSExtra
 
-    _active_host: Optional[str] = PrivateAttr(default=None)
+    _active_host: str | None = PrivateAttr(default=None)
 
     @slot
     @classmethod
     def get_current(cls, **kwargs):
         """
-        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Automatically sets up current cluster name as `cluster`.
 
@@ -283,16 +275,16 @@ class HDFS(FileConnection, RenameDirMixin):
         Parameters
         ----------
         user : str
-            User which has access to HDFS. See [HDFS][] constructor documentation.
+            User which has access to HDFS.
 
         password : str | None
-            User password for Kerberos. See [HDFS][] constructor documentation.
+            User password for Kerberos.
 
         keytab : str | None
-            Path to keytab file for Kerberos. See [HDFS][] constructor documentation.
+            Path to keytab file for Kerberos.
 
         extra : HDFSExtra, optional
-            Extra options passed to underlying HDFS client. See [HDFS][] constructor documentation.
+            Extra options passed to underlying HDFS client.
 
         Examples
         --------
@@ -320,7 +312,7 @@ class HDFS(FileConnection, RenameDirMixin):
     @property
     def instance_url(self) -> str:
         if self.cluster:
-            return self.cluster
+            return "hdfs://" + self.cluster
         return f"hdfs://{self.host}:{self.webhdfs_port}"
 
     def __str__(self):
@@ -340,7 +332,8 @@ class HDFS(FileConnection, RenameDirMixin):
             self._active_host = None
         return self
 
-    @validator("user", pre=True)
+    @field_validator("user", mode="before")
+    @classmethod
     def _validate_packages(cls, user):
         if user:
             try:
@@ -362,7 +355,8 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return user
 
-    @root_validator
+    @model_validator(mode="before")
+    @classmethod
     def _validate_cluster_or_hostname_set(cls, values):
         host = values.get("host")
         cluster = values.get("cluster")
@@ -373,7 +367,8 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return values
 
-    @validator("cluster")
+    @field_validator("cluster", mode="before")
+    @classmethod
     def _validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
@@ -388,9 +383,10 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return validated_cluster
 
-    @validator("host")
-    def _validate_host_name(cls, host, values):
-        cluster = values.get("cluster")
+    @field_validator("host", mode="before")
+    @classmethod
+    def _validate_host_name(cls, host, info: ValidationInfo):
+        cluster = info.data.get("cluster")
 
         log.debug("|%s| Normalizing namenode %r host...", cls.__name__, host)
         namenode = cls.Slots.normalize_namenode_host(host, cluster) or host
@@ -405,25 +401,26 @@ class HDFS(FileConnection, RenameDirMixin):
                     f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: "
                     f"{sorted(known_namenodes)!r}"
                 )
-                raise ValueError(
-                    msg,
-                )
+                raise ValueError(msg)
 
         return namenode
 
-    @validator("webhdfs_port", always=True)
-    def _validate_port_number(cls, port, values):
+    @model_validator(mode="before")
+    def _validate_port_number(cls, values):
+        port = values.get("port") or values.pop("webhdfs_port", None)
         cluster = values.get("cluster")
-        if cluster:
+
+        if cluster and not port:
             log.debug("|%s| Getting WebHDFS port of cluster %r ...", cls.__name__, cluster)
-            result = cls.Slots.get_webhdfs_port(cluster) or port
-            if result != port:
-                log.debug("|%s|   Got %r", cls.__name__, result)
-            return result
+            port = cls.Slots.get_webhdfs_port(cluster)
+            if port:
+                log.debug("|%s|   Got %r", cls.__name__, port)
 
-        return port
+        values["port"] = port or cls.DEFAULT_WEBHDFS_PORT
+        return values
 
-    @root_validator
+    @model_validator(mode="before")
+    @classmethod
     def _validate_credentials(cls, values):
         user = values.get("user")
         password = values.get("password")
@@ -438,7 +435,8 @@ class HDFS(FileConnection, RenameDirMixin):
 
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _timeout_fallback(cls, values):
         if "timeout" not in values:
             return values
@@ -449,12 +447,11 @@ class HDFS(FileConnection, RenameDirMixin):
             "Option `timeout` is deprecated since v0.16.0 and will be removed in v1.0.0. "
             f"Use extra={cls.__name__}.Extra(timeout={timeout!r}) instead",
             category=UserWarning,
-            stacklevel=5,
+            stacklevel=3,
         )
-        extra = cls.Extra.parse(values.get("extra"))
-        extra_dict = extra.dict(exclude_unset=True, by_alias=True)
-        extra_dict["timeout"] = timeout
-        values["extra"] = cls.Extra.parse(extra_dict)
+        values["extra"] = cls.Extra.parse(
+            cls.Extra.parse(values.get("extra")).model_dump(exclude_unset=True, by_alias=True) | {"timeout": timeout}
+        )
         return values
 
     def _get_active_namenode(self) -> str:
@@ -479,32 +476,26 @@ class HDFS(FileConnection, RenameDirMixin):
         raise RuntimeError(msg)
 
     def _get_host(self) -> str:
-        host = cast("str", self.host)
-
-        if not host and self.cluster:
+        if not self.host:
             return self._get_active_namenode()
 
         # host is passed explicitly or cluster not set
         class_name = self.__class__.__name__
         if self.cluster:
-            log.info("|%s| Detecting if namenode %r of cluster %r is active...", class_name, host, self.cluster)
+            log.info("|%s| Detecting if namenode %r of cluster %r is active...", class_name, self.host, self.cluster)
         else:
-            log.info("|%s| Detecting if namenode %r is active...", class_name, host)
+            log.info("|%s| Detecting if namenode %r is active...", class_name, self.host)
 
-        is_active = self.Slots.is_namenode_active(cast("str", host), self.cluster)
+        is_active = self.Slots.is_namenode_active(self.host, self.cluster)
         if is_active:
-            log.info("|%s|   Namenode %r is active!", class_name, host)
-            return host
+            log.info("|%s|   Namenode %r is active!", class_name, self.host)
+            return self.host
 
         if is_active is None:
             log.debug("|%s|   No hooks, skip validation", class_name)
-            return host
+            return self.host
 
-        if self.cluster:
-            msg = f"Host {host!r} is not an active namenode of cluster {self.cluster!r}"
-            raise RuntimeError(msg)
-
-        msg = f"Host {host!r} is not an active namenode"
+        msg = f"Host {self.host!r} is not an active namenode of cluster {self.cluster!r}"
         raise RuntimeError(msg)
 
     def _get_conn_str(self) -> str:
@@ -522,7 +513,7 @@ class HDFS(FileConnection, RenameDirMixin):
     def _get_client(self) -> Client:
         session = self._get_session()
         timeout = (self.extra.timeout.connect_timeout, self.extra.timeout.read_timeout)
-        extra = self.extra.dict(by_alias=True, exclude={"timeout", "retry"})
+        extra = self.extra.model_dump(by_alias=True, exclude={"timeout", "retry"})
         if self.user and (self.keytab or self.password):
             from hdfs.ext.kerberos import KerberosClient
 
@@ -555,7 +546,8 @@ class HDFS(FileConnection, RenameDirMixin):
         self.client.makedirs(os.fspath(path))
 
     def _upload_file(self, local_file_path: LocalPath, remote_file_path: RemotePath) -> None:
-        self.client.upload(os.fspath(remote_file_path), os.fspath(local_file_path))
+        # overwrite=True is used to handle client retries
+        self.client.upload(os.fspath(remote_file_path), os.fspath(local_file_path), overwrite=True)
 
     def _rename_file(self, source: RemotePath, target: RemotePath) -> None:
         self.client.rename(os.fspath(source), os.fspath(target))

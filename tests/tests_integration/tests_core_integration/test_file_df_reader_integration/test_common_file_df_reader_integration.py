@@ -8,6 +8,7 @@ Do not test all possible options and combinations, we are not testing Spark here
 """
 
 import logging
+import re
 import secrets
 
 import pytest
@@ -118,7 +119,8 @@ def test_file_df_reader_run_without_files_and_source_path(file_df_connection):
         connection=file_df_connection,
         format=CSV(),
     )
-    with pytest.raises(ValueError, match="Neither file list nor `source_path` are passed"):
+    msg = "Cannot call FileDFReader.run() without files arg or with source_path=None"
+    with pytest.raises(ValueError, match=re.escape(msg)):
         reader.run()
 
 

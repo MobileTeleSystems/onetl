@@ -1,11 +1,9 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import warnings
-from typing import ClassVar, Optional
+from typing import ClassVar
 
-from etl_entities.instance import Host
+from pydantic import ConfigDict
 
 from onetl._util.classproperty import classproperty
 from onetl._util.spark import get_client_info
@@ -24,66 +22,69 @@ from onetl.connection.db_connection.mssql.options import (
     MSSQLWriteOptions,
 )
 from onetl.hooks import slot, support_hooks
-from onetl.impl import GenericOptions
+from onetl.impl import GenericOptions, Host
 
 # do not import PySpark here, as we allow user to use `MSSQL.get_packages()` for creating Spark session
 
 
 class MSSQLExtra(GenericOptions):
-    class Config:
-        extra = "allow"
-        prohibited_options = frozenset(("databaseName",))
+    """
+    Extra options for MSSQL connection.
+
+    You can pass here any property supported by
+    [MSSQL JDBC driver]((https://learn.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties#properties),
+    even if it is not mentioned in this documentation.
+    """
+
+    model_config = ConfigDict(extra="allow", prohibited_options=frozenset(("databaseName",)))  # type: ignore[typeddict-unknown-key]
 
 
 @support_hooks
 class MSSQL(JDBCConnection):
-    """MSSQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """MSSQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on Maven package [com.microsoft.sqlserver:mssql-jdbc:13.4.0.jre8](https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc/13.4.0.jre8)
     ([official MSSQL JDBC driver](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server)).
 
     !!! info "See also"
 
-        Before using this connector please take into account [mssql-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-mssql-prerequisites][]
 
     Parameters
     ----------
-    host : str
+    host
         Host of MSSQL database. For example: `test.mssql.domain.com` or `192.168.1.14`
 
-    port : int, default: `None`
+    port
         Port of MSSQL database
 
         !!! info "Changed in 0.11.1"
             Default value was changed from `1433` to `None`,
             to allow automatic port discovery with `instanceName`.
 
-    user : str
-        User, which have proper access to the database. For example: `some_user`
+    user
+        User for database connection
 
-    password : str
+    password
         Password for database connection
 
-    database : str
-        Database in RDBMS, NOT schema.
+    database
+        Database in RDBMS, NOT schema
 
         See [this page](https://www.educba.com/postgresql-database-vs-schema/) for more details
 
-    spark : `pyspark.sql.SparkSession`
-        Spark session.
+    spark
+        Spark session
 
-    extra : dict, default: `None`
-        Specifies one or more extra parameters by which clients can connect to the instance.
-
-        For example: `{"connectRetryCount": 3, "connectRetryInterval": 10}`
-
-        See [MSSQL JDBC driver properties documentation](https://learn.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties#properties)
-        for more details
+    extra
+        Extra parameters passed directly to JDBC driver.
+        For example: `{"connectRetryCount": 3, "connectRetryInterval": 10}`.
 
     Examples
     --------
 
     === "Create MSSQL connection with plain auth"
+
         ```python
         from onetl.connection import MSSQL
         from pyspark.sql import SparkSession
@@ -108,7 +109,9 @@ class MSSQL(JDBCConnection):
             spark=spark,
         )
         ```
+
     === "Create MSSQL connection with domain auth"
+
         ```python
         # Create Spark session with MSSQL driver loaded
         ...
@@ -128,7 +131,9 @@ class MSSQL(JDBCConnection):
             spark=spark,
         )
         ```
+
     === "Create MSSQL connection with instance name"
+
         ```python
         # Create Spark session with MSSQL driver loaded
         ...
@@ -146,7 +151,9 @@ class MSSQL(JDBCConnection):
             spark=spark,
         )
         ```
+
     === "Create MSSQL read-only connection"
+
         ```python
         # Create Spark session with MSSQL driver loaded
         ...
@@ -170,17 +177,17 @@ class MSSQL(JDBCConnection):
 
     database: str
     host: Host
-    port: Optional[int] = None
+    port: int | None = None
     extra: MSSQLExtra = MSSQLExtra()
 
-    ReadOptions = MSSQLReadOptions
-    WriteOptions = MSSQLWriteOptions
-    SQLOptions = MSSQLSQLOptions
-    FetchOptions = MSSQLFetchOptions
-    ExecuteOptions = MSSQLExecuteOptions
+    ReadOptions: ClassVar = MSSQLReadOptions
+    WriteOptions: ClassVar = MSSQLWriteOptions
+    SQLOptions: ClassVar = MSSQLSQLOptions
+    FetchOptions: ClassVar = MSSQLFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = MSSQLExecuteOptions  # type: ignore[misc]
 
-    Extra = MSSQLExtra
-    Dialect = MSSQLDialect
+    Extra: ClassVar = MSSQLExtra
+    Dialect: ClassVar = MSSQLDialect
 
     DRIVER: ClassVar[str] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
     _CHECK_QUERY: ClassVar[str] = "SELECT 1 AS field"
@@ -193,7 +200,7 @@ class MSSQL(JDBCConnection):
         package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Allows specifying custom JDBC driver versions for MSSQL.
 
@@ -201,9 +208,9 @@ class MSSQL(JDBCConnection):
 
         Parameters
         ----------
-        java_version : str, optional
+        java_version
             Java major version, defaults to `8`. Must be `8` or `11`.
-        package_version : str, optional
+        package_version
             Specifies the version of the MSSQL JDBC driver to use. Defaults to `13.4.0.`.
 
         Examples
@@ -254,7 +261,7 @@ class MSSQL(JDBCConnection):
     @property
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
-        result.update(self.extra.dict(by_alias=True))
+        result.update(self.extra.model_dump(by_alias=True))
         result["databaseName"] = self.database
         # https://learn.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-ver16#properties
         result["applicationName"] = result.get("applicationName", get_client_info(self.spark, limit=128))
@@ -262,7 +269,7 @@ class MSSQL(JDBCConnection):
 
     @property
     def instance_url(self) -> str:
-        extra_dict = self.extra.dict(by_alias=True)
+        extra_dict = self.extra.model_dump(by_alias=True)
         instance_name = extra_dict.get("instanceName")
         if instance_name:
             return rf"{self.__class__.__name__.lower()}://{self.host}\{instance_name}/{self.database}"
@@ -272,7 +279,7 @@ class MSSQL(JDBCConnection):
         return f"{self.__class__.__name__.lower()}://{self.host}:{port}/{self.database}"
 
     def __str__(self):
-        extra_dict = self.extra.dict(by_alias=True)
+        extra_dict = self.extra.model_dump(by_alias=True)
         instance_name = extra_dict.get("instanceName")
         if instance_name:
             return rf"{self.__class__.__name__}[{self.host}\{instance_name}/{self.database}]"

@@ -76,26 +76,23 @@ def maven_packages(request):  # noqa: C901, PLR0912
     gp_package_version = os.getenv("ONETL_GP_PACKAGE_VERSION")
     if "greenplum" in markers and gp_package_version != "local":
         packages.extend(
-            Greenplum.get_packages(
-                spark_version=str(pyspark_version),
-                package_version=gp_package_version,
-            ),
+            Greenplum.get_packages(package_version=gp_package_version),
         )
 
     if "avro" in markers:
-        packages.extend(Avro.get_packages(spark_version=str(pyspark_version)))
+        packages.extend(Avro.get_packages())
 
-    if "kafka" in markers:
-        packages.extend(Kafka.get_packages(spark_version=str(pyspark_version)))
+    if {"kafka", "kafka_oauth"} & markers:
+        packages.extend(Kafka.get_packages())
 
     if "s3" in markers:
-        packages.extend(SparkS3.get_packages(spark_version=str(pyspark_version)))
+        packages.extend(SparkS3.get_packages())
 
     if "xml" in markers:
-        packages.extend(XML.get_packages(spark_version=str(pyspark_version)))
+        packages.extend(XML.get_packages())
 
     if "mongodb" in markers:
-        packages.extend(MongoDB.get_packages(spark_version=str(pyspark_version)))
+        packages.extend(MongoDB.get_packages())
 
     if "excel" in markers:
         # There are package versions only for specific Spark versions,
@@ -111,21 +108,20 @@ def maven_packages(request):  # noqa: C901, PLR0912
         elif version == (4, 0):
             packages.extend(Excel.get_packages(package_version="0.31.2", spark_version="4.0.0"))
 
-    # There is no package for Iceberg Runtime for Spark 4.1 for now
-    if "iceberg" in markers and version < (4, 1):
-        iceberg_version = "1.4.3" if version == (3, 2) else "1.10.0"
-        packages.extend(
-            Iceberg.get_packages(
-                package_version=iceberg_version,
-                spark_version=str(pyspark_version),
-            ),
-        )
+    # There is no package for Iceberg Runtime for Spark 4.2 for now
+    if "iceberg" in markers and version < (4, 2):
+        if version == (3, 2):
+            # https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-3.2_2.12/
+            iceberg_version = "1.4.3"
+        elif version == (3, 3):
+            # https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-3.3_2.12/
+            iceberg_version = "1.8.1"
+        else:
+            iceberg_version = "1.11.0"
+
+        packages.extend(Iceberg.get_packages(package_version=iceberg_version))
         if "s3" in markers:
-            packages.extend(
-                Iceberg.S3Warehouse.get_packages(
-                    package_version=iceberg_version,
-                ),
-            )
+            packages.extend(Iceberg.S3Warehouse.get_packages(package_version=iceberg_version))
 
     return packages
 

@@ -3,7 +3,6 @@
 ::: onetl.connection.db_connection.iceberg.catalog.rest.IcebergRESTCatalog
     options:
         inherited_members: true
-        show_root_heading: true
 
 ## Authentication { #DBR-onetl-connection-db-connection-iceberg-catalog-rest-authentication }
 

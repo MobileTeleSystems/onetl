@@ -1,18 +1,17 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
+import time
 import warnings
 from abc import abstractmethod
+from collections.abc import Callable
 from contextlib import closing
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Callable, ClassVar, TypeVar
+from typing import TYPE_CHECKING, ClassVar, TypeVar
 
-try:
-    from pydantic.v1 import Field, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
+from humanize import naturaldelta
+from pydantic import Field, SecretStr
+from typing_extensions import Self
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._util.java import get_java_gateway
@@ -68,7 +67,7 @@ class JDBCMixin:
     However, some of Spark's magic is used here, for example to convert raw ResultSet to move convenient DataFrame
     """
 
-    spark: SparkSession = Field(repr=False)
+    spark: "SparkSession" = Field(repr=False)
     user: str
     password: SecretStr
 
@@ -94,9 +93,9 @@ class JDBCMixin:
         }
 
     @slot
-    def close(self):
+    def close(self) -> Self:
         """
-        Close all connections, opened by `.fetch()`, `.execute()` or `.check()` methods. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Close all connections, opened by `.fetch()`, `.execute()` or `.check()` methods. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning "Deprecated since 0.13.0"
             Connections are now closed immediately. Method is now no-op.
@@ -107,7 +106,7 @@ class JDBCMixin:
 
         Returns
         -------
-        Self
+        :
             Connection itself.
 
         Examples
@@ -145,9 +144,9 @@ class JDBCMixin:
         self,
         query: str,
         options: JDBCFetchOptions | dict | None = None,
-    ) -> DataFrame:
+    ) -> "DataFrame":
         """
-        **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        **Immediately** execute SELECT statement **on Spark driver** and return in-memory DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Works almost the same like [sql][], but Spark executor is not used.
 
@@ -160,11 +159,11 @@ class JDBCMixin:
 
         Parameters
         ----------
-        query : str
+        query
 
             SQL query to be executed.
 
-        options : dict, [FetchOptions][], default: `None`
+        options
 
             Options to be passed directly to JDBC driver, like `fetchsize` or `queryTimeout`
 
@@ -174,8 +173,7 @@ class JDBCMixin:
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame
-
+        :
             Spark dataframe
         """
 
@@ -186,24 +184,27 @@ class JDBCMixin:
         log_lines(log, query)
 
         call_options = (
-            self.FetchOptions.parse(options.dict())
+            self.FetchOptions.parse(options.model_dump())
             if isinstance(options, JDBCMixinOptions)
             else self.FetchOptions.parse(options)
         )
 
         with override_job_description(self.spark, f"{self}.fetch()"):
+            started = time.perf_counter()
             try:
-                df = self._query_on_driver(query, call_options)
+                df, rows_count = self._query_with_count_on_driver(query, call_options)
             except Exception:
-                log.exception("|%s| Query failed!", self.__class__.__name__)
+                elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+                log.exception("|%s| Query failed after %s!", self.__class__.__name__, elapsed)
                 raise
 
-            log.info("|%s| Query succeeded, created in-memory dataframe.", self.__class__.__name__)
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+            log.info("|%s| Query succeeded, created in-memory dataframe in %s", self.__class__.__name__, elapsed)
 
             # as we don't actually use Spark for this method, SparkMetricsRecorder is useless.
             # Just create metrics by hand, and fill them up using information based on dataframe content.
             metrics = SparkCommandMetrics()
-            metrics.input.read_rows = df.count()
+            metrics.input.read_rows = rows_count
             metrics.driver.in_memory_bytes = estimate_dataframe_size(df)
             log.info("|%s| Recorded metrics:", self.__class__.__name__)
             log_lines(log, str(metrics))
@@ -214,9 +215,9 @@ class JDBCMixin:
         self,
         statement: str,
         options: JDBCExecuteOptions | dict | None = None,
-    ) -> DataFrame | None:
+    ) -> "DataFrame | None":
         """
-        **Immediately** execute DDL, DML or procedure/function **on Spark driver**. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        **Immediately** execute DDL, DML or procedure/function **on Spark driver**. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         There is no method like this in `pyspark.sql.SparkSession` object,
         but Spark internal methods works almost the same (but on executor side).
@@ -225,11 +226,11 @@ class JDBCMixin:
 
         Parameters
         ----------
-        statement : str
+        statement
 
             Statement to be executed.
 
-        options : dict, [JDBCExecuteOptions][], default: `None`
+        options
 
             Options to be passed directly to JDBC driver, like `queryTimeout`
 
@@ -239,9 +240,8 @@ class JDBCMixin:
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame, optional
-
-            Spark DataFrame.
+        :
+            Spark dataframe, optional.
 
             DataFrame is returned only if input is DML statement with `RETURNING ...` clause,
             or a procedure/function call. In other cases returns `None`.
@@ -254,27 +254,30 @@ class JDBCMixin:
         log_lines(log, statement)
 
         call_options = (
-            self.ExecuteOptions.parse(options.dict())
+            self.ExecuteOptions.parse(options.model_dump())
             if isinstance(options, JDBCMixinOptions)
             else self.ExecuteOptions.parse(options)
         )
 
         with override_job_description(self.spark, f"{self}.execute()"):
+            started = time.perf_counter()
             try:
-                df = self._call_on_driver(statement, call_options)
+                df, rows_count = self._call_with_count_on_driver(statement, call_options)
             except Exception:
-                log.exception("|%s| Execution failed!", self.__class__.__name__)
+                elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+                log.exception("|%s| Execution failed after %s!", self.__class__.__name__, elapsed)
                 raise
 
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
             if not df:
-                log.info("|%s| Execution succeeded, nothing returned.", self.__class__.__name__)
+                log.info("|%s| Execution succeeded in %s, nothing returned", self.__class__.__name__, elapsed)
                 return None
 
-            log.info("|%s| Execution succeeded, created in-memory dataframe.", self.__class__.__name__)
+            log.info("|%s| Execution succeeded, created in-memory dataframe in %s", self.__class__.__name__, elapsed)
             # as we don't actually use Spark for this method, SparkMetricsRecorder is useless.
             # Just create metrics by hand, and fill them up using information based on dataframe content.
             metrics = SparkCommandMetrics()
-            metrics.input.read_rows = df.count()
+            metrics.input.read_rows = rows_count
             metrics.driver.in_memory_bytes = estimate_dataframe_size(df)
 
             log.info("|%s| Recorded metrics:", self.__class__.__name__)
@@ -285,7 +288,14 @@ class JDBCMixin:
         self,
         query: str,
         options: JDBCFetchOptions | JDBCExecuteOptions,
-    ) -> DataFrame:
+    ) -> "DataFrame":
+        return self._query_with_count_on_driver(query, options)[0]
+
+    def _query_with_count_on_driver(
+        self,
+        query: str,
+        options: JDBCFetchOptions | JDBCExecuteOptions,
+    ) -> "tuple[DataFrame, int]":
         return self._execute_on_driver(
             statement=query,
             statement_type=JDBCStatementType.PREPARED,
@@ -298,7 +308,14 @@ class JDBCMixin:
         self,
         query: str,
         options: JDBCFetchOptions,
-    ) -> DataFrame | None:
+    ) -> "DataFrame | None":
+        return self._query_optional_with_count_on_driver(query, options)[0]
+
+    def _query_optional_with_count_on_driver(
+        self,
+        query: str,
+        options: JDBCFetchOptions,
+    ) -> "tuple[DataFrame | None, int]":
         return self._execute_on_driver(
             statement=query,
             statement_type=JDBCStatementType.PREPARED,
@@ -311,7 +328,14 @@ class JDBCMixin:
         self,
         query: str,
         options: JDBCExecuteOptions,
-    ) -> DataFrame | None:
+    ) -> "DataFrame | None":
+        return self._call_with_count_on_driver(query, options)[0]
+
+    def _call_with_count_on_driver(
+        self,
+        query: str,
+        options: JDBCExecuteOptions,
+    ) -> "tuple[DataFrame | None, int]":
         return self._execute_on_driver(
             statement=query,
             statement_type=JDBCStatementType.CALL,
@@ -329,7 +353,7 @@ class JDBCMixin:
         Fills up human-readable Options class to a format required by Spark internal methods
         """
         result = self.jdbc_params
-        result.update(options.dict(by_alias=True, **kwargs))
+        result.update(options.model_dump(by_alias=True, **kwargs))
         return stringify(result)
 
     def _options_to_connection_properties(self, options: JDBCFetchOptions | JDBCExecuteOptions):
@@ -408,7 +432,7 @@ class JDBCMixin:
             jdbc_statement = self._build_statement(statement, statement_type, jdbc_connection, statement_args)
             return self._execute_statement(jdbc_connection, jdbc_statement, statement, options, callback, read_only)
 
-    def _execute_statement(  # noqa: PLR0913
+    def _execute_statement(  # noqa: PLR0913, PLR0917
         self,
         jdbc_connection,
         jdbc_statement,
@@ -477,11 +501,11 @@ class JDBCMixin:
 
         return jdbc_connection.createStatement(*statement_args)
 
-    def _statement_to_dataframe(self, jdbc_connection, jdbc_statement) -> DataFrame:
+    def _statement_to_dataframe(self, jdbc_connection, jdbc_statement) -> "tuple[DataFrame, int]":
         result_set = jdbc_statement.getResultSet()
-        return self._resultset_to_dataframe(jdbc_connection, result_set)
+        return self._resultset_with_count_to_dataframe(jdbc_connection, result_set)
 
-    def _statement_to_optional_dataframe(self, jdbc_connection, jdbc_statement) -> DataFrame | None:
+    def _statement_to_optional_dataframe(self, jdbc_connection, jdbc_statement) -> "tuple[DataFrame | None, int]":
         """
         Returns `org.apache.spark.sql.DataFrame` or `None`, if ResultSet is does not contain any columns.
 
@@ -491,16 +515,16 @@ class JDBCMixin:
         result_set = jdbc_statement.getResultSet()
 
         if not result_set or result_set.isClosed():
-            return None
+            return None, 0
 
         result_metadata = result_set.getMetaData()
         result_column_count = result_metadata.getColumnCount()
         if not result_column_count:
-            return None
+            return None, 0
 
-        return self._resultset_to_dataframe(jdbc_connection, result_set)
+        return self._resultset_with_count_to_dataframe(jdbc_connection, result_set)
 
-    def _resultset_to_dataframe(self, jdbc_connection, result_set) -> DataFrame:
+    def _resultset_with_count_to_dataframe(self, jdbc_connection, result_set) -> "tuple[DataFrame, int]":
         """
         Converts `java.sql.ResultSet` to `org.apache.spark.sql.DataFrame` using Spark's internal methods.
 
@@ -540,9 +564,10 @@ class JDBCMixin:
             result_iterator = JdbcUtils.resultSetToRows(result_set, result_schema)
 
         result_list = JavaConverters.seqAsJavaListConverter(result_iterator.toSeq()).asJava()
+        rows_count = result_list.size()
         jdf = self.spark._jsparkSession.createDataFrame(result_list, result_schema)  # type: ignore[attr-defined]  # noqa: SLF001
 
         # But since Spark 3.3 "_wrapped" attribute was removed from SparkSession
         spark_context = getattr(self.spark, "_wrapped", self.spark)
 
-        return DataFrame(jdf, spark_context)
+        return DataFrame(jdf, spark_context), rows_count

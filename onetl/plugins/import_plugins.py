@@ -1,12 +1,9 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import inspect
 import logging
 import textwrap
-
-from importlib_metadata import EntryPoint, entry_points
+from importlib.metadata import EntryPoint, entry_points
 
 from onetl.log import log_collection, log_with_indent
 from onetl.version import __version__
@@ -83,18 +80,19 @@ def import_plugins(group: str, whitelist: list[str] | None = None, blacklist: li
 
     for i, entrypoint in enumerate(entrypoints):
         if whitelist and entrypoint.name not in whitelist:
-            log.info("|onETL| Skipping plugin %r because it is not in whitelist", entrypoint.dist.name)
+            log.info("|onETL| Skipping plugin %r because it is not in whitelist", entrypoint.name)
             continue
 
         if blacklist and entrypoint.name in blacklist:
-            log.info("|onETL| Skipping plugin %r because it is in a blacklist", entrypoint.dist.name)
+            log.info("|onETL| Skipping plugin %r because it is in a blacklist", entrypoint.name)
             continue
 
         if log.isEnabledFor(logging.DEBUG):
             log.debug("|onETL| Loading plugin (%d of %d):", i + 1, plugins_count)
             log_with_indent(log, "name = %r", entrypoint.name, level=logging.DEBUG)
-            log_with_indent(log, "package = %r", entrypoint.dist.name, level=logging.DEBUG)
-            log_with_indent(log, "version = %r", entrypoint.dist.version, level=logging.DEBUG)
+            if entrypoint.dist:
+                log_with_indent(log, "package = %r", entrypoint.dist.name, level=logging.DEBUG)
+                log_with_indent(log, "version = %r", entrypoint.dist.version, level=logging.DEBUG)
             log_with_indent(log, "importing = %r", entrypoint.value, level=logging.DEBUG)
         else:
             log.info("|onETL| Loading plugin %r", entrypoint.name)

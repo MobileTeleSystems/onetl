@@ -3,7 +3,6 @@
 
 ::: onetl.connection.file_connection.samba.Samba
     options:
-        show_root_heading: true
         members:
             - check
             - path_exists
@@ -22,7 +21,6 @@
 
 ::: onetl.connection.file_connection.samba.SambaExtra
     options:
-        show_root_heading: true
         members:
           - connect_timeout
           - operation_timeout

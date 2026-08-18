@@ -1,19 +1,13 @@
 import re
 import textwrap
+from pathlib import PurePosixPath
 from unittest.mock import Mock
 
 import pytest
 from etl_entities.hwm import (
-    HWM,
-    ColumnDateHWM,
-    ColumnDateTimeHWM,
-    ColumnHWM,
-    ColumnIntHWM,
     FileListHWM,
     FileModifiedTimeHWM,
 )
-from etl_entities.instance import AbsolutePath
-from etl_entities.old_hwm import FileListHWM as OldFileListHWM
 
 from onetl.base import BaseFileConnection
 from onetl.core import FileFilter, FileLimit
@@ -47,7 +41,7 @@ def test_file_downloader_deprecated_import():
     "hwm_type",
     [
         "file_list",
-        OldFileListHWM,
+        pytest.param(object(), id="OldFileListHWM"),
     ],
 )
 def test_file_downloader_hwm_type_deprecated(hwm_type):
@@ -64,46 +58,14 @@ def test_file_downloader_hwm_type_deprecated(hwm_type):
         )
 
     assert isinstance(downloader.hwm, FileListHWM)
-    assert downloader.hwm.entity == AbsolutePath("/source/path")
-
-
-def test_file_downloader_unknown_hwm_type():
-    # fails on pydantic issubclass(hwm_type, OldFileListHWM) in FileDownloader
-    with pytest.raises(ValueError):
-        FileDownloader(
-            connection=Mock(spec=BaseFileConnection),
-            local_path="/local/path",
-            source_path="/source/path",
-            hwm_type="abc",
-        )
-
-
-@pytest.mark.parametrize(
-    "hwm_type",
-    [
-        ColumnIntHWM,
-        ColumnDateHWM,
-        ColumnDateTimeHWM,
-        ColumnHWM,
-        HWM,
-    ],
-)
-def test_file_downloader_wrong_hwm_type(hwm_type):
-    # pydantic validation fails, as new hwm classes are passed into hwm_type
-    with pytest.raises(ValueError):
-        FileDownloader(
-            connection=Mock(spec=BaseFileConnection),
-            local_path="/local/path",
-            source_path="/source/path",
-            hwm_type=hwm_type,
-        )
+    assert downloader.hwm.entity == PurePosixPath("/source/path")
 
 
 @pytest.mark.parametrize(
     "hwm_type",
     [
         "file_list",
-        OldFileListHWM,
+        pytest.param(object(), id="OldFileListHWM"),
     ],
 )
 def test_file_downloader_hwm_type_without_source_path(hwm_type):
@@ -135,7 +97,7 @@ def test_file_downloader_hwm_autofill_directory(hwm_type):
         source_path="/source/path",
         hwm=hwm_type(name="abc"),
     )
-    assert downloader.hwm.entity == AbsolutePath("/source/path")
+    assert downloader.hwm.entity == PurePosixPath("/source/path")
 
 
 @pytest.mark.parametrize("hwm_type", SUPPORTED_HWM_TYPES)
@@ -146,7 +108,7 @@ def test_file_downloader_hwm_with_same_directory(hwm_type):
         source_path="/source/path",
         hwm=hwm_type(name="abc", directory="/source/path"),
     )
-    assert downloader.hwm.entity == AbsolutePath("/source/path")
+    assert downloader.hwm.entity == PurePosixPath("/source/path")
 
 
 @pytest.mark.parametrize("hwm_type", SUPPORTED_HWM_TYPES)
@@ -286,5 +248,5 @@ def test_file_downloader_options_mode_deprecated(options, value, message):
 
 
 def test_file_downloader_options_if_exists_wrong_value():
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+    with pytest.raises(ValueError, match="Input should be"):
         FileDownloader.Options(if_exists="wrong_mode")

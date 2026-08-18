@@ -15,6 +15,7 @@
 
 * [Kafka BasicAuth][DBR-onetl-connection-db-connection-kafka-basic-auth-kafka-basicauth]
 * [Kafka KerberosAuth][DBR-onetl-connection-db-connection-kafka-kerberos-auth-kafka-kerberosauth]
+* [Kafka OAuth2ClientCredentials][DBR-onetl-connection-db-connection-kafka-oauth2-client-credentials-kafka-oauth2clientcredentials]
 * [Kafka ScramAuth][DBR-onetl-connection-db-connection-kafka-scram-auth-kafka-scramauth]
 
 ## Operations { #DBR-onetl-connection-db-connection-kafka-operations }

@@ -46,4 +46,3 @@ Method above accepts [Clickhouse.WriteOptions][onetl.connection.db_connection.cl
 ::: onetl.connection.db_connection.clickhouse.options.ClickhouseWriteOptions
     options:
         inherited_members: true
-        show_root_heading: true

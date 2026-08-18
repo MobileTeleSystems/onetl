@@ -1,11 +1,8 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
+from collections.abc import Sequence
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Sequence, TypeVar
-
-from typing_extensions import Protocol, TypeAlias, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, TypeAlias, TypeVar, runtime_checkable
 
 if TYPE_CHECKING:
     PurePathProtocol: TypeAlias = PurePath

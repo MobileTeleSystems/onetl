@@ -593,26 +593,26 @@ You can enable/disable/temporary disable hooks on 4 different levels:
 
 - Manage global hooks state (level 1):
 
-    - [`onetl.hooks.hooks_state.stop_all_hooks`][onetl.hooks.hooks_state.stop_all_hooks]
-    - [`onetl.hooks.hooks_state.resume_all_hooks`][onetl.hooks.hooks_state.resume_all_hooks]
-    - [`onetl.hooks.hooks_state.skip_all_hooks`][onetl.hooks.hooks_state.skip_all_hooks]
+    - [`stop_all_hooks`][onetl.hooks.hooks_state.stop_all_hooks]
+    - [`resume_all_hooks`][onetl.hooks.hooks_state.resume_all_hooks]
+    - [`skip_all_hooks`][onetl.hooks.hooks_state.skip_all_hooks]
 
 - Manage all hooks bound to a specific class (level 2):
 
-    - [`onetl.hooks.support_hooks.suspend_hooks`][onetl.hooks.support_hooks.suspend_hooks]
-    - [`onetl.hooks.support_hooks.resume_hooks`][onetl.hooks.support_hooks.resume_hooks]
-    - [`onetl.hooks.support_hooks.skip_hooks`][onetl.hooks.support_hooks.skip_hooks]
+    - [`SomeClass.suspend_hooks()`][onetl.hooks.support_hooks.suspend_hooks]
+    - [`SomeClass.resume_hooks()`][onetl.hooks.support_hooks.resume_hooks]
+    - [`with SomeClass.skip_hooks():`][onetl.hooks.support_hooks.skip_hooks]
 
 - Manage all hooks bound to a specific slot (level 3):
 
-    - [`onetl.hooks.slot.Slot.suspend_hooks`][onetl.hooks.slot.Slot.suspend_hooks]
-    - [`onetl.hooks.slot.Slot.resume_hooks`][onetl.hooks.slot.Slot.resume_hooks]
-    - [`onetl.hooks.slot.Slot.skip_hooks`][onetl.hooks.slot.Slot.skip_hooks]
+    - [`some_method.suspend_hooks()`][onetl.hooks.slot.Slot.suspend_hooks]
+    - [`some_method.resume_hooks()`][onetl.hooks.slot.Slot.resume_hooks]
+    - [`with some_method.skip_hooks():`][onetl.hooks.slot.Slot.skip_hooks]
 
 - Manage state of a specific hook (level 4):
 
-    - [`onetl.hooks.hook.Hook.enable`][onetl.hooks.hook.Hook.enable]
-    - [`onetl.hooks.hook.Hook.disable`][onetl.hooks.hook.Hook.disable]
+    - [`some_hook.enable()`][onetl.hooks.hook.Hook.enable]
+    - [`some_hook.disable()`][onetl.hooks.hook.Hook.disable]
 
 More details in the documentation above.
 

@@ -1,20 +1,13 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import warnings
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
-from onetl._util.alias import avoid_alias
-
-try:
-    from pydantic.v1 import Field, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator, validator  # type: ignore[no-redef, assignment]
-
+from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import deprecated
 
+from onetl._util.alias import avoid_alias
 from onetl.base import BaseWritableFileFormat
 from onetl.impl import GenericOptions
 
@@ -91,9 +84,7 @@ class HiveWriteOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        extra = "allow"
-        known_options: frozenset = frozenset()
+    model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     if_exists: HiveTableExistBehavior = Field(  # type: ignore[literal-required]
         default=HiveTableExistBehavior.APPEND,
@@ -102,115 +93,116 @@ class HiveWriteOptions(GenericOptions):
     """Behavior of writing data into existing table.
 
     Possible values:
-        * `append` (default)
-            Appends data into existing partition/table, or create partition/table if it does not exist.
 
-            Same as Spark's `df.write.insertInto(table, overwrite=False)`.
+    * `append` (default)
+        Appends data into existing partition/table, or create partition/table if it does not exist.
 
-            ??? note "Behavior in details"
+        Same as Spark's `df.write.insertInto(table, overwrite=False)`.
 
-                * Table does not exist
-                    Table is created using options provided by user (`format`, `compression`, etc).
+        ??? note "Behavior in details"
 
-                * Table exists, but not partitioned, [partition_by][] is set
-                    Data is appended to a table. Table is still not partitioned (DDL is unchanged).
+            * Table does not exist
+                Table is created using options provided by user (`format`, `compression`, etc).
 
-                * Table exists and partitioned,
-                  but has different partitioning schema than [partition_by][]
-                    Partition is created based on table's `PARTITIONED BY (...)` options.
-                    Explicit [partition_by][] value is ignored.
+            * Table exists, but not partitioned, [partition_by][] is set
+                Data is appended to a table. Table is still not partitioned (DDL is unchanged).
 
-                * Table exists and partitioned according [partition_by][],
-                  but partition is present only in dataframe
-                    Partition is created.
+            * Table exists and partitioned,
+                but has different partitioning schema than [partition_by][]
+                Partition is created based on table's `PARTITIONED BY (...)` options.
+                Explicit [partition_by][] value is ignored.
 
-                * Table exists and partitioned according [partition_by][],
-                  partition is present in both dataframe and table
-                    Data is appended to existing partition.
+            * Table exists and partitioned according [partition_by][],
+                but partition is present only in dataframe
+                Partition is created.
 
-                    !!! warning
+            * Table exists and partitioned according [partition_by][],
+                partition is present in both dataframe and table
+                Data is appended to existing partition.
 
-                        This mode does not check whether table already contains
-                        rows from dataframe, so duplicated rows can be created.
+                !!! warning
 
-                        To implement deduplication, write data to staging table first,
-                        and then perform some deduplication logic using [sql][].
+                    This mode does not check whether table already contains
+                    rows from dataframe, so duplicated rows can be created.
 
-                * Table exists and partitioned according [partition_by][],
-                  but partition is present only in table, not dataframe
-                    Existing partition is left intact.
+                    To implement deduplication, write data to staging table first,
+                    and then perform some deduplication logic using [onetl.connection.db_connection.hive.connection.Hive.sql][].
 
-        * `replace_overlapping_partitions`
-            Overwrites data in the existing partition, or create partition/table if it does not exist.
+            * Table exists and partitioned according [partition_by][],
+                but partition is present only in table, not dataframe
+                Existing partition is left intact.
 
-            Same as Spark's `df.write.insertInto(table, overwrite=True)` +
-            `spark.sql.sources.partitionOverwriteMode=dynamic`.
+    * `replace_overlapping_partitions`
+        Overwrites data in the existing partition, or create partition/table if it does not exist.
 
-            !!! danger
+        Same as Spark's `df.write.insertInto(table, overwrite=True)` +
+        `spark.sql.sources.partitionOverwriteMode=dynamic`.
 
-                This mode does make sense **ONLY** if the table is partitioned.
-                **IF NOT, YOU'LL LOSE YOUR DATA!**
+        !!! danger
 
-            ??? note "Behavior in details"
+            This mode does make sense **ONLY** if the table is partitioned.
+            **IF NOT, YOU'LL LOSE YOUR DATA!**
 
-                * Table does not exist
-                    Table is created using options provided by user (`format`, `compression`, etc).
+        ??? note "Behavior in details"
 
-                * Table exists, but not partitioned, [partition_by][] is set
-                    Data is **overwritten in all the table**.
-                    Table is still not partitioned (DDL is unchanged).
+            * Table does not exist
+                Table is created using options provided by user (`format`, `compression`, etc).
 
-                * Table exists and partitioned,
-                  but has different partitioning schema than [partition_by][]
-                    Partition is created based on table's `PARTITIONED BY (...)` options.
-                    Explicit [partition_by][] value is ignored.
+            * Table exists, but not partitioned, [partition_by][] is set
+                Data is **overwritten in all the table**.
+                Table is still not partitioned (DDL is unchanged).
 
-                * Table exists and partitioned according [partition_by][],
-                  but partition is present only in dataframe
-                    Partition is created.
+            * Table exists and partitioned,
+                but has different partitioning schema than [partition_by][]
+                Partition is created based on table's `PARTITIONED BY (...)` options.
+                Explicit [partition_by][] value is ignored.
 
-                * Table exists and partitioned according [partition_by][],
-                  partition is present in both dataframe and table
-                    Existing partition **replaced** with data from dataframe.
+            * Table exists and partitioned according [partition_by][],
+                but partition is present only in dataframe
+                Partition is created.
 
-                * Table exists and partitioned according [partition_by][],
-                  but partition is present only in table, not dataframe
-                    Existing partition is left intact.
+            * Table exists and partitioned according [partition_by][],
+                partition is present in both dataframe and table
+                Existing partition **replaced** with data from dataframe.
 
-        * `replace_entire_table`
-            **Recreates table** (via `DROP + CREATE`), **deleting all existing data**.
-            **All existing partitions are dropped.**
+            * Table exists and partitioned according [partition_by][],
+                but partition is present only in table, not dataframe
+                Existing partition is left intact.
 
-            Same as Spark's `df.write.saveAsTable(table, mode="overwrite")` (NOT `insertInto`)!
+    * `replace_entire_table`
+        **Recreates table** (via `DROP + CREATE`), **deleting all existing data**.
+        **All existing partitions are dropped.**
 
-            !!! warning
+        Same as Spark's `df.write.saveAsTable(table, mode="overwrite")` (NOT `insertInto`)!
 
-                Table is recreated using options provided by user (`format`, `compression`, etc)
-                **instead of using original table options**. Be careful
+        !!! warning
 
-        * `ignore`
-            Ignores the write operation if the table/partition already exists.
+            Table is recreated using options provided by user (`format`, `compression`, etc)
+            **instead of using original table options**. Be careful
 
-            ??? note "Behavior in details"
+    * `ignore`
+        Ignores the write operation if the table/partition already exists.
 
-                * Table does not exist
-                    Table is created using options provided by user (`format`, `compression`, etc).
+        ??? note "Behavior in details"
 
-                * Table exists
-                    If the table exists, **no further action is taken**. This is true whether or not new partition
-                    values are present and whether the partitioning scheme differs or not
+            * Table does not exist
+                Table is created using options provided by user (`format`, `compression`, etc).
 
-        * `error`
-            Raises an error if the table/partition already exists.
+            * Table exists
+                If the table exists, **no further action is taken**. This is true whether or not new partition
+                values are present and whether the partitioning scheme differs or not
 
-            ??? note "Behavior in details"
+    * `error`
+        Raises an error if the table/partition already exists.
 
-                * Table does not exist
-                    Table is created using options provided by user (`format`, `compression`, etc).
+        ??? note "Behavior in details"
 
-                * Table exists
-                    If the table exists, **raises an error**. This is true whether or not new partition
-                    values are present and whether the partitioning scheme differs or not
+            * Table does not exist
+                Table is created using options provided by user (`format`, `compression`, etc).
+
+            * Table exists
+                If the table exists, **raises an error**. This is true whether or not new partition
+                values are present and whether the partitioning scheme differs or not
 
 
     !!! note
@@ -219,7 +211,7 @@ class HiveWriteOptions(GenericOptions):
         does not affect behavior.
     """
 
-    format: Union[str, BaseWritableFileFormat] = "orc"
+    format: str | BaseWritableFileFormat = "orc"
     """Format of files which should be used for storing table data.
 
     Examples
@@ -255,7 +247,7 @@ class HiveWriteOptions(GenericOptions):
         Used **only** while **creating new table**, or in case of `if_exists=replace_entire_table`
     """
 
-    partition_by: Optional[Union[List[str], str]] = Field(default=None, alias="partitionBy")
+    partition_by: list[str] | str | None = Field(default=None, alias="partitionBy")
     """
     List of columns should be used for data partitioning. `None` means partitioning is disabled.
 
@@ -266,7 +258,7 @@ class HiveWriteOptions(GenericOptions):
         Used **only** while **creating new table**, or in case of `if_exists=replace_entire_table`
     """
 
-    bucket_by: Optional[Tuple[int, Union[List[str], str]]] = Field(default=None, alias="bucketBy")
+    bucket_by: tuple[int, list[str] | str] | None = Field(default=None, alias="bucketBy")
     """Number of buckets plus bucketing columns. `None` means bucketing is disabled.
 
     Each bucket is created as a set of files with name containing result of
@@ -299,7 +291,7 @@ class HiveWriteOptions(GenericOptions):
         Used **only** while **creating new table**, or in case of `if_exists=replace_entire_table`
     """
 
-    sort_by: Optional[Union[List[str], str]] = Field(default=None, alias="sortBy")
+    sort_by: list[str] | str | None = Field(default=None, alias="sortBy")
     """Each file in a bucket will be sorted by these columns value. `None` means sorting is disabled.
 
     Examples: `user_id` or `["user_id", "user_phone"]`
@@ -317,7 +309,7 @@ class HiveWriteOptions(GenericOptions):
         Used **only** while **creating new table**, or in case of `if_exists=replace_entire_table`
     """
 
-    compression: Optional[str] = None
+    compression: str | None = None
     """Compressing algorithm which should be used for compressing created files in HDFS.
     `None` means compression is disabled.
 
@@ -328,7 +320,7 @@ class HiveWriteOptions(GenericOptions):
         Used **only** while **creating new table**, or in case of `if_exists=replace_entire_table`
     """
 
-    table_properties: Dict[str, Any] = Field(default_factory=dict)
+    table_properties: dict[str, Any] = Field(default_factory=dict)
     """TBLPROPERTIES to add to freshly created table.
 
     !!! success "Added in 0.15.0"
@@ -340,17 +332,15 @@ class HiveWriteOptions(GenericOptions):
         Used **only** while **creating new table**, or in case of `if_exists=replace_entire_table`
     """
 
-    @validator("sort_by")
-    def _sort_by_cannot_be_used_without_bucket_by(cls, sort_by, values):
-        options = values.copy()
-        bucket_by = options.pop("bucket_by", None)
-        if sort_by and not bucket_by:
+    @model_validator(mode="after")
+    def _sort_by_cannot_be_used_without_bucket_by(self):
+        if self.sort_by and not self.bucket_by:
             msg = "`sort_by` option can only be used with non-empty `bucket_by`"
             raise ValueError(msg)
+        return self
 
-        return sort_by
-
-    @root_validator
+    @model_validator(mode="before")
+    @classmethod
     def _partition_overwrite_mode_is_not_allowed(cls, values):
         partition_overwrite_mode = values.get("partitionOverwriteMode") or values.get("partition_overwrite_mode")
         if partition_overwrite_mode:
@@ -370,14 +360,15 @@ class HiveWriteOptions(GenericOptions):
 
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_deprecated(cls, values):
         if "mode" in values:
             warnings.warn(
                 "Option `Hive.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
                 "Use `Hive.WriteOptions(if_exists=...)` instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
         return values
 

@@ -1,14 +1,9 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar
 
-try:
-    from pydantic.v1 import ByteSize, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import ByteSize, SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import ByteSize, ConfigDict, SecretStr
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -27,7 +22,7 @@ log = logging.getLogger(__name__)
 @support_hooks
 class Excel(ReadWriteFileFormat):
     """
-    Excel file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    Excel file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark Excel](https://github.com/crealytics/spark-excel) file format.
 
@@ -43,7 +38,7 @@ class Excel(ReadWriteFileFormat):
                 See [Maven index](https://mvnrepository.com/artifact/dev.mauch/spark-excel)
                 and [official documentation](https://github.com/crealytics/spark-excel).
 
-        * Java versions: 8 - 22
+        * Java versions: 8 -- 22
 
         See documentation from link above.
 
@@ -61,6 +56,7 @@ class Excel(ReadWriteFileFormat):
         The set of supported options depends on `spark-excel` package version.
 
     === "Reading files"
+
         ```python
         from pyspark.sql import SparkSession
         from onetl.file.format import Excel
@@ -78,7 +74,9 @@ class Excel(ReadWriteFileFormat):
 
         excel = Excel(header=True, inferSchema=True)
         ```
+
     === "Writing files"
+
         ```python
         # Create Spark session with Excel package loaded
         spark = ...
@@ -97,25 +95,25 @@ class Excel(ReadWriteFileFormat):
     Default `False`.
     """
 
-    dataAddress: Optional[str] = None
+    dataAddress: str | None = None
     """
     Cell address used as starting point.
     For example: `'A1'` or `'Sheet1'!A1`
     """
 
-    timestampFormat: Optional[str] = None
+    timestampFormat: str | None = None
     """
     Format string used for parsing or serializing timestamp values.
     Default `yyyy-mm-dd hh:mm:ss[.fffffffff]`.
     """
 
-    dateFormat: Optional[str] = None
+    dateFormat: str | None = None
     """
     Format string used for parsing or serializing date values.
     Default `yyyy-MM-dd`.
     """
 
-    treatEmptyValuesAsNulls: Optional[bool] = None
+    treatEmptyValuesAsNulls: bool | None = None
     """
     If `True`, empty cells are parsed as `null` values.
     If `False`, empty cells are parsed as empty strings.
@@ -126,7 +124,7 @@ class Excel(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    setErrorCellsToFallbackValues: Optional[bool] = None
+    setErrorCellsToFallbackValues: bool | None = None
     """
     If `True`, cells containing `#N/A` value are replaced with default value for column type,
     e.g. 0 for `IntegerType()`. If `False`, `#N/A` values are replaced with `null`.
@@ -137,13 +135,13 @@ class Excel(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    usePlainNumberFormat: Optional[bool] = None
+    usePlainNumberFormat: bool | None = None
     """
     If `True`, read or write numeric values with plain format, without using scientific notation or rounding.
     Default `False`.
     """
 
-    inferSchema: Optional[bool] = None
+    inferSchema: bool | None = None
     """
     If `True`, infer DataFrame schema based on cell content.
     If `False` and no explicit DataFrame schema is passed, all columns are `StringType()`.
@@ -153,7 +151,7 @@ class Excel(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    workbookPassword: Optional[SecretStr] = None
+    workbookPassword: SecretStr | None = None
     """
     If Excel file is encrypted, provide password to open it.
 
@@ -162,7 +160,7 @@ class Excel(ReadWriteFileFormat):
         Used only for reading files. Cannot be used to write files.
     """
 
-    maxRowsInMemory: Optional[int] = None
+    maxRowsInMemory: int | None = None
     """
     If set, use streaming reader and fetch only specified number of rows per iteration.
     This reduces memory usage for large files.
@@ -177,7 +175,7 @@ class Excel(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    maxByteArraySize: Optional[ByteSize] = None
+    maxByteArraySize: ByteSize | None = None
     """
     If set, overrides memory limit (in bytes) of byte array size used for reading rows from input file.
     Default `0`, which means using default limit.
@@ -190,7 +188,7 @@ class Excel(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    tempFileThreshold: Optional[ByteSize] = None
+    tempFileThreshold: ByteSize | None = None
     """
     If value is greater than 0, large zip entries will be written to temporary files after reaching this threshold.
     If value is 0, all zip entries will be written to temporary files.
@@ -201,7 +199,7 @@ class Excel(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    excerptSize: Optional[int] = None
+    excerptSize: int | None = None
     """
     If `inferSchema=True`, set number of rows to infer schema from.
     Default `10`.
@@ -210,10 +208,7 @@ class Excel(ReadWriteFileFormat):
 
         Used only for reading files.
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        extra = "allow"
+    model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     @slot
     @classmethod
@@ -224,7 +219,7 @@ class Excel(ReadWriteFileFormat):
         scala_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning
 
@@ -238,16 +233,16 @@ class Excel(ReadWriteFileFormat):
 
         Parameters
         ----------
-        package_version : str
+        package_version
             Package version in format `major.minor.patch`.
 
             !!! info "Changed in 0.14.0"
                 This parameter is now mandatory.
 
-        spark_version : str
+        spark_version
             Spark version in format `major.minor.patch`.
 
-        scala_version : str, optional
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
@@ -282,7 +277,7 @@ class Excel(ReadWriteFileFormat):
         ]
 
     @slot
-    def check_if_supported(self, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: "SparkSession") -> None:
         java_class = "dev.mauch.spark.excel.v2.ExcelDataSource"
 
         try:
@@ -297,14 +292,14 @@ class Excel(ReadWriteFileFormat):
             raise ValueError(msg) from e
 
     @slot
-    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
-        options = self.dict(by_alias=True, exclude_none=True)
+    def apply_to_reader(self, reader: "DataFrameReader") -> "DataFrameReader":
+        options = self.model_dump(by_alias=True, exclude_none=True)
         if self.workbookPassword:
             options["workbookPassword"] = self.workbookPassword.get_secret_value()
         return reader.format(self.name).options(**options)
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = self.model_dump(by_alias=True, exclude_none=True)
         options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

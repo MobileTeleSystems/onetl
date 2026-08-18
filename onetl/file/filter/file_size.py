@@ -1,17 +1,9 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
-from typing import Optional
-
-from onetl.base.path_protocol import PathWithStatsProtocol
-
-try:
-    from pydantic.v1 import ByteSize, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import ByteSize, root_validator, validator  # type: ignore[no-redef, assignment]
+from pydantic import ByteSize, model_validator
 
 from onetl.base import BaseFileFilter, PathProtocol
+from onetl.base.path_protocol import PathWithStatsProtocol
 from onetl.impl import FrozenModel
 
 
@@ -32,11 +24,11 @@ class FileSizeRange(BaseFileFilter, FrozenModel):
     Parameters
     ----------
 
-    min : int or str, optional
+    min
 
         Minimal allowed file size. `None` means no limit.
 
-    max : int or str, optional
+    max
 
         Maximum allowed file size. `None` means no limit.
 
@@ -69,30 +61,20 @@ class FileSizeRange(BaseFileFilter, FrozenModel):
     ```
     """
 
-    min: Optional[ByteSize] = None
-    max: Optional[ByteSize] = None
+    min: ByteSize | None = None
+    max: ByteSize | None = None
 
-    @root_validator(skip_on_failure=True)
-    def _validate_min_max(cls, values):
-        min_value = values.get("min")
-        max_value = values.get("max")
-
-        if min_value is None and max_value is None:
+    @model_validator(mode="after")
+    def _validate_min_max(self):
+        if self.min is None and self.max is None:
             msg = "Either min or max must be specified"
             raise ValueError(msg)
 
-        if min_value and max_value and min_value > max_value:
+        if self.min is not None and self.max is not None and self.min > self.max:
             msg = "Min size cannot be greater than max size"
             raise ValueError(msg)
 
-        return values
-
-    @validator("min", "max")
-    def _validate_min(cls, value):
-        if value is not None and value < 0:
-            msg = "size cannot be negative"
-            raise ValueError(msg)
-        return value
+        return self
 
     def __repr__(self):
         min_human_readable = self.min.human_readable() if self.min is not None else None

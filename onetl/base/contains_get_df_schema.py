@@ -1,10 +1,6 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
-from typing_extensions import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from pyspark.sql.types import StructType
@@ -20,8 +16,8 @@ class ContainsGetDFSchemaMethod(Protocol):
         self,
         source: str,
         columns: list[str] | None = None,
-    ) -> StructType:
+    ) -> "StructType":
         """
-        Description of the dataframe schema. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Description of the dataframe schema. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
         """
         ...

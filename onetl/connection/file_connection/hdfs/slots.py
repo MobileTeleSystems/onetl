@@ -1,13 +1,11 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from onetl.hooks import slot, support_hooks
 
 
 @support_hooks
 class HDFSSlots:
-    """Slots that could be implemented by third-party plugins.
+    """[Slots][DBR-onetl-hooks-design-high-level-design] that could be implemented by third-party plugins.
 
     !!! success "Added in 0.7.0"
     """
@@ -24,12 +22,12 @@ class HDFSSlots:
 
         Parameters
         ----------
-        cluster : `str`
+        cluster
             Cluster name
 
         Returns
         -------
-        str | None
+        :
             Normalized cluster name.
 
             If hook cannot be applied to a specific cluster, it should return `None`.
@@ -61,15 +59,15 @@ class HDFSSlots:
 
         Parameters
         ----------
-        host : `str`
+        host=
             Namenode host (raw)
 
-        cluster : `str` or `None`
+        cluster
             Cluster name (normalized), if set
 
         Returns
         -------
-        str | None
+        :
             Normalized namenode host name.
 
             If hook cannot be applied to a specific host name, it should return `None`.
@@ -108,7 +106,7 @@ class HDFSSlots:
 
         Returns
         -------
-        set[str] | None
+        :
             Collection of cluster names (in normalized form).
 
             If hook cannot be applied, it should return `None`.
@@ -141,12 +139,12 @@ class HDFSSlots:
 
         Parameters
         ----------
-        cluster : `str`
+        cluster
             Cluster name (normalized)
 
         Returns
         -------
-        set[str] | None
+        :
             Collection of host names (in normalized form).
 
             If hook cannot be applied, it should return `None`.
@@ -181,7 +179,7 @@ class HDFSSlots:
 
         Returns
         -------
-        str | None
+        :
             Current cluster name (in normalized form).
 
             If hook cannot be applied, it should return `None`.
@@ -214,12 +212,12 @@ class HDFSSlots:
 
         Parameters
         ----------
-        cluster : `str`
+        cluster
             Cluster name (normalized)
 
         Returns
         -------
-        int | None
+        :
             WebHDFS port number.
 
             If hook cannot be applied, it should return `None`.
@@ -255,21 +253,21 @@ class HDFSSlots:
 
             * If HDFS connection is created with `host`
 
-                [check][] will determine whether this host is active.
+                [onetl.connection.file_connection.hdfs.connection.HDFS.check][] will determine whether this host is active.
 
         !!! success "Added in 0.7.0"
 
         Parameters
         ----------
-        host : `str`
+        host
             Namenode host (normalized)
 
-        cluster : `str` or `None`
+        cluster
             Cluster name (normalized), if set
 
         Returns
         -------
-        bool | None
+        :
             `True` if namenode is active, `False` if not.
 
             If hook cannot be applied, it should return `None`.

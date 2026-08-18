@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 
 from onetl.base.path_protocol import PathProtocol
@@ -11,7 +9,7 @@ class BaseFileFilter(ABC):
     """
     Base file filter interface.
 
-    Filters used by several onETL components, including [file-downloader][] and [file-mover][],
+    Filters used by several onETL components, including [onetl.file.file_downloader.file_downloader.FileDownloader][] and [onetl.file.file_mover.file_mover.FileMover][],
     to determine if a file should be handled or not.
 
     All filters are stateless.

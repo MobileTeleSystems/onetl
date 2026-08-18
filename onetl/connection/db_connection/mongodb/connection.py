@@ -1,25 +1,19 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import json
 import logging
 import warnings
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 from urllib import parse as parser
 
-from etl_entities.instance import Host
-
-try:
-    from pydantic.v1 import PrivateAttr, SecretStr, validator
-except (ImportError, AttributeError):
-    from pydantic import PrivateAttr, SecretStr, validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, PrivateAttr, SecretStr, field_validator
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
 from onetl._util.spark import (
     get_client_info,
+    get_pyspark_version,
     get_spark_version,
     override_job_description,
 )
@@ -35,61 +29,64 @@ from onetl.connection.db_connection.mongodb.options import (
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
-from onetl.impl import GenericOptions
+from onetl.impl import GenericOptions, Host
 from onetl.log import log_dataframe_schema, log_json, log_options, log_with_indent
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
 log = logging.getLogger(__name__)
 
 
 class MongoDBExtra(GenericOptions):
-    class Config:
-        extra = "allow"
+    """
+    Extra options for MongoDB connection.
+
+    You can pass here any property supported by
+    [MongoDB Client](https://www.mongodb.com/docs/manual/reference/connection-string/#std-label-connections-connection-options),
+    even if it is not mentioned in this documentation.
+    """
+
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class MongoDB(DBConnection):
-    """MongoDB connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """MongoDB connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on package [org.mongodb.spark:mongo-spark-connector:10.6.1](https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector_2.12/10.6.1)
     ([MongoDB connector for Spark](https://www.mongodb.com/docs/spark-connector/current/))
 
     !!! info "See also"
 
-        Before using this connector please take into account [mongodb-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-mongodb-prerequisites][]
 
     !!! success "Added in 0.7.0"
 
     Parameters
     ----------
-    host : str
-        Host of MongoDB. For example: `test.mongodb.com` or `193.168.1.17`.
+    host
+        Host of MongoDB. For example: `test.mongodb.com` or `193.168.1.17`
 
-    port : int, default: `27017`.
+    port
         Port of MongoDB
 
-    user : str
-        User, which have proper access to the database. For example: `some_user`.
+    user
+        User for database connection
 
-    password : str
-        Password for database connection.
+    password
+        Password for database connection
 
-    database : str
-        Database in MongoDB.
+    database
+        Database in MongoDB
 
-    extra : dict, default: `None`
-        Specifies one or more extra parameters by which clients can connect to the instance.
+    spark
+        Spark session
 
-        For example: `{"tls": "false"}`
-
-        See [Connection string options documentation](https://www.mongodb.com/docs/manual/reference/connection-string/#std-label-connections-connection-options)
-        for more details
-
-    spark : `pyspark.sql.SparkSession`
-        Spark session.
+    extra
+        Extra parameters passed directly to MongoDB client.
+        For example: `{"tls": "false"}`.
 
     Examples
     --------
@@ -99,7 +96,7 @@ class MongoDB(DBConnection):
     from pyspark.sql import SparkSession
 
     # Create Spark session with MongoDB connector loaded
-    maven_packages = MongoDB.get_packages(spark_version="3.4")
+    maven_packages = MongoDB.get_packages()
     spark = (
         SparkSession.builder.appName("spark-app-name")
         .config("spark.jars.packages", ",".join(maven_packages))
@@ -124,13 +121,13 @@ class MongoDB(DBConnection):
     port: int = 27017
     extra: MongoDBExtra = MongoDBExtra()
 
-    Dialect = MongoDBDialect
-    ReadOptions = MongoDBReadOptions
-    WriteOptions = MongoDBWriteOptions
-    PipelineOptions = MongoDBPipelineOptions
-    Extra = MongoDBExtra
+    Dialect: ClassVar = MongoDBDialect
+    ReadOptions: ClassVar = MongoDBReadOptions
+    WriteOptions: ClassVar = MongoDBWriteOptions
+    PipelineOptions: ClassVar = MongoDBPipelineOptions
+    Extra: ClassVar = MongoDBExtra
 
-    _server_version: Optional[Version] = PrivateAttr(default=None)
+    _server_version: Version | None = PrivateAttr(default=None)
 
     # any small collection with always present in db, and which any user can access
     # https://www.mongodb.com/docs/manual/reference/system-collections/
@@ -145,7 +142,7 @@ class MongoDB(DBConnection):
         package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Allows specifying custom MongoDB Spark connector versions.
 
@@ -153,15 +150,17 @@ class MongoDB(DBConnection):
 
         Parameters
         ----------
-        scala_version : str, optional
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
 
-        spark_version : str, optional
-            Spark version in format `major.minor`. Used only if `scala_version=None`.
+        spark_version
+            Spark version in format `major.minor`.
 
-        package_version : str, optional
+            Used only if `scala_version=None`. If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
+
+        package_version
             Specifies the version of the MongoDB Spark connector to use. Defaults to `10.6.1`.
 
             !!! success "Added in 0.11.0"
@@ -171,10 +170,10 @@ class MongoDB(DBConnection):
         ```python
         from onetl.connection import MongoDB
 
-        MongoDB.get_packages(scala_version="2.12")
+        MongoDB.get_packages()
 
         # specify custom connector version
-        MongoDB.get_packages(scala_version="2.12", package_version="10.6.1")
+        MongoDB.get_packages(package_version="10.6.1")
         ```
         """
 
@@ -186,8 +185,8 @@ class MongoDB(DBConnection):
             spark_ver = Version(spark_version)
             scala_ver = get_default_scala_version(spark_ver)
         else:
-            msg = "You should pass either `scala_version` or `spark_version`"
-            raise ValueError(msg)
+            spark_ver = get_pyspark_version()
+            scala_ver = get_default_scala_version(spark_ver)
 
         connector_ver = Version(package_version or default_package_version).min_digits(2)
         return [f"org.mongodb.spark:mongo-spark-connector_{scala_ver.format('{0}.{1}')}:{connector_ver}"]
@@ -227,11 +226,11 @@ class MongoDB(DBConnection):
         self,
         collection: str,
         pipeline: dict | list[dict] | None = None,
-        df_schema: StructType | None = None,
+        df_schema: "StructType | None" = None,
         options: MongoDBPipelineOptions | dict | None = None,
     ):
         """
-        Execute a pipeline for a specific collection, and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Execute a pipeline for a specific collection, and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Almost like [Aggregation pipeline syntax](https://www.mongodb.com/docs/manual/core/aggregation-pipeline/)
         in MongoDB:
@@ -243,7 +242,7 @@ class MongoDB(DBConnection):
 
         !!! note
 
-            This method does not support [strategy][],
+            This method does not support [strategy][DBR-onetl-strategy-read-strategies],
             use [DBReader][onetl.db.db_reader.db_reader.DBReader] instead
 
         !!! success "Added in 0.7.0"
@@ -251,17 +250,17 @@ class MongoDB(DBConnection):
         Parameters
         ----------
 
-        collection : str
+        collection
             Collection name.
 
-        pipeline : dict | list[dict], optional
+        pipeline
             Pipeline containing a database query.
             See [Aggregation pipeline syntax](https://www.mongodb.com/docs/manual/core/aggregation-pipeline/).
 
-        df_schema : StructType, optional
+        df_schema
             Schema describing the resulting DataFrame.
 
-        options : PipelineOptions | dict, optional
+        options
             Additional pipeline options,
             see [MongoDB.PipelineOptions][onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions].
 
@@ -330,7 +329,7 @@ class MongoDB(DBConnection):
         """
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
 
-        read_options = self.PipelineOptions.parse(options).dict(by_alias=True, exclude_none=True)
+        read_options = self.PipelineOptions.parse(options).model_dump(by_alias=True, exclude_none=True)
         if pipeline:
             pipeline = self.dialect.prepare_pipeline(pipeline)
 
@@ -396,7 +395,7 @@ class MongoDB(DBConnection):
     ) -> tuple[Any, Any]:
         log.info("|%s| Getting min and max values for column %r ...", self.__class__.__name__, window.expression)
 
-        read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
+        read_options = self.ReadOptions.parse(options).model_dump(by_alias=True, exclude_none=True)
         read_options.update(self._get_connection_params(source))
 
         # The '_id' field must be specified in the request.
@@ -417,8 +416,8 @@ class MongoDB(DBConnection):
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
         log_with_indent(log, "collection = %r", source)
-        log_json(log, pipeline, "pipeline")
-        log_json(log, hint, "hint")
+        log_json(log, pipeline, name="pipeline")
+        log_json(log, hint, name="hint")
 
         read_options["aggregation.pipeline"] = json.dumps(pipeline)
         if hint:
@@ -441,16 +440,17 @@ class MongoDB(DBConnection):
     @slot
     def read_source_as_df(  # noqa: PLR0913
         self,
+        *,
         source: str,
         columns: list[str] | None = None,
         hint: dict | None = None,
         where: dict | None = None,
-        df_schema: StructType | None = None,
+        df_schema: "StructType | None" = None,
         window: Window | None = None,
         limit: int | None = None,
         options: MongoDBReadOptions | dict | None = None,
-    ) -> DataFrame:
-        read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
+    ) -> "DataFrame":
+        read_options = self.ReadOptions.parse(options).model_dump(by_alias=True, exclude_none=True)
         read_options.update(self._get_connection_params(source))
 
         final_where = self.dialect.apply_window(where, window)
@@ -463,8 +463,8 @@ class MongoDB(DBConnection):
 
         log.info("|%s| Executing aggregation pipeline:", self.__class__.__name__)
         log_with_indent(log, "collection = %r", source)
-        log_json(log, pipeline, "pipeline")
-        log_json(log, hint, "hint")
+        log_json(log, pipeline, name="pipeline")
+        log_json(log, hint, name="hint")
         spark_reader = self.spark.read.format("mongodb").options(**read_options)
 
         if df_schema:
@@ -484,12 +484,12 @@ class MongoDB(DBConnection):
     @slot
     def write_df_to_target(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         target: str,
         options: MongoDBWriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-        write_options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
+        write_options_dict = write_options.model_dump(by_alias=True, exclude_none=True, exclude={"if_exists"})
         write_options_dict.update(self._get_connection_params(target))
         mode = (
             "overwrite"
@@ -515,7 +515,7 @@ class MongoDB(DBConnection):
 
     @property
     def connection_url(self) -> str:
-        params = self.extra.dict(by_alias=True)
+        params = self.extra.model_dump(by_alias=True)
         sorted_params = [(k, v) for k, v in sorted(params.items(), key=lambda x: x[0].lower())]
         query = parser.urlencode(sorted_params, quote_via=parser.quote)
 
@@ -539,8 +539,9 @@ class MongoDB(DBConnection):
 
         return result
 
-    @validator("spark")
-    def _check_java_class_imported(cls, spark):
+    @field_validator("spark", mode="before")
+    @classmethod
+    def _check_java_class_imported(cls, spark: "SparkSession") -> "SparkSession":
         java_class = "com.mongodb.spark.sql.connector.MongoTableProvider"
 
         try:
@@ -549,7 +550,7 @@ class MongoDB(DBConnection):
             spark_version = get_spark_version(spark).format("{0}.{1}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
-                package_source=cls.__name__,
+                package_source=cls.__name__,  # type: ignore[attr-defined]
                 args=f"spark_version='{spark_version}'",
             )
             raise ValueError(msg) from e

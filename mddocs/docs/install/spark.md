@@ -18,12 +18,13 @@ apt-get install openjdk-11-jdk  # Debian-based
 
 | Spark                                                     | Python      | Java       |   Scala |
 |-----------------------------------------------------------|-------------|------------|---------|
-| [3.2.x](https://spark.apache.org/docs/3.2.4/#downloading) | 3.7  - 3.10 | 8u201 - 11 |    2.12 |
-| [3.3.x](https://spark.apache.org/docs/3.3.4/#downloading) | 3.7  - 3.12 | 8u201 - 17 |    2.12 |
-| [3.4.x](https://spark.apache.org/docs/3.4.4/#downloading) | 3.7  - 3.12 | 8u362 - 20 |    2.12 |
-| [3.5.x](https://spark.apache.org/docs/3.5.1/#downloading) | 3.8  - 3.13 | 8u371 - 20 |    2.12 |
-| [4.0.x](https://spark.apache.org/docs/4.0.1/#downloading) | 3.9  - 3.14 |   17 - 22  |    2.13 |
-| [4.1.x](https://spark.apache.org/docs/4.1.1/#downloading) | 3.10 - 3.14 |   17 - 22  |    2.13 |
+| [3.2.x](https://spark.apache.org/docs/3.2.4/#downloading) |        3.10 | 8u201 - 11 |    2.12 |
+| [3.3.x](https://spark.apache.org/docs/3.3.4/#downloading) | 3.10 - 3.12 | 8u201 - 17 |    2.12 |
+| [3.4.x](https://spark.apache.org/docs/3.4.4/#downloading) | 3.10 - 3.12 | 8u362 - 20 |    2.12 |
+| [3.5.x](https://spark.apache.org/docs/3.5.8/#downloading) | 3.10 - 3.13 | 8u371 - 20 |    2.12 |
+| [4.0.x](https://spark.apache.org/docs/4.0.2/#downloading) | 3.10 - 3.14 |   17 - 22  |    2.13 |
+| [4.1.x](https://spark.apache.org/docs/4.1.3/#downloading) | 3.10 - 3.14 |   17 - 22  |    2.13 |
+| [4.2.x](https://spark.apache.org/docs/4.2.0/#downloading) | 3.10 - 3.14 |   17 - 25  |    2.13 |
 
 ## Installing PySpark { #DBR-onetl-install-spark-installing-pyspark }
 
@@ -53,7 +54,7 @@ This is usually done by setting up `spark.jars.packages` option while creating S
 ```python
 # here is a list of packages to be downloaded:
 maven_packages = (
-    Greenplum.get_packages(spark_version="3.2")
+    Greenplum.get_packages()
     + MySQL.get_packages()
     + Postgres.get_packages()
 )
@@ -128,7 +129,7 @@ Can be used if you have access both to public repos (like Maven) and a private A
 
 ```python
 maven_packages = (
-    Greenplum.get_packages(spark_version="3.2")
+    Greenplum.get_packages()
     + MySQL.get_packages()
     + Postgres.get_packages()
 )
@@ -245,7 +246,7 @@ Same as above, but can be used even if there is no network access to public repo
 
 ```python title="script.py"
 maven_packages = (
-    Greenplum.get_packages(spark_version="3.2")
+    Greenplum.get_packages()
     + MySQL.get_packages()
     + Postgres.get_packages()
 )
@@ -268,7 +269,7 @@ Can be used to pass already downloaded file to Ivy, and skip resolving package f
 
 ```python
 maven_packages = (
-    Greenplum.get_packages(spark_version="3.2")
+    Greenplum.get_packages()
     + MySQL.get_packages()
     + Postgres.get_packages()
 )
@@ -293,7 +294,7 @@ spark = (
 Can be used to embed `.jar` files to a default Spark classpath.
 
 - Download `package.jar` file (it's usually something like `some-package_1.0.0.jar`). Local file name does not matter, but it should be unique.
-- Move it to `$SPARK_HOME/jars/` folder, e.g. `~/.local/lib/python3.7/site-packages/pyspark/jars/` or `/opt/spark/3.2.3/jars/`.
+- Move it to `$SPARK_HOME/jars/` folder, e.g. `~/.local/lib/python3.10/site-packages/pyspark/jars/` or `/opt/spark/3.2.3/jars/`.
 - Create Spark session **WITHOUT** passing Package name to `spark.jars.packages`
 
 ```python

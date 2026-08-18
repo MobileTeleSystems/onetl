@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from threading import current_thread
 from typing import ClassVar
@@ -15,9 +13,9 @@ from onetl._metrics.listener.execution import (
 KNOWN_METRICS = SparkSQLMetricNames.values()
 
 
-@dataclass
+@dataclass(slots=True)
 class SparkMetricsListener(BaseSparkListener):
-    THREAD_ID_KEY = "python.thread.id"
+    THREAD_ID_KEY: ClassVar[str] = "python.thread.id"
     SQL_START_CLASS_NAME: ClassVar[str] = "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart"
     SQL_STOP_CLASS_NAME: ClassVar[str] = "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd"
 
@@ -28,7 +26,7 @@ class SparkMetricsListener(BaseSparkListener):
         # we cannot override execution_id property as it set by Spark
         # we also cannot use job tags, as they were implemented only in Spark 3.5+
         self.spark.sparkContext.setLocalProperty(self.THREAD_ID_KEY, self._thread_id)
-        return super().activate()
+        return super(SparkMetricsListener, self).activate()
 
     def reset(self):
         self._recorded_executions.clear()
@@ -48,7 +46,7 @@ class SparkMetricsListener(BaseSparkListener):
         between Python thread and Java thread.
         """
         self.reset()
-        return super().__enter__()
+        return super(SparkMetricsListener, self).__enter__()
 
     def onOtherEvent(self, event):  # noqa: N802
         class_name = event.getClass().getName()

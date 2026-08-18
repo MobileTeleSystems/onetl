@@ -17,32 +17,35 @@ def test_mongodb_package():
         assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"
 
 
-def test_mongodb_get_packages_no_input():
-    with pytest.raises(ValueError, match="You should pass either `scala_version` or `spark_version`"):
-        MongoDB.get_packages()
-
-
 @pytest.mark.parametrize(
     ("spark_version", "scala_version", "package_version", "package"),
     [
-        (None, "2.12", "10.6.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
-        (None, "2.13", "10.6.1", "org.mongodb.spark:mongo-spark-connector_2.13:10.6.1"),
-        ("3.2", None, "10.6.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
-        ("3.3", None, "10.6.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
-        ("3.4", None, "10.6.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
-        ("3.2", "2.12", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
-        ("3.4", "2.13", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
-        ("3.2", "2.12", "10.2.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.1"),
-        ("3.2", "2.12", "10.2.0", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.0"),
-        ("3.2.4", "2.12.1", "10.6.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
+        (None, None, None, "org.mongodb.spark:mongo-spark-connector_{scala_ver}:10.6.1"),
+        (None, None, "10.1.1", "org.mongodb.spark:mongo-spark-connector_{scala_ver}:10.1.1"),
+        (None, "2.12", None, "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
+        (None, "2.13", None, "org.mongodb.spark:mongo-spark-connector_2.13:10.6.1"),
+        (None, "2.13", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
+        ("3.2", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
+        ("3.3", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
+        ("3.4", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
+        ("3.5", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
+        ("4.0", None, None, "org.mongodb.spark:mongo-spark-connector_2.13:10.6.1"),
+        ("4.1", None, None, "org.mongodb.spark:mongo-spark-connector_2.13:10.6.1"),
+        ("3.2", None, "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
+        ("3.2", "2.13", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
+        ("3.2.4", "2.12.1", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
     ],
 )
 def test_mongodb_get_packages(spark_version, scala_version, package_version, package):
+    import pyspark
+
+    scala_ver = "2.12" if pyspark.__version__.startswith("3") else "2.13"
+    expected = package.format(scala_ver=scala_ver)
     assert MongoDB.get_packages(
         spark_version=spark_version,
         scala_version=scala_version,
         package_version=package_version,
-    ) == [package]
+    ) == [expected]
 
 
 @pytest.mark.parametrize(
@@ -150,35 +153,35 @@ def test_mongodb_with_port(spark_mock):
 
 
 def test_mongodb_without_mandatory_args(spark_mock):
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB()
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB(
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB(
             host="some_host",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB(
             host="some_host",
             user="user",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB(
             host="some_host",
             password="passwd",
             spark=spark_mock,
         )
 
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         MongoDB(
             host="some_host",
             user="user",
@@ -322,5 +325,5 @@ def test_mongodb_write_options_mode_deprecated(options, value, message):
 
 
 def test_mongodb_write_options_if_exists_wrong_value():
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+    with pytest.raises(ValueError, match="Input should be"):
         MongoDB.WriteOptions(if_exists="wrong_mode")

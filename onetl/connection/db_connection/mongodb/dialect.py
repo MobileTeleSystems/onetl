@@ -1,9 +1,8 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
+from collections.abc import Iterable, Mapping
 from datetime import datetime
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 from onetl.connection.db_connection.db_connection.dialect import DBDialect
 from onetl.connection.db_connection.dialect_mixins import (
@@ -77,7 +76,7 @@ class MongoDBDialect(
                 f"{self.connection.__class__.__name__} requires 'where' parameter type to be 'dict', "
                 f"got {where.__class__.__name__!r}"
             )
-            raise TypeError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         for key in where:
             self._validate_top_level_keys_in_where_parameter(key)
@@ -95,7 +94,7 @@ class MongoDBDialect(
                 f"{self.connection.__class__.__name__} requires 'hint' parameter type to be 'dict', "
                 f"got {hint.__class__.__name__!r}"
             )
-            raise TypeError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         return hint
 
     def prepare_pipeline(

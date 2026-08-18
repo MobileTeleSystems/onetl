@@ -5,8 +5,8 @@
 - MongoDB server versions:
     - Officially declared: 4.0 or higher
     - Actually tested: 4.0.0, 8.3.1
-- Spark versions: 3.2.x - 4.1.x
-- Java versions: 8 - 22
+- Spark versions: 3.2.x -- 4.2.x
+- Java versions: 8 -- 25
 
 See [official documentation](https://www.mongodb.com/docs/spark-connector/).
 

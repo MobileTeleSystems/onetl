@@ -2,15 +2,15 @@
   # Min supported version by JDBC driver is 8.2, but it is too ancient to be used by anyone in real life
   postgres-version: 9.4.26-alpine
   spark-version: '3.2'
-  pydantic-version: 1
-  python-version: '3.7'
+  etl-entities-version: 2
+  python-version: '3.10'
   java-version: 8
-  os: ubuntu-22.04
+  os: ubuntu-latest
 
 3_5_x: &3_5_x
   postgres-version: 18.3-alpine
   spark-version: '3.5'
-  pydantic-version: 2
+  etl-entities-version: 3
   python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
@@ -18,21 +18,20 @@
 4_0_x: &4_0_x
   postgres-version: 18.3-alpine
   spark-version: '4.0'
-  pydantic-version: 2
+  etl-entities-version: 3
   python-version: '3.14'
   # https://issues.apache.org/jira/browse/SPARK-54276
   java-version: 22
   os: ubuntu-latest
 
-4_1_x: &4_1_x
+4_2_x: &4_2_x
   postgres-version: 18.3-alpine
-  spark-version: '4.1'
-  pydantic-version: 2
+  spark-version: '4.2'
+  etl-entities-version: 3
   python-version: '3.14'
-  # https://issues.apache.org/jira/browse/SPARK-54276
-  java-version: 22
+  java-version: 25
   os: ubuntu-latest
 
 matrix:
   small: [*3_5_x]
-  full: [*3_2_x, *3_5_x, *4_0_x, *4_1_x]
+  full: [*3_2_x, *3_5_x, *4_0_x, *4_2_x]

@@ -28,10 +28,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
 
@@ -43,7 +43,7 @@ jobs:
 
       # astral-sh/setup-uv cannot restore multiple keys
       - name: Cache uv
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/uv
           key: ${{ runner.os }}-python${{ env.DEFAULT_PYTHON }}-pydantic2-spark3.5-${{ hashFiles('uv.lock') }}
@@ -55,14 +55,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --extra files --group test-spark-3.5 --group test-pydantic-2 --group dev
+          uv sync --extra files --group test-spark-3.5 --group dev
 
-          # Set the `CODEQL-PYTHON` environment variable to the Python executable
-          # that includes the dependencies
-          echo "CODEQL_PYTHON=$(which python)" >> $GITHUB_ENV
-
-      - name: Run mypy
-        run: python3 -m mypy onetl
+      - name: Run linters
+        run: |
+          uv run ruff format --check
+          uv run ruff check
+          uv run -m mypy onetl
 
   codeql:
     name: CodeQL
@@ -74,20 +73,20 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
 
     # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v4.37.7
         with:
           languages: python
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v4.37.7
         with:
           category: /language:python

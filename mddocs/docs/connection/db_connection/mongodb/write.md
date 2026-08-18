@@ -33,6 +33,3 @@ Method above accepts [MongoDB.WriteOptions][onetl.connection.db_connection.mongo
 
 
 ::: onetl.connection.db_connection.mongodb.options.MongoDBWriteOptions
-    options:
-        show_root_heading: true
-        inherited_members: false

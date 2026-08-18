@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
-from typing import Any, Optional
+from typing import Any
 
 from etl_entities.hwm import HWM
 
@@ -11,12 +9,12 @@ from onetl.strategy.hwm_strategy import HWMStrategy
 
 
 class IncrementalStrategy(HWMStrategy):
-    """Incremental strategy for [db-reader][]/[file-downloader][].
+    """Incremental strategy for [onetl.db.db_reader.db_reader.DBReader][]/[onetl.file.file_downloader.file_downloader.FileDownloader][].
 
     Used for fetching only new rows/files from a source
-    by filtering items not covered by the previous [hwm][] value.
+    by filtering items not covered by the previous [DBR-onetl-hwm-store-hwm][] value.
 
-    For [db-reader][]:
+    For [onetl.db.db_reader.db_reader.DBReader][]:
         First incremental run is just the same as
         [SnapshotStrategy][onetl.strategy.snapshot_strategy.SnapshotStrategy]:
 
@@ -24,7 +22,7 @@ class IncrementalStrategy(HWMStrategy):
     SELECT id, data FROM mydata;
     ```
 
-        Then the max value of `id` column (e.g. `1000`) will be saved as `HWM` to [HWM Store][hwm].
+        Then the max value of `id` column (e.g. `1000`) will be saved as `HWM` to [HWM Store][DBR-onetl-hwm-store-hwm].
 
         Next incremental run will read only new data from the source:
 
@@ -47,7 +45,7 @@ class IncrementalStrategy(HWMStrategy):
         When DBReader will **NOT** update HWM in HWM Store.
         This allows to resume reading process from the *last successful run*.
 
-    For [file-downloader][]:
+    For [onetl.file.file_downloader.file_downloader.FileDownloader][]:
         Behavior depends on `hwm` type.
 
     === "FileListHWM"
@@ -72,7 +70,7 @@ class IncrementalStrategy(HWMStrategy):
         )
         ```
 
-        Then the list of original file paths is saved as `FileListHWM` object into [HWM Store][hwm]:
+        Then the list of original file paths is saved as `FileListHWM` object into [HWM Store][DBR-onetl-hwm-store-hwm]:
 
         ```python
         FileListHWM(
@@ -105,7 +103,7 @@ class IncrementalStrategy(HWMStrategy):
         )
         ```
 
-        Value of `FileListHWM` will be updated and saved to [HWM Store][hwm]:
+        Value of `FileListHWM` will be updated and saved to [HWM Store][DBR-onetl-hwm-store-hwm]:
 
         ```python
         FileListHWM(
@@ -142,7 +140,7 @@ class IncrementalStrategy(HWMStrategy):
         ```
 
         Then the maximum modified time of original files is saved as
-        `FileModifiedTimeHWM` object into [HWM Store][hwm]:
+        `FileModifiedTimeHWM` object into [HWM Store][DBR-onetl-hwm-store-hwm]:
 
         ```python
         FileModifiedTimeHWM(
@@ -173,7 +171,7 @@ class IncrementalStrategy(HWMStrategy):
         )
         ```
 
-        Value of `FileModifiedTimeHWM` will be updated and and saved to [HWM Store][hwm]:
+        Value of `FileModifiedTimeHWM` will be updated and and saved to [HWM Store][DBR-onetl-hwm-store-hwm]:
 
         ```python
         FileModifiedTimeHWM(
@@ -190,16 +188,16 @@ class IncrementalStrategy(HWMStrategy):
 
             * FileDownloader does not raise exceptions if some file cannot be downloaded.
             * FileDownloader creates files on local filesystem, and file content may differ for different
-              [modes][onetl.file.file_downloader.file_downloader.FileDownloader.Options.mode].
+              [modes][onetl.file.file_downloader.options.FileDownloaderOptions(if_exists)].
             * It can remove files from the source
-              if [delete_source][onetl.file.file_downloader.file_downloader.FileDownloader.Options.delete_source]
+              if [delete_source][onetl.file.file_downloader.options.FileDownloaderOptions(delete_source)]
               is set to `True`.
 
     !!! success "Added in 0.1.0"
 
     Parameters
     ----------
-    offset : Any, default: `None`
+    offset
 
         If passed, the offset value will be used to read rows which appeared in the source after the previous read.
 
@@ -247,7 +245,7 @@ class IncrementalStrategy(HWMStrategy):
 
         !!! warning
 
-            Cannot be used with [file-downloader][]
+            Cannot be used with [onetl.file.file_downloader.file_downloader.FileDownloader][]
 
         !!! note
 
@@ -258,7 +256,7 @@ class IncrementalStrategy(HWMStrategy):
     Examples
     --------
 
-    ???+ example "Incremental run with [db-reader][]"
+    ???+ example "Incremental run with [onetl.db.db_reader.db_reader.DBReader][]"
 
         ```python
         from onetl.db import DBReader, DBWriter
@@ -287,7 +285,7 @@ class IncrementalStrategy(HWMStrategy):
         WHERE id > 1000; --- from HWM (EXCLUDING first row)
         ```
 
-    ??? example "Incremental run with [db-reader][] and `IncrementalStrategy(offset=...)`"
+    ??? example "Incremental run with [onetl.db.db_reader.db_reader.DBReader][] and `IncrementalStrategy(offset=...)`"
 
         ```python
         from onetl.db import DBReader, DBWriter
@@ -345,7 +343,8 @@ class IncrementalStrategy(HWMStrategy):
         WHERE business_dt > CAST('2021-01-09' AS DATE); -- from HWM-offset (EXCLUDING first row)
         ```
 
-    ??? example "Incremental run with [db-reader][] and [kafka][]"
+    ??? example "Incremental run with [onetl.db.db_reader.db_reader.DBReader][] and [onetl.connection.db_connection.kafka.connection.Kafka][]"
+
         ```python
         from onetl.db import DBReader, DBWriter
         from onetl.strategy import IncrementalStrategy
@@ -364,7 +363,8 @@ class IncrementalStrategy(HWMStrategy):
         # current run will fetch only messages which were added since previous run
         ```
 
-    ??? example "Incremental run with [file-downloader][] and `hwm=FileListHWM(...)`"
+    ??? example "Incremental run with [onetl.file.file_downloader.file_downloader.FileDownloader][] and `hwm=FileListHWM(...)`"
+
         ```python
         from onetl.file import FileDownloader
         from onetl.strategy import SnapshotStrategy
@@ -385,7 +385,8 @@ class IncrementalStrategy(HWMStrategy):
         # current run will download only files which were added since previous run
         ```
 
-    ??? example "Incremental run with [file-downloader][] and `hwm=FileModifiedTimeHWM(...)`"
+    ??? example "Incremental run with [onetl.file.file_downloader.file_downloader.FileDownloader][] and `hwm=FileModifiedTimeHWM(...)`"
+
         ```python
         from onetl.file import FileDownloader
         from onetl.strategy import SnapshotStrategy
@@ -408,7 +409,7 @@ class IncrementalStrategy(HWMStrategy):
 
     """
 
-    hwm: Optional[HWM] = None
+    hwm: HWM | None = None
     offset: Any = None
 
     def fetch_hwm(self) -> None:
@@ -419,11 +420,11 @@ class IncrementalStrategy(HWMStrategy):
 
 
 class IncrementalBatchStrategy(BatchHWMStrategy):
-    """Incremental batch strategy for [db-reader][].
+    """Incremental batch strategy for [onetl.db.db_reader.db_reader.DBReader][].
 
     !!! note
 
-        Cannot be used with [file-downloader][]
+        Cannot be used with [onetl.file.file_downloader.file_downloader.FileDownloader][]
 
     Same as [IncrementalStrategy][onetl.strategy.incremental_strategy.IncrementalStrategy],
     but reads data from the source in sequential batches (1..N) like:
@@ -443,7 +444,7 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
     !!! warning
 
         Unlike [SnapshotBatchStrategy][onetl.strategy.snapshot_strategy.SnapshotBatchStrategy],
-        it **saves** current HWM value after **each batch** into [HWM Store][hwm].
+        it **saves** current HWM value after **each batch** into [HWM Store][DBR-onetl-hwm-store-hwm].
 
         So if code inside the context manager raised an exception, like:
 
@@ -461,7 +462,7 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
 
     !!! warning
 
-        Not every [DB connection][db-connections]
+        Not every [DB connection][DBR-onetl-connection-db-connection-db-connections]
         supports batch strategy. For example, Kafka connection doesn't support it.
         Make sure the connection you use is compatible with the IncrementalBatchStrategy.
 
@@ -469,7 +470,7 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
 
     Parameters
     ----------
-    step : Any
+    step
 
         Step size used for generating batch SQL queries like:
 
@@ -490,7 +491,7 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
 
             For example, for `TIMESTAMP` column `step` type should be `datetime.timedelta`, not `int`
 
-    stop : Any, default: `None`
+    stop
 
         If passed, the value will be used for generating WHERE clauses with `hwm.expression` filter,
         as a stop value for the last batch.
@@ -508,7 +509,7 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
             `stop` should be the same type as `hwm.expression` value,
             e.g. `datetime.datetime` for `TIMESTAMP` column, `datetime.date` for `DATE`, and so on
 
-    offset : Any, default: `None`
+    offset
 
         If passed, the offset value will be used to read rows which appeared in the source after the previous read.
 
@@ -725,7 +726,7 @@ class IncrementalBatchStrategy(BatchHWMStrategy):
 
     """
 
-    hwm: Optional[HWM] = None
+    hwm: HWM | None = None
     offset: Any = None
 
     def fetch_hwm(self) -> None:

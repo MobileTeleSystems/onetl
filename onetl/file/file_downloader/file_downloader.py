@@ -1,28 +1,23 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 import os
 import shutil
 import textwrap
+import time
 import warnings
+from collections.abc import Generator, Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
-from typing import Generator, Iterable, List, Optional, Tuple, Type, Union, cast
+from typing import ClassVar, cast
 
-from etl_entities.hwm import FileHWM, FileListHWM
-from etl_entities.instance import AbsolutePath
-from etl_entities.old_hwm import FileListHWM as OldFileListHWM
-from etl_entities.source import RemoteFolder
+from etl_entities.hwm import FileHWM, FileListHWM, HWMTypeRegistry
+from humanize import naturaldelta
 from ordered_set import OrderedSet
+from pydantic import Field, PrivateAttr, ValidationInfo, field_validator, model_validator
 
-try:
-    from pydantic.v1 import Field, PrivateAttr, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
-
-from onetl._util.file import generate_temp_path
+from onetl._util.file import absolute_path, generate_temp_path
+from onetl._util.process import get_process_info
 from onetl.base import BaseFileConnection, BaseFileFilter, BaseFileLimit
 from onetl.base.path_protocol import PathProtocol
 from onetl.file.file_downloader.options import FileDownloaderOptions
@@ -54,7 +49,7 @@ from onetl.strategy.hwm_strategy import HWMStrategy
 log = logging.getLogger(__name__)
 
 # source, target, temp
-DOWNLOAD_ITEMS_TYPE = OrderedSet[Tuple[RemotePath, LocalPath, Optional[LocalPath]]]
+DOWNLOAD_ITEMS_TYPE = OrderedSet[tuple[RemotePath, LocalPath, LocalPath | None]]
 
 
 class FileDownloadStatus(Enum):
@@ -67,18 +62,18 @@ class FileDownloadStatus(Enum):
 @support_hooks
 class FileDownloader(FrozenModel):
     """Allows you to download files from a remote source with specified file connection
-    and parameters, and return an object with download result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    and parameters, and return an object with download result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! note
 
-        FileDownloader can return different results depending on [strategy][]
+        FileDownloader can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
     !!! note
 
         This class is used to download files **only** from remote directory to the local one.
 
         It does NOT support direct file transfer between filesystems, like `FTP -> SFTP`.
-        You should use FileDownloader + [file-uploader][] to implement `FTP -> local dir -> SFTP`.
+        You should use FileDownloader + [onetl.file.file_uploader.file_uploader.FileUploader][] to implement `FTP -> local dir -> SFTP`.
 
     !!! success "Added in 0.1.0"
 
@@ -87,19 +82,19 @@ class FileDownloader(FrozenModel):
 
     Parameters
     ----------
-    connection : FileConnection
-        Class which contains File system connection properties. See [file-connections][] section.
+    connection
+        Class which contains File system connection properties. See [DBR-onetl-connection-file-connection-file-connections][] section.
 
-    local_path : `os.PathLike` or `str`
+    local_path
         Local path where you download files
 
-    source_path : `os.PathLike` or `str`, optional, default: `None`
+    source_path
         Remote path to download files from.
 
         Could be `None`, but only if you pass absolute file paths directly to
         [run][] method
 
-    temp_path : `os.PathLike` or `str`, optional, default: `None`
+    temp_path
         If set, this path will be used for downloading a file, and then renaming it to the target file path.
         If `None` is passed, files are downloaded directly to `target_path`.
 
@@ -119,8 +114,8 @@ class FileDownloader(FrozenModel):
 
         !!! success "Added in 0.5.0"
 
-    filters : list of [BaseFileFilter][onetl.base.base_file_filter.BaseFileFilter]
-        Return only files/directories matching these filters. See [file-filters][]
+    filters
+        Return only files/directories matching these filters. See [DBR-onetl-file-filters][]
 
         !!! info "Changed in 0.3.0"
             Replaces old `source_path_pattern: str` and `exclude_dirs: str` options.
@@ -128,22 +123,21 @@ class FileDownloader(FrozenModel):
         !!! info "Changed in 0.8.0"
             Renamed `filter` → `filters`
 
-    limits : list of [BaseFileLimit][onetl.base.base_file_limit.BaseFileLimit]
+    limits
         Apply limits to the list of files/directories, and stop if one of the limits is reached.
-        See [file-limits][]
+        See [DBR-onetl-file-limits][]
 
         !!! success "Added in 0.4.0"
 
         !!! info "Changed in 0.8.0"
             Renamed `limit` → `limits`
 
-    options : [Options][]  | dict | None, default: `None`
+    options
         File downloading options.
-        See [FileDownloader.Options][onetl.file.file_downloader.options.FileDownloaderOptions]
 
         !!! success "Added in 0.3.0"
 
-    hwm : type[HWM] | None, default: `None`
+    hwm
 
         HWM class to detect changes in incremental run.
         See [File HWM](https://etl-entities.readthedocs.io/en/stable/hwm/file/index.html)
@@ -160,6 +154,7 @@ class FileDownloader(FrozenModel):
     --------
 
     === "Minimal example"
+
         ```python
         from onetl.connection import SFTP
         from onetl.file import FileDownloader
@@ -176,7 +171,9 @@ class FileDownloader(FrozenModel):
         # download files to "/path/to/local"
         downloader.run()
         ```
+
     === "Full example"
+
         ```python
         from onetl.connection import SFTP
         from onetl.file import FileDownloader
@@ -205,7 +202,9 @@ class FileDownloader(FrozenModel):
         # and stop before downloading 101 file
         downloader.run()
         ```
+
     === "Incremental download (by tracking list of file paths)"
+
         ```python
         from onetl.connection import SFTP
         from onetl.file import FileDownloader
@@ -228,7 +227,9 @@ class FileDownloader(FrozenModel):
         with IncrementalStrategy():
             downloader.run()
         ```
+
     === "Incremental download (by tracking file modification time)"
+
         ```python
         from onetl.connection import SFTP
         from onetl.file import FileDownloader
@@ -253,39 +254,37 @@ class FileDownloader(FrozenModel):
         ```
     """
 
-    Options = FileDownloaderOptions
-
     connection: BaseFileConnection
 
     local_path: LocalPath
-    source_path: Optional[RemotePath] = None
-    temp_path: Optional[LocalPath] = None
+    source_path: RemotePath | None = None
+    temp_path: LocalPath | None = None
 
-    filters: List[BaseFileFilter] = Field(default_factory=list, alias="filter")
-    limits: List[BaseFileLimit] = Field(default_factory=list, alias="limit")
+    filters: list[BaseFileFilter] = Field(default_factory=list, alias="filter")
+    limits: list[BaseFileLimit] = Field(default_factory=list, alias="limit")
 
-    hwm: Optional[FileHWM] = None
-    hwm_type: Optional[Union[Type[OldFileListHWM], str]] = None
+    hwm: FileHWM | None = Field(default=None, validate_default=True)
 
     options: FileDownloaderOptions = FileDownloaderOptions()
+    Options: ClassVar = FileDownloaderOptions
 
     _connection_checked: bool = PrivateAttr(default=False)
 
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> DownloadResult:  # noqa: C901
         """
-        Method for downloading files from source to local directory. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Method for downloading files from source to local directory. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
-            This method can return different results depending on [strategy][]
+            This method can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
         !!! success "Added in 0.1.0"
 
         Parameters
         ----------
 
-        files : Iterable[str | os.PathLike] | None, default `None`
+        files
             File list to download.
 
             If empty, download files from `source_path` to `local_path`,
@@ -298,13 +297,12 @@ class FileDownloader(FrozenModel):
 
         Returns
         -------
-        [DownloadResult][onetl.file.file_downloader.download_result.DownloadResult]
-
+        :
             Download result object
 
         Raises
         ------
-        [onetl.exception.DirectoryNotFoundError][]
+        onetl.exception.DirectoryNotFoundError
 
             `source_path` does not found
 
@@ -393,16 +391,18 @@ class FileDownloader(FrozenModel):
         ```
         """
 
-        entity_boundary_log(log, f"{self.__class__.__name__}.run() starts")
+        method = f"{self.__class__.__name__}.run()"
+
+        if files is None and not self.source_path:
+            msg = f"Cannot call {method} without files arg or with source_path=None"
+            raise ValueError(msg)
+
+        entity_boundary_log(log, f"{method} started")
 
         if not self._connection_checked:
             self._log_parameters(files)
 
         self._check_strategy()
-
-        if files is None and not self.source_path:
-            msg = "Neither file list nor `source_path` are passed"
-            raise ValueError(msg)
 
         # Check everything
         if not self._connection_checked:
@@ -437,29 +437,33 @@ class FileDownloader(FrozenModel):
         if self.hwm:
             self._init_hwm(self.hwm)
 
-        result = self._download_files(to_download)
-        if current_temp_dir:
-            self._remove_temp_dir(current_temp_dir)
+        started = time.perf_counter()
+        try:
+            result = self._download_files(to_download)
+            if current_temp_dir:
+                self._remove_temp_dir(current_temp_dir)
 
-        self._log_result(result)
-        entity_boundary_log(log, f"{self.__class__.__name__}.run() ends", char="-")
-        return result
+            self._log_result(result)
+            return result
+        finally:
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+            entity_boundary_log(log, f"{method} ended in %s", elapsed, char="-")
 
     @slot
     def view_files(self) -> FileSet[RemoteFile]:
         """
         Get file list in the `source_path`,
-        after `filter`, `limit` and `hwm` applied (if any). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        after `filter`, `limit` and `hwm` applied (if any). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
-            This method can return different results depending on [strategy][]
+            This method can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
         !!! success "Added in 0.3.0"
 
         Raises
         ------
-        [onetl.exception.DirectoryNotFoundError][]
+        onetl.exception.DirectoryNotFoundError
 
             `source_path` does not found
 
@@ -469,7 +473,7 @@ class FileDownloader(FrozenModel):
 
         Returns
         -------
-        FileSet[RemoteFile]
+        :
             Set of files in `source_path`, which will be downloaded by [run][] method
 
         Examples
@@ -489,10 +493,12 @@ class FileDownloader(FrozenModel):
         ```
         """
 
+        method = f"{self.__class__.__name__}.view_files()"
         if not self.source_path:
-            msg = "Cannot call `.view_files()` without `source_path`"
+            msg = f"Cannot call {method} with source_path=None"
             raise ValueError(msg)
 
+        entity_boundary_log(log, f"{method} started")
         log.debug("|%s| Getting files list from path '%s'", self.connection.__class__.__name__, self.source_path)
 
         if not self._connection_checked:
@@ -503,6 +509,7 @@ class FileDownloader(FrozenModel):
             filters.append(FileHWMFilter(hwm=self._init_hwm(self.hwm)))
 
         result: FileSet[RemoteFile] = FileSet()
+        started = time.perf_counter()
         try:
             for _root, _dirs, files in self.connection.walk(self.source_path, filters=filters, limits=self.limits):
                 for file in files:
@@ -511,35 +518,44 @@ class FileDownloader(FrozenModel):
         except Exception as e:
             msg = f"Couldn't read directory tree from remote dir '{self.source_path}'"
             raise RuntimeError(msg) from e
+        else:
+            return result
+        finally:
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+            entity_boundary_log(log, f"{method} ended in %s", elapsed, char="-")
 
-        return result
+    @field_validator("local_path", "temp_path", mode="before")
+    @classmethod
+    def _resolve_local_path(cls, value):
+        return LocalPath(value).expanduser().resolve() if value else None
 
-    @validator("local_path", pre=True, always=True)
-    def _resolve_local_path(cls, local_path):
-        return LocalPath(local_path).resolve()
+    @field_validator("source_path", mode="before")
+    @classmethod
+    def _validate_source_path(cls, value):
+        return absolute_path(RemotePath(value)) if value else None
 
-    @validator("source_path", pre=True, always=True)
-    def _validate_source_path(cls, source_path):
-        return RemotePath(source_path) if source_path else None
+    @model_validator(mode="before")
+    @classmethod
+    def _hwm_type_to_hwm(cls, values):
+        connection = values.get("connection")
+        if not connection:
+            return values
 
-    @validator("temp_path", pre=True, always=True)
-    def _validate_temp_path(cls, temp_path):
-        return LocalPath(temp_path).resolve() if temp_path else None
-
-    @root_validator(skip_on_failure=True)
-    def _validate_hwm(cls, values):
-        connection = values["connection"]
-        source_path = values.get("source_path")
-        hwm_type = values.get("hwm_type")
+        hwm_type = values.pop("hwm_type", None)
         hwm = values.get("hwm")
+        if not hwm and not hwm_type:
+            return values
 
-        if (hwm or hwm_type) and not source_path:
+        source_path = values.get("source_path")
+        if not source_path:
             msg = "If `hwm` is passed, `source_path` must be specified"
             raise ValueError(msg)
 
-        if hwm_type and (hwm_type == "file_list" or issubclass(hwm_type, OldFileListHWM)):
-            remote_file_folder = RemoteFolder(name=source_path, instance=connection.instance_url)
-            old_hwm = OldFileListHWM(source=remote_file_folder)
+        if hwm_type:
+            process_name, hostname = get_process_info()
+            # backported HWM.qualified_name from etl_entities v1/v2
+            qualified_name = f"file_list#{os.fspath(source_path)}@{connection.instance_url}#{process_name}@{hostname}"
+
             warnings.warn(
                 textwrap.dedent(
                     f"""
@@ -547,21 +563,42 @@ class FileDownloader(FrozenModel):
                     and will be removed in v1.0.0.
 
                     Instead use:
-                        hwm=FileListHWM(name={old_hwm.qualified_name!r})
+                        hwm=FileListHWM(name={qualified_name!r})
                     """,
                 ),
                 UserWarning,
                 stacklevel=2,
             )
             hwm = FileListHWM(
-                name=old_hwm.qualified_name,
+                name=qualified_name,
                 directory=source_path,
             )
 
-        if hwm and not hwm.entity:
-            hwm = hwm.copy(update={"entity": AbsolutePath(source_path)})
+        values["hwm"] = hwm
+        return values
 
-        if hwm and hwm.entity != source_path:
+    # etl-entities v1 uses pydantic v1 models
+    # which are not compatible with pydantic v2.
+    # using a plain validator here
+    @field_validator("hwm", mode="plain")
+    @classmethod
+    def _validate_hwm(cls, hwm, info: ValidationInfo):
+        if not hwm:
+            return None
+
+        if not isinstance(hwm, FileHWM):
+            hwm = HWMTypeRegistry.parse(hwm)
+
+        if not isinstance(hwm, FileHWM):
+            msg = f"Expected FileHWM, got {hwm.__class__.__name__}"
+            raise ValueError(msg)  # noqa: TRY004
+
+        hwm = cast("FileHWM", hwm)
+        source_path = info.data.get("source_path")
+        if not hwm.entity:
+            hwm = hwm.copy(update={"entity": source_path})
+
+        if hwm.entity != source_path:
             error_message = textwrap.dedent(
                 f"""
                 Passed `hwm.directory` is different from `source_path`.
@@ -577,11 +614,10 @@ class FileDownloader(FrozenModel):
             )
             raise ValueError(error_message)
 
-        values["hwm"] = hwm
-        values["hwm_type"] = None
-        return values
+        return hwm
 
-    @validator("filters", pre=True)
+    @field_validator("filters", mode="before")
+    @classmethod
     def _validate_filters(cls, filters):
         if filters is None:
             warnings.warn(
@@ -601,7 +637,8 @@ class FileDownloader(FrozenModel):
 
         return filters
 
-    @validator("limits", pre=True)
+    @field_validator("limits", mode="before")
+    @classmethod
     def _validate_limits(cls, limits):
         if limits is None:
             warnings.warn(
@@ -687,7 +724,7 @@ class FileDownloader(FrozenModel):
         log_collection(log, "limits", self.limits)
         if self.hwm:
             log_hwm(log, self.hwm)
-        log_options(log, self.options.dict(by_alias=True))
+        log_options(log, self.options.model_dump(by_alias=True))
 
         if self.options.delete_source:
             log.warning("|%s| SOURCE FILES WILL BE PERMANENTLY DELETED AFTER DOWNLOADING !!!", self.__class__.__name__)
@@ -732,8 +769,8 @@ class FileDownloader(FrozenModel):
 
             elif not remote_file_path.is_absolute():
                 # Passed path is already relative
+                remote_file = absolute_path(self.source_path / remote_file_path)
                 local_file = self.local_path / remote_file_path
-                remote_file = self.source_path / remote_file_path
                 if current_temp_dir:
                     tmp_file = current_temp_dir / remote_file_path
             else:

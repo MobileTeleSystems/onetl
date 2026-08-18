@@ -587,7 +587,8 @@ def test_file_uploader_without_files_and_without_local_path(file_connection):
 
     uploader = FileUploader(connection=file_connection, target_path=target_path)
 
-    with pytest.raises(ValueError, match="Neither file list nor `local_path` are passed"):
+    msg = "Cannot call FileUploader.run() without files arg or with local_path=None"
+    with pytest.raises(ValueError, match=re.escape(msg)):
         uploader.run()
 
 

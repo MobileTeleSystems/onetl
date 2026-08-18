@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 import re
 import stat
@@ -25,7 +23,7 @@ FILE_TYPE_DETECTORS = {
 }
 
 
-@dataclass
+@dataclass(slots=True)
 class PathRepr:
     path: str
     kind: str | None = None
@@ -37,7 +35,7 @@ class PathRepr:
     exception: Exception | None = None
 
     @classmethod
-    def from_path(cls, path) -> PathRepr:
+    def from_path(cls, path) -> "PathRepr":
         if isinstance(path, str):
             path = PurePath(path)
 

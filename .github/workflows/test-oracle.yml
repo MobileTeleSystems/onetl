@@ -15,7 +15,7 @@ on:
       spark-version:
         required: true
         type: string
-      pydantic-version:
+      etl-entities-version:
         required: true
         type: string
       java-version:
@@ -34,12 +34,12 @@ on:
 
 jobs:
   test-oracle:
-    name: Run Oracle tests (server=${{ inputs.oracle-version }}, spark=${{ inputs.spark-version }}, pydantic=${{ inputs.pydantic-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    name: Run Oracle tests (server=${{ inputs.oracle-version }}, spark=${{ inputs.spark-version }}, etl-entities=${{ inputs.etl-entities-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Start Oracle
         run: |
@@ -55,7 +55,7 @@ jobs:
           java-version: ${{ inputs.java-version }}
 
       - name: Set up Python ${{ inputs.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ inputs.python-version }}
 
@@ -81,14 +81,14 @@ jobs:
 
       # astral-sh/setup-uv cannot restore multiple keys
       - name: Cache uv
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
+          key: ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-spark${{ inputs.spark-version }}-
-            ${{ runner.os }}-python${{ inputs.python-version }}-pydantic${{ inputs.pydantic-version }}-
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-spark${{ inputs.spark-version }}-
+            ${{ runner.os }}-python${{ inputs.python-version }}-etl-entities${{ inputs.etl-entities-version}}-
             ${{ runner.os }}-python${{ inputs.python-version }}-
 
       - name: Wait for Oracle to be ready
@@ -98,18 +98,23 @@ jobs:
           ORACLE_IMAGE: ${{ inputs.oracle-image }}:${{ inputs.oracle-version }}
 
       - name: Run tests
-        run: |
-          export ONETL_ORA_CLIENT_PATH=$(realpath ./oracle/instantclient_21_10)
-          export LD_LIBRARY_PATH=${ONETL_ORA_CLIENT_PATH}:${LD_LIBRARY_PATH}
-          export PATH=${ONETL_ORA_CLIENT_PATH}:${PATH}
-          sed -i 's|ONETL_ORA_SERVICE_NAME=.*|ONETL_ORA_SERVICE_NAME=${{ inputs.db-name }}|' .env.local
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          retry_on: error
+          max_attempts: 3
+          command: |
+            export ETL_ENTITIES_VERSION=${{ inputs.etl-entities-version }}
+            export SPARK_VERSION=${{ inputs.spark-version }}
+            export ONETL_ORA_CLIENT_PATH=$(realpath ./oracle/instantclient_21_10)
+            export LD_LIBRARY_PATH=${ONETL_ORA_CLIENT_PATH}:${LD_LIBRARY_PATH}
+            export PATH=${ONETL_ORA_CLIENT_PATH}:${PATH}
+            sed -i 's|ONETL_ORA_SERVICE_NAME=.*|ONETL_ORA_SERVICE_NAME=${{ inputs.db-name }}|' .env.local
 
-          mkdir reports/ || echo "Directory exists"
-          export "PYTEST=coverage run -m pytest --junitxml=reports/junit/oracle-${RANDOM}.xml"
-          make test-spark UV_ARGS="--group test-oracle" PYTEST_ARGS="-m oracle"
-        env:
-          PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
-          SPARK_VERSION: ${{ inputs.spark-version }}
+            mkdir reports/ || echo "Directory exists"
+            rm -rf reports/*
+            export "PYTEST=coverage run -m pytest --junitxml=reports/junit/oracle-${RANDOM}.xml"
+            make test-spark UV_ARGS="--group test-oracle" PYTEST_ARGS="-m oracle"
 
       - name: Dump Oracle logs on failure
         if: failure()

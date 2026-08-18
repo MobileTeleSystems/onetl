@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, ClassVar, TypeVar
+
+from pydantic import ConfigDict
 
 from onetl.base import BaseReadableFileFormat, BaseWritableFileFormat
 from onetl.hooks import slot, support_hooks
@@ -28,42 +28,36 @@ PROHIBITED_OPTIONS = frozenset(
 @support_hooks
 class ReadOnlyFileFormat(BaseReadableFileFormat, GenericOptions):
     name: ClassVar[str]
-
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS)  # type: ignore[typeddict-unknown-key]
 
     @slot
-    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
-        options = self.dict(by_alias=True, exclude_none=True)
+    def apply_to_reader(self, reader: "DataFrameReader") -> "DataFrameReader":
+        options = self.model_dump(by_alias=True, exclude_none=True)
         return reader.format(self.name).options(**options)
 
 
 @support_hooks
 class WriteOnlyFileFormat(BaseWritableFileFormat, GenericOptions):
     name: ClassVar[str]
-
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS)  # type: ignore[typeddict-unknown-key]
 
     @slot
-    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter:
-        options = self.dict(by_alias=True, exclude_none=True)
+    def apply_to_writer(self, writer: "DataFrameWriter") -> "DataFrameWriter":
+        options = self.model_dump(by_alias=True, exclude_none=True)
         return writer.format(self.name).options(**options)
 
 
 @support_hooks
 class ReadWriteFileFormat(BaseReadableFileFormat, BaseWritableFileFormat, GenericOptions):
     name: ClassVar[str]
-
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS)  # type: ignore[typeddict-unknown-key]
 
     @slot
-    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
-        options = self.dict(by_alias=True, exclude_none=True)
+    def apply_to_reader(self, reader: "DataFrameReader") -> "DataFrameReader":
+        options = self.model_dump(by_alias=True, exclude_none=True)
         return reader.format(self.name).options(**options)
 
     @slot
-    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter:
-        options = self.dict(by_alias=True, exclude_none=True)
+    def apply_to_writer(self, writer: "DataFrameWriter") -> "DataFrameWriter":
+        options = self.model_dump(by_alias=True, exclude_none=True)
         return writer.format(self.name).options(**options)

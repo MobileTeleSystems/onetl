@@ -1,20 +1,37 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import io
 import logging
 import os
 import textwrap
 import warnings
+from collections.abc import Iterable
 from pathlib import Path
 from pprint import pformat
-from typing import Iterable, Optional, Union, cast
+from typing import ClassVar, Literal, cast
 
+from pydantic import (  # type: ignore[no-redef, assignment]
+    ConfigDict,
+    DirectoryPath,
+    Field,
+    FilePath,
+    SecretStr,
+    model_validator,
+)
+
+from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.exception import DirectoryNotEmptyError
 from onetl.hooks import slot, support_hooks
-from onetl.impl.generic_options import GenericOptions
-from onetl.impl.remote_file import RemoteFile
+from onetl.impl import (
+    GenericOptions,
+    Host,
+    LocalPath,
+    RemoteDirectory,
+    RemoteFile,
+    RemotePath,
+    RemotePathStat,
+    path_repr,
+)
 
 try:
     from minio import Minio, commonconfig
@@ -40,25 +57,6 @@ except (ImportError, NameError) as e:
         ).strip(),
     ) from e
 
-from etl_entities.instance import Host
-
-try:
-    from pydantic.v1 import DirectoryPath, Field, FilePath, SecretStr, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import (  # type: ignore[no-redef, assignment]
-        DirectoryPath,
-        Field,
-        FilePath,
-        SecretStr,
-        root_validator,
-        validator,
-    )
-
-from typing_extensions import Literal
-
-from onetl.connection.file_connection.file_connection import FileConnection
-from onetl.impl import LocalPath, RemoteDirectory, RemotePath, RemotePathStat, path_repr
-
 log = logging.getLogger(__name__)
 
 
@@ -66,16 +64,17 @@ class S3Extra(GenericOptions):
     """
     Extra options for S3 connection.
 
-    You can pass here any parameters supported by [minio.Minio client](https://docs.min.io/aistor/developers/sdk/python/api/),
-    **without** `webdav_` prefix.
+    You can pass here any parameters supported by [minio.Minio client](https://docs.min.io/aistor/developers/sdk/python/api/).
+
+    !!! success "Added in 0.16.0"
 
     Parameters
     ---------
-    timeout : urllib3.util.timeout.Timeout, optional
+    timeout
         Timeout for requests,  see [urllib3 documentation](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Timeout).
-    retry : urllib3.util.retry.Retry, optional
+    retry
         Retry for requests, see [urllib3 documentation](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry).
-    ssl_verify : Union[FilePath, DirectoryPath, bool], optional
+    ssl_verify
         One of:
 
         - a path to a file with SSL certificate.
@@ -91,33 +90,34 @@ class S3Extra(GenericOptions):
         status_forcelist=frozenset({500, 502, 503, 504}),
     )
 
-    ssl_verify: Union[FilePath, DirectoryPath, bool] = True
+    ssl_verify: FilePath | DirectoryPath | bool = Field(default=True, validate_default=True)
 
-    @validator("ssl_verify", pre=True, always=True)
-    def _ssl_verify_default_value(cls, value):
-        if not isinstance(value, bool):
-            return value
+    @model_validator(mode="before")
+    @classmethod
+    def _ssl_verify_default_value(cls, values):
+        value = values.get("ssl_verify", True)
+        if value is True:
+            # Try to use default SSL certificates
+            for env_var in ("REQUESTS_CA_BUNDLE", "SSL_CERT_FILE", "SSL_CERT_DIR"):
+                value = os.environ.get(env_var)
+                if not value:
+                    continue
+                values["ssl_verify"] = value
+                return values
 
-        if value is False:
-            return value
+            import certifi
 
-        # Try to use default SSL certificates
-        for env_var in ("REQUESTS_CA_BUNDLE", "SSL_CERT_FILE", "SSL_CERT_DIR"):
-            value = os.environ.get(env_var)
-            if value:
-                return value
+            values["ssl_verify"] = certifi.where()
+            return values
 
-        import certifi
+        return values
 
-        return certifi.where()
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class S3(FileConnection):
-    """S3 file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """S3 file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [minio-py client](https://pypi.org/project/minio/).
 
@@ -131,38 +131,38 @@ class S3(FileConnection):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     !!! success "Added in 0.5.1"
 
     Parameters
     ----------
-    host : str
+    host
         Host of S3 source. For example: `s3.domain.com`
 
-    port : int, optional
+    port
         Port of S3 source
 
-    bucket : str
+    bucket
         Bucket name in the S3 file source
 
-    access_key : str
+    access_key
         Access key (aka user ID) of an account in the S3 service
 
-    secret_key : str
+    secret_key
         Secret key (aka password) of an account in the S3 service
 
-    protocol : str, default: `https`
-        Connection protocol. Allowed values: `https` or `http`
+    protocol
+        Connection protocol.
 
         !!! info "Changed in 0.6.0"
             Renamed `secure: bool` to `protocol: Literal["https", "http"]`
 
-    region : str, optional
+    region
         Region name of bucket in S3 service.
         Optional for some S3 implementations (MinIO, Ozone), but could be mandatory for others.
 
-    session_token : str, optional
+    session_token
         Session token generated by S3 STS service, if used.
 
     Examples
@@ -199,7 +199,7 @@ class S3(FileConnection):
             region="us-east-1",
             extra=S3.Extra(
                 timeout=Timeout(connect=10, read=60),
-                retry=Retry(5, backoff_factor=0.2),
+                retry=Retry(total=5, backoff_factor=0.2),
                 ssl_verify=True,
             ),
         ).check()
@@ -207,52 +207,56 @@ class S3(FileConnection):
     """
 
     host: Host
-    port: Optional[int] = None
     bucket: str
     access_key: str
     secret_key: SecretStr
     protocol: Literal["http", "https"] = "https"
-    region: Optional[str] = None
-    session_token: Optional[SecretStr] = None
+    port: int = 443
+    region: str | None = None
+    session_token: SecretStr | None = None
     extra: S3Extra = Field(default_factory=S3Extra)
 
-    Extra = S3Extra
+    Extra: ClassVar = S3Extra
 
-    @root_validator
-    def _validate_port(cls, values):
-        if values["port"] is not None:
+    @model_validator(mode="before")
+    @classmethod
+    def _set_port_based_on_protocol(cls, values):
+        port = values.get("port")
+        if port is not None:
             return values
 
-        values["port"] = 443 if values["protocol"] == "https" else 80
+        values["port"] = 443 if values.get("protocol", "https") == "https" else 80
         return values
 
-    @validator("region", always=True)
-    def _region_is_recommended(cls, value):
-        if not value:
-            warnings.warn(
-                f"It is highly recommended to specify {cls.__name__}(region=...) to avoid potential access errors",
-                category=UserWarning,
-                stacklevel=5,
-            )
-        return value
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _ssl_verify_fallback(cls, values):
-        if "ssl_verify" not in values:
+        ssl_verify = values.pop("ssl_verify", None)
+        if ssl_verify is None:
             return values
 
-        ssl_verify = values.pop("ssl_verify")
         warnings.warn(
             "Option `ssl_verify` is deprecated since v0.16.0 and will be removed in v1.0.0. "
             f"Use extra={cls.__name__}.Extra(ssl_verify={ssl_verify!r}) instead",
             category=UserWarning,
-            stacklevel=5,
+            stacklevel=3,
         )
-        extra = cls.Extra.parse(values.get("extra"))
-        extra_dict = extra.dict(exclude_unset=True, by_alias=True)
-        extra_dict["ssl_verify"] = ssl_verify
-        values["extra"] = cls.Extra.parse(extra_dict)
+        values["extra"] = cls.Extra.parse(
+            cls.Extra.parse(values.get("extra")).model_dump(exclude_unset=True, by_alias=True)
+            | {"ssl_verify": ssl_verify}
+        )
         return values
+
+    @model_validator(mode="after")
+    def _region_is_recommended(self):
+        if not self.region:
+            class_name = self.__class__.__name__
+            warnings.warn(
+                f"It is highly recommended to specify {class_name}(region=...) to avoid potential access errors",
+                category=UserWarning,
+                stacklevel=3,
+            )
+        return self
 
     @property
     def instance_url(self) -> str:
@@ -316,12 +320,8 @@ class S3(FileConnection):
             # self.list_dir may return large list
             # self._scan_entries return an iterator, which have to be iterated at least once
             for _entry in self._scan_entries(remote_dir):
-                msg = "|%s| Cannot delete non-empty directory %s"
-                raise DirectoryNotEmptyError(
-                    msg,
-                    self.__class__.__name__,
-                    directory_info,
-                )
+                msg = f"|{self.__class__.__name__}| Cannot delete non-empty directory {directory_info}"
+                raise DirectoryNotEmptyError(msg)
 
             log.debug("|%s| Directory to remove: %s", self.__class__.__name__, directory_info)
             self._remove_dir(remote_dir)
@@ -400,7 +400,7 @@ class S3(FileConnection):
         )
 
     def _get_client(self) -> Minio:
-        extra = self.extra.dict(by_alias=True, exclude={"timeout", "retry", "ssl_verify"})
+        extra = self.extra.model_dump(by_alias=True, exclude={"timeout", "retry", "ssl_verify"})
         return Minio(
             endpoint=f"{self.host}:{self.port}",
             access_key=self.access_key,
@@ -575,17 +575,13 @@ class S3(FileConnection):
             return True
 
         directory_path_str = self._delete_absolute_path_slash(path) + "/"
+        generator = self.client.list_objects(bucket_name=self.bucket, prefix=directory_path_str)
         try:
-            next(
-                self.client.list_objects(
-                    bucket_name=self.bucket,
-                    prefix=directory_path_str,
-                ),
-            )
-        except StopIteration:
+            for _ in generator:
+                return True
             return False
-        else:
-            return True
+        finally:
+            generator.close()
 
     def _is_file(self, path: RemotePath) -> bool:
         path_str = self._delete_absolute_path_slash(path)

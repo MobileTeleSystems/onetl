@@ -1,12 +1,10 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import warnings
 from contextlib import closing
-from typing import ClassVar, Optional
+from typing import ClassVar
 
-from etl_entities.instance import Host
+from pydantic import ConfigDict
 
 from onetl._util.classproperty import classproperty
 from onetl._util.spark import get_client_info
@@ -25,7 +23,7 @@ from onetl.connection.db_connection.mysql.options import (
     MySQLWriteOptions,
 )
 from onetl.hooks import slot, support_hooks
-from onetl.impl.generic_options import GenericOptions
+from onetl.impl import GenericOptions, Host
 
 # do not import PySpark here, as we allow user to use `MySQL.get_packages()` for creating Spark session
 
@@ -33,47 +31,44 @@ from onetl.impl.generic_options import GenericOptions
 class MySQLExtra(GenericOptions):
     useUnicode: str = "yes"
     characterEncoding: str = "UTF-8"
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class MySQL(JDBCConnection):
-    """MySQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """MySQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on Maven package [com.mysql:mysql-connector-j:9.7.0](https://mvnrepository.com/artifact/com.mysql/mysql-connector-j/9.7.0)
     ([official MySQL JDBC driver](https://dev.mysql.com/doc/connector-j/en/)).
 
     !!! info "See also"
 
-        Before using this connector please take into account [mysql-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-mysql-prerequisites][]
 
     !!! success "Added in 0.1.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of MySQL database. For example: `mysql0012.domain.com` or `192.168.1.11`
 
-    port : int, default: `3306`
+    port
         Port of MySQL database
 
-    user : str
-        User, which have proper access to the database. For example: `some_user`
+    user
+        User for database connection
 
-    password : str
+    password
         Password for database connection
 
-    database : str, optional
-        Database (==schema) in MySQL
+    database
+        Default database (schema) to connect
 
-    spark : `pyspark.sql.SparkSession`
-        Spark session.
+    spark
+        Spark session
 
-    extra : dict, default: `None`
-        Specifies one or more extra parameters by which clients can connect to the instance.
-
+    extra
+        Extra parameters passed directly to JDBC driver.
         For example: `{"useSSL": "false", "allowPublicKeyRetrieval": "true"}`
 
         See [MySQL JDBC driver properties documentation](https://dev.mysql.com/doc/connector-j/en/connector-j-reference-configuration-properties.html)
@@ -109,17 +104,17 @@ class MySQL(JDBCConnection):
 
     host: Host
     port: int = 3306
-    database: Optional[str] = None
+    database: str | None = None
     extra: MySQLExtra = MySQLExtra()
 
-    ReadOptions = MySQLReadOptions
-    WriteOptions = MySQLWriteOptions
-    SQLOptions = MySQLSQLOptions
-    FetchOptions = MySQLFetchOptions
-    ExecuteOptions = MySQLExecuteOptions
+    ReadOptions: ClassVar = MySQLReadOptions
+    WriteOptions: ClassVar = MySQLWriteOptions
+    SQLOptions: ClassVar = MySQLSQLOptions
+    FetchOptions: ClassVar = MySQLFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = MySQLExecuteOptions  # type: ignore[misc]
 
-    Extra = MySQLExtra
-    Dialect = MySQLDialect
+    Extra: ClassVar = MySQLExtra
+    Dialect: ClassVar = MySQLDialect
 
     DRIVER: ClassVar[str] = "com.mysql.cj.jdbc.Driver"
 
@@ -128,13 +123,13 @@ class MySQL(JDBCConnection):
     def get_packages(cls, package_version: str | None = None) -> list[str]:
         """
         Get package names to be downloaded by Spark.
-        Allows specifying a custom JDBC driver version for MySQL. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Allows specifying a custom JDBC driver version for MySQL. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
         Parameters
         ----------
-        package_version : str, optional
+        package_version
             Specifies the version of the MySQL JDBC driver to use. Defaults to `9.7.0`.
 
             !!! success "Added in 0.11.0"
@@ -172,7 +167,7 @@ class MySQL(JDBCConnection):
     @property
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
-        result.update(self.extra.dict(by_alias=True))
+        result.update(self.extra.model_dump(by_alias=True))
         # https://dev.mysql.com/doc/connector-j/en/connector-j-connp-props-connection.html
         # https://stackoverflow.com/questions/31722323/mysql-connection-with-advanced-attributes-such-as-program-name
         client_info = f"program_name:{get_client_info(self.spark, unsupported=':,')}"

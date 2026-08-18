@@ -1,16 +1,13 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import inspect
 import logging
 import textwrap
 from collections import defaultdict
-from contextlib import ExitStack, suppress
+from collections.abc import Callable
+from contextlib import AbstractContextManager, ExitStack, suppress
 from functools import partial, wraps
-from typing import Any, Callable, ContextManager, TypeVar
-
-from typing_extensions import Protocol
+from typing import Any, ParamSpec, Protocol, TypeVar
 
 from onetl.exception import SignatureError
 from onetl.hooks.hook import CanProcessResult, Hook, HookPriority
@@ -19,12 +16,13 @@ from onetl.hooks.hooks_state import HooksState
 from onetl.hooks.method_inheritance_stack import MethodInheritanceStack
 from onetl.log import NOTICE
 
-Method = TypeVar("Method", bound=Callable[..., Any])
+P = ParamSpec("P")
+T = TypeVar("T")
 
 logger = logging.getLogger(__name__)
 
 
-def _unwrap_method(method: Method) -> Method:
+def _unwrap_method(method: Callable[P, T]) -> Callable[P, T]:
     """Unwrap @classmethod and @staticmethod to get original function"""
     return getattr(method, "__func__", method)
 
@@ -41,7 +39,7 @@ def get_hooks_hierarchy(cls: type, method_name: str) -> HookCollection:
     Return all hooks registered for a specific method,
     sorted by priority and class nested level.
 
-    See [hooks-design][] for more details.
+    See [DBR-onetl-hooks-design-high-level-design][] for more details.
     """
 
     hooks_by_priority: dict[tuple[HookPriority, int], HookCollection] = defaultdict(HookCollection)
@@ -65,7 +63,7 @@ def bind_hook(method: Callable, inp=None):
     """
     Bind a hook to the slot.
 
-    See [hooks-design][] for more details.
+    See [DBR-onetl-hooks-design-high-level-design][] for more details.
 
     !!! success "Added in 0.7.0"
 
@@ -349,7 +347,7 @@ def register_slot(cls: type, method_name: str):  # noqa: C901, PLR0915
 
                 hook_call_result = _execute_hook(hook, hook_args)
 
-                if isinstance(hook_call_result, ContextManager):
+                if isinstance(hook_call_result, AbstractContextManager):
                     logger.log(
                         NOTICE,
                         "|Hooks| %sThis is a context manager, entering...",
@@ -470,7 +468,7 @@ def is_slot(method: Callable) -> bool:
 
 
 class Slot(Protocol):
-    """Protocol which is implemented by a method after applying [slot][] decorator.
+    """Protocol which is implemented by a method after applying [`@slot` decorator][DBR-onetl-hooks-slot-decorator].
 
     !!! success "Added in 0.7.0"
     """
@@ -481,7 +479,7 @@ class Slot(Protocol):
     def __hooks__(self) -> HookCollection:
         """Collection of hooks bound to the slot"""
 
-    def skip_hooks(self) -> ContextManager[None]:
+    def skip_hooks(self) -> AbstractContextManager[None]:
         """
         Context manager which temporary stops all the hooks bound to the slot.
 
@@ -626,7 +624,7 @@ class Slot(Protocol):
     def bind(self): ...
 
 
-def slot(method: Method) -> Method:
+def slot(method: Callable[P, T]) -> Callable[P, T]:
     """
     Decorator which enables hooks functionality on a specific class method.
 

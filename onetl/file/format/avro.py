@@ -1,22 +1,15 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import json
 import logging
 import warnings
-from typing import TYPE_CHECKING, ClassVar, Optional, Union, cast
+from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
-from typing_extensions import Literal
-
-try:
-    from pydantic.v1 import Field, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator, validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version
+from onetl._util.spark import get_pyspark_version, get_spark_version
 from onetl._util.version import Version
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.file.format.file_format import ReadWriteFileFormat
@@ -24,7 +17,6 @@ from onetl.hooks import slot, support_hooks
 
 if TYPE_CHECKING:
     from pyspark.sql import Column, DataFrameReader, DataFrameWriter, SparkSession
-
 
 PROHIBITED_OPTIONS = frozenset(
     (
@@ -50,7 +42,7 @@ log = logging.getLogger(__name__)
 @support_hooks
 class Avro(ReadWriteFileFormat):
     """
-    Avro file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    Avro file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark Avro](https://spark.apache.org/docs/latest/sql-data-sources-avro.html) file format.
 
@@ -77,12 +69,13 @@ class Avro(ReadWriteFileFormat):
         The set of supported options depends on Spark version.
 
     === "Reading files"
+
         ```python
         from pyspark.sql import SparkSession
         from onetl.file.format import Avro
 
         # Create Spark session with Avro package loaded
-        maven_packages = Avro.get_packages(spark_version="3.5.8")
+        maven_packages = Avro.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -99,7 +92,9 @@ class Avro(ReadWriteFileFormat):
         }
         avro = Avro(avroSchema=schema)  # or avroSchemaUrl=...
         ```
+
     === "Writing files"
+
         ```python
         # Create Spark session with Avro package loaded
         spark = ...
@@ -123,7 +118,7 @@ class Avro(ReadWriteFileFormat):
 
     name: ClassVar[str] = "avro"
 
-    schema_dict: Optional[dict] = Field(default=None, alias="avroSchema")
+    schema_dict: dict | None = Field(default=None, alias="avroSchema")
     """
     Avro schema in JSON format representation.
 
@@ -146,7 +141,7 @@ class Avro(ReadWriteFileFormat):
         Mutually exclusive with [schema_url][].
     """
 
-    schema_url: Optional[str] = Field(default=None, alias="avroSchemaUrl")
+    schema_url: str | None = Field(default=None, alias="avroSchemaUrl")
     """
     URL to Avro schema in JSON format. Usually points to Schema Registry, like:
 
@@ -165,7 +160,7 @@ class Avro(ReadWriteFileFormat):
         Mutually exclusive with [schema_dict][].
     """
 
-    recordName: Optional[str] = None
+    recordName: str | None = None
     """
     Record name in written Avro schema.
     Default is `topLevelRecord`.
@@ -175,7 +170,7 @@ class Avro(ReadWriteFileFormat):
         Used only for writing files and by [serialize_column][].
     """
 
-    recordNamespace: Optional[str] = None
+    recordNamespace: str | None = None
     """
     Record namespace in written Avro schema. Default is not set.
 
@@ -184,7 +179,7 @@ class Avro(ReadWriteFileFormat):
         Used only for writing files and by [serialize_column][].
     """
 
-    compression: Union[str, Literal["uncompressed", "snappy", "deflate", "bzip2", "xz", "zstandard"], None] = None
+    compression: str | Literal["uncompressed", "snappy", "deflate", "bzip2", "xz", "zstandard"] | None = None
     """
     Compression codec.
     By default, Spark config value `spark.sql.avro.compression.codec ` (`snappy`) is used.
@@ -194,7 +189,7 @@ class Avro(ReadWriteFileFormat):
         Used only for writing files. Ignored by [serialize_column][].
     """
 
-    mode: Optional[Literal["PERMISSIVE", "FAILFAST"]] = None
+    mode: Literal["PERMISSIVE", "FAILFAST"] | None = None
     """
     How to handle parsing errors:
       * `PERMISSIVE` - set field value as `null`.
@@ -207,7 +202,7 @@ class Avro(ReadWriteFileFormat):
         Used only by [parse_column][] method.
     """
 
-    datetimeRebaseMode: Optional[Literal["CORRECTED", "LEGACY", "EXCEPTION"]] = None
+    datetimeRebaseMode: Literal["CORRECTED", "LEGACY", "EXCEPTION"] | None = None
     """
     While converting dates/timestamps from Julian to Proleptic Gregorian calendar, handle value ambiguity:
       * `EXCEPTION` - fail if ancient dates/timestamps are ambiguous between the two calendars.
@@ -221,7 +216,7 @@ class Avro(ReadWriteFileFormat):
         Used only for reading files and by [parse_column][].
     """
 
-    positionalFieldMatching: Optional[bool] = None
+    positionalFieldMatching: bool | None = None
     """
     If `True`, match Avro schema field and DataFrame column by position.
     If `False`, match by name.
@@ -229,7 +224,7 @@ class Avro(ReadWriteFileFormat):
     Default is `False`.
     """
 
-    enableStableIdentifiersForUnionType: Optional[bool] = None
+    enableStableIdentifiersForUnionType: bool | None = None
     """
     Avro schema may contain union types, which are not supported by Spark.
     Different variants of union are split to separated DataFrame columns with respective type.
@@ -244,21 +239,17 @@ class Avro(ReadWriteFileFormat):
 
         Used only for reading files and by [parse_column][].
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, known_options=[], extra="allow")  # type: ignore[typeddict-unknown-key]
 
     @slot
     @classmethod
     def get_packages(
         cls,
-        spark_version: str,
+        spark_version: str | None = None,
         scala_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         See [Maven package index](https://mvnrepository.com/artifact/org.apache.spark/spark-avro)
         for all available packages.
@@ -267,10 +258,12 @@ class Avro(ReadWriteFileFormat):
 
         Parameters
         ----------
-        spark_version : str
+        spark_version
             Spark version in format `major.minor.patch`.
 
-        scala_version : str, optional
+            If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
+
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
@@ -281,17 +274,17 @@ class Avro(ReadWriteFileFormat):
         ```python
         from onetl.file.format import Avro
 
-        Avro.get_packages(spark_version="3.5.8")
+        Avro.get_packages()
         Avro.get_packages(spark_version="3.5.8", scala_version="2.12")
         ```
         """
 
-        spark_ver = Version(spark_version).min_digits(3)
+        spark_ver = Version(spark_version).min_digits(3) if spark_version else get_pyspark_version()
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         return [f"org.apache.spark:spark-avro_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}"]
 
     @slot
-    def check_if_supported(self, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: "SparkSession") -> None:
         java_class = "org.apache.spark.sql.avro.AvroFileFormat"
 
         try:
@@ -306,20 +299,20 @@ class Avro(ReadWriteFileFormat):
             raise ValueError(msg) from e
 
     @slot
-    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
-        options = self.dict(by_alias=True, exclude_none=True, exclude={"schema"})
+    def apply_to_reader(self, reader: "DataFrameReader") -> "DataFrameReader":
+        options = self.model_dump(by_alias=True, exclude_none=True, exclude={"schema"})
         if self.schema_dict:
             options["avroSchema"] = json.dumps(self.schema_dict)
         return reader.format(self.name).options(**options)
 
     @slot
-    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter:
-        options = self.dict(by_alias=True, exclude_none=True, exclude={"schema"})
+    def apply_to_writer(self, writer: "DataFrameWriter") -> "DataFrameWriter":
+        options = self.model_dump(by_alias=True, exclude_none=True, exclude={"schema"})
         if self.schema_dict:
             options["avroSchema"] = json.dumps(self.schema_dict)
         return writer.format(self.name).options(**options)
 
-    def parse_column(self, column: str | Column) -> Column:
+    def parse_column(self, column: "str | Column") -> "Column":
         """
         Parses an Avro binary column into a structured Spark SQL column using Spark's
         [from_avro](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.avro.functions.from_avro.html) function,
@@ -341,13 +334,13 @@ class Avro(ReadWriteFileFormat):
 
         Parameters
         ----------
-        column : str | Column
+        column
             The name of the column or the column object containing Avro bytes to deserialize.
             Schema should match the provided Avro schema.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with deserialized data. Schema is matching the provided Avro schema.
             Column name is the same as input column.
 
@@ -405,7 +398,7 @@ class Avro(ReadWriteFileFormat):
         |    |-- name: string (nullable = true)
         |    |-- age: integer (nullable = true)
         ```
-        """  # noqa: E501
+        """
         from pyspark.sql import Column, SparkSession
         from pyspark.sql.functions import col
 
@@ -427,7 +420,7 @@ class Avro(ReadWriteFileFormat):
 
         return from_avro(column, schema).alias(column_name)
 
-    def serialize_column(self, column: str | Column) -> Column:
+    def serialize_column(self, column: "str | Column") -> "Column":
         """
         Serializes a structured Spark SQL column into an Avro binary column using Spark's
         [to_avro](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.avro.functions.to_avro.html#pyspark.sql.avro.functions.to_avro) function.
@@ -448,12 +441,12 @@ class Avro(ReadWriteFileFormat):
 
         Parameters
         ----------
-        column : str | Column
+        column
             The name of the column or the column object containing the data to serialize to Avro format.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with binary Avro data. Column name is the same as input column.
 
         Raises
@@ -506,7 +499,7 @@ class Avro(ReadWriteFileFormat):
         |-- key: string (nullable = true)
         |-- value: binary (nullable = true)
         ```
-        """  # noqa: E501
+        """
         from pyspark.sql import Column, SparkSession
         from pyspark.sql.functions import col
 
@@ -525,12 +518,12 @@ class Avro(ReadWriteFileFormat):
         return to_avro(column, schema).alias(column_name)
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = self.model_dump(by_alias=True, exclude_none=True)
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"
 
     def _check_unsupported_parse_options(self):
-        current_options = self.dict(by_alias=True, exclude_none=True)
+        current_options = self.model_dump(by_alias=True, exclude_none=True)
         unsupported_options = current_options.keys() & PARSE_COLUMN_UNSUPPORTED_OPTIONS
         if unsupported_options:
             warnings.warn(
@@ -540,7 +533,7 @@ class Avro(ReadWriteFileFormat):
             )
 
     def _check_unsupported_serialization_options(self):
-        current_options = self.dict(by_alias=True, exclude_none=True)
+        current_options = self.model_dump(by_alias=True, exclude_none=True)
         unsupported_options = current_options.keys() & SERIALIZE_COLUMN_UNSUPPORTED_OPTIONS
         if unsupported_options:
             warnings.warn(
@@ -549,20 +542,19 @@ class Avro(ReadWriteFileFormat):
                 stacklevel=2,
             )
 
-    @validator("schema_dict", pre=True)
+    @field_validator("schema_dict", mode="before")
+    @classmethod
     def _parse_schema_from_json(cls, value):
         if isinstance(value, (str, bytes)):
             return json.loads(value)
         return value
 
-    @root_validator(pre=True)
-    def _check_schema(cls, values):
-        schema_dict = values.get("schema_dict")
-        schema_url = values.get("schema_url")
-        if schema_dict and schema_url:
+    @model_validator(mode="after")
+    def _check_schema(self):
+        if self.schema_dict and self.schema_url:
             msg = "Parameters `avroSchema` and `avroSchemaUrl` are mutually exclusive."
             raise ValueError(msg)
-        return values
+        return self
 
     def _get_schema_json(self) -> str:
         if self.schema_dict:

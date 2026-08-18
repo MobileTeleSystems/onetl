@@ -11,6 +11,39 @@ from onetl.connection import Iceberg, SparkLocalFS, SparkS3
 pytestmark = [pytest.mark.iceberg, pytest.mark.db_connection, pytest.mark.connection]
 
 
+@pytest.mark.parametrize(
+    ("package_version", "spark_version", "scala_version", "package"),
+    [
+        ("1.4.0", None, None, "org.apache.iceberg:iceberg-spark-runtime-{pyspark_ver}_{scala_ver}:1.4.0"),
+        ("1.4.0", "3.3", None, "org.apache.iceberg:iceberg-spark-runtime-3.3_2.12:1.4.0"),
+        ("1.4.0", None, "2.13", "org.apache.iceberg:iceberg-spark-runtime-{pyspark_ver}_2.13:1.4.0"),
+        ("1.10.0", "3.5.8", "2.13.1", "org.apache.iceberg:iceberg-spark-runtime-3.5_2.13:1.10.0"),
+    ],
+)
+def test_iceberg_get_packages(package_version, spark_version, scala_version, package):
+    import pyspark
+
+    pyspark_ver = ".".join(pyspark.__version__.split(".")[:2])
+    scala_ver = "2.12" if pyspark_ver.startswith("3") else "2.13"
+    expected = package.format(pyspark_ver=pyspark_ver, scala_ver=scala_ver)
+    assert Iceberg.get_packages(
+        package_version=package_version,
+        spark_version=spark_version,
+        scala_version=scala_version,
+    ) == [expected]
+
+
+@pytest.mark.parametrize(
+    ("package_version", "package"),
+    [
+        ("1.4.0", "org.apache.iceberg:iceberg-aws-bundle:1.4.0"),
+        ("1.10.0", "org.apache.iceberg:iceberg-aws-bundle:1.10.0"),
+    ],
+)
+def test_iceberg_s3_warehouse_get_packages(package_version, package):
+    assert Iceberg.S3Warehouse.get_packages(package_version=package_version) == [package]
+
+
 def test_iceberg_missing_args(spark_mock):
     # no spark
     with pytest.raises(TypeError):
@@ -308,7 +341,7 @@ def test_iceberg_with_rest_catalog_delegated_warehouse(spark_mock):
 
 
 def test_iceberg_rest_catalog_missing_args():
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match="Field required"):
         Iceberg.RESTCatalog()
 
 
@@ -463,21 +496,6 @@ def test_iceberg_spark_stopped(iceberg_mock, spark_stopped):
             warehouse=iceberg_mock.warehouse,
             spark=spark_stopped,
         )
-
-
-@pytest.mark.parametrize(
-    ("package_version", "spark_version", "scala_version", "package"),
-    [
-        ("1.4.0", "3.3", None, "org.apache.iceberg:iceberg-spark-runtime-3.3_2.12:1.4.0"),
-        ("1.10.0", "3.5", "2.12", "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.10.0"),
-    ],
-)
-def test_iceberg_get_packages(package_version, spark_version, scala_version, package):
-    assert Iceberg.get_packages(
-        package_version=package_version,
-        spark_version=spark_version,
-        scala_version=scala_version,
-    ) == [package]
 
 
 @pytest.mark.local_fs

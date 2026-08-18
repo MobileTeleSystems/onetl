@@ -1,20 +1,13 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import glob
 import os
 import re
 import textwrap
 import warnings
-from typing import List, Optional, Union
 
+from pydantic import Field, field_validator, model_validator
 from typing_extensions import deprecated
-
-try:
-    from pydantic.v1 import Field, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator, validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel, RemotePath
@@ -32,7 +25,7 @@ class FileFilter(BaseFileFilter, FrozenModel):
     Parameters
     ----------
 
-    glob : str | None, default `None`
+    glob
 
         Pattern (e.g. `*.csv`) for which any **file** (only file) path should match
 
@@ -40,7 +33,7 @@ class FileFilter(BaseFileFilter, FrozenModel):
 
             Mutually exclusive with `regexp`
 
-    regexp : str | re.Pattern | None, default `None`
+    regexp
 
         Regular expression (e.g. `\d+\.csv`) for which any **file** (only file) path should match.
 
@@ -50,7 +43,7 @@ class FileFilter(BaseFileFilter, FrozenModel):
 
             Mutually exclusive with `glob`
 
-    exclude_dirs : list[os.PathLike | str], default `[]`
+    exclude_dirs
 
         List of directories which should not be a part of a file or directory path
 
@@ -94,50 +87,49 @@ class FileFilter(BaseFileFilter, FrozenModel):
     ```
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    glob: str | None = None
+    regexp: re.Pattern | None = None
+    exclude_dirs: list[RemotePath] = Field(default_factory=list)
 
-    glob: Optional[str] = None
-    regexp: Optional[re.Pattern] = None
-    exclude_dirs: List[RemotePath] = Field(default_factory=list)
-
-    @validator("glob", pre=True)
-    def check_glob(cls, value: str) -> str:
+    @field_validator("glob", mode="before")
+    @classmethod
+    def _check_glob(cls, value: str) -> str:
         if not glob.has_magic(value):
             msg = "Invalid glob"
             raise ValueError(msg)
 
         return value
 
-    @validator("regexp", pre=True)
-    def check_regexp(cls, value: Union[re.Pattern, str]) -> re.Pattern:
+    @field_validator("regexp", mode="before")
+    @classmethod
+    def _check_regexp(cls, value: re.Pattern | str) -> re.Pattern:
         if isinstance(value, str):
             return re.compile(value, re.IGNORECASE | re.DOTALL)
-
         return value
 
-    @validator("exclude_dirs", each_item=True, pre=True)
-    def check_exclude_dir(cls, value: Union[str, os.PathLike]) -> RemotePath:
-        return RemotePath(value)
+    @field_validator("exclude_dirs", mode="before")
+    def _check_exclude_dir(cls, value):
+        return [RemotePath(item) for item in value]
 
-    @root_validator
-    def disallow_empty_fields(cls, value: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def _disallow_empty_fields(cls, value):
         if value.get("glob") is None and value.get("regexp") is None and not value.get("exclude_dirs"):
             msg = "One of the following fields must be set: `glob`, `regexp`, `exclude_dirs`"
             raise ValueError(msg)
-
         return value
 
-    @root_validator
-    def disallow_both_glob_and_regexp(cls, value: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def _disallow_both_glob_and_regexp(cls, value):
         if value.get("glob") and value.get("regexp"):
             msg = "Only one of `glob`, `regexp` fields can passed, not both"
             raise ValueError(msg)
-
         return value
 
-    @root_validator
-    def log_deprecated(cls, value: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def _log_deprecated(cls, value):
         imports = []
         old_filters = []
         new_filters = []
@@ -150,6 +142,8 @@ class FileFilter(BaseFileFilter, FrozenModel):
         regexp = value.get("regexp")
         if regexp is not None:
             imports.append("Regexp")
+            if isinstance(regexp, str):
+                regexp = re.compile(regexp, re.IGNORECASE | re.DOTALL)
             old_filters.append(f"regexp={regexp.pattern!r}")
             new_filters.append(f"Regexp({regexp.pattern!r})")
 
@@ -180,7 +174,7 @@ class FileFilter(BaseFileFilter, FrozenModel):
         warnings.warn(
             textwrap.dedent(message).strip(),
             category=UserWarning,
-            stacklevel=5,
+            stacklevel=3,
         )
         return value
 

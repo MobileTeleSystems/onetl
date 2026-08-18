@@ -2,7 +2,7 @@
 
 ## Supported Python versions { #DBR-onetl-security-supported-python-versions }
 
-3.7 or above
+3.10 or above
 
 ## Product development security recommendations { #DBR-onetl-security-product-development-security-recommendations }
 

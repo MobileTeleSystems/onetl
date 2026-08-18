@@ -18,10 +18,5 @@ Especially if there are indexes for columns used in `pipeline` value.
 
 
 ::: onetl.connection.db_connection.mongodb.connection.MongoDB.pipeline
-    options:
-        show_root_heading: true
 
 ::: onetl.connection.db_connection.mongodb.options.MongoDBPipelineOptions
-    options:
-        show_root_heading: true
-        inherited_members: false

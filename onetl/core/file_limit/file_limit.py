@@ -1,16 +1,10 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import textwrap
 import warnings
 
+from pydantic import field_validator
 from typing_extensions import deprecated
-
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
 
 from onetl.base import BaseFileLimit, PathProtocol
 from onetl.impl import FrozenModel
@@ -27,7 +21,7 @@ class FileLimit(BaseFileLimit, FrozenModel):
     Parameters
     ----------
 
-    count_limit : int, default = 100
+    count_limit
 
         Number of downloaded files at a time.
 
@@ -68,7 +62,8 @@ class FileLimit(BaseFileLimit, FrozenModel):
     def is_reached(self) -> bool:
         return self._counter > self.count_limit
 
-    @validator("count_limit")
+    @field_validator("count_limit", mode="before")
+    @classmethod
     def _deprecated(cls, value):
         message = f"""
             Using FileLimit is deprecated since v0.8.0 and will be removed in v1.0.0.
@@ -87,6 +82,6 @@ class FileLimit(BaseFileLimit, FrozenModel):
         warnings.warn(
             textwrap.dedent(message).strip(),
             category=UserWarning,
-            stacklevel=5,
+            stacklevel=3,
         )
         return value

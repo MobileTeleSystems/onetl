@@ -1,10 +1,9 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, ContextManager
+from contextlib import AbstractContextManager
+from typing import TYPE_CHECKING
 
 from onetl.base.base_connection import BaseConnection
 from onetl.base.base_file_format import BaseReadableFileFormat, BaseWritableFileFormat
@@ -23,7 +22,7 @@ class FileDFReadOptions(ABC):
     """
 
     @abstractmethod
-    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader | ContextManager[DataFrameReader]:
+    def apply_to_reader(self, reader: "DataFrameReader") -> "DataFrameReader | AbstractContextManager[DataFrameReader]":
         """
         Apply provided format to `pyspark.sql.DataFrameReader`.
 
@@ -31,10 +30,10 @@ class FileDFReadOptions(ABC):
 
         Returns
         -------
-        pyspark.sql.DataFrameReader
+        :
             DataFrameReader with options applied.
 
-        ContextManager[DataFrameReader]
+        contextlib.AbstractContextManager[DataFrameReader]
             If returned context manager, it will be entered before reading data and exited after creating a DataFrame.
             Context manager's `__enter__` method should return `pyspark.sql.DataFrameReader` instance.
         """
@@ -48,7 +47,7 @@ class FileDFWriteOptions(ABC):
     """
 
     @abstractmethod
-    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter | ContextManager[DataFrameWriter]:
+    def apply_to_writer(self, writer: "DataFrameWriter") -> "DataFrameWriter | AbstractContextManager[DataFrameWriter]":
         """
         Apply provided format to `pyspark.sql.DataFrameWriter`.
 
@@ -56,10 +55,10 @@ class FileDFWriteOptions(ABC):
 
         Returns
         -------
-        pyspark.sql.DataFrameWriter
+        :
             DataFrameWriter with options applied.
 
-        ContextManager[DataFrameWriter]
+        contextlib.AbstractContextManager[DataFrameWriter]
             If returned context manager, it will be entered before writing and exited after writing a DataFrame.
             Context manager's `__enter__` method should return `pyspark.sql.DataFrameWriter` instance.
         """
@@ -72,7 +71,7 @@ class BaseFileDFConnection(BaseConnection):
     !!! success "Added in 0.9.0"
     """
 
-    spark: SparkSession
+    spark: "SparkSession"
 
     @abstractmethod
     def check_if_format_supported(
@@ -80,7 +79,7 @@ class BaseFileDFConnection(BaseConnection):
         format: BaseReadableFileFormat | BaseWritableFileFormat,
     ) -> None:
         """
-        Validate if specific file format is supported. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Validate if specific file format is supported. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
@@ -93,7 +92,7 @@ class BaseFileDFConnection(BaseConnection):
     @abstractmethod
     def path_from_string(self, path: os.PathLike | str) -> PurePathProtocol:
         """
-        Convert path from string to object. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Convert path from string to object. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
         """
@@ -112,11 +111,11 @@ class BaseFileDFConnection(BaseConnection):
         paths: list[PurePathProtocol],
         format: BaseReadableFileFormat,
         root: PurePathProtocol | None = None,
-        df_schema: StructType | None = None,
+        df_schema: "StructType | None" = None,
         options: FileDFReadOptions | None = None,
-    ) -> DataFrame:
+    ) -> "DataFrame":
         """
-        Read files in some paths list as dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Read files in some paths list as dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
         """
@@ -124,13 +123,13 @@ class BaseFileDFConnection(BaseConnection):
     @abstractmethod
     def write_df_as_files(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         path: PurePathProtocol,
         format: BaseWritableFileFormat,
         options: FileDFWriteOptions | None = None,
     ) -> None:
         """
-        Write dataframe as files in some path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Write dataframe as files in some path. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
         """

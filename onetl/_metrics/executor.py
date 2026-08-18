@@ -1,23 +1,16 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
+from dataclasses import dataclass, field
 from datetime import timedelta
 
 from humanize import naturalsize, precisedelta
 
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
 
-from onetl.impl import BaseModel
-
-
-class SparkExecutorMetrics(BaseModel):
-    total_run_time: timedelta = Field(default_factory=timedelta)
-    total_cpu_time: timedelta = Field(default_factory=timedelta)
+@dataclass(slots=True)
+class SparkExecutorMetrics:
+    total_run_time: timedelta = field(default_factory=timedelta)
+    total_cpu_time: timedelta = field(default_factory=timedelta)
     peak_memory_bytes: int = 0
     memory_spilled_bytes: int = 0
     disk_spilled_bytes: int = 0
@@ -26,7 +19,7 @@ class SparkExecutorMetrics(BaseModel):
     def is_empty(self) -> bool:
         return not self.total_run_time
 
-    def update(self, other: SparkExecutorMetrics) -> SparkExecutorMetrics:
+    def update(self, other: "SparkExecutorMetrics") -> "SparkExecutorMetrics":
         self.total_run_time += other.total_run_time
         self.total_cpu_time += other.total_cpu_time
         self.peak_memory_bytes += other.peak_memory_bytes

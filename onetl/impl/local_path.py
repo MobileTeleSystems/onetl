@@ -3,9 +3,7 @@
 import os
 import sys
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import TYPE_CHECKING
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
 if TYPE_CHECKING:
     LocalPath: TypeAlias = Path

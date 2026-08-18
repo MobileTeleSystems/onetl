@@ -70,6 +70,30 @@ class KafkaProcessing(BaseProcessing):
     def sasl_port(self) -> int:
         return int(os.environ["ONETL_KAFKA_PLAINTEXT_SASL_PORT"])
 
+    @property
+    def oauth_host(self) -> str:
+        return os.environ["ONETL_KAFKA_OAUTH_HOST"]
+
+    @property
+    def oauth_port(self) -> int:
+        return int(os.environ["ONETL_KAFKA_OAUTH_PORT"])
+
+    @property
+    def oauth_client_id(self) -> str:
+        return os.environ["ONETL_KAFKA_OAUTH_CLIENT_ID"]
+
+    @property
+    def oauth_client_secret(self) -> str:
+        return os.environ["ONETL_KAFKA_OAUTH_CLIENT_SECRET"]
+
+    @property
+    def oauth_token_endpoint(self) -> str:
+        return os.environ["ONETL_KAFKA_OAUTH_TOKEN_ENDPOINT"]
+
+    @property
+    def oauth_scopes(self) -> list[str]:
+        return os.environ["ONETL_KAFKA_OAUTH_SCOPE"].split()
+
     def create_schema(self, schema: str) -> None:
         pass
 
@@ -186,7 +210,33 @@ class KafkaProcessing(BaseProcessing):
         table: str,
         order_by: str | None = None,
     ) -> pandas.DataFrame:
-        pass
+        raise NotImplementedError
+
+    def fix_pandas_df(
+        self,
+        df: pandas.DataFrame,
+    ) -> pandas.DataFrame:
+        df = super().fix_pandas_df(df)
+
+        for column in df.columns:
+            if "headers" in column:
+
+                def convert(headers):
+                    if not headers:
+                        return headers
+
+                    # Spark 4.2 df.collect() uses pyarrow which convert tuples to dicts
+                    result = []
+                    for header in headers:
+                        if isinstance(header, dict):
+                            result.append((header["key"], header["value"]))
+                        else:
+                            result.append(header)
+                    return result
+
+                df[column] = df[column].apply(convert)
+
+        return df
 
     def json_deserialize(
         self,

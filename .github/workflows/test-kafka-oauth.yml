@@ -1,0 +1,107 @@
+name: Tests for Kafka OAuth
+on:
+  workflow_call:
+    inputs:
+      spark-version:
+        required: true
+        type: string
+      etl-entities-version:
+        required: true
+        type: string
+      java-version:
+        required: true
+        type: string
+      python-version:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
+      with-cache:
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  test-kafka-oauth:
+    name: Run Kafka OAuth tests (spark=${{ inputs.spark-version }}, java=${{ inputs.java-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Start Kafka OAuth
+        run: |
+          docker compose --profile kafka-oauth down -v --remove-orphans
+          docker compose --profile kafka-oauth up -d --pull always
+
+      - name: Set up Java ${{ inputs.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      # no caching of ~/.ivy2 because Kafka connector is just a few MB
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          activate-environment: 'true'
+          enable-cache: 'false'
+
+      # astral-sh/setup-uv cannot restore multiple keys
+      - name: Cache uv
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-python${{ inputs.python-version }}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-python${{ inputs.python-version }}-spark${{ inputs.spark-version }}-${{ hashFiles('uv.lock') }}
+            ${{ runner.os }}-python${{ inputs.python-version }}-spark${{ inputs.spark-version }}-
+            ${{ runner.os }}-python${{ inputs.python-version }}-
+
+      - name: Wait for Kafka OAuth to be ready
+        run: |
+          docker compose --profile kafka-oauth up -d --wait --wait-timeout 200
+
+      - name: Run tests
+        run: |
+          mkdir reports/ || echo "Directory exists"
+          export "PYTEST=coverage run -m pytest --junitxml=reports/junit/kafka-oauth-${RANDOM}.xml"
+          make test-spark PYTEST_ARGS="-m kafka_oauth"
+        env:
+          ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
+          SPARK_VERSION: ${{ inputs.spark-version }}
+
+      - name: Dump Kafka OAuth logs on failure
+        if: failure()
+        run: |
+          mkdir -p logs
+          docker compose --profile kafka-oauth logs --no-color > logs/kafka-oauth.log
+
+      - name: Upload Kafka OAuth logs
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: container-logs-kafka-oauth-spark${{ inputs.spark-version }}
+          path: logs/*
+
+      - name: Shutdown Kafka OAuth
+        if: always()
+        run: |
+          docker compose --profile kafka-oauth down -v --remove-orphans
+
+      - name: Upload coverage results
+        if: success() || failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-kafka-oauth-spark${{ inputs.spark-version }}
+          path: reports/*
+          # https://github.com/actions/upload-artifact/issues/602
+          include-hidden-files: true

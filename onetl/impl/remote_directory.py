@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -49,11 +47,11 @@ else:
             return self.stats
 
         @property
-        def parent(self) -> RemoteDirectory:
+        def parent(self) -> "RemoteDirectory":
             return RemoteDirectory(self.path.parent)
 
         @property
-        def parents(self) -> list[RemoteDirectory]:
+        def parents(self) -> "list[RemoteDirectory]":
             return [RemoteDirectory(parent) for parent in self.path.parents]
 
         def __repr__(self) -> str:

@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import re
 from functools import total_ordering
 
@@ -190,7 +188,7 @@ class Version:
             return NotImplemented
         return self._numeric_parts == other._numeric_parts
 
-    def __lt__(self, other: Version):
+    def __lt__(self, other: "Version"):
         """
         Compare two versions using less than.
 
@@ -209,7 +207,7 @@ class Version:
             return NotImplemented
         return self._numeric_parts < other._numeric_parts
 
-    def min_digits(self, num_parts: int) -> Version:
+    def min_digits(self, num_parts: int) -> "Version":
         """
         Ensure the version has at least a specified number of numeric components.
 

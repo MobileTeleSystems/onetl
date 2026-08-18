@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
@@ -45,7 +43,7 @@ class SparkSQLMetricNames(str, Enum):
         return set(cls.__members__.values())
 
 
-@dataclass
+@dataclass(slots=True)
 class SparkListenerExecution:
     id: int
     description: str | None = None

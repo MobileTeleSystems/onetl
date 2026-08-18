@@ -6,6 +6,9 @@ from onetl.connection.db_connection.kafka.extra import KafkaExtra
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
+from onetl.connection.db_connection.kafka.kafka_oauth2_client_credentials import (
+    KafkaOAuth2ClientCredentials,
+)
 from onetl.connection.db_connection.kafka.kafka_plaintext_protocol import KafkaPlaintextProtocol
 from onetl.connection.db_connection.kafka.kafka_protocol import KafkaProtocol
 from onetl.connection.db_connection.kafka.kafka_scram_auth import KafkaScramAuth
@@ -24,6 +27,7 @@ __all__ = [
     "KafkaDialect",
     "KafkaExtra",
     "KafkaKerberosAuth",
+    "KafkaOAuth2ClientCredentials",
     "KafkaPlaintextProtocol",
     "KafkaProtocol",
     "KafkaReadOptions",

@@ -1,14 +1,13 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import Any
-
-from onetl.base import BaseDBConnection
+if TYPE_CHECKING:
+    from onetl.base import BaseDBConnection
 
 
 class SupportHintStr:
-    connection: BaseDBConnection
+    connection: "BaseDBConnection"
 
     def validate_hint(
         self,
@@ -22,6 +21,6 @@ class SupportHintStr:
                 f"{self.connection.__class__.__name__} requires 'hint' parameter type to be 'str', "
                 f"got {hint.__class__.__name__!r}"
             )
-            raise TypeError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         return hint

@@ -14,7 +14,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: alexwilson/enable-github-automerge-action@2.0.0
+      - uses: alexwilson/enable-github-automerge-action@3.0.0
         with:
           github-token: ${{ secrets.AUTOMERGE_TOKEN }}
           merge-method: REBASE

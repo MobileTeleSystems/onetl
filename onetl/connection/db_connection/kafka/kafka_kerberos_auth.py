@@ -1,40 +1,31 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 import os
 import shutil
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, cast
 
-try:
-    from pydantic.v1 import Field, PrivateAttr, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, PrivateAttr, field_validator
 
-from onetl._util.file import get_file_hash, is_file_readable
+from onetl._util.file import get_file_hash, readable_local_file
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions, LocalPath, path_repr
 
 if TYPE_CHECKING:
-    from onetl.connection import Kafka
+    from onetl.connection.db_connection.kafka.connection import Kafka
 
 log = logging.getLogger(__name__)
 
 
 KNOWN_OPTIONS = frozenset(
     (
-        "clearPass",
         "debug",
-        "doNotPrompt",
-        "isInitiator",
         "refreshKrb5Config",
         "renewTGT",
-        "storePass",
+        "storeKey",
         "ticketCache",
-        "tryFirstPass",
-        "useFirstPass",
+        "useTicketCache",
         "sasl.kerberos.*",
     ),
 )
@@ -91,11 +82,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
     ```python
     from onetl.connection import Kafka
 
-    auth = Kafka.KerberosAuth(
-        principal="user",
-        use_keytab=False,
-        use_ticket_cache=True,
-    )
+    auth = Kafka.KerberosAuth(principal="user")
     ```
     Pass custom options for JAAS config and Kafka SASL:
 
@@ -117,38 +104,42 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
     """
 
     principal: str
-    keytab: Optional[LocalPath] = Field(default=None, alias="keyTab")
+    keytab: LocalPath | None = Field(default=None, alias="keyTab")
     deploy_keytab: bool = True
     service_name: str = Field(default="kafka", alias="serviceName")
-    renew_ticket: bool = Field(default=True, alias="renewTicket")
-    store_key: bool = Field(default=True, alias="storeKey")
-    use_keytab: bool = Field(default=True, alias="useKeyTab")
-    use_ticket_cache: bool = Field(default=False, alias="useTicketCache")
 
-    _keytab_path: Optional[LocalPath] = PrivateAttr(default=None)
+    _keytab_path: LocalPath | None = PrivateAttr(default=None)
+    model_config = ConfigDict(
+        prohibited_options=PROHIBITED_OPTIONS,
+        known_options=KNOWN_OPTIONS,
+        strip_prefixes=("kafka.",),
+        extra="allow",  # type: ignore[typeddict-unknown-key]
+    )
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        known_options = KNOWN_OPTIONS
-        strip_prefixes = ("kafka.",)
-        extra = "allow"
-
-    def get_jaas_conf(self, kafka: Kafka) -> str:
-        options = self.dict(
+    def get_jaas_conf(self, kafka: "Kafka") -> str:
+        options = self.model_dump(
             by_alias=True,
             exclude_none=True,
             exclude={"deploy_keytab"},
         )
+        options.setdefault("doNotPrompt", True)  # default False
+        options.setdefault("useTicketCache", True)  # default False
+
         if self.keytab:
+            options["useKeyTab"] = True
             options["keyTab"] = self._prepare_keytab(kafka)
+        else:
+            options["useKeyTab"] = False
 
         jaas_conf = stringify({key: value for key, value in options.items() if not key.startswith("sasl.")}, quote=True)
         jaas_conf_items = [f"{key}={value}" for key, value in jaas_conf.items()]
         return "com.sun.security.auth.module.Krb5LoginModule required " + " ".join(jaas_conf_items) + ";"
 
-    def get_options(self, kafka: Kafka) -> dict:
+    def get_options(self, kafka: "Kafka") -> dict:
         result = {
-            key: value for key, value in self.dict(by_alias=True, exclude_none=True).items() if key.startswith("sasl.")
+            key: value
+            for key, value in self.model_dump(by_alias=True, exclude_none=True).items()
+            if key.startswith("sasl.")
         }
         result.update(
             {
@@ -159,7 +150,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
         )
         return stringify(result)
 
-    def cleanup(self, kafka: Kafka) -> None:
+    def cleanup(self, kafka: "Kafka") -> None:
         if self._keytab_path and self._keytab_path.exists():
             log.debug("Removing keytab from %s", path_repr(self._keytab_path))
             try:
@@ -168,21 +159,13 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
                 log.exception("Failed to remove keytab file '%s'", self._keytab_path)
         self._keytab_path = None
 
-    @validator("keytab")
+    @field_validator("keytab", mode="before")
+    @classmethod
     def _validate_keytab(cls, value):
-        return is_file_readable(value)
+        return readable_local_file(LocalPath(value).expanduser().resolve())
 
-    @root_validator
-    def _use_keytab(cls, values):
-        keytab = values.get("keytab")
-        use_keytab = values.get("use_keytab")
-        if use_keytab and not keytab:
-            msg = "keytab is required if useKeytab is True"
-            raise ValueError(msg)
-        return values
-
-    def _prepare_keytab(self, kafka: Kafka) -> str:
-        keytab: LocalPath = self.keytab  # type: ignore[assignment]
+    def _prepare_keytab(self, kafka: "Kafka") -> str:
+        keytab = cast("LocalPath", self.keytab)
         if not self.deploy_keytab:
             return os.fspath(keytab)
 
@@ -190,7 +173,7 @@ class KafkaKerberosAuth(KafkaAuth, GenericOptions):
         log.debug("Moving keytab from %s to %s", path_repr(keytab), path_repr(self._keytab_path))
         shutil.copy2(keytab, self._keytab_path)
         kafka.spark.sparkContext.addFile(os.fspath(self._keytab_path))
-        return os.fspath(self._keytab_path.name)
+        return self._keytab_path.name
 
     @staticmethod
     def _generate_keytab_path(keytab: LocalPath, principal: str) -> LocalPath:

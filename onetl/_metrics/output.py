@@ -1,16 +1,14 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
+from dataclasses import dataclass
 from pprint import pformat
 
 from humanize import naturalsize
 
-from onetl.impl import BaseModel
 
-
-class SparkOutputMetrics(BaseModel):
+@dataclass(slots=True)
+class SparkOutputMetrics:
     written_bytes: int = 0
     written_rows: int = 0
     created_files: int = 0
@@ -20,7 +18,7 @@ class SparkOutputMetrics(BaseModel):
     def is_empty(self) -> bool:
         return not any([self.written_bytes, self.written_rows, self.created_files])
 
-    def update(self, other: SparkOutputMetrics) -> SparkOutputMetrics:
+    def update(self, other: "SparkOutputMetrics") -> "SparkOutputMetrics":
         self.written_bytes += other.written_bytes
         self.written_rows += other.written_rows
         self.created_files += other.created_files

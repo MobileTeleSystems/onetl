@@ -1,17 +1,13 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
+import time
+from collections.abc import Iterable
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from etl_entities.instance import Cluster
-
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from humanize import naturaldelta
+from pydantic import field_validator
 
 from onetl._metrics.recorder import SparkMetricsRecorder
 from onetl._util.spark import inject_spark_param, override_job_description, stringify
@@ -28,6 +24,7 @@ from onetl.connection.db_connection.hive.slots import HiveSlots
 from onetl.file.format.file_format import ReadWriteFileFormat, WriteOnlyFileFormat
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
+from onetl.impl import Cluster
 from onetl.log import log_lines, log_with_indent
 
 if TYPE_CHECKING:
@@ -40,11 +37,11 @@ log = logging.getLogger(__name__)
 
 @support_hooks
 class Hive(DBConnection):
-    """Spark connection with Hive MetaStore support. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Spark connection with Hive MetaStore support. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! info "See also"
 
-        Before using this connector please take into account [hive-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-hive-prerequisites][]
 
     !!! success "Added in 0.1.0"
 
@@ -55,7 +52,7 @@ class Hive(DBConnection):
 
         !!! success "Added in 0.7.0"
 
-    spark : `pyspark.sql.SparkSession`
+    spark : pyspark.sql.SparkSession
         Spark session with Hive metastore support enabled
 
     Examples
@@ -86,7 +83,9 @@ class Hive(DBConnection):
         # Create connection
         hive = Hive(cluster="rnd-dwh", spark=spark).check()
         ```
+
     === "Create Hive connection with anonymous auth"
+
         ```python
         from onetl.connection import Hive
         from pyspark.sql import SparkSession
@@ -101,20 +100,20 @@ class Hive(DBConnection):
 
     cluster: Cluster
 
-    Dialect = HiveDialect
-    WriteOptions = HiveWriteOptions
-    Options = HiveLegacyOptions
-    Slots = HiveSlots
+    Dialect: ClassVar = HiveDialect
+    WriteOptions: ClassVar = HiveWriteOptions
+    Options: ClassVar = HiveLegacyOptions
+    Slots: ClassVar = HiveSlots
     # TODO: remove in v1.0.0
-    slots = HiveSlots
+    slots: ClassVar = HiveSlots
 
     _CHECK_QUERY: ClassVar[str] = "SHOW DATABASES"
 
     @slot
     @classmethod
-    def get_current(cls, spark: SparkSession):
+    def get_current(cls, spark: "SparkSession"):
         """
-        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
@@ -125,7 +124,7 @@ class Hive(DBConnection):
 
         Parameters
         ----------
-        spark : `pyspark.sql.SparkSession`
+        spark
             Spark session
 
         Examples
@@ -156,7 +155,7 @@ class Hive(DBConnection):
 
     @property
     def instance_url(self) -> str:
-        return self.cluster
+        return "hive://" + self.cluster
 
     def __str__(self):
         return f"{self.__class__.__name__}[{self.cluster}]"
@@ -190,9 +189,9 @@ class Hive(DBConnection):
     def sql(
         self,
         query: str,
-    ) -> DataFrame:
+    ) -> "DataFrame":
         """
-        Lazily execute SELECT statement and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Lazily execute SELECT statement and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Same as `spark.sql(query)`.
 
@@ -200,14 +199,13 @@ class Hive(DBConnection):
 
         Parameters
         ----------
-        query : str
+        query
 
             SQL query to be executed.
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame
-
+        :
             Spark dataframe
         """
 
@@ -216,12 +214,16 @@ class Hive(DBConnection):
         log.info("|%s| Executing SQL query:", self.__class__.__name__)
         log_lines(log, query)
 
-        with SparkMetricsRecorder(self.spark) as recorder:
+        with (
+            SparkMetricsRecorder(self.spark) as recorder,
+            override_job_description(self.spark, f"{self}.sql()"),
+        ):
+            started = time.perf_counter()
             try:
-                with override_job_description(self.spark, f"{self}.sql()"):
-                    df = self._execute_sql(query)
+                df = self._execute_sql(query)
             except Exception:
-                log.exception("|%s| Query failed", self.__class__.__name__)
+                elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+                log.exception("|%s| Query failed after %s!", self.__class__.__name__, elapsed)
 
                 metrics = recorder.metrics()
                 if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
@@ -231,7 +233,8 @@ class Hive(DBConnection):
                     log_lines(log, str(metrics), level=logging.DEBUG)
                 raise
 
-            log.info("|Spark| DataFrame successfully created from SQL statement")
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+            log.info("|Spark| DataFrame successfully created from SQL statement in %s", elapsed)
 
             metrics = recorder.metrics()
             if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
@@ -248,13 +251,13 @@ class Hive(DBConnection):
         statement: str,
     ) -> None:
         """
-        Execute DDL or DML statement. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Execute DDL or DML statement. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.2.0"
 
         Parameters
         ----------
-        statement : str
+        statement
 
             Statement to be executed.
         """
@@ -264,12 +267,16 @@ class Hive(DBConnection):
         log.info("|%s| Executing statement:", self.__class__.__name__)
         log_lines(log, statement)
 
-        with SparkMetricsRecorder(self.spark) as recorder:
+        with (
+            SparkMetricsRecorder(self.spark) as recorder,
+            override_job_description(self.spark, f"{self}.execute()"),
+        ):
+            started = time.perf_counter()
             try:
-                with override_job_description(self.spark, f"{self}.execute()"):
-                    self._execute_sql(statement).collect()
+                self._execute_sql(statement).collect()
             except Exception:
-                log.exception("|%s| Execution failed", self.__class__.__name__)
+                elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+                log.exception("|%s| Execution failed after %s!", self.__class__.__name__, elapsed)
 
                 metrics = recorder.metrics()
                 if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
@@ -279,7 +286,8 @@ class Hive(DBConnection):
                     log_lines(log, str(metrics), level=logging.DEBUG)
                 raise
 
-            log.info("|%s| Execution succeeded", self.__class__.__name__)
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+            log.info("|%s| Execution succeeded in %s", self.__class__.__name__, elapsed)
 
             metrics = recorder.metrics()
             if log.isEnabledFor(logging.DEBUG) and not metrics.is_empty:
@@ -291,7 +299,7 @@ class Hive(DBConnection):
     @slot
     def write_df_to_target(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         target: str,
         options: HiveWriteOptions | None = None,
     ) -> None:
@@ -322,14 +330,15 @@ class Hive(DBConnection):
     @slot
     def read_source_as_df(  # noqa: PLR0913
         self,
+        *,
         source: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
-        df_schema: StructType | None = None,
+        df_schema: "StructType | None" = None,
         window: Window | None = None,
         limit: int | None = None,
-    ) -> DataFrame:
+    ) -> "DataFrame":
         query = self.dialect.get_sql_query(
             table=source,
             columns=columns,
@@ -345,7 +354,7 @@ class Hive(DBConnection):
         self,
         source: str,
         columns: list[str] | None = None,
-    ) -> StructType:
+    ) -> "StructType":
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
         query = self.dialect.get_sql_query(source, columns=columns, where=0, compact=True)
 
@@ -396,7 +405,8 @@ class Hive(DBConnection):
 
         return min_value, max_value
 
-    @validator("cluster")
+    @field_validator("cluster", mode="before")
+    @classmethod
     def _validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
@@ -411,7 +421,7 @@ class Hive(DBConnection):
 
         return validated_cluster
 
-    def _execute_sql(self, query: str) -> DataFrame:
+    def _execute_sql(self, query: str) -> "DataFrame":
         return self.spark.sql(query)
 
     def _sort_df_columns_like_table(self, table: str, df_columns: list[str]) -> list[str]:
@@ -485,7 +495,7 @@ class Hive(DBConnection):
 
     def _insert_into(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         table: str,
         options: HiveWriteOptions | dict | None = None,
     ) -> None:
@@ -517,7 +527,7 @@ class Hive(DBConnection):
         log.info("|%s| Data is successfully inserted into table %r.", self.__class__.__name__, table)
 
     def _format_write_options(self, write_options: HiveWriteOptions) -> dict:
-        options_dict = write_options.dict(
+        options_dict = write_options.model_dump(
             by_alias=True,
             exclude_unset=True,
             exclude={"if_exists"},
@@ -525,20 +535,20 @@ class Hive(DBConnection):
 
         if isinstance(write_options.format, (WriteOnlyFileFormat, ReadWriteFileFormat)):
             options_dict["format"] = write_options.format.name
-            options_dict.update(write_options.format.dict(exclude={"name"}, exclude_none=True))
+            options_dict.update(write_options.format.model_dump(exclude={"name"}, exclude_none=True))
 
         return options_dict
 
     def _save_as_table(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         table: str,
         options: HiveWriteOptions | dict | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
 
         writer = df.write
-        for method, value in write_options.dict(
+        for method, value in write_options.model_dump(
             by_alias=True,
             exclude_none=True,
             exclude={"if_exists", "format", "table_properties"},

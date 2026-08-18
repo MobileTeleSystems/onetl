@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 import os
 import textwrap
@@ -9,13 +7,8 @@ import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 from urllib.parse import quote, urlencode, urlparse, urlunparse
 
-from etl_entities.instance import Host
+from pydantic import ConfigDict, SecretStr, field_validator
 from typing_extensions import deprecated
-
-try:
-    from pydantic.v1 import SecretStr, validator
-except (ImportError, AttributeError):
-    from pydantic import SecretStr, validator  # type: ignore[no-redef, assignment]
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
@@ -48,13 +41,14 @@ from onetl.connection.db_connection.jdbc_mixin import (
 from onetl.exception import MISSING_JVM_CLASS_MSG, TooManyParallelJobsError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
-from onetl.impl import GenericOptions
+from onetl.impl import GenericOptions, Host
 from onetl.log import log_lines, log_with_indent
 
-# do not import PySpark here, as we allow user to use `Greenplum.get_packages()` for creating Spark session
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
     from pyspark.sql.types import StructType
+
+# do not import PySpark here, as we allow user to use `Greenplum.get_packages()` for creating Spark session
 
 log = logging.getLogger(__name__)
 
@@ -67,26 +61,33 @@ EXTRA_OPTIONS = frozenset(
 
 
 class GreenplumExtra(GenericOptions):
-    # avoid closing connections from server side
-    # while connector is moving data to executors before insert
-    tcpKeepAlive: str = "true"
+    """
+    Extra options for Postgres connection.
 
-    class Config:
-        extra = "allow"
-        prohibited_options = JDBCMixinOptions.Config.prohibited_options
+    You can pass here any parameters supported by
+    [Postgres JDBC driver properties documentation](https://jdbc.postgresql.org/documentation/use/),
+    even if it is not mentioned in this documentation.
+    """
+
+    tcpKeepAlive: str = "true"
+    """
+    Avoid closing connections from server side while connector is moving data to executors before insert.
+    """
+
+    model_config = ConfigDict(extra="allow", prohibited_options=JDBCMixinOptions.model_config["prohibited_options"])  # type: ignore[typeddict-unknown-key]
 
 
 @support_hooks
 @deprecated("Deprecated in 0.15.1 and will be removed in 1.0.0", category=None)
 class Greenplum(JDBCMixin, DBConnection):
-    """Greenplum connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Greenplum connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on package `io.pivotal:greenplum-spark:2.2.0`
     ([VMware Greenplum connector for Spark](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/index.html)).
 
     !!! info "See also"
 
-        Before using this connector please take into account [greenplum-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-greenplum-prerequisites][]
 
     !!! success "Added in 0.5.0"
 
@@ -98,32 +99,32 @@ class Greenplum(JDBCMixin, DBConnection):
     host : str
         Host of Greenplum master. For example: `test.greenplum.domain.com` or `193.168.1.17`
 
-    port : int, default: `5432`
+    port : int, default: 5432
         Port of Greenplum master
 
     user : str
-        User, which have proper access to the database. For example: `some_user`
+        User for database connection
 
     password : str
         Password for database connection
 
     database : str
-        Database in RDBMS, NOT schema.
+        Database in RDBMS, NOT schema
 
         See [this page](https://www.educba.com/postgresql-database-vs-schema/) for more details
 
-    spark : `pyspark.sql.SparkSession`
-        Spark session.
+    spark : pyspark.sql.SparkSession
+        Spark session
 
-    extra : dict, default: `None`
-        Specifies one or more extra parameters by which clients can connect to the instance.
-
+    extra : dict, optional
+        Extra parameters passed directly to JDBC driver.
         For example: `{"tcpKeepAlive": "true", "server.port": "50000-65535"}`
 
         Supported options are:
-            * All [Postgres JDBC driver properties](https://jdbc.postgresql.org/documentation/use/)
-            * Properties from [Greenplum connector for Spark documentation](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html) page,
-              but only starting with `server.` or `pool.`
+
+        * All [Postgres JDBC driver properties](https://jdbc.postgresql.org/documentation/use/)
+        * Properties from [Greenplum connector for Spark documentation](https://docs.vmware.com/en/VMware-Greenplum-Connector-for-Apache-Spark/2.3/greenplum-connector-spark/options.html) page,
+            but only starting with `server.` or `pool.`
 
     Examples
     --------
@@ -135,7 +136,7 @@ class Greenplum(JDBCMixin, DBConnection):
     from pyspark.sql import SparkSession
 
     # Create Spark session with Greenplum connector loaded
-    maven_packages = Greenplum.get_packages(spark_version="3.2")
+    maven_packages = Greenplum.get_packages()
     spark = (
         SparkSession.builder.appName("spark-app-name")
         .config("spark.jars.packages", ",".join(maven_packages))
@@ -163,7 +164,7 @@ class Greenplum(JDBCMixin, DBConnection):
         spark=spark,
     ).check()
     ```
-    """  # noqa: E501
+    """
 
     host: Host
     user: str
@@ -172,14 +173,14 @@ class Greenplum(JDBCMixin, DBConnection):
     port: int = 5432
     extra: GreenplumExtra = GreenplumExtra()
 
-    ReadOptions = GreenplumReadOptions
-    WriteOptions = GreenplumWriteOptions
-    FetchOptions = GreenplumFetchOptions
-    ExecuteOptions = GreenplumExecuteOptions
-    JDBCOptions = JDBCMixinOptions
+    ReadOptions: ClassVar = GreenplumReadOptions
+    WriteOptions: ClassVar = GreenplumWriteOptions
+    FetchOptions: ClassVar = GreenplumFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = GreenplumExecuteOptions  # type: ignore[misc]
+    JDBCOptions: ClassVar = JDBCMixinOptions  # type: ignore[misc]
 
-    Extra = GreenplumExtra
-    Dialect = GreenplumDialect
+    Extra: ClassVar = GreenplumExtra
+    Dialect: ClassVar = GreenplumDialect
 
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
     CONNECTIONS_WARNING_LIMIT: ClassVar[int] = 31
@@ -201,7 +202,7 @@ class Greenplum(JDBCMixin, DBConnection):
         package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! warning
 
@@ -211,17 +212,17 @@ class Greenplum(JDBCMixin, DBConnection):
 
         Parameters
         ----------
-        scala_version : str, optional
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
 
-        spark_version : str, optional
-            Spark version in format `major.minor`.
+        spark_version
+            Spark version.
 
             Used only if `scala_version=None`.
 
-        package_version : str, optional, default `2.2.0`
+        package_version
             Package version in format `major.minor.patch`
 
             !!! success "Added in 0.10.1"
@@ -232,8 +233,8 @@ class Greenplum(JDBCMixin, DBConnection):
         ```python
         from onetl.connection import Greenplum
 
-        Greenplum.get_packages(scala_version="2.12")
-        Greenplum.get_packages(spark_version="3.2", package_version="2.3.0")
+        Greenplum.get_packages()
+        Greenplum.get_packages(package_version="2.3.0")
         ```
         """
 
@@ -249,8 +250,7 @@ class Greenplum(JDBCMixin, DBConnection):
                 raise ValueError(msg)
             scala_ver = get_default_scala_version(spark_ver)
         else:
-            msg = "You should pass either `scala_version` or `spark_version`"
-            raise ValueError(msg)
+            scala_ver = Version("2.12")
 
         return [f"io.pivotal:greenplum-spark_{scala_ver.format('{0}.{1}')}:{package_ver}"]
 
@@ -279,7 +279,7 @@ class Greenplum(JDBCMixin, DBConnection):
     def jdbc_custom_params(self) -> dict:
         result = {
             key: value
-            for key, value in self.extra.dict(by_alias=True).items()
+            for key, value in self.extra.model_dump(by_alias=True).items()
             if not key.startswith(("server.", "pool."))
         }
         # https://www.postgresql.org/docs/current/runtime-config-logging.html#GUC-APPLICATION-NAME
@@ -322,16 +322,17 @@ class Greenplum(JDBCMixin, DBConnection):
     @slot
     def read_source_as_df(  # noqa: PLR0913
         self,
+        *,
         source: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
-        df_schema: StructType | None = None,
+        df_schema: "StructType | None" = None,
         window: Window | None = None,
         limit: int | None = None,
         options: GreenplumReadOptions | None = None,
-    ) -> DataFrame:
-        read_options = self.ReadOptions.parse(options).dict(by_alias=True, exclude_none=True)
+    ) -> "DataFrame":
+        read_options = self.ReadOptions.parse(options).model_dump(by_alias=True, exclude_none=True)
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         where = self.dialect.apply_window(where, window)
         fake_query_for_log = self.dialect.get_sql_query(table=source, columns=columns, where=where, limit=limit)
@@ -356,12 +357,12 @@ class Greenplum(JDBCMixin, DBConnection):
     @slot
     def write_df_to_target(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         target: str,
         options: GreenplumWriteOptions | None = None,
     ) -> None:
         write_options = self.WriteOptions.parse(options)
-        options_dict = write_options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"})
+        options_dict = write_options.model_dump(by_alias=True, exclude_none=True, exclude={"if_exists"})
 
         self._check_expected_jobs_number(df, action="write")
 
@@ -384,7 +385,7 @@ class Greenplum(JDBCMixin, DBConnection):
         source: str,
         columns: list[str] | None = None,
         options: GreenplumReadOptions | None = None,
-    ) -> StructType:
+    ) -> "StructType":
         log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_class_name())
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
@@ -394,7 +395,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.debug("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query, level=logging.DEBUG)
 
-        df = self._query_on_driver(query, self.FetchOptions.parse(jdbc_options.dict()))
+        df = self._query_on_driver(query, self.FetchOptions.parse(jdbc_options.model_dump()))
         log.info("|%s| Schema fetched.", self.__class__.__name__)
 
         return df.schema
@@ -429,7 +430,7 @@ class Greenplum(JDBCMixin, DBConnection):
         log.info("|%s| Executing SQL query (on driver):", self.__class__.__name__)
         log_lines(log, query)
 
-        df = self._query_on_driver(query, self.FetchOptions.parse(jdbc_options.dict()))
+        df = self._query_on_driver(query, self.FetchOptions.parse(jdbc_options.model_dump()))
         row = df.collect()[0]
         min_value = row["min"]
         max_value = row["max"]
@@ -440,7 +441,8 @@ class Greenplum(JDBCMixin, DBConnection):
 
         return min_value, max_value
 
-    @validator("spark")
+    @field_validator("spark", mode="before")
+    @classmethod
     def _check_java_class_imported(cls, spark):
         java_class = "io.pivotal.greenplum.spark.GreenplumRelationProvider"
 
@@ -450,7 +452,7 @@ class Greenplum(JDBCMixin, DBConnection):
             spark_version = get_spark_version(spark).format("{0}.{1}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
-                package_source=cls.__name__,
+                package_source=cls.__name__,  # type: ignore[attr-defined]
                 args=f"spark_version='{spark_version}'",
             )
             raise ValueError(msg) from e
@@ -461,7 +463,7 @@ class Greenplum(JDBCMixin, DBConnection):
         table: str,
     ) -> dict:
         schema, table_name = table.split(".")
-        extra = self.extra.dict(by_alias=True, exclude_none=True)
+        extra = self.extra.model_dump(by_alias=True, exclude_none=True)
         greenplum_connector_options = {
             key: value for key, value in extra.items() if key.startswith(("server.", "pool."))
         }
@@ -549,7 +551,7 @@ class Greenplum(JDBCMixin, DBConnection):
             occupied=occupied_connections,
         )
 
-    def _check_expected_jobs_number(self, df: DataFrame, action: str) -> None:
+    def _check_expected_jobs_number(self, df: "DataFrame", action: str) -> None:
         # Parallel reading or writing to Greenplum can open a lot of connections.
         # Connection number is limited on server side, so we should prevent creating too much of them because reaching
         # the limit may prevent all other users from connecting the cluster

@@ -1,12 +1,15 @@
 import re
 import secrets
+import sys
 import textwrap
 
 import pytest
-from frozendict import frozendict
 
 from onetl.connection import Hive
 from onetl.db import DBReader
+
+if sys.version_info < (3, 15):
+    from frozendict import frozendict
 
 pytestmark = pytest.mark.hive
 
@@ -30,7 +33,7 @@ def test_reader_deprecated_import():
 
 
 def test_reader_no_connection():
-    with pytest.raises(ValueError, match="field required"):
+    with pytest.raises(ValueError, match=re.compile("field required", re.IGNORECASE)):
         DBReader(target="schema.table")
 
 

@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, ClassVar
 
 from etl_entities.hwm import HWM, ColumnDateHWM, ColumnDateTimeHWM, ColumnIntHWM
@@ -32,10 +30,10 @@ class SparkTypeToHWM:
     ```
     """
 
-    _mapping: ClassVar[dict[DataType | type[DataType], type[HWM]]] = {}
+    _mapping: ClassVar[dict["DataType | type[DataType]", type[HWM]]] = {}
 
     @classmethod
-    def get(cls, spark_type: DataType) -> type[HWM] | None:
+    def get(cls, spark_type: "DataType") -> type[HWM] | None:
         # avoid importing pyspark in the module
         from pyspark.sql.types import (
             ByteType,
@@ -73,11 +71,11 @@ class SparkTypeToHWM:
         )
 
     @classmethod
-    def add(cls, spark_type: DataType | type[DataType], klass: type[HWM]) -> None:
+    def add(cls, spark_type: "DataType | type[DataType]", klass: type[HWM]) -> None:
         cls._mapping[spark_type] = klass
 
 
-def register_spark_type_to_hwm_type_mapping(*spark_types: DataType | type[DataType]):
+def register_spark_type_to_hwm_type_mapping(*spark_types: "DataType | type[DataType]"):
     """Decorator for registering mapping between Spark data type and HWM type.
 
     Accepts both data type class and instance.

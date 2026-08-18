@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
@@ -13,7 +12,9 @@ if TYPE_CHECKING:
 
 
 class SparkMetricsRecorder:
-    def __init__(self, spark: SparkSession):
+    __slots__ = ("_listener",)
+
+    def __init__(self, spark: "SparkSession"):
         self._listener = SparkMetricsListener(spark=spark)
 
     def __enter__(self):

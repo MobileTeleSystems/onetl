@@ -1,16 +1,14 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
+from dataclasses import dataclass
 from pprint import pformat
 
 from humanize import naturalsize
 
-from onetl.impl import BaseModel
 
-
-class SparkInputMetrics(BaseModel):
+@dataclass(slots=True)
+class SparkInputMetrics:
     read_rows: int = 0
     read_files: int = 0
     read_partitions: int = 0
@@ -21,7 +19,7 @@ class SparkInputMetrics(BaseModel):
     def is_empty(self) -> bool:
         return not any([self.read_bytes, self.read_files, self.read_rows])
 
-    def update(self, other: SparkInputMetrics) -> SparkInputMetrics:
+    def update(self, other: "SparkInputMetrics") -> "SparkInputMetrics":
         self.read_rows += other.read_rows
         self.read_files += other.read_files
         self.read_partitions += other.read_partitions

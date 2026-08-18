@@ -3,7 +3,7 @@ Security
 
 Supported Python versions
 -------------------------
-3.7 or above
+3.10 or above
 
 Product development security recommendations
 --------------------------------------------

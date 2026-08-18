@@ -1,9 +1,7 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from onetl.connection.db_connection.iceberg.catalog import IcebergCatalog
-from onetl.impl.frozen_model import FrozenModel
+from onetl.impl import FrozenModel
 
 
 class IcebergFilesystemCatalog(IcebergCatalog, FrozenModel):

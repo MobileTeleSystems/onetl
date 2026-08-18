@@ -1,14 +1,9 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
-try:
-    from pydantic.v1 import SecretStr
-except (ImportError, AttributeError):
-    from pydantic import SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import SecretStr
 
 from onetl.connection.db_connection.iceberg.catalog.auth import IcebergRESTCatalogAuth
-from onetl.impl.frozen_model import FrozenModel
+from onetl.impl import FrozenModel
 
 
 class IcebergRESTCatalogBasicAuth(IcebergRESTCatalogAuth, FrozenModel):
@@ -20,10 +15,10 @@ class IcebergRESTCatalogBasicAuth(IcebergRESTCatalogAuth, FrozenModel):
 
     Parameters
     ----------
-    user : str
+    user
         Username for authentication.
 
-    password : str
+    password
         Password for authentication.
 
     Examples

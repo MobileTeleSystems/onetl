@@ -1,13 +1,8 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import warnings
 
-try:
-    from pydantic.v1 import Field, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
+from pydantic import Field, model_validator
 
 from onetl._util.alias import avoid_alias
 from onetl.impl import FileExistBehavior, GenericOptions
@@ -39,10 +34,11 @@ class FileMoverOptions(GenericOptions):
     How to handle existing files in the local directory.
 
     Possible values:
-        * `error` (default) - mark file as failed
-        * `ignore` - mark file as skipped
-        * `replace_file` - replace existing file with a new one
-        * `replace_entire_directory` - delete directory content before moving files
+
+    * `error` (default) - mark file as failed
+    * `ignore` - mark file as skipped
+    * `replace_file` - replace existing file with a new one
+    * `replace_entire_directory` - delete directory content before moving files
 
     !!! success "Added in 0.8.0"
 
@@ -62,13 +58,14 @@ class FileMoverOptions(GenericOptions):
     !!! success "Added in 0.8.1"
     """
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_deprecated(cls, values):
         if "mode" in values:
             warnings.warn(
                 "Option `FileMover.Options(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
                 "Use `FileMover.Options(if_exists=...)` instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
         return values

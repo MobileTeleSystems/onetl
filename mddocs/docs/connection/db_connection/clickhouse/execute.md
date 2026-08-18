@@ -99,9 +99,7 @@ So it should **NOT** be used to read large amounts of data. Use [DBReader][DBR-o
 ::: onetl.connection.db_connection.clickhouse.options.ClickhouseFetchOptions
     options:
         inherited_members: true
-        show_root_heading: true
 
 ::: onetl.connection.db_connection.clickhouse.options.ClickhouseExecuteOptions
     options:
         inherited_members: true
-        show_root_heading: true

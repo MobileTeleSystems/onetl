@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
 from onetl.base.pure_path_protocol import PurePathProtocol
 

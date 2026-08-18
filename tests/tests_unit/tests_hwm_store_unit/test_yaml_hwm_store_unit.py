@@ -3,9 +3,11 @@ import secrets
 import shutil
 import sys
 import textwrap
+import warnings
 from pathlib import Path
 
 import pytest
+import yaml
 from etl_entities.hwm_store import BaseHWMStore as OriginalBaseHWMStore
 from etl_entities.hwm_store import (
     HWMStoreClassRegistry as OriginalHWMStoreClassRegistry,
@@ -21,8 +23,9 @@ from etl_entities.hwm_store import (
 from onetl.hwm.store import YAMLHWMStore
 
 
-def test_hwm_store_yaml_path(request, tmp_path_factory, hwm_delta):
-    hwm, _delta = hwm_delta
+@pytest.mark.parametrize("keep_history", [True, False])
+def test_yaml_hwm_store(request, tmp_path_factory, hwm_with_value, keep_history):
+    hwm, new_value = hwm_with_value
     folder: Path = tmp_path_factory.mktemp("someconf")
     path = folder / secrets.token_hex(5)
 
@@ -31,7 +34,7 @@ def test_hwm_store_yaml_path(request, tmp_path_factory, hwm_delta):
 
     request.addfinalizer(finalizer)
 
-    store = YAMLHWMStore(path=path)
+    store = YAMLHWMStore(path=path, keep_history=keep_history)
 
     assert path.exists()
 
@@ -50,8 +53,16 @@ def test_hwm_store_yaml_path(request, tmp_path_factory, hwm_delta):
 
     assert store.get_hwm(hwm.name) == hwm
 
+    new_hwm = hwm.update(new_value)
+    store.set_hwm(new_hwm)
 
-def test_hwm_store_yaml_path_not_folder(request, tmp_path_factory):
+    assert store.get_hwm(hwm.name) == new_hwm
+
+    data = yaml.safe_load(item.read_text())
+    assert len(data) == 2 if keep_history else 1
+
+
+def test_yaml_hwm_store_path_not_folder(request, tmp_path_factory):
     folder: Path = tmp_path_factory.mktemp("someconf")
     path = folder / secrets.token_hex(5)
     path.touch()
@@ -67,8 +78,8 @@ def test_hwm_store_yaml_path_not_folder(request, tmp_path_factory):
 
 # TODO: fix
 @pytest.mark.skipif(sys.version_info >= (3, 14), reason="fails on Python 3.14")
-def test_hwm_store_yaml_path_no_access(request, tmp_path_factory, hwm_delta):
-    hwm, _delta = hwm_delta
+def test_yaml_hwm_store_path_no_access(request, tmp_path_factory, hwm_with_value):
+    hwm, _new_value = hwm_with_value
     folder: Path = tmp_path_factory.mktemp("someconf")
     path = folder / secrets.token_hex(5)
     path.mkdir()
@@ -89,7 +100,7 @@ def test_hwm_store_yaml_path_no_access(request, tmp_path_factory, hwm_delta):
         store.set_hwm(hwm)
 
 
-def test_hwm_store_yaml_context_manager(caplog):
+def test_yaml_hwm_store_context_manager(caplog):
     hwm_store = YAMLHWMStore()
 
     assert hwm_store.path
@@ -105,7 +116,7 @@ def test_hwm_store_yaml_context_manager(caplog):
     assert HWMStoreStackManager.get_current() == hwm_store
 
 
-def test_hwm_store_yaml_context_manager_with_path(caplog, request, tmp_path_factory):
+def test_yaml_hwm_store_context_manager_with_path(caplog, request, tmp_path_factory):
     folder: Path = tmp_path_factory.mktemp("someconf")
     path = folder / secrets.token_hex(5)
 
@@ -129,7 +140,7 @@ def test_hwm_store_yaml_context_manager_with_path(caplog, request, tmp_path_fact
     assert isinstance(HWMStoreStackManager.get_current(), YAMLHWMStore)
 
 
-def test_hwm_store_yaml_context_manager_with_encoding(caplog, request, tmp_path_factory):
+def test_yaml_hwm_store_context_manager_with_encoding(caplog, request, tmp_path_factory):
     folder: Path = tmp_path_factory.mktemp("someconf")
     path = folder / secrets.token_hex(5)
 
@@ -188,12 +199,12 @@ def test_hwm_store_yaml_context_manager_with_encoding(caplog, request, tmp_path_
         ),
     ],
 )
-def test_hwm_store_yaml_cleanup_file_name(qualified_name, file_name):
+def test_yaml_hwm_store_cleanup_file_name(qualified_name, file_name):
     assert YAMLHWMStore.cleanup_file_name(qualified_name) == file_name
 
 
 def test_hwm_store_no_deprecation_warning_yaml_hwm_store():
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         from onetl.hwm.store import YAMLHWMStore
 
         YAMLHWMStore()

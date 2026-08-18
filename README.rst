@@ -65,8 +65,8 @@ Non-goals
 Requirements
 ------------
 
-* **Python 3.7 - 3.14**
-* PySpark 3.2.x - 4.1.x (depends on used connector)
+* **Python 3.10 - 3.14**
+* PySpark 3.2.x -- 4.2.x (depends on used connector)
 * Java 8+ (required by Spark, see below)
 * Kerberos libs & GCC (required by ``Hive``, ``HDFS`` and ``SparkHDFS`` connectors)
 
@@ -182,17 +182,19 @@ Compatibility matrix
 +--------------------------------------------------------------+-------------+-------------+-------+
 | Spark                                                        |  Python     | Java        | Scala |
 +==============================================================+=============+=============+=======+
-| `3.2.x <https://spark.apache.org/docs/3.2.4/#downloading>`_  |  3.7 - 3.10 | 8u201 - 11  | 2.12  |
+| `3.2.x <https://spark.apache.org/docs/3.2.4/#downloading>`_  |        3.10 | 8u201 - 11  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.3.x <https://spark.apache.org/docs/3.3.4/#downloading>`_  |  3.7 - 3.12 | 8u201 - 17  | 2.12  |
+| `3.3.x <https://spark.apache.org/docs/3.3.4/#downloading>`_  | 3.10 - 3.12 | 8u201 - 17  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.4.x <https://spark.apache.org/docs/3.4.4/#downloading>`_  |  3.7 - 3.12 | 8u362 - 20  | 2.12  |
+| `3.4.x <https://spark.apache.org/docs/3.4.4/#downloading>`_  | 3.10 - 3.12 | 8u362 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `3.5.x <https://spark.apache.org/docs/3.5.1/#downloading>`_  |  3.8 - 3.13 | 8u371 - 20  | 2.12  |
+| `3.5.x <https://spark.apache.org/docs/3.5.8/#downloading>`_  | 3.10 - 3.13 | 8u371 - 20  | 2.12  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `4.0.x <https://spark.apache.org/docs/4.0.1/#downloading>`_  |  3.9 - 3.14 | 17 - 22     | 2.13  |
+| `4.0.x <https://spark.apache.org/docs/4.0.2/#downloading>`_  | 3.10 - 3.14 | 17 - 22     | 2.13  |
 +--------------------------------------------------------------+-------------+-------------+-------+
-| `4.1.x <https://spark.apache.org/docs/4.1.1/#downloading>`_  | 3.10 - 3.14 | 17 - 22     | 2.13  |
+| `4.1.x <https://spark.apache.org/docs/4.1.3/#downloading>`_  | 3.10 - 3.14 | 17 - 22     | 2.13  |
++--------------------------------------------------------------+-------------+-------------+-------+
+| `4.2.x <https://spark.apache.org/docs/4.2.0/#downloading>`_  | 3.10 - 3.14 | 17 - 25     | 2.13  |
 +--------------------------------------------------------------+-------------+-------------+-------+
 
 .. _pyspark-install:
@@ -548,7 +550,7 @@ Read files directly from S3 path, convert them to dataframe, transform it and th
     setup_logging()
 
     # Initialize new SparkSession with Hadoop AWS libraries and Postgres driver loaded
-    maven_packages = SparkS3.get_packages(spark_version="3.5.8") + Postgres.get_packages()
+    maven_packages = SparkS3.get_packages() + Postgres.get_packages()
     exclude_packages = SparkS3.get_exclude_packages()
     spark = (
         SparkSession.builder.appName("spark_app_onetl_demo")

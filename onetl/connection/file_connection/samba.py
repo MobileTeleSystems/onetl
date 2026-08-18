@@ -1,27 +1,17 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 import textwrap
 from io import BytesIO
 from logging import getLogger
 from pathlib import Path
-from typing import Optional
+from typing import ClassVar, Literal
 
-from etl_entities.instance import Host
-from typing_extensions import Literal
-
-from onetl.impl.generic_options import GenericOptions
-
-try:
-    from pydantic.v1 import Field, SecretStr, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr, validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath, RemotePathStat
+from onetl.impl import GenericOptions, Host, LocalPath, RemotePath, RemotePathStat
 
 try:
     from smb.smb_structs import OperationFailure
@@ -51,15 +41,17 @@ class SambaExtra(GenericOptions):
 
     You can pass here any parameters supported by [smb.SMBConnection.SMBConnection class](https://pysmb.readthedocs.io/en/latest/api/smb_SMBConnection.html).
 
+    !!! success "Added in 0.16.0"
+
     Parameters
     ---------
-    connect_timeout : int, default: `60`
+    connect_timeout
         Timeout (in seconds) for establishing TCP connection.
-    operation_timeout : int, default: `30`
+    operation_timeout
         Timeout (in seconds) for the client operations.
-    my_name : str, default: `onetl`
+    my_name
         Client name.
-    sign_options : int, default: `SMBConnection.SIGN_WHEN_REQUIRED`
+    sign_options
         Sign options.
     """
 
@@ -67,14 +59,12 @@ class SambaExtra(GenericOptions):
     operation_timeout: int = 30
     my_name: str = "onetl"
     sign_options: int = SMBConnection.SIGN_WHEN_REQUIRED
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class Samba(FileConnection):
-    """Samba file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Samba file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [pysmb library](https://pypi.org/project/pysmb/).
 
@@ -90,36 +80,36 @@ class Samba(FileConnection):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     Parameters
     ----------
-    host : str
+    host
         Host of Samba source. For example: `mydomain.com`.
 
-    share : str
+    share
         The name of the share on the Samba server.
 
-    protocol : str, default: `SMB`
+    protocol
         The protocol to use for the connection. Either `SMB` or `NetBIOS`.
         Affects the default port and the `is_direct_tcp` flag in `SMBConnection`.
 
-    port : int, default: 445
+    port
         Port of Samba source.
 
-    domain : str, default: ` `
+    domain
         Windows workgroup name. Empty strings means use `host` as domain name.
 
-    auth_type : str, default: `NTLMv2`
+    auth_type
         The authentication type to use. Either `NTLMv2` (recommended) or `NTLMv1` (Windows XP).
 
-    user : str, default: None
+    user
         User, which have access to the file source. Can be `None` for anonymous connection.
 
-    password : str, default: None
+    password
         Password for file source connection. Can be `None` for anonymous connection.
 
-    extra : SambaExtra, default: `SambaExtra()`
+    extra
         Extra options for Samba connection.
 
     Examples
@@ -161,21 +151,25 @@ class Samba(FileConnection):
     host: Host
     share: str
     protocol: Literal["SMB", "NetBIOS"] = "SMB"
-    port: Optional[int] = None
+    port: int = 445
     domain: str = ""
     auth_type: Literal["NTLMv1", "NTLMv2"] = "NTLMv2"
-    user: Optional[str] = None
-    password: Optional[SecretStr] = None
+    user: str | None = None
+    password: SecretStr | None = None
 
     extra: SambaExtra = Field(default_factory=SambaExtra)
 
-    Extra = SambaExtra
+    Extra: ClassVar = SambaExtra
 
-    @validator("port", pre=True, always=True)
-    def _set_port_based_on_protocol(cls, port, values):
-        if port is None:
-            return 445 if values.get("protocol") == "SMB" else 139
-        return port
+    @model_validator(mode="before")
+    @classmethod
+    def _set_port_based_on_protocol(cls, values):
+        port = values.get("port")
+        if port is not None:
+            return values
+
+        values["port"] = 445 if values.get("protocol", "SMB") == "SMB" else 139
+        return values
 
     @property
     def instance_url(self) -> str:
@@ -263,7 +257,7 @@ class Samba(FileConnection):
     def _get_client(self) -> SMBConnection:
         is_direct_tcp = self.protocol == "SMB"
         use_ntlm_v2 = self.auth_type == "NTLMv2"
-        extra = self.extra.dict(by_alias=True, exclude={"operation_timeout", "connect_timeout"})
+        extra = self.extra.model_dump(by_alias=True, exclude={"operation_timeout", "connect_timeout"})
         conn = SMBConnection(
             username=self.user,
             password=self.password.get_secret_value() if self.password else None,

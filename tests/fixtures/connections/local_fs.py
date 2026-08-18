@@ -40,7 +40,6 @@ def local_fs_file_df_connection_with_path_and_files(
     root = tmp_path_factory.mktemp("local-fs") / worker_id
     copy_from = resource_path / "file_df_connection"
 
-    # there is no dirs_exist_ok in python 3.7, so we don't create root dir before copy
     shutil.copytree(copy_from, root)
 
     files = []

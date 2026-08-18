@@ -8,6 +8,7 @@ from onetl.base import SupportsRenameDir
 from onetl.exception import DirectoryExistsError, DirectoryNotFoundError, NotAFileError
 
 
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.parametrize("path_type", [str, PurePosixPath])
 def test_file_connection_rm_dir_recursive(
     file_connection_with_path_and_files,

@@ -1,15 +1,9 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import re
+from contextlib import suppress
 from datetime import timedelta
 from typing import Any
-
-try:
-    from pydantic.v1 import ByteSize
-except (ImportError, AttributeError):
-    from pydantic import ByteSize  # type: ignore[no-redef, assignment]
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._metrics.driver import SparkDriverMetrics
@@ -21,25 +15,55 @@ from onetl._metrics.listener.execution import (
 )
 from onetl._metrics.output import SparkOutputMetrics
 
-# in some cases byte metrics have format "7.6 MiB", but sometimes it is:
-# total (min, med, max (stageId: taskId))\n7.6 MiB (0.0 B, 7.6 MiB, 7.6 MiB (driver))
-NON_BYTE_SIZE = re.compile(r"^[^\d.]+|\(.*\)", flags=re.DOTALL)
+BYTE_SIZES = {
+    "b": 1,
+    "kb": 10**3,
+    "mb": 10**6,
+    "gb": 10**9,
+    "tb": 10**12,
+    "pb": 10**15,
+    "eb": 10**18,
+    "kib": 2**10,
+    "mib": 2**20,
+    "gib": 2**30,
+    "tib": 2**40,
+    "pib": 2**50,
+    "eib": 2**60,
+}
+BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if "i" not in k})
+byte_string_re = re.compile(r"^\s*(\d*\.?\d+)\s*(\w+)?", re.IGNORECASE)
 
 
 def _get_int(data: dict[SparkSQLMetricNames, list[str]], key: Any) -> int | None:
     try:
         return int(data[key][0])
-    except (IndexError, KeyError, ValueError, TypeError):
+    except (KeyError, IndexError, ValueError, TypeError):
         return None
 
 
 def _get_bytes(data: dict[SparkSQLMetricNames, list[str]], key: Any) -> int | None:
     try:
         raw_value = data[key][0]
-        normalized_value = NON_BYTE_SIZE.sub("", raw_value)
-        return int(ByteSize.validate(normalized_value))
-    except (IndexError, KeyError, ValueError, TypeError):
+    except (KeyError, IndexError):
         return None
+
+    with suppress(ValueError):
+        return int(raw_value)
+
+    str_match = byte_string_re.match(raw_value)
+    if str_match is None:
+        return None
+
+    scalar, unit = str_match.groups()
+    if unit is None:
+        unit = "b"
+
+    try:
+        unit_mult = BYTE_SIZES[unit.lower()]
+    except KeyError:
+        return None
+
+    return int(float(scalar) * unit_mult)
 
 
 def extract_metrics_from_execution(execution: SparkListenerExecution) -> SparkCommandMetrics:

@@ -1,13 +1,9 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field
 
 from onetl.base import FileDFReadOptions
 from onetl.hooks import slot, support_hooks
@@ -40,10 +36,9 @@ class FileDFReaderOptions(FileDFReadOptions, GenericOptions):
     ```
     """
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
-    recursive: Optional[bool] = Field(default=None, alias="recursiveFileLookup")
+    recursive: bool | None = Field(default=None, alias="recursiveFileLookup")
     """If `True`, perform recursive file lookup.
 
     !!! warning
@@ -56,14 +51,14 @@ class FileDFReaderOptions(FileDFReadOptions, GenericOptions):
     """
 
     @slot
-    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
+    def apply_to_reader(self, reader: "DataFrameReader") -> "DataFrameReader":
         """
-        Apply provided format to `pyspark.sql.DataFrameReader`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Apply provided format to `pyspark.sql.DataFrameReader`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Returns
         -------
-        pyspark.sql.DataFrameReader
+        :
             Reader with options applied.
         """
-        options = self.dict(by_alias=True, exclude_none=True)
+        options = self.model_dump(by_alias=True, exclude_none=True)
         return reader.options(**options)

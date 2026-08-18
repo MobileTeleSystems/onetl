@@ -1,24 +1,20 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
+from typing import Annotated
 
-from onetl.base.path_protocol import PathWithStatsProtocol
-
-try:
-    from pydantic.v1 import ByteSize, validator
-except (ImportError, AttributeError):
-    from pydantic import ByteSize, validator  # type: ignore[no-redef, assignment]
+import annotated_types
+from pydantic import ByteSize
 
 from onetl.base import BaseFileLimit, PathProtocol
+from onetl.base.path_protocol import PathWithStatsProtocol
 from onetl.impl import FrozenModel
 
 log = logging.getLogger(__name__)
 
 
 class TotalFilesSize(BaseFileLimit, FrozenModel):
-    """Limits the total size of files handled by [file-downloader][] or [file-mover][].
+    """Limits the total size of files handled by [onetl.file.file_downloader.file_downloader.FileDownloader][] or [onetl.file.file_mover.file_mover.FileMover][].
 
     Calculates the sum of downloaded/moved files size (`.stat().st_size`),
     and checks that this sum is less or equal to specified limit.
@@ -38,7 +34,7 @@ class TotalFilesSize(BaseFileLimit, FrozenModel):
     Parameters
     ----------
 
-    limit : int or str
+    limit
         Maximum total size of files to be handled. Can be an integer (bytes) or a string like `1GiB`.
 
     Examples
@@ -54,23 +50,16 @@ class TotalFilesSize(BaseFileLimit, FrozenModel):
     ```
     """
 
-    limit: ByteSize
+    limit: Annotated[ByteSize, annotated_types.Gt(0)]
 
     _handled: int = 0
 
     def __init__(self, limit: int | str):
         # this is only to allow passing glob as positional argument
-        super().__init__(limit=limit)
+        super().__init__(limit=limit)  # type: ignore[call-arg]
 
     def __repr__(self):
         return f'{self.__class__.__name__}("{self.limit.human_readable()}")'
-
-    @validator("limit")
-    def _limit_cannot_be_negative(cls, value):
-        if value <= 0:
-            msg = "Limit should be positive number"
-            raise ValueError(msg)
-        return value
 
     def reset(self):
         self._handled = 0

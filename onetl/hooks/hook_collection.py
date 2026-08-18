@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 from onetl.log import NOTICE
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from onetl.hooks.hook import Hook
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class HookCollection:
     ```
     """
 
-    def __init__(self, hooks: list[Hook] | HookCollection | None = None):
+    def __init__(self, hooks: "list[Hook] | HookCollection | None" = None):
         self._hooks: list[Hook] = list(hooks) if hooks else []
         self._enabled: bool = True
 
@@ -187,7 +187,7 @@ class HookCollection:
             yield
             self._enabled = True
 
-    def add(self, item: Hook):
+    def add(self, item: "Hook"):
         """Appends hook to the collection.
 
         !!! success "Added in 0.7.0"
@@ -218,7 +218,7 @@ class HookCollection:
         """
         self._hooks.append(item)
 
-    def extend(self, hooks: Iterable[Hook]):
+    def extend(self, hooks: "Iterable[Hook]"):
         """Extends collection using a iterator.
 
         !!! success "Added in 0.7.0"

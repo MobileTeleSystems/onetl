@@ -134,4 +134,3 @@ deserialized_df = read_df.select(
 ::: onetl.connection.db_connection.kafka.options.KafkaReadOptions
     options:
         inherited_members: true
-        show_root_heading: true

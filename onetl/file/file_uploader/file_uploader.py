@@ -1,21 +1,18 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 import os
+import time
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
-from typing import Iterable, Optional, Tuple, cast
+from typing import ClassVar, cast
 
+from humanize import naturaldelta
 from ordered_set import OrderedSet
+from pydantic import PrivateAttr, field_validator
 
-try:
-    from pydantic.v1 import PrivateAttr, validator
-except (ImportError, AttributeError):
-    from pydantic import PrivateAttr, validator  # type: ignore[no-redef, assignment]
-
-from onetl._util.file import generate_temp_path
+from onetl._util.file import absolute_path, generate_temp_path
 from onetl.base import BaseFileConnection
 from onetl.exception import DirectoryNotFoundError, NotAFileError
 from onetl.file.file_set import FileSet
@@ -36,7 +33,7 @@ from onetl.log import entity_boundary_log, log_lines, log_options, log_with_inde
 log = logging.getLogger(__name__)
 
 # source, target, temp
-UPLOAD_ITEMS_TYPE = OrderedSet[Tuple[LocalPath, RemotePath, Optional[RemotePath]]]
+UPLOAD_ITEMS_TYPE = OrderedSet[tuple[LocalPath, RemotePath, RemotePath | None]]
 
 
 class FileUploadStatus(Enum):
@@ -49,14 +46,14 @@ class FileUploadStatus(Enum):
 @support_hooks
 class FileUploader(FrozenModel):
     """Allows you to upload files to a remote source with specified file connection
-    and parameters, and return an object with upload result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    and parameters, and return an object with upload result summary. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! note
 
         This class is used to upload files **only** from local directory to the remote one.
 
         It does NOT support direct file transfer between filesystems, like `FTP -> SFTP`.
-        You should use [file-downloader][] + FileUploader to implement `FTP -> local dir -> SFTP`.
+        You should use [onetl.file.file_downloader.file_downloader.FileDownloader][] + FileUploader to implement `FTP -> local dir -> SFTP`.
 
     !!! warning
 
@@ -69,13 +66,13 @@ class FileUploader(FrozenModel):
 
     Parameters
     ----------
-    connection : FileConnection
-        Class which contains File system connection properties. See [file-connections][] section.
+    connection
+        Class which contains File system connection properties. See [DBR-onetl-connection-file-connection-file-connections][] section.
 
-    target_path : os.PathLike or str
+    target_path
         Remote path where want you upload files to
 
-    local_path : os.PathLike or str, optional, default: `None`
+    local_path
         The local directory from which the data is loaded.
 
         Could be `None`, but only if you pass absolute file paths directly to
@@ -83,7 +80,7 @@ class FileUploader(FrozenModel):
 
         !!! success "Added in 0.3.0"
 
-    temp_path : os.PathLike or str, optional, default: `None`
+    temp_path
         If set, this path will be used for uploading a file, and then renaming it to the target file path.
         If `None` (default since v0.5.0) is passed, files are uploaded directly to `target_path`.
 
@@ -104,13 +101,14 @@ class FileUploader(FrozenModel):
         !!! info "Changed in 0.5.0"
             Default changed from `/tmp` to `None`
 
-    options : [Options][] | dict | None, default: `None`
-        File upload options. See [FileUploader.Options][onetl.file.file_uploader.options.FileUploaderOptions]
+    options
+        File upload options.
 
     Examples
     --------
 
     === "Minimal example"
+
         ```python
         from onetl.connection import HDFS
         from onetl.file import FileUploader
@@ -122,7 +120,9 @@ class FileUploader(FrozenModel):
             target_path="/path/to/remote/source",
         )
         ```
+
     === "Full example"
+
         ```python
         from onetl.connection import HDFS
         from onetl.file import FileUploader
@@ -139,14 +139,14 @@ class FileUploader(FrozenModel):
         ```
     """
 
-    Options = FileUploaderOptions
+    Options: ClassVar = FileUploaderOptions
 
     connection: BaseFileConnection
 
     target_path: RemotePath
 
-    local_path: Optional[LocalPath] = None
-    temp_path: Optional[RemotePath] = None
+    local_path: LocalPath | None = None
+    temp_path: RemotePath | None = None
 
     options: FileUploaderOptions = FileUploaderOptions()
 
@@ -155,27 +155,27 @@ class FileUploader(FrozenModel):
     @slot
     def run(self, files: Iterable[str | os.PathLike] | None = None) -> UploadResult:
         """
-        Method for uploading files to remote host. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Method for uploading files to remote host. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.1.0"
 
         Parameters
         ----------
 
-        files : Iterator[str | os.PathLike] | None, default `None`
+        files
             File list to upload.
 
             If empty, upload files from `local_path`.
 
         Returns
         -------
-        [UploadResult][onetl.file.file_uploader.upload_result.UploadResult]
+        :
 
             Upload result object
 
         Raises
         ------
-        [onetl.exception.DirectoryNotFoundError][]
+        onetl.exception.DirectoryNotFoundError
 
             `local_path` does not found
 
@@ -268,11 +268,13 @@ class FileUploader(FrozenModel):
         ```
         """
 
-        entity_boundary_log(log, f"{self.__class__.__name__}.run() starts")
+        method = f"{self.__class__.__name__}.run()"
 
         if files is None and not self.local_path:
-            msg = "Neither file list nor `local_path` are passed"
+            msg = f"Cannot call {method} without files arg or with local_path=None"
             raise ValueError(msg)
+
+        entity_boundary_log(log, f"{method} started")
 
         if not self._connection_checked:
             self._log_parameters(files)
@@ -298,33 +300,37 @@ class FileUploader(FrozenModel):
 
         to_upload = self._validate_files(files, current_temp_dir=current_temp_dir)
 
-        # remove folder only after everything is checked
-        if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
-            self.connection.remove_dir(self.target_path, recursive=True)
-            self.connection.create_dir(self.target_path)
+        started = time.perf_counter()
+        try:
+            # remove folder only after everything is checked
+            if self.options.if_exists == FileExistBehavior.REPLACE_ENTIRE_DIRECTORY:
+                self.connection.remove_dir(self.target_path, recursive=True)
+                self.connection.create_dir(self.target_path)
 
-        if current_temp_dir:
-            current_temp_dir = self.connection.create_dir(current_temp_dir)
+            if current_temp_dir:
+                current_temp_dir = self.connection.create_dir(current_temp_dir)
 
-        result = self._upload_files(to_upload)
+            result = self._upload_files(to_upload)
 
-        if current_temp_dir:
-            self._remove_temp_dir(current_temp_dir)
+            if current_temp_dir:
+                self._remove_temp_dir(current_temp_dir)
 
-        self._log_result(result)
-        entity_boundary_log(log, f"{self.__class__.__name__}.run() ends", char="-")
-        return result
+            self._log_result(result)
+            return result
+        finally:
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+            entity_boundary_log(log, f"{method} ended in %s", elapsed, char="-")
 
     @slot
     def view_files(self) -> FileSet[LocalPath]:
         """
-        Get file list in the `local_path`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get file list in the `local_path`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.3.0"
 
         Raises
         ------
-        [onetl.exception.DirectoryNotFoundError][]
+        onetl.exception.DirectoryNotFoundError
 
             `local_path` does not found
 
@@ -334,7 +340,7 @@ class FileUploader(FrozenModel):
 
         Returns
         -------
-        FileSet[LocalPath]
+        :
             Set of files in `local_path`
 
         Examples
@@ -354,17 +360,19 @@ class FileUploader(FrozenModel):
         ```
         """
 
+        method = f"{self.__class__.__name__}.view_files()"
         if not self.local_path:
-            msg = "Cannot call `.view_files()` without `local_path`"
+            msg = f"Cannot call {method} with local_path=None"
             raise ValueError(msg)
 
+        entity_boundary_log(log, f"{method} started")
         log.debug("|Local FS| Getting files list from path '%s'", self.local_path)
 
         if not self._connection_checked:
             self._check_local_path()
 
         result: FileSet[LocalPath] = FileSet()
-
+        started = time.perf_counter()
         try:
             for root, dirs, files in os.walk(self.local_path):
                 log.debug("|Local FS| Listing dir '%s': %d dirs, %d files", root, len(dirs), len(files))
@@ -372,27 +380,26 @@ class FileUploader(FrozenModel):
         except Exception as e:
             msg = f"Couldn't read directory tree from local dir '{self.local_path}'"
             raise RuntimeError(msg) from e
+        else:
+            return result
+        finally:
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+            entity_boundary_log(log, f"{method} ended in %s", elapsed, char="-")
 
-        return result
-
-    @validator("local_path", pre=True, always=True)
+    @field_validator("local_path", mode="before")
     def _resolve_local_path(cls, local_path):
-        return LocalPath(local_path).resolve() if local_path else None
+        return LocalPath(local_path).expanduser().resolve() if local_path else None
 
-    @validator("target_path", pre=True, always=True)
-    def _validate_target_path(cls, target_path):
-        return RemotePath(target_path)
-
-    @validator("temp_path", pre=True, always=True)
-    def _validate_temp_path(cls, temp_path):
-        return RemotePath(temp_path) if temp_path else None
+    @field_validator("target_path", "temp_path", mode="before")
+    def _validate_target_path(cls, value):
+        return absolute_path(RemotePath(value)) if value else None
 
     def _log_parameters(self, files: Iterable[str | os.PathLike] | None = None) -> None:
         log.info("|Local FS| -> |%s| Uploading files using parameters:'", self.connection.__class__.__name__)
         log_with_indent(log, "local_path = %s", f"'{self.local_path}'" if self.local_path else "None")
         log_with_indent(log, "target_path = '%s'", self.target_path)
         log_with_indent(log, "temp_path = %s", f"'{self.temp_path}'" if self.temp_path else "None")
-        log_options(log, self.options.dict(by_alias=True))
+        log_options(log, self.options.model_dump(by_alias=True))
 
         if self.options.delete_local:
             log.warning("|%s| LOCAL FILES WILL BE PERMANENTLY DELETED AFTER UPLOADING !!!", self.__class__.__name__)
@@ -437,7 +444,7 @@ class FileUploader(FrozenModel):
             elif not local_file_path.is_absolute():
                 # Passed path is already relative
                 local_file = self.local_path / local_file_path
-                target_file = self.target_path / local_file_path
+                target_file = absolute_path(self.target_path / local_file_path)
                 if current_temp_dir:
                     tmp_file = current_temp_dir / local_file_path
             else:

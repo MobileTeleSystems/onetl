@@ -1,17 +1,17 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from onetl.base import BaseFileLimit
 
 log = logging.getLogger(__name__)
 
 
-def limits_reached(limits: Iterable[BaseFileLimit]) -> bool:
+def limits_reached(limits: "Iterable[BaseFileLimit]") -> bool:
     """
     Check if any of limits reached.
 
@@ -19,7 +19,7 @@ def limits_reached(limits: Iterable[BaseFileLimit]) -> bool:
 
     Parameters
     ----------
-    limits : Iterable of [onetl.base.base_file_limit.BaseFileLimit][]
+    limits
         Limits to test.
 
     Returns

@@ -1,7 +1,5 @@
 #!/bin/env python3
 
-from __future__ import annotations
-
 import csv
 import gzip
 import io
@@ -363,9 +361,11 @@ def save_as_avro_plain(data: list[dict], path: Path) -> None:
 
     # DataFileDFWriter.sync_marker is initialized with randbytes
     # temporary set seed to avoid generating files with different hashes
-    with temporary_set_seed(SEED), path.joinpath("file.avro").open("wb") as file, DataFileWriter(
-        file, DatumWriter(), schema
-    ) as writer:
+    with (
+        temporary_set_seed(SEED),
+        path.joinpath("file.avro").open("wb") as file,
+        DataFileWriter(file, DatumWriter(), schema) as writer,
+    ):
         for row in data:
             writer.append(row)
 
@@ -379,9 +379,11 @@ def save_as_avro_snappy(data: list[dict], path: Path) -> None:
 
     # DataFileDFWriter.sync_marker is initialized with randbytes
     # temporary set seed to avoid generating files with different hashes
-    with temporary_set_seed(SEED), path.joinpath("file.snappy.avro").open("wb") as file, DataFileWriter(
-        file, DatumWriter(), schema, codec="snappy"
-    ) as writer:
+    with (
+        temporary_set_seed(SEED),
+        path.joinpath("file.snappy.avro").open("wb") as file,
+        DataFileWriter(file, DatumWriter(), schema, codec="snappy") as writer,
+    ):
         for row in data:
             writer.append(row)
 

@@ -1,20 +1,16 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 import threading
 from abc import abstractmethod
+from collections.abc import Iterable, Iterator
 from contextlib import suppress
 from logging import getLogger
-from typing import Any, Iterable, Iterator
+from typing import Any
 
 from humanize import naturalsize
-
-try:
-    from pydantic.v1 import PrivateAttr
-except (ImportError, AttributeError):
-    from pydantic import PrivateAttr  # type: ignore[no-redef, assignment]
+from pydantic import PrivateAttr
+from typing_extensions import Self
 
 from onetl.base import (
     BaseFileConnection,
@@ -72,9 +68,9 @@ class FileConnection(BaseFileConnection, FrozenModel):
         return self._clients_cache.client
 
     @slot
-    def close(self):
+    def close(self) -> Self:
         """
-        Close all connections, opened by other methods call. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Close all connections, opened by other methods call. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
@@ -82,7 +78,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Returns
         -------
-        Self
+        :
             Connection itself.
 
         Examples
@@ -486,12 +482,8 @@ class FileConnection(BaseFileConnection, FrozenModel):
             # self.list_dir may return large list
             # self._scan_entries return an iterator, which have to be iterated at least once
             for _entry in self._scan_entries(remote_dir):
-                msg = "|%s| Cannot delete non-empty directory %s"
-                raise DirectoryNotEmptyError(
-                    msg,
-                    self.__class__.__name__,
-                    directory_info,
-                )
+                msg = f"|{self.__class__.__name__}| Cannot delete non-empty directory {directory_info}"
+                raise DirectoryNotEmptyError(msg)
 
         log.debug("|%s| Directory to remove: %s", self.__class__.__name__, directory_info)
         if recursive:
@@ -582,12 +574,12 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Parameters
         ----------
-        path : RemotePath
+        path
             Path to the source directory
 
         Returns
         -------
-        Iterable
+        :
             Iterable entries
 
         Examples
@@ -625,7 +617,8 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Returns
         -------
-        str
+        :
+            Entry name
 
         Examples
         --------
@@ -653,7 +646,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
     @abstractmethod
     def _is_dir_entry(self, top: RemotePath, entry) -> bool:
         """
-        Returns `True` if the object that describes the entry is a directory.
+        Check if the object that describes the entry is a directory.
 
         If entry object does not contain such information, you could construct a path
         from `top / entry.name` and pass it into [_is_dir][] method.
@@ -661,14 +654,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Parameters
         ----------
-        top : RemotePath
+        top
             Root directory
         entry
             One of the elements retrieved from the list (returned by [_scan_entries][]).
 
         Returns
         -------
-        bool
+        :
+            `True` if entry is directory.
 
         Examples
         --------
@@ -695,7 +689,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
     @abstractmethod
     def _is_file_entry(self, top: RemotePath, entry) -> bool:
         """
-        Returns `True` if the object that describes the entry is a file.
+        Check if the object that describes the entry is a file.
 
         If entry object does not contain such information, you could construct a path
         from `top / entry.name` and pass it into [_is_file][] method.
@@ -703,14 +697,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Parameters
         ----------
-        top : RemotePath
+        top
             Root directory
         entry
             One of the elements retrieved from the list (returned by [_scan_entries][]).
 
         Returns
         -------
-        bool
+        :
+            `True` if entry is directory.
 
         Examples
         --------
@@ -748,14 +743,15 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
         Parameters
         ----------
-        top : RemotePath
+        top
             Root directory.
         entry
             One of the elements retrieved from the list (returned by [_scan_entries][]).
 
         Returns
         -------
-        PathStatProtocol
+        :
+            An object containing information about file
 
         Examples
         --------
@@ -787,7 +783,7 @@ class FileConnection(BaseFileConnection, FrozenModel):
 
     def _log_parameters(self):
         log.info("|%s| Using connection parameters:", self.__class__.__name__)
-        parameters = self.dict(exclude_none=True)
+        parameters = self.model_dump(exclude_none=True)
         for attr, value in parameters.items():
             if isinstance(value, os.PathLike):
                 log_with_indent(log, "%s = %s", attr, path_repr(value))

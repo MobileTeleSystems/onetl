@@ -1,20 +1,14 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
-from typing import Generic, Iterable, TypeVar
+from collections.abc import Iterable
+from typing import Generic, TypeVar
 
 from humanize import naturalsize
-
-from onetl.base.path_protocol import PathProtocol
-
-try:
-    from pydantic.v1 import Field, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, validator  # type: ignore[no-redef, assignment]
+from pydantic import Field, field_validator
 
 from onetl.base import PurePathProtocol
+from onetl.base.path_protocol import PathProtocol
 from onetl.exception import (
     EmptyFilesError,
     FailedFilesError,
@@ -37,10 +31,10 @@ class FileResult(BaseModel, Generic[SuccessfulPath_co, FailedPath_co, MissingPat
 
     Container for file paths, divided into certain categories:
 
-    * :obj`successful`
-    * :obj`failed`
-    * :obj`skipped`
-    * :obj`missing`
+    * [successful][]
+    * [failed][]
+    * [skipped][]
+    * [missing][]
     """
 
     successful: FileSet[SuccessfulPath_co] = Field(default_factory=lambda: FileSet({}))
@@ -55,7 +49,8 @@ class FileResult(BaseModel, Generic[SuccessfulPath_co, FailedPath_co, MissingPat
     missing: FileSet[MissingPath_co] = Field(default_factory=lambda: FileSet({}))
     "Unknown paths which cannot be handled"
 
-    @validator("successful", "failed", "skipped", "missing")
+    @field_validator("successful", "failed", "skipped", "missing", mode="before")
+    @classmethod
     def validate_container(cls, value: Iterable[PurePathProtocol]) -> FileSet[PurePathProtocol]:
         return FileSet(value)
 

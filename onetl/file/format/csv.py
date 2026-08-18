@@ -1,16 +1,9 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import warnings
-from typing import TYPE_CHECKING, ClassVar, Optional, Union, cast
+from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
-from typing_extensions import Literal
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field
 
 from onetl._util.alias import avoid_alias
 from onetl._util.spark import stringify
@@ -36,7 +29,7 @@ PARSE_COLUMN_UNSUPPORTED_OPTIONS = {
 @support_hooks
 class CSV(ReadWriteFileFormat):
     """
-    CSV file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    CSV file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark CSV](https://spark.apache.org/docs/latest/sql-data-sources-csv.html) file format.
 
@@ -60,12 +53,15 @@ class CSV(ReadWriteFileFormat):
         The set of supported options depends on Spark version.
 
     === "Reading files"
+
         ```python
         from onetl.file.format import CSV
 
         csv = CSV(header=True, inferSchema=True, mode="PERMISSIVE")
         ```
+
     === "Writing files"
+
         ```python
         from onetl.file.format import CSV
 
@@ -80,7 +76,7 @@ class CSV(ReadWriteFileFormat):
     Character used to separate fields in CSV row.
     """
 
-    header: Optional[bool] = None
+    header: bool | None = None
     """
     If `True`, the first row of the file is considered a header.
     Default `False`.
@@ -93,7 +89,7 @@ class CSV(ReadWriteFileFormat):
     Empty string is considered as `\\u0000` (`NUL`) character.
     """
 
-    quoteAll: Optional[bool] = None
+    quoteAll: bool | None = None
     """
     If `True`, all fields are quoted:
 
@@ -119,7 +115,7 @@ class CSV(ReadWriteFileFormat):
     Empty string is considered as `\\u0000` (`NUL`) character.
     """
 
-    lineSep: Optional[str] = Field(default=None, min_length=1, max_length=2)
+    lineSep: str | None = Field(default=None, min_length=1, max_length=2)
     """
     Character used to separate lines in the CSV file.
 
@@ -133,7 +129,7 @@ class CSV(ReadWriteFileFormat):
         Ignored by [parse_column][] method, as it expects that each DataFrame row will contain exactly one CSV line.
     """
 
-    encoding: Optional[str] = Field(default=None, min_length=1)
+    encoding: str | None = Field(default=None, min_length=1)
     """
     Encoding of the CSV file.
     Default `UTF-8`.
@@ -143,7 +139,7 @@ class CSV(ReadWriteFileFormat):
         Used only for reading and writing files. Ignored by [parse_column][] method.
     """
 
-    compression: Union[str, Literal["none", "bzip2", "gzip", "lz4", "snappy", "deflate"], None] = None
+    compression: str | Literal["none", "bzip2", "gzip", "lz4", "snappy", "deflate"] | None = None
     """
     Compression codec of the CSV file.
     Default `none`.
@@ -153,7 +149,7 @@ class CSV(ReadWriteFileFormat):
         Used only for writing files. Ignored by [parse_column][] method.
     """
 
-    inferSchema: Optional[bool] = None
+    inferSchema: bool | None = None
     """
     If `True`, try to infer the input schema by reading a sample of the file (see [samplingRatio][]).
     Default `False` which means that all parsed columns will be `StringType()`.
@@ -161,20 +157,20 @@ class CSV(ReadWriteFileFormat):
     !!! note
 
         Used only for reading files, and only if user haven't provider explicit DataFrame schema.
-        Ignored by [parse_column][] function.
+        Ignored by [parse_column][] method.
     """
 
-    samplingRatio: Optional[float] = Field(default=None, ge=0, le=1)
+    samplingRatio: float | None = Field(default=None, ge=0, le=1)
     """
     For `inferSchema=True`, read the specified fraction of rows to infer the schema.
     Default `1`.
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
-    comment: Optional[str] = Field(default=None, max_length=1)
+    comment: str | None = Field(default=None, max_length=1)
     """
     If set, all lines starting with specified character (e.g. `#`) are considered a comment, and skipped.
     Default is not set, meaning that CSV lines should not contain comments.
@@ -184,7 +180,7 @@ class CSV(ReadWriteFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    enforceSchema: Optional[bool] = None
+    enforceSchema: bool | None = None
     """
     If `True`, inferred or user-provided schema has higher priority than CSV file headers.
     This means that all input files should have the same structure.
@@ -195,10 +191,10 @@ class CSV(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
-    escapeQuotes: Optional[bool] = None
+    escapeQuotes: bool | None = None
     """
     If `True`, escape quotes within CSV field.
 
@@ -217,16 +213,16 @@ class CSV(ReadWriteFileFormat):
         Used only for writing files.
     """
 
-    unescapedQuoteHandling: Union[
-        None,
+    unescapedQuoteHandling: (
         Literal[
             "STOP_AT_CLOSING_QUOTE",
             "BACK_TO_DELIMITER",
             "STOP_AT_DELIMITER",
             "SKIP_VALUE",
             "RAISE_ERROR",
-        ],
-    ] = None
+        ]
+        | None
+    ) = None
     """
     Define how to handle unescaped quotes within CSV field.
 
@@ -244,7 +240,7 @@ class CSV(ReadWriteFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    ignoreLeadingWhiteSpace: Optional[bool] = None
+    ignoreLeadingWhiteSpace: bool | None = None
     """
     If `True`, trim leading whitespaces in field value.
 
@@ -253,7 +249,7 @@ class CSV(ReadWriteFileFormat):
       * `False` for writing.
     """
 
-    ignoreTrailingWhiteSpace: Optional[bool] = None
+    ignoreTrailingWhiteSpace: bool | None = None
     """
     If `True`, trim trailing whitespaces in field value.
 
@@ -262,7 +258,7 @@ class CSV(ReadWriteFileFormat):
       * `False` for writing.
     """
 
-    emptyValue: Optional[str] = None
+    emptyValue: str | None = None
     """
     Value used for empty string fields.
 
@@ -271,13 +267,13 @@ class CSV(ReadWriteFileFormat):
       * `""` for writing.
     """
 
-    nullValue: Optional[str] = None
+    nullValue: str | None = None
     """
     If set, this value will be converted to `null`.
     Default is empty string.
     """
 
-    nanValue: Optional[str] = Field(default=None)
+    nanValue: str | None = Field(default=None)
     """
     If set, this string will be considered as Not-A-Number (NaN) value for `FloatType()` and `DoubleType()`.
     Default is `NaN`.
@@ -287,7 +283,7 @@ class CSV(ReadWriteFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    positiveInf: Optional[str] = Field(default=None, min_length=1)
+    positiveInf: str | None = Field(default=None, min_length=1)
     """
     If set, this string will be considered as positive infinity value for `FloatType()` and `DoubleType()`.
     Default is `Inf`.
@@ -297,7 +293,7 @@ class CSV(ReadWriteFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    negativeInf: Optional[str] = Field(default=None, min_length=1)
+    negativeInf: str | None = Field(default=None, min_length=1)
     """
     If set, this string will be considered as negative infinity value for `FloatType()` and `DoubleType()`.
     Default is `-Inf`.
@@ -307,7 +303,7 @@ class CSV(ReadWriteFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    preferDate: Optional[bool] = None
+    preferDate: bool | None = None
     """
     If `True` and `inferSchema=True` and column does match [dateFormat][], consider it as `DateType()`.
     For columns matching both [timestampFormat][] and [dateFormat][], consider it as `TimestampType()`.
@@ -318,22 +314,22 @@ class CSV(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
-    dateFormat: Optional[str] = Field(default=None, min_length=1)
+    dateFormat: str | None = Field(default=None, min_length=1)
     """
     String format for `DateType()` representation.
     Default is `yyyy-MM-dd`.
     """
 
-    timestampFormat: Optional[str] = Field(default=None, min_length=1)
+    timestampFormat: str | None = Field(default=None, min_length=1)
     """
     String format for `TimestampType()` representation.
     Default is `yyyy-MM-dd'T'HH:mm:ss[.SSS][XXX]`.
     """
 
-    timestampNTZFormat: Optional[str] = Field(default=None, min_length=1)
+    timestampNTZFormat: str | None = Field(default=None, min_length=1)
     """
     String format for `TimestampNTZType()` representation.
     Default is `yyyy-MM-dd'T'HH:mm:ss[.SSS]`.
@@ -343,7 +339,7 @@ class CSV(ReadWriteFileFormat):
         Added in Spark 3.2.0
     """
 
-    locale: Optional[str] = Field(default=None, min_length=1)
+    locale: str | None = Field(default=None, min_length=1)
     """
     Locale name used to parse dates and timestamps.
     Default is `en-US`
@@ -353,7 +349,7 @@ class CSV(ReadWriteFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    maxCharsPerColumn: Optional[int] = None
+    maxCharsPerColumn: int | None = None
     """
     Maximum number of characters to read per column.
     Default is `-1`, which means no limit.
@@ -363,7 +359,7 @@ class CSV(ReadWriteFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    mode: Optional[Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"]] = None
+    mode: Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"] | None = None
     """
     How to handle parsing errors:
       * `PERMISSIVE` - set field value as `null`, move raw data to [columnNameOfCorruptRecord][] column.
@@ -377,7 +373,7 @@ class CSV(ReadWriteFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    columnNameOfCorruptRecord: Optional[str] = Field(default=None, min_length=1)
+    columnNameOfCorruptRecord: str | None = Field(default=None, min_length=1)
     """
     Name of column to put corrupt records in.
     Default is `_corrupt_record`.
@@ -416,7 +412,7 @@ class CSV(ReadWriteFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    multiLine: Optional[bool] = None
+    multiLine: bool | None = None
     """
     If `True`, fields may contain line separators.
     If `False`, the input is expected to have one record per file.
@@ -429,7 +425,7 @@ class CSV(ReadWriteFileFormat):
         Ignored by [parse_column][] method, as it expects that each DataFrame row will contain exactly one CSV line.
     """
 
-    charToEscapeQuoteEscaping: Optional[str] = Field(default=None, max_length=1)
+    charToEscapeQuoteEscaping: str | None = Field(default=None, max_length=1)
     """
     If CSV field value contains [escape][] character, it should be escaped as well.
     For example, if `escape="\\"`, when line:
@@ -451,17 +447,15 @@ class CSV(ReadWriteFileFormat):
     Default is same as [escape][].
     """
 
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        extra = "allow"
+    model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     @slot
     @classmethod
-    def check_if_supported(cls, spark: SparkSession) -> None:
+    def check_if_supported(cls, spark: "SparkSession") -> None:
         # always available
         pass
 
-    def parse_column(self, column: str | Column, schema: StructType) -> Column:
+    def parse_column(self, column: "str | Column", schema: "StructType") -> "Column":
         """
         Parses a CSV string column to a structured Spark SQL column using Spark's
         [from_csv](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_csv.html) function,
@@ -475,16 +469,16 @@ class CSV(ReadWriteFileFormat):
 
         Parameters
         ----------
-        column : str | Column
+        column
             The name of the column or the column object containing CSV strings/bytes to parse.
 
-        schema : StructType
+        schema
             The schema to apply when parsing the CSV data.
             This defines the structure of the output DataFrame column.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with deserialized data, with the same structure as the provided schema.
             Column name is the same as input column.
 
@@ -527,7 +521,7 @@ class CSV(ReadWriteFileFormat):
         |    |-- name: string (nullable = true)
         |    |-- age: integer (nullable = true)
         ```
-        """  # noqa: E501
+        """
 
         from pyspark.sql import Column, SparkSession
 
@@ -543,10 +537,10 @@ class CSV(ReadWriteFileFormat):
             column_name, column = column, col(column).cast("string")
 
         schema_string = schema.simpleString()
-        options = stringify(self.dict(by_alias=True, exclude_none=True))
+        options = stringify(self.model_dump(by_alias=True, exclude_none=True))
         return from_csv(column, schema_string, options).alias(column_name)
 
-    def serialize_column(self, column: str | Column) -> Column:
+    def serialize_column(self, column: "str | Column") -> "Column":
         """
         Serializes a structured Spark SQL column into a CSV string column using Spark's
         [to_csv](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_csv.html) function.
@@ -559,12 +553,12 @@ class CSV(ReadWriteFileFormat):
 
         Parameters
         ----------
-        column : str | Column
+        column
             The name of the column or the Column object containing the data to serialize to CSV.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with string CSV data. Column name is the same as input column.
 
         Examples
@@ -601,7 +595,7 @@ class CSV(ReadWriteFileFormat):
         |-- id: integer (nullable = true)
         |-- value: string (nullable = true)
         ```
-        """  # noqa: E501
+        """
 
         from pyspark.sql import Column, SparkSession
 
@@ -616,11 +610,11 @@ class CSV(ReadWriteFileFormat):
         else:
             column_name, column = column, col(column)
 
-        options = stringify(self.dict(by_alias=True, exclude_none=True))
+        options = stringify(self.model_dump(by_alias=True, exclude_none=True))
         return to_csv(column, options).alias(column_name)
 
     def _check_unsupported_serialization_options(self):
-        current_options = self.dict(by_alias=True, exclude_none=True)
+        current_options = self.model_dump(by_alias=True, exclude_none=True)
         unsupported_options = current_options.keys() & PARSE_COLUMN_UNSUPPORTED_OPTIONS
         if unsupported_options:
             warnings.warn(
@@ -631,7 +625,7 @@ class CSV(ReadWriteFileFormat):
             )
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = self.model_dump(by_alias=True, exclude_none=True)
         options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

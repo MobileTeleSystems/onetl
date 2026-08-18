@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2024-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -19,7 +17,7 @@ class SparkListenerStageStatus(str, Enum):
         return self.value
 
 
-@dataclass
+@dataclass(slots=True)
 class SparkListenerStage:
     # https://spark.apache.org/docs/3.5.8/api/java/org/apache/spark/scheduler/StageInfo.html
     id: int

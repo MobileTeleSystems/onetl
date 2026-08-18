@@ -1,11 +1,7 @@
 import logging
 
 import pytest
-
-try:
-    from pydantic.v1 import SecretStr
-except (ImportError, AttributeError):
-    from pydantic import SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import SecretStr
 
 from onetl.file.format import Excel
 

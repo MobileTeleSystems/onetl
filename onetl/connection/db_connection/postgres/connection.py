@@ -1,11 +1,9 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import warnings
 from typing import ClassVar
 
-from etl_entities.instance import Host
+from pydantic import ConfigDict
 
 from onetl._util.classproperty import classproperty
 from onetl._util.spark import get_client_info
@@ -24,33 +22,48 @@ from onetl.connection.db_connection.postgres.options import (
     PostgresWriteOptions,
 )
 from onetl.hooks import slot, support_hooks
-from onetl.impl import GenericOptions
+from onetl.impl import GenericOptions, Host
 
 # do not import PySpark here, as we allow user to use `Postgres.get_packages()` for creating Spark session
 
 
 class PostgresExtra(GenericOptions):
-    # allows automatic conversion from text to target column type during write
+    """
+    Extra options for Postgres connection.
+
+    You can pass here any property supported by
+    [Postgres JDBC driver](https://jdbc.postgresql.org/documentation/use/),
+    even if it is not mentioned in this documentation.
+    """
+
     stringtype: str = "unspecified"
+    """
+    Allow automatic conversion from text to target column type during write.
+    """
 
-    # avoid closing connections from server side
-    # while connector is moving data to executors before insert
     tcpKeepAlive: str = "true"
+    """
+    Avoid closing connections from server side while connector is moving data to executors before insert.
+    """
 
-    class Config:
-        extra = "allow"
+    reWriteBatchedInserts: str = "true"
+    """
+    x2 performance on batch writes
+    """
+
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class Postgres(JDBCConnection):
-    """PostgreSQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """PostgreSQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on Maven package [org.postgresql:postgresql:42.7.11](https://mvnrepository.com/artifact/org.postgresql/postgresql/42.7.11)
     ([official Postgres JDBC driver](https://jdbc.postgresql.org/)).
 
     !!! info "See also"
 
-        Before using this connector please take into account [postgres-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-postgres-prerequisites][]
 
     !!! success "Added in 0.1.0"
 
@@ -59,30 +72,26 @@ class Postgres(JDBCConnection):
     host : str
         Host of Postgres database. For example: `test.postgres.domain.com` or `193.168.1.11`
 
-    port : int, default: `5432`
+    port
         Port of Postgres database
 
-    user : str
-        User, which have proper access to the database. For example: `some_user`
+    user
+        User for database connection
 
-    password : str
+    password
         Password for database connection
 
-    database : str
-        Database in RDBMS, NOT schema.
+    database
+        Database in RDBMS, NOT schema
 
         See [this page](https://www.educba.com/postgresql-database-vs-schema/) for more details
 
-    spark : `pyspark.sql.SparkSession`
-        Spark session.
+    spark
+        Spark session
 
-    extra : dict, default: `None`
-        Specifies one or more extra parameters by which clients can connect to the instance.
-
-        For example: `{"ssl": "false"}`
-
-        See [Postgres JDBC driver properties documentation](https://jdbc.postgresql.org/documentation/use/)
-        for more details
+    extra
+        Extra parameters passed directly to JDBC driver.
+        For example: `{"ssl": "false"}`.
 
     Examples
     --------
@@ -132,14 +141,14 @@ class Postgres(JDBCConnection):
     port: int = 5432
     extra: PostgresExtra = PostgresExtra()
 
-    ReadOptions = PostgresReadOptions
-    WriteOptions = PostgresWriteOptions
-    SQLOptions = PostgresSQLOptions
-    FetchOptions = PostgresFetchOptions
-    ExecuteOptions = PostgresExecuteOptions
+    ReadOptions: ClassVar = PostgresReadOptions
+    WriteOptions: ClassVar = PostgresWriteOptions
+    SQLOptions: ClassVar = PostgresSQLOptions
+    FetchOptions: ClassVar = PostgresFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = PostgresExecuteOptions  # type: ignore[misc]
 
-    Extra = PostgresExtra
-    Dialect = PostgresDialect
+    Extra: ClassVar = PostgresExtra
+    Dialect: ClassVar = PostgresDialect
 
     DRIVER: ClassVar[str] = "org.postgresql.Driver"
 
@@ -147,13 +156,13 @@ class Postgres(JDBCConnection):
     @classmethod
     def get_packages(cls, package_version: str | None = None) -> list[str]:
         """
-        Get package names to be downloaded by Spark.  Allows specifying a custom JDBC driver version. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark.  Allows specifying a custom JDBC driver version. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
         Parameters
         ----------
-        package_version : str, optional
+        package_version
             Specifies the version of the PostgreSQL JDBC driver to use.  Defaults to `42.7.11`.
 
         Examples
@@ -187,7 +196,7 @@ class Postgres(JDBCConnection):
     @property
     def jdbc_params(self) -> dict[str, str]:
         result = super().jdbc_params
-        result.update(self.extra.dict(by_alias=True))
+        result.update(self.extra.model_dump(by_alias=True))
         # https://www.postgresql.org/docs/current/runtime-config-logging.html#GUC-APPLICATION-NAME
         result["ApplicationName"] = result.get("ApplicationName", get_client_info(self.spark, limit=64))
         return result

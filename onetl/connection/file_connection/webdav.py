@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import datetime
 import io
 import os
@@ -9,30 +7,21 @@ import textwrap
 import warnings
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, ClassVar, Literal
 
-from etl_entities.instance import Host
-
-from onetl.impl.generic_options import GenericOptions
-
-try:
-    from pydantic.v1 import DirectoryPath, Field, FilePath, SecretStr, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import (  # type: ignore[no-redef, assignment]
-        DirectoryPath,
-        Field,
-        FilePath,
-        SecretStr,
-        root_validator,
-        validator,
-    )
-
-from typing_extensions import Literal
+from pydantic import (
+    ConfigDict,
+    DirectoryPath,
+    Field,
+    FilePath,
+    SecretStr,
+    model_validator,
+)
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
 from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath, RemotePathStat
+from onetl.impl import GenericOptions, Host, LocalPath, RemotePath, RemotePathStat
 
 try:
     from requests.adapters import HTTPAdapter
@@ -66,13 +55,15 @@ class WebDAVExtra(GenericOptions):
     You can pass here any parameters supported by [webdav3.client.Client](https://github.com/ezhov-evgeny/webdav-client-python-3#webdav-api),
     **without** `webdav_` prefix.
 
+    !!! success "Added in 0.16.0"
+
     Parameters
     ---------
-    timeout : urllib3.util.timeout.Timeout, optional
+    timeout
         Timeout for requests,  see [urllib3 documentation](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Timeout).
-    retry : urllib3.util.retry.Retry, optional
+    retry
         Retry for requests, see [urllib3 documentation](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry).
-    ssl_verify : Union[FilePath, DirectoryPath, bool], optional
+    ssl_verify
         One of:
 
         - a path to a file with SSL certificate.
@@ -84,33 +75,34 @@ class WebDAVExtra(GenericOptions):
     timeout: Timeout = Timeout(connect=10, read=60)
     retry: Retry = Retry.DEFAULT
 
-    ssl_verify: Union[FilePath, DirectoryPath, bool] = True
+    ssl_verify: FilePath | DirectoryPath | bool = Field(default=True, validate_default=True)
 
-    @validator("ssl_verify", pre=True, always=True)
-    def _ssl_verify_default_value(cls, value):
-        if not isinstance(value, bool):
-            return value
+    @model_validator(mode="before")
+    @classmethod
+    def _ssl_verify_default_value(cls, values):
+        value = values.get("ssl_verify", True)
+        if value is True:
+            # Try to use default SSL certificates
+            for env_var in ("REQUESTS_CA_BUNDLE", "SSL_CERT_FILE", "SSL_CERT_DIR"):
+                value = os.environ.get(env_var)
+                if not value:
+                    continue
+                values["ssl_verify"] = value
+                return values
 
-        if value is False:
-            return value
+            import certifi
 
-        # Try to use default SSL certificates
-        for env_var in ("REQUESTS_CA_BUNDLE", "SSL_CERT_FILE", "SSL_CERT_DIR"):
-            value = os.environ.get(env_var)
-            if value:
-                return value
+            values["ssl_verify"] = certifi.where()
+            return values
 
-        import certifi
+        return values
 
-        return certifi.where()
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class WebDAV(FileConnection, RenameDirMixin):
-    """WebDAV file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """WebDAV file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [WebdavClient3 library](https://pypi.org/project/webdavclient3/).
 
@@ -124,28 +116,28 @@ class WebDAV(FileConnection, RenameDirMixin):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     !!! success "Added in 0.6.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of WebDAV source. For example: `webdav.domain.com`
 
-    user : str
+    user
         User, which have access to the file source. For example: `someuser`
 
-    password : str
+    password
         Password for file source connection
 
-    protocol : str, default: `https`
+    protocol
         Connection protocol. Allowed values: `https` or `http`
 
-    port : int, optional
+    port
         Connection port
 
-    extra: WebDAVExtra, optional
+    extra
         Extra options passed to WebDAV client
 
     Examples
@@ -177,7 +169,13 @@ class WebDAV(FileConnection, RenameDirMixin):
             password="*****",
             extra=WebDAV.Extra(
                 ssl_verify=True,
-                timeout=Timeout(connect=5, read=10),
+                timeout=Timeout(connect=10, read=60),
+                retry=Retry(
+                    total=3,
+                    backoff_factor=0.2,
+                    # retry on missing files (404 status code)
+                    status_forcelist=[404, 429, 500, 502, 503, 504],
+                ),
                 disable_check=True,
             )
         ).check()
@@ -188,34 +186,38 @@ class WebDAV(FileConnection, RenameDirMixin):
     user: str
     password: SecretStr
     protocol: Literal["http", "https"] = "https"
-    port: Optional[int] = None
+    port: int = 443
     extra: WebDAVExtra = Field(default_factory=WebDAVExtra)
 
-    Extra = WebDAVExtra
+    Extra: ClassVar = WebDAVExtra
 
-    @root_validator
-    def _validate_port(cls, values):
-        if values["port"] is not None:
+    @model_validator(mode="before")
+    @classmethod
+    def _set_port_based_on_protocol(cls, values):
+        port = values.get("port")
+        if port is not None:
             return values
 
-        values["port"] = 443 if values["protocol"] == "https" else 80
+        values["port"] = 443 if values.get("protocol", "https") == "https" else 80
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _ssl_verify_fallback(cls, values):
-        if "ssl_verify" not in values:
+        ssl_verify = values.pop("ssl_verify", None)
+        if ssl_verify is None:
             return values
 
-        ssl_verify = values.pop("ssl_verify")
         warnings.warn(
             "Option `ssl_verify` is deprecated since v0.16.0 and will be removed in v1.0.0. "
             f"Use extra={cls.__name__}.Extra(ssl_verify={ssl_verify!r}) instead",
             category=UserWarning,
-            stacklevel=5,
+            stacklevel=3,
         )
-        extra_dict = cls.Extra.parse(values.get("extra")).dict(exclude_unset=True, by_alias=True)
-        extra_dict["ssl_verify"] = ssl_verify
-        values["extra"] = cls.Extra.parse(extra_dict)
+        values["extra"] = cls.Extra.parse(
+            cls.Extra.parse(values.get("extra")).model_dump(exclude_unset=True, by_alias=True)
+            | {"ssl_verify": ssl_verify}
+        )
         return values
 
     @property
@@ -237,7 +239,7 @@ class WebDAV(FileConnection, RenameDirMixin):
             "webdav_timeout": (self.extra.timeout.connect_timeout, self.extra.timeout.read_timeout),
         }
 
-        extra = self.extra.dict(by_alias=True, exclude={"timeout", "retry", "ssl_verify"})
+        extra = self.extra.model_dump(by_alias=True, exclude={"timeout", "retry", "ssl_verify"})
         options.update({"webdav_" + k: v for k, v in extra.items()})
 
         client = Client(options)

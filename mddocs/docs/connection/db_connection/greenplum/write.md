@@ -137,6 +137,3 @@ High-level schema is described in [Greenplum prerequisites][DBR-onetl-connection
 
 
 ::: onetl.connection.db_connection.greenplum.options.GreenplumWriteOptions
-    options:
-        show_root_heading: true
-        inherited_members: false

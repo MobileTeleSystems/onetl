@@ -1,21 +1,13 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import warnings
 from enum import Enum
-from typing import Optional
+
+from pydantic import ConfigDict, Field, PositiveInt, model_validator
+from typing_extensions import deprecated
 
 from onetl._util.alias import avoid_alias
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCFetchOptions
-
-try:
-    from pydantic.v1 import Field, PositiveInt, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, PositiveInt, root_validator  # type: ignore[no-redef, assignment]
-
-from typing_extensions import deprecated
-
 from onetl.impl import GenericOptions
 
 # options from spark.read.jdbc which are populated by JDBCConnection methods
@@ -140,13 +132,14 @@ class JDBCReadOptions(JDBCFetchOptions):
     ```
     """
 
-    class Config:
-        known_options = READ_OPTIONS | READ_WRITE_OPTIONS
-        prohibited_options = GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        known_options=READ_OPTIONS | READ_WRITE_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        prohibited_options=GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )
 
     # Options in DataFrameWriter.jdbc() method
-    partition_column: Optional[str] = Field(default=None, alias="partitionColumn")
+    partition_column: str | None = Field(default=None, alias="partitionColumn")
     """Column used to parallelize reading from a table.
 
     !!! warning
@@ -154,26 +147,26 @@ class JDBCReadOptions(JDBCFetchOptions):
         to avoid performance issues.
 
     !!! note
-        Column type depends on [partitioning_mode][].
+        Column type depends on `partitioning_mode`.
 
         * `partitioning_mode="range"` requires column to be an integer,
           date or timestamp (can be NULL, but not recommended).
         * `partitioning_mode="hash"` accepts any column type (NOT NULL).
         * `partitioning_mode="mod"` requires column to be an integer (NOT NULL).
 
-    See documentation for [partitioning_mode][] for more details"""
+    See documentation for `partitioning_mode` for more details"""
 
     num_partitions: PositiveInt = Field(default=1, alias="numPartitions")
     """Number of jobs created by Spark to read the table content in parallel.
-    See documentation for [partitioning_mode][] for more details"""
+    See documentation for `partitioning_mode` for more details"""
 
-    lower_bound: Optional[int] = Field(default=None, alias="lowerBound")
-    """See documentation for [partitioning_mode][] for more details"""
+    lower_bound: int | None = Field(default=None, alias="lowerBound")
+    """See documentation for `partitioning_mode` for more details"""
 
-    upper_bound: Optional[int] = Field(default=None, alias="upperBound")
-    """See documentation for [partitioning_mode][] for more details"""
+    upper_bound: int | None = Field(default=None, alias="upperBound")
+    """See documentation for `partitioning_mode` for more details"""
 
-    session_init_statement: Optional[str] = Field(default=None, alias="sessionInitStatement")
+    session_init_statement: str | None = Field(default=None, alias="sessionInitStatement")
     '''After each database session is opened to the remote DB and before starting to read data,
     this option executes a custom SQL statement (or a PL/SQL block).
 
@@ -191,7 +184,7 @@ class JDBCReadOptions(JDBCFetchOptions):
     ```
     '''
 
-    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    query_timeout: int | None = Field(default=None, alias="queryTimeout")
     """The number of seconds the driver will wait for a statement to execute.
     Zero means there is no limit.
 
@@ -224,7 +217,7 @@ class JDBCReadOptions(JDBCFetchOptions):
     Possible values:
 
     * `range` (default)
-        Allocate each executor a range of values from column passed into [partition_column][].
+        Allocate each executor a range of values from column passed into `partition_column`.
 
         ??? note "Spark generates for each executor an SQL query"
 
@@ -258,16 +251,16 @@ class JDBCReadOptions(JDBCFetchOptions):
 
         !!! note
 
-            [lower_bound][], [upper_bound][] and [num_partitions][] are used just to
+            `lower_bound`, `upper_bound` and `num_partitions` are used just to
             calculate the partition stride, **NOT** for filtering the rows in table.
-            So all rows in the table will be returned (unlike *Incremental* [strategy][]).
+            So all rows in the table will be returned (unlike *Incremental* [strategy][DBR-onetl-strategy-read-strategies]).
 
         !!! note
 
-            All queries are executed in parallel. To execute them sequentially, use *Batch* [strategy][].
+            All queries are executed in parallel. To execute them sequentially, use *Batch* [strategy][DBR-onetl-strategy-read-strategies].
 
     * `hash`
-        Allocate each executor a set of values based on hash of the [partition_column][] column.
+        Allocate each executor a set of values based on hash of the `partition_column` column.
 
         ??? note "Spark generates for each executor an SQL query"
 
@@ -297,7 +290,7 @@ class JDBCReadOptions(JDBCFetchOptions):
             or expression based on this function call. Usually such functions accepts any column type as an input.
 
     * `mod`
-        Allocate each executor a set of values based on modulus of the [partition_column][] column.
+        Allocate each executor a set of values based on modulus of the `partition_column` column.
 
         ??? note "Spark generates for each executor an SQL query"
 
@@ -363,31 +356,27 @@ class JDBCReadOptions(JDBCFetchOptions):
     ```
     """
 
-    @root_validator
-    def _partitioning_mode_actions(cls, values):
-        mode = values["partitioning_mode"]
-        num_partitions = values.get("num_partitions")
-        partition_column = values.get("partition_column")
-        lower_bound = values.get("lower_bound")
-        upper_bound = values.get("upper_bound")
-
-        if not partition_column:
-            if num_partitions == 1:
-                return values
+    @model_validator(mode="after")
+    def _partitioning_mode_actions(self):
+        if not self.partition_column:
+            if self.num_partitions == 1:
+                return self
 
             msg = "You should set partition_column to enable partitioning"
             raise ValueError(msg)
 
-        if num_partitions == 1:
+        if self.num_partitions == 1:
             msg = "You should set num_partitions > 1 to enable partitioning"
             raise ValueError(msg)
 
-        if mode == JDBCPartitioningMode.RANGE:
-            return values
+        if self.partitioning_mode == JDBCPartitioningMode.RANGE:
+            return self
 
-        values["lower_bound"] = lower_bound if lower_bound is not None else 0
-        values["upper_bound"] = upper_bound if upper_bound is not None else num_partitions
-        return values
+        if self.lower_bound is None:
+            object.__setattr__(self, "lower_bound", 0)
+        if self.upper_bound is None:
+            object.__setattr__(self, "upper_bound", self.num_partitions)
+        return self
 
 
 class JDBCWriteOptions(GenericOptions):
@@ -418,10 +407,11 @@ class JDBCWriteOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        known_options = WRITE_OPTIONS | READ_WRITE_OPTIONS
-        prohibited_options = GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        known_options=WRITE_OPTIONS | READ_WRITE_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        prohibited_options=GENERIC_PROHIBITED_OPTIONS | READ_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )
 
     if_exists: JDBCTableExistBehavior = Field(  # type: ignore[literal-required]
         default=JDBCTableExistBehavior.APPEND,
@@ -430,75 +420,76 @@ class JDBCWriteOptions(GenericOptions):
     """Behavior of writing data into existing table.
 
     Possible values:
-        * `append` (default)
-            Adds new rows into existing table.
 
-            ??? note "Behavior in details"
+    * `append` (default)
+        Adds new rows into existing table.
 
-                * Table does not exist
-                    Table is created using options provided by user
-                    (`createTableOptions`, `createTableColumnTypes`, etc).
+        ??? note "Behavior in details"
 
-                * Table exists
-                    Data is appended to a table. Table has the same DDL as before writing data
+            * Table does not exist
+                Table is created using options provided by user
+                (`createTableOptions`, `createTableColumnTypes`, etc).
 
-                    !!! warning
+            * Table exists
+                Data is appended to a table. Table has the same DDL as before writing data
 
-                        This mode does not check whether table already contains
-                        rows from dataframe, so duplicated rows can be created.
+                !!! warning
 
-                        Also Spark does not support passing custom options to
-                        insert statement, like `ON CONFLICT`, so don't try to
-                        implement deduplication using unique indexes or constraints.
+                    This mode does not check whether table already contains
+                    rows from dataframe, so duplicated rows can be created.
 
-                        Instead, write to staging table and perform deduplication
-                        using [execute][] method.
+                    Also Spark does not support passing custom options to
+                    insert statement, like `ON CONFLICT`, so don't try to
+                    implement deduplication using unique indexes or constraints.
 
-        * `replace_entire_table`
-            **Table is dropped and then created, or truncated**.
+                    Instead, write to staging table and perform deduplication
+                    using `execute` method.
 
-            ??? note "Behavior in details"
+    * `replace_entire_table`
+        **Table is dropped and then created, or truncated**.
 
-                * Table does not exist
-                    Table is created using options provided by user
-                    (`createTableOptions`, `createTableColumnTypes`, etc).
+        ??? note "Behavior in details"
 
-                * Table exists
-                    Table content is replaced with dataframe content.
+            * Table does not exist
+                Table is created using options provided by user
+                (`createTableOptions`, `createTableColumnTypes`, etc).
 
-                    After writing completed, target table could either have the same DDL as
-                    before writing data (`truncate=True`), or can be recreated (`truncate=False`
-                    or source does not support truncation).
+            * Table exists
+                Table content is replaced with dataframe content.
 
-        * `ignore`
-            Ignores the write operation if the table already exists.
+                After writing completed, target table could either have the same DDL as
+                before writing data (`truncate=True`), or can be recreated (`truncate=False`
+                or source does not support truncation).
 
-            ??? note "Behavior in details"
+    * `ignore`
+        Ignores the write operation if the table already exists.
 
-                * Table does not exist
-                    Table is created using options provided by user
-                    (`createTableOptions`, `createTableColumnTypes`, etc).
+        ??? note "Behavior in details"
 
-                * Table exists
-                    The write operation is ignored, and no data is written to the table.
+            * Table does not exist
+                Table is created using options provided by user
+                (`createTableOptions`, `createTableColumnTypes`, etc).
 
-        * `error`
-            Raises an error if the table already exists.
+            * Table exists
+                The write operation is ignored, and no data is written to the table.
 
-            ??? note "Behavior in details"
+    * `error`
+        Raises an error if the table already exists.
 
-                * Table does not exist
-                    Table is created using options provided by user
-                    (`createTableOptions`, `createTableColumnTypes`, etc).
+        ??? note "Behavior in details"
 
-                * Table exists
-                    An error is raised, and no data is written to the table.
+            * Table does not exist
+                Table is created using options provided by user
+                (`createTableOptions`, `createTableColumnTypes`, etc).
+
+            * Table exists
+                An error is raised, and no data is written to the table.
 
     !!! info "Changed in 0.9.0"
         Renamed `mode` → `if_exists`
     """
 
-    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    query_timeout: int | None = Field(default=None, alias="queryTimeout")
     """The number of seconds the driver will wait for a statement to execute.
     Zero means there is no limit.
 
@@ -533,25 +524,27 @@ class JDBCWriteOptions(GenericOptions):
     """The transaction isolation level, which applies to current connection.
 
     Possible values:
-        * `NONE` (as string, not Python's `None`)
-        * `READ_COMMITTED`
-        * `READ_UNCOMMITTED`
-        * `REPEATABLE_READ`
-        * `SERIALIZABLE`
+
+    * `NONE` (as string, not Python's `None`)
+    * `READ_COMMITTED`
+    * `READ_UNCOMMITTED`
+    * `REPEATABLE_READ`
+    * `SERIALIZABLE`
 
     Values correspond to transaction isolation levels defined by JDBC standard.
     Please refer the documentation for
     [java.sql.Connection](https://docs.oracle.com/javase/8/docs/api/java/sql/Connection.html).
     """
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_deprecated(cls, values):
         if "mode" in values:
             warnings.warn(
                 "Option `WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
                 "Use `WriteOptions(if_exists=...)` instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
         return values
 
@@ -587,7 +580,7 @@ class JDBCSQLOptions(GenericOptions):
     ```
     """
 
-    partition_column: Optional[str] = Field(default=None, alias="partitionColumn")
+    partition_column: str | None = Field(default=None, alias="partitionColumn")
     """Column used to partition data across multiple executors for parallel query processing.
 
     !!! warning
@@ -616,16 +609,16 @@ class JDBCSQLOptions(GenericOptions):
         ```
     """
 
-    num_partitions: Optional[int] = Field(default=None, alias="numPartitions")
+    num_partitions: int | None = Field(default=None, alias="numPartitions")
     """Number of jobs created by Spark to read the table content in parallel."""
 
-    lower_bound: Optional[int] = Field(default=None, alias="lowerBound")
-    """Defines the lower boundary for partitioning the query's data. Mandatory if [partition_column][] is set"""
+    lower_bound: int | None = Field(default=None, alias="lowerBound")
+    """Defines the lower boundary for partitioning the query's data. Mandatory if `partition_column` is set"""
 
-    upper_bound: Optional[int] = Field(default=None, alias="upperBound")
-    """Sets the lower boundary for data partitioning. Mandatory if [partition_column][] is set"""
+    upper_bound: int | None = Field(default=None, alias="upperBound")
+    """Sets the lower boundary for data partitioning. Mandatory if `partition_column` is set"""
 
-    session_init_statement: Optional[str] = Field(default=None, alias="sessionInitStatement")
+    session_init_statement: str | None = Field(default=None, alias="sessionInitStatement")
     '''After each database session is opened to the remote DB and before starting to read data,
     this option executes a custom SQL statement (or a PL/SQL block).
 
@@ -643,7 +636,7 @@ class JDBCSQLOptions(GenericOptions):
     ```
     '''
 
-    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    query_timeout: int | None = Field(default=None, alias="queryTimeout")
     """The number of seconds the driver will wait for a statement to execute.
     Zero means there is no limit.
 
@@ -669,22 +662,25 @@ class JDBCSQLOptions(GenericOptions):
     !!! info "Changed in 0.2.0"
         Set explicit default value to `100_000`
     """
+    model_config = ConfigDict(
+        known_options=READ_OPTIONS - {"partitioning_mode"},  # type: ignore[typeddict-unknown-key]
+        prohibited_options=GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS | {"partitioning_mode"},  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )
 
-    class Config:
-        known_options = READ_OPTIONS - {"partitioning_mode"}
-        prohibited_options = GENERIC_PROHIBITED_OPTIONS | WRITE_OPTIONS | {"partitioning_mode"}
-        extra = "allow"
+    @model_validator(mode="after")
+    def _check_partition_fields(self):
+        if self.num_partitions is None:
+            return self
 
-    @root_validator
-    def _check_partition_fields(cls, values):
-        num_partitions = values.get("num_partitions")
-        lower_bound = values.get("lower_bound")
-        upper_bound = values.get("upper_bound")
+        if self.num_partitions == 1:
+            return self
 
-        if num_partitions is not None and num_partitions > 1 and (lower_bound is None or upper_bound is None):
-            msg = "lowerBound and upperBound must be set if numPartitions > 1"
-            raise ValueError(msg)
-        return values
+        if self.lower_bound is not None and self.upper_bound is not None:
+            return self
+
+        msg = "lowerBound and upperBound must be set if numPartitions > 1"
+        raise ValueError(msg)
 
 
 @deprecated(
@@ -692,17 +688,18 @@ class JDBCSQLOptions(GenericOptions):
     category=UserWarning,
 )
 class JDBCLegacyOptions(GenericOptions):
-    class Config:
-        prohibited_options = GENERIC_PROHIBITED_OPTIONS
-        known_options = READ_OPTIONS | WRITE_OPTIONS | READ_WRITE_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        prohibited_options=GENERIC_PROHIBITED_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        known_options=READ_OPTIONS | WRITE_OPTIONS | READ_WRITE_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )
 
-    partition_column: Optional[str] = Field(default=None, alias="partitionColumn")
+    partition_column: str | None = Field(default=None, alias="partitionColumn")
     num_partitions: PositiveInt = Field(default=1, alias="numPartitions")
-    lower_bound: Optional[int] = Field(default=None, alias="lowerBound")
-    upper_bound: Optional[int] = Field(default=None, alias="upperBound")
-    session_init_statement: Optional[str] = Field(default=None, alias="sessionInitStatement")
-    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    lower_bound: int | None = Field(default=None, alias="lowerBound")
+    upper_bound: int | None = Field(default=None, alias="upperBound")
+    session_init_statement: str | None = Field(default=None, alias="sessionInitStatement")
+    query_timeout: int | None = Field(default=None, alias="queryTimeout")
     if_exists: JDBCTableExistBehavior = Field(default=JDBCTableExistBehavior.APPEND, alias="mode")
     isolation_level: str = Field(default="READ_UNCOMMITTED", alias="isolationLevel")
     fetchsize: int = 100_000

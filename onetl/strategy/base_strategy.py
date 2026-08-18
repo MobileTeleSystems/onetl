@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 
 from onetl.hwm import Edge
@@ -54,7 +52,7 @@ class BaseStrategy(BaseModel):
 
     def _log_parameters(self) -> None:
         log.info("|onETL| Using %s as a strategy", self.__class__.__name__)
-        parameters = self.dict(by_alias=True, exclude_none=True, exclude=self._log_exclude_fields())
+        parameters = self.model_dump(by_alias=True, exclude_none=True, exclude=self._log_exclude_fields())
         for attr, value in sorted(parameters.items()):
             log_with_indent(log, "%s = %r", attr, value)
 

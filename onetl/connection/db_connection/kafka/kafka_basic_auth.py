@@ -1,19 +1,15 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-try:
-    from pydantic.v1 import Field, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import Field, SecretStr
 
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions
 
 if TYPE_CHECKING:
-    from onetl.connection import Kafka
+    from onetl.connection.db_connection.kafka.connection import Kafka
 
 
 class KafkaBasicAuth(KafkaAuth, GenericOptions):
@@ -49,12 +45,12 @@ class KafkaBasicAuth(KafkaAuth, GenericOptions):
             f'password="{self.password.get_secret_value()}";'
         )
 
-    def get_options(self, kafka: Kafka) -> dict:
+    def get_options(self, kafka: "Kafka") -> dict:
         return {
             "sasl.mechanism": "PLAIN",
             "sasl.jaas.config": self.get_jaas_conf(),
         }
 
-    def cleanup(self, kafka: Kafka) -> None:
+    def cleanup(self, kafka: "Kafka") -> None:
         # nothing to cleanup
         pass

@@ -271,7 +271,7 @@ def test_file_downloader_file_filter_file_size(file_connection_with_path_and_fil
     with caplog.at_level(logging.INFO):
         download_result = downloader.run()
         assert "    filters = [" in caplog.text
-        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "        FileSizeRange(min='1B', max=None)," in caplog.text
         assert "    ]" in caplog.text
 
     assert not download_result.failed
@@ -365,7 +365,7 @@ def test_file_downloader_several_file_filters(file_connection_with_path_and_file
         download_result = downloader.run()
         assert "    filters = [" in caplog.text
         assert "        Glob('*.csv')," in caplog.text
-        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "        FileSizeRange(min='1B', max=None)," in caplog.text
         assert "    ]" in caplog.text
 
     assert not download_result.failed
@@ -506,7 +506,8 @@ def test_file_downloader_run_without_files_and_source_path(file_connection, tmp_
         connection=file_connection,
         local_path=local_path,
     )
-    with pytest.raises(ValueError, match="Neither file list nor `source_path` are passed"):
+    msg = "Cannot call FileDownloader.run() without files arg or with source_path=None"
+    with pytest.raises(ValueError, match=re.escape(msg)):
         downloader.run()
 
 
@@ -1043,8 +1044,11 @@ def test_file_downloader_detect_hwm_type_incremental_batch_strategy(
     )
 
     error_message = "FileDownloader(hwm=...) cannot be used with IncrementalBatchStrategy"
-    with pytest.raises(ValueError, match=re.escape(error_message)), IncrementalBatchStrategy(
-        step=timedelta(days=5),
+    with (
+        pytest.raises(ValueError, match=re.escape(error_message)),
+        IncrementalBatchStrategy(
+            step=timedelta(days=5),
+        ),
     ):
         downloader.run()
 

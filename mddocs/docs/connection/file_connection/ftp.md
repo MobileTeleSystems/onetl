@@ -3,7 +3,6 @@
 
 ::: onetl.connection.file_connection.ftp.FTP
     options:
-        show_root_heading: true
         members:
             - check
             - path_exists
@@ -24,7 +23,6 @@
 
 ::: onetl.connection.file_connection.ftp.FTPExtra
     options:
-        show_root_heading: true
         members:
           - use_passive_mode
           - encoding

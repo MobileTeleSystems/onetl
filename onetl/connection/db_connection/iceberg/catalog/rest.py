@@ -1,13 +1,8 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
+from typing import Annotated, Any, ClassVar
 
-from typing import Any, Dict, Optional
-
-try:
-    from pydantic.v1 import AnyUrl, Field
-except (ImportError, AttributeError):
-    from pydantic import AnyUrl, Field  # type: ignore[no-redef, assignment]
+from pydantic import Field, HttpUrl, UrlConstraints
 
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.catalog import IcebergCatalog
@@ -17,7 +12,7 @@ from onetl.connection.db_connection.iceberg.catalog.auth import (
     IcebergRESTCatalogBearerAuth,
     IcebergRESTCatalogOAuth2ClientCredentials,
 )
-from onetl.impl.frozen_model import FrozenModel
+from onetl.impl import FrozenModel
 
 
 class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
@@ -27,22 +22,23 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
 
     Parameters
     ----------
-    url : str
+    url
         REST catalog server URL
 
-    headers : dict[str, str], optional
+    headers
         Additional HTTP headers to include in requests
 
-    extra : dict[str, str], optional
+    extra
         Additional configuration parameters
 
-    auth : IcebergRESTCatalogAuth, optional
+    auth
         Authentication configuration
 
     Examples
     --------
 
     === "REST catalog with basic authentication"
+
         ```python
         from onetl.connection import Iceberg
 
@@ -54,7 +50,9 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
             ),
         )
         ```
+
     === "REST catalog with bearer token"
+
         ```python
         from onetl.connection import Iceberg
 
@@ -65,7 +63,9 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
             ),
         )
         ```
+
     === "REST catalog with OAuth2 Client Credentials Flow"
+
         ```python
         from onetl.connection import Iceberg
 
@@ -77,7 +77,9 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
             ),
         )
         ```
+
     === "REST catalog with custom auth"
+
         ```python
         from onetl.connection import Iceberg
 
@@ -104,17 +106,17 @@ class IcebergRESTCatalog(IcebergCatalog, FrozenModel):
         ```
     """
 
-    BasicAuth = IcebergRESTCatalogBasicAuth
-    BearerAuth = IcebergRESTCatalogBearerAuth
-    OAuth2ClientCredentials = IcebergRESTCatalogOAuth2ClientCredentials
+    BasicAuth: ClassVar = IcebergRESTCatalogBasicAuth
+    BearerAuth: ClassVar = IcebergRESTCatalogBearerAuth
+    OAuth2ClientCredentials: ClassVar = IcebergRESTCatalogOAuth2ClientCredentials
 
-    url: AnyUrl
-    headers: Dict[str, Any] = Field(default_factory=dict)
-    extra: Dict[str, Any] = Field(default_factory=dict)
+    url: Annotated[HttpUrl, UrlConstraints(host_required=True, preserve_empty_path=True)]
+    headers: dict[str, Any] = Field(default_factory=dict)
+    extra: dict[str, Any] = Field(default_factory=dict)
 
-    auth: Optional[IcebergRESTCatalogAuth] = None
+    auth: IcebergRESTCatalogAuth | None = None
 
-    def get_config(self) -> Dict[str, str]:
+    def get_config(self) -> dict[str, str]:
         config = {
             "type": "rest",
             "uri": str(self.url),

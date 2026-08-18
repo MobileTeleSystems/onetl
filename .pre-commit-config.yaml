@@ -2,11 +2,7 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      - id: check-ast
-        priority: 0
       - id: check-case-conflict
-        priority: 0
-      - id: check-docstring-first
         priority: 0
       - id: check-executables-have-shebangs
         priority: 0
@@ -32,22 +28,6 @@ repos:
     rev: v3.0.1
     hooks:
       - id: docker-compose-check
-        priority: 0
-
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
-    hooks:
-      - id: python-no-log-warn
-        priority: 0
-      - id: python-no-eval
-        priority: 0
-      - id: rst-backticks
-        priority: 0
-      - id: rst-directive-colons
-        priority: 0
-      - id: rst-inline-touching-normal
-        priority: 0
-      - id: text-unicode-replacement-char
         priority: 0
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
@@ -82,7 +62,7 @@ repos:
         priority: 6
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
         args: [-w]
@@ -103,29 +83,13 @@ repos:
         priority: 8
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.11.13
+    rev: 0.12.5
     hooks:
       - id: uv-lock
         priority: 8
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.12
-    hooks:
-      - id: ruff-format
-        priority: 8
-      - id: ruff-check
-        args: [--fix]
-        priority: 9
-
   - repo: local
     hooks:
-      - id: mypy
-        name: mypy
-        entry: python3 -m mypy onetl
-        language: system
-        types: [python]
-        pass_filenames: false
-        priority: 10
       - id: towncrier
         name: towncrier
         entry: towncrier build --draft
@@ -133,13 +97,7 @@ repos:
         types: [markdown]
         pass_filenames: false
         priority: 8
-      - id: links2anchors
-        name: links2anchors
-        entry: python mddocs/scripts/links2anchors.py
-        language: system
-        types: [markdown]
-        pass_filenames: false
-        priority: 8
+
       - id: generate_anchors
         name: generate_anchors
         entry: python mddocs/scripts/generate_anchors.py
@@ -147,6 +105,30 @@ repos:
         types: [markdown]
         pass_filenames: false
         priority: 8
+
+      - id: ruff-format
+        name: ruff-format
+        language: system
+        entry: ruff format .
+        types: [python]
+        pass_filenames: false
+        priority: 8
+
+      - id: ruff-check
+        name: ruff-check
+        language: system
+        entry: ruff check --fix
+        types: [python]
+        pass_filenames: false
+        priority: 9
+
+      - id: mypy
+        name: mypy
+        entry: python3 -m mypy onetl
+        language: system
+        types: [python]
+        pass_filenames: false
+        priority: 10
 
   - repo: meta
     hooks:
@@ -160,4 +142,6 @@ ci:
     - chmod # failing in pre-commit.ci
     - docker-compose-check # cannot run on pre-commit.ci
     - mypy # checked with Github Actions
+    - ruff-format # checked with Github Actions
+    - ruff-check # checked with Github Actions
     - towncrier # checked with Github Actions

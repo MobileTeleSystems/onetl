@@ -1,28 +1,28 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from onetl.base import BaseFileLimit
 
 log = logging.getLogger(__name__)
 
 
-def reset_limits(limits: Iterable[BaseFileLimit]) -> list[BaseFileLimit]:
+def reset_limits(limits: "Iterable[BaseFileLimit]") -> "list[BaseFileLimit]":
     """
     Reset limits state.
 
     Parameters
     ----------
-    limits : Iterable of [onetl.base.base_file_limit.BaseFileLimit][]
+    limits
         Limits to reset.
 
     Returns
     -------
-    list of BaseFileLimit
+    list[onetl.base.base_file_limit.BaseFileLimit]
         List with limits, but with reset state.
 
         List may contain original filters with reset state, or new copies.

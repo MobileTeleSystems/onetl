@@ -1,14 +1,13 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import Any
-
-from onetl.base import BaseDBConnection
+if TYPE_CHECKING:
+    from onetl.base import BaseDBConnection
 
 
 class NotSupportDFSchema:
-    connection: BaseDBConnection
+    connection: "BaseDBConnection"
 
     def validate_df_schema(
         self,

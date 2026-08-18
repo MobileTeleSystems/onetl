@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from onetl.hooks import slot, support_hooks
 
 
@@ -25,12 +23,12 @@ class KafkaSlots:
 
         Parameters
         ----------
-        cluster : str
+        cluster
             The original Kafka cluster name.
 
         Returns
         -------
-        str | None
+        :
             The normalized Kafka cluster name. If the hook cannot be applied, return `None`.
 
         Examples
@@ -60,7 +58,7 @@ class KafkaSlots:
 
         Returns
         -------
-        set[str] | None
+        :
             A collection of known Kafka cluster names. If the hook cannot be applied, return `None`.
 
         Examples
@@ -80,9 +78,9 @@ class KafkaSlots:
 
     @slot
     @staticmethod
-    def normalize_address(address: str, cluster: str) -> str | None:
+    def normalize_address(address: str, cluster: str | None) -> str | None:
         """
-        Normalize the given broker address for a specific Kafka cluster.
+        Normalize the given broker address.
 
         This can be used to format the broker address according to specific rules, such as adding default ports.
 
@@ -90,14 +88,16 @@ class KafkaSlots:
 
         Parameters
         ----------
-        address : str
+        address
             The original broker address.
-        cluster : str
+        cluster
             The Kafka cluster name for which the address should be normalized.
+
+            !!! info "Since 0.17.0 this parameter is optional"
 
         Returns
         -------
-        str | None
+        :
             The normalized broker address. If the hook cannot be applied to the specific address, return `None`.
 
         Examples
@@ -129,12 +129,12 @@ class KafkaSlots:
 
         Parameters
         ----------
-        cluster : str
+        cluster
             The Kafka cluster name.
 
         Returns
         -------
-        list[str] | None
+        :
             A collection of broker addresses for the specified Kafka cluster.
             If the hook cannot be applied, return `None`.
 

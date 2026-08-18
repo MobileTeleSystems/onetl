@@ -1,15 +1,7 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
-from typing import Optional
-
+from pydantic import ConfigDict, Field
 from typing_extensions import deprecated
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
 
 from onetl.impl import GenericOptions
 
@@ -50,11 +42,9 @@ class JDBCOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
-    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    query_timeout: int | None = Field(default=None, alias="queryTimeout")
     """The number of seconds the driver will wait for a statement to execute.
     Zero means there is no limit.
 
@@ -62,7 +52,7 @@ class JDBCOptions(GenericOptions):
     some drivers can check the timeout of each query instead of an entire JDBC batch.
     """
 
-    fetchsize: Optional[int] = None
+    fetchsize: int | None = None
     """How many rows to fetch per round trip.
 
     Tuning this option can influence performance of reading.
@@ -99,11 +89,9 @@ class JDBCFetchOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
-    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    query_timeout: int | None = Field(default=None, alias="queryTimeout")
     """The number of seconds the driver will wait for a statement to execute.
     Zero means there is no limit.
 
@@ -111,7 +99,7 @@ class JDBCFetchOptions(GenericOptions):
     some drivers can check the timeout of each query instead of an entire JDBC batch.
     """
 
-    fetchsize: Optional[int] = None
+    fetchsize: int | None = None
     """How many rows to fetch per round trip.
 
     Tuning this option can influence performance of reading.
@@ -146,11 +134,9 @@ class JDBCExecuteOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
-    query_timeout: Optional[int] = Field(default=None, alias="queryTimeout")
+    query_timeout: int | None = Field(default=None, alias="queryTimeout")
     """The number of seconds the driver will wait for a statement to execute.
     Zero means there is no limit.
 
@@ -158,7 +144,7 @@ class JDBCExecuteOptions(GenericOptions):
     some drivers can check the timeout of each query instead of an entire JDBC batch.
     """
 
-    fetchsize: Optional[int] = None
+    fetchsize: int | None = None
     """How many rows to fetch per round trip.
 
     Tuning this option can influence performance of reading.

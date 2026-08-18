@@ -1,14 +1,9 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 import re
 
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from pydantic import field_validator
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel
@@ -23,7 +18,7 @@ class Regexp(BaseFileFilter, FrozenModel):
     Parameters
     ----------
 
-    pattern : [re.Pattern][]
+    pattern
 
         Regular expression (e.g. `\d+\.csv`) for which any **file** (only file) path should match.
 
@@ -40,7 +35,7 @@ class Regexp(BaseFileFilter, FrozenModel):
     regexp = Regexp(r"\d+\.csv")
 
     ```
-    Create regexp filter from [re.Pattern][]:
+    Create regexp filter from compiled regexp:
 
     ```python
     import re
@@ -52,14 +47,11 @@ class Regexp(BaseFileFilter, FrozenModel):
     ```
     """
 
-    class Config:
-        arbitrary_types_allowed = True
-
     pattern: re.Pattern
 
     def __init__(self, pattern: str):
         # this is only to allow passing regexp as positional argument
-        super().__init__(pattern=pattern)
+        super().__init__(pattern=pattern)  # type: ignore[call-arg]
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.pattern!r})"
@@ -70,13 +62,13 @@ class Regexp(BaseFileFilter, FrozenModel):
 
         return self.pattern.search(os.fspath(path)) is not None
 
-    @validator("pattern", pre=True)
+    @field_validator("pattern", mode="before")
+    @classmethod
     def _validate_pattern(cls, value: re.Pattern | str) -> re.Pattern:
-        if isinstance(value, str):
-            try:
-                return re.compile(value, re.IGNORECASE | re.DOTALL)
-            except re.error as e:
-                msg = f"Invalid regexp: {value!r}"
-                raise ValueError(msg) from e
-
-        return value
+        if isinstance(value, re.Pattern):
+            return value
+        try:
+            return re.compile(value, re.IGNORECASE | re.DOTALL)
+        except re.error as e:
+            msg = f"Invalid regexp: {value!r}"
+            raise ValueError(msg) from e

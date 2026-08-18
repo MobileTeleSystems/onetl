@@ -1,26 +1,18 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
+from typing import Any, Literal
 
-from typing import Any, Dict, Optional
-
-from typing_extensions import Literal
-
-from onetl.hooks import slot, support_hooks
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import Field
 
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.warehouse import IcebergWarehouse
-from onetl.impl.frozen_model import FrozenModel
+from onetl.hooks import slot, support_hooks
+from onetl.impl import FrozenModel
 
 
 @support_hooks
 class IcebergDelegatedWarehouse(IcebergWarehouse, FrozenModel):
-    """Delegate configuring Iceberg warehouse to Iceberg catalog. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Delegate configuring Iceberg warehouse to Iceberg catalog. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Used by some Iceberg catalog implementations like:
       * [Lakekeeper](https://docs.lakekeeper.io/docs/latest/storage/#s3)
@@ -32,19 +24,20 @@ class IcebergDelegatedWarehouse(IcebergWarehouse, FrozenModel):
 
     Parameters
     ----------
-    name : str, optional
+    name
         Warehouse name/alias, if supported by specific Iceberg catalog
 
-    access_delegation : "vended-credentials" | "remote-signing"
+    access_delegation
         Value of [X-Iceberg-Access-Delegation](https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/open-api/rest-catalog-open-api.yaml#L1854) header.
 
-    extra : Dict[str, str], default: {}
+    extra
         Additional configuration parameters
 
     Examples
     --------
 
     === "S3 client with vended credentials"
+
         ```python
         from onetl.connection import Iceberg
 
@@ -55,7 +48,9 @@ class IcebergDelegatedWarehouse(IcebergWarehouse, FrozenModel):
             extra={"client.region": "us-east-1"},
         )
         ```
+
     === "S3 client with remote signing"
+
         ```python
         from onetl.connection import Iceberg
 
@@ -66,11 +61,11 @@ class IcebergDelegatedWarehouse(IcebergWarehouse, FrozenModel):
             extra={"client.region": "us-east-1"},
         )
         ```
-    """  # noqa: E501
+    """
 
-    name: Optional[str] = None
+    name: str | None = None
     access_delegation: Literal["vended-credentials", "remote-signing"]
-    extra: Dict[str, Any] = Field(default_factory=dict)
+    extra: dict[str, Any] = Field(default_factory=dict)
 
     @slot
     def get_config(self) -> dict[str, str]:

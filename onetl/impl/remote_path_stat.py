@@ -1,13 +1,8 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
-
+from onetl.base.path_stat_protocol import PathStatProtocol
 from onetl.impl.frozen_model import FrozenModel
-
-if TYPE_CHECKING:
-    from onetl.base.path_stat_protocol import PathStatProtocol
 
 
 class RemotePathStat(FrozenModel):
@@ -16,28 +11,28 @@ class RemotePathStat(FrozenModel):
     Size of file, in bytes
     """
 
-    st_mtime: Optional[float] = None
+    st_mtime: float | None = None
     """
     Unix timestamp of most recent content modification
     """
 
-    st_mode: Optional[int] = None
+    st_mode: int | None = None
     """
     File mode bits
     """
 
-    st_uid: Union[int, str, None] = None
+    st_uid: int | str | None = None
     """
     User identifier of the file owner
     """
 
-    st_gid: Union[int, str, None] = None
+    st_gid: int | str | None = None
     """
     Group identifier of the file owner
     """
 
     @classmethod
-    def from_stat(cls, path_stat: PathStatProtocol) -> RemotePathStat:
+    def from_stat(cls, path_stat: PathStatProtocol) -> "RemotePathStat":
         return cls(
             st_size=path_stat.st_size,
             st_mtime=path_stat.st_mtime,

@@ -1,15 +1,10 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 import socket
 from pathlib import Path
 
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
+from pydantic import field_validator
 
 from onetl.base import PurePathProtocol
 from onetl.connection.file_df_connection.spark_file_df_connection import (
@@ -22,7 +17,7 @@ from onetl.impl import LocalPath
 @support_hooks
 class SparkLocalFS(SparkFileDFConnection):
     """
-    Spark connection to local filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    Spark connection to local filesystem. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark Generic File Data Source](https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html).
 
@@ -31,7 +26,7 @@ class SparkLocalFS(SparkFileDFConnection):
         To use SparkHDFS connector you should have PySpark installed (or injected to `sys.path`)
         BEFORE creating the connector instance.
 
-        See [install-spark][] installation instruction for more details.
+        See [DBR-onetl-install-spark][] installation instruction for more details.
 
     !!! warning
 
@@ -47,7 +42,7 @@ class SparkLocalFS(SparkFileDFConnection):
 
     Parameters
     ----------
-    spark : `pyspark.sql.SparkSession`
+    spark
         Spark session
 
     Examples
@@ -78,7 +73,8 @@ class SparkLocalFS(SparkFileDFConnection):
         # str should not make network requests
         return "LocalFS"
 
-    @validator("spark")
+    @field_validator("spark", mode="before")
+    @classmethod
     def _validate_spark(cls, spark):
         master = spark.conf.get("spark.master")
         if not master.startswith("local"):

@@ -1,22 +1,21 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from py4j.java_gateway import JavaGateway
+    from py4j.java_gateway import JavaClass, JavaGateway
     from pyspark.sql import SparkSession
 
 
-def get_java_gateway(spark_session: SparkSession) -> JavaGateway:
+def get_java_gateway(spark_session: "SparkSession") -> "JavaGateway":
     """
     Get py4j Java gateway object
     """
     return spark_session._sc._gateway  # noqa: SLF001 # type: ignore[attr-defined]
 
 
-def try_import_java_class(spark_session: SparkSession, name: str):
+def try_import_java_class(spark_session: "SparkSession", name: str) -> "JavaClass":
     """
     Try to import Java class by name
     """
@@ -26,7 +25,7 @@ def try_import_java_class(spark_session: SparkSession, name: str):
     return klass
 
 
-def start_callback_server(spark_session: SparkSession):
+def start_callback_server(spark_session: "SparkSession") -> None:
     """
     Start Py4J callback server. Important to receive Java events on Python side,
     e.g. in Spark Listener implementations.

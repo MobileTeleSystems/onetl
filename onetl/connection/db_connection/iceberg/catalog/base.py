@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
-from typing import Dict
 
 
 class IcebergCatalog(ABC):
@@ -14,5 +11,5 @@ class IcebergCatalog(ABC):
     """
 
     @abstractmethod
-    def get_config(self) -> Dict[str, str]:
+    def get_config(self) -> dict[str, str]:
         """Return flat dict with catalog configuration."""

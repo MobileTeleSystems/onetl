@@ -1,67 +1,11 @@
 .autodoc_pydantic_validator_arrow {
   padding-left: 8px;
-  }
+}
 
 .autodoc_pydantic_collapsable_json {
   cursor: pointer;
-  }
+}
 
 .autodoc_pydantic_collapsable_erd {
   cursor: pointer;
-  }
-
-.mermaid {
-  cursor: zoom-in;
-  }
-
-.mermaid-zoom-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.85);
-  overflow: auto;
-  z-index: 9999;
-  padding: 48px 2vw 2vh;
-  box-sizing: border-box;
-  }
-
-.mermaid-zoom-toolbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  z-index: 10000;
-  display: flex;
-  gap: 8px;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.7);
-  box-sizing: border-box;
-  }
-
-.mermaid-zoom-toolbar button {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 4px;
-  padding: 4px 12px;
-  font-size: 16px;
-  cursor: pointer;
-  line-height: 1;
-  }
-
-.mermaid-zoom-toolbar button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  }
-
-.mermaid-zoom-toolbar .mermaid-zoom-close {
-  margin-left: auto;
-  }
-
-.mermaid-zoom-overlay svg {
-  display: block;
-  background: white;
-  height: auto;
-  cursor: default;
-  }
+}

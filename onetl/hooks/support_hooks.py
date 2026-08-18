@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 from contextlib import ExitStack, contextmanager
 from functools import partial
@@ -34,6 +32,7 @@ def skip_hooks(cls: type):
     --------
 
     === "Context manager syntax"
+
         ```python
         @support_hooks
         class MyClass:
@@ -57,7 +56,9 @@ def skip_hooks(cls: type):
         obj.my_method(2)  # will execute callback(obj, 2)
 
         ```
+
     === "Decorator syntax"
+
         ```python
         @support_hooks
         class MyClass:
@@ -179,9 +180,9 @@ def support_hooks(cls: Klass) -> Klass:
     """
     Decorator which adds hooks functionality to a specific class.
 
-    Only methods decorated with [slot][] can be used for connecting hooks.
+    Only methods wrapped with [`@slot` decorator][DBR-onetl-hooks-slot-decorator] can be used for connecting hooks.
 
-    Adds [skip_hooks][], [suspend_hooks][] and [resume_hooks][] to the class.
+    Adds [onetl.hooks.support_hooks.skip_hooks][], [onetl.hooks.support_hooks.suspend_hooks][] and [onetl.hooks.support_hooks.resume_hooks][] to the class.
 
     !!! success "Added in 0.7.0"
 
@@ -208,7 +209,7 @@ def support_hooks(cls: Klass) -> Klass:
     """
 
     has_slots = False
-    for method_name, method in cls.__dict__.items():
+    for method_name, method in cls.__dict__.copy().items():
         if is_slot(method):
             has_slots = True
             setattr(cls, method_name, register_slot(cls, method_name))

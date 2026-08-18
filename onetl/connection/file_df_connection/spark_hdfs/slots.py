@@ -1,13 +1,11 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from onetl.hooks import slot, support_hooks
 
 
 @support_hooks
 class SparkHDFSSlots:
-    """Spark HDFS slots that could be implemented by third-party plugins.
+    """[Slots][DBR-onetl-hooks-design-high-level-design] that could be implemented by third-party plugins.
 
     !!! success "Added in 0.9.0"
     """
@@ -24,12 +22,12 @@ class SparkHDFSSlots:
 
         Parameters
         ----------
-        cluster : `str`
+        cluster
             Cluster name
 
         Returns
         -------
-        str | None
+        :
             Normalized cluster name.
 
             If hook cannot be applied to a specific cluster, it should return `None`.
@@ -51,7 +49,7 @@ class SparkHDFSSlots:
 
     @slot
     @staticmethod
-    def normalize_namenode_host(host: str, cluster: str) -> str | None:
+    def normalize_namenode_host(host: str, cluster: str | None) -> str | None:
         """
         Normalize namenode host passed into SparkHDFS constructor.
 
@@ -61,15 +59,17 @@ class SparkHDFSSlots:
 
         Parameters
         ----------
-        host : `str`
+        host=
             Namenode host (raw)
 
-        cluster : `str`
+        cluster
             Cluster name (normalized)
+
+            !!! info "Since 0.17.0 this parameter is optional"
 
         Returns
         -------
-        str | None
+        :
             Normalized namenode host name.
 
             If hook cannot be applied to a specific host name, it should return `None`.
@@ -108,7 +108,7 @@ class SparkHDFSSlots:
 
         Returns
         -------
-        set[str] | None
+        :
             Collection of cluster names (in normalized form).
 
             If hook cannot be applied, it should return `None`.
@@ -141,12 +141,12 @@ class SparkHDFSSlots:
 
         Parameters
         ----------
-        cluster : `str`
+        cluster
             Cluster name (normalized)
 
         Returns
         -------
-        set[str] | None
+        :
             Collection of host names (in normalized form).
 
             If hook cannot be applied, it should return `None`.
@@ -181,7 +181,7 @@ class SparkHDFSSlots:
 
         Returns
         -------
-        str | None
+        :
             Current cluster name (in normalized form).
 
             If hook cannot be applied, it should return `None`.
@@ -206,7 +206,7 @@ class SparkHDFSSlots:
     @staticmethod
     def get_ipc_port(cluster: str) -> int | None:
         """
-        Get IPC port number for a specific cluster.
+        Get IPC port number.
 
         Used by constructor to automatically set port number if omitted.
 
@@ -214,12 +214,12 @@ class SparkHDFSSlots:
 
         Parameters
         ----------
-        cluster : `str`
+        cluster
             Cluster name (normalized)
 
         Returns
         -------
-        int | None
+        :
             IPC port number.
 
             If hook cannot be applied, it should return `None`.
@@ -243,7 +243,7 @@ class SparkHDFSSlots:
 
     @slot
     @staticmethod
-    def is_namenode_active(host: str, cluster: str) -> bool | None:
+    def is_namenode_active(host: str, cluster: str | None) -> bool | None:
         """
         Check whether a namenode of a specified cluster is active (=not standby) or not.
 
@@ -255,21 +255,23 @@ class SparkHDFSSlots:
 
             * If SparkHDFS connection is created with `host`
 
-                [check][] will determine whether this host is active.
+                [onetl.connection.file_connection.hdfs.connection.HDFS.check][] will determine whether this host is active.
 
         !!! success "Added in 0.9.0"
 
         Parameters
         ----------
-        host : `str`
+        host
             Namenode host (normalized)
 
-        cluster : `str`
+        cluster
             Cluster name (normalized)
+
+            !!! info "Since 0.17.0 this parameter is optional"
 
         Returns
         -------
-        bool | None
+        :
             `True` if namenode is active, `False` if not.
 
             If hook cannot be applied, it should return `None`.

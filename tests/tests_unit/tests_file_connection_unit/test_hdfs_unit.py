@@ -36,7 +36,7 @@ def test_hdfs_connection_with_cluster():
     assert not conn.user
     assert not conn.password
     assert not conn.keytab
-    assert conn.instance_url == "rnd-dwh"
+    assert conn.instance_url == "hdfs://rnd-dwh"
     assert str(conn) == "HDFS[rnd-dwh]"
 
 
@@ -46,7 +46,7 @@ def test_hdfs_connection_with_cluster_and_host():
     conn = HDFS(cluster="rnd-dwh", host="some-host.domain.com")
     assert conn.cluster == "rnd-dwh"
     assert conn.host == "some-host.domain.com"
-    assert conn.instance_url == "rnd-dwh"
+    assert conn.instance_url == "hdfs://rnd-dwh"
     assert str(conn) == "HDFS[rnd-dwh]"
 
 
@@ -109,7 +109,7 @@ def test_hdfs_connection_with_keytab(request, tmp_path_factory):
 def test_hdfs_connection_keytab_does_not_exist():
     from onetl.connection import HDFS
 
-    with pytest.raises(ValueError, match='file or directory at path "/path/to/keytab" does not exist'):
+    with pytest.raises(ValueError, match="Path does not point to a file"):
         HDFS(host="some-host.domain.com", user="some_user", keytab="/path/to/keytab")
 
 
@@ -125,7 +125,7 @@ def test_hdfs_connection_keytab_is_directory(request, tmp_path_factory):
 
     request.addfinalizer(finalizer)
 
-    with pytest.raises(ValueError, match=f'path "{keytab}" does not point to a file'):
+    with pytest.raises(ValueError, match="Path does not point to a file"):
         HDFS(host="some-host.domain.com", user="some_user", keytab=keytab)
 
 

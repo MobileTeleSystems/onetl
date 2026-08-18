@@ -82,4 +82,3 @@ Especially if there are indexes for columns used in `where` clause.
     options:
         inherited_members: true
         members: true
-        show_root_heading: true

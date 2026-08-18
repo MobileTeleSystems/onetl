@@ -1,19 +1,13 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import getpass
 import logging
 import os
 from contextlib import suppress
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, ClassVar, cast
 
-from etl_entities.instance import Cluster, Host
-
-try:
-    from pydantic.v1 import Field, PrivateAttr, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, validator  # type: ignore[no-redef, assignment]
+from pydantic import Field, PrivateAttr, ValidationInfo, field_validator, model_validator
+from typing_extensions import Self
 
 from onetl._util.alias import avoid_alias
 from onetl.base import PurePathProtocol
@@ -22,7 +16,7 @@ from onetl.connection.file_df_connection.spark_file_df_connection import (
 )
 from onetl.connection.file_df_connection.spark_hdfs.slots import SparkHDFSSlots
 from onetl.hooks import slot, support_hooks
-from onetl.impl import RemotePath
+from onetl.impl import Cluster, Host, RemotePath
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
@@ -33,26 +27,26 @@ log = logging.getLogger(__name__)
 @support_hooks
 class SparkHDFS(SparkFileDFConnection):
     """
-    Spark connection to HDFS. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    Spark connection to HDFS. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark Generic File Data Source](https://spark.apache.org/docs/latest/sql-data-sources-generic-options.html).
 
     !!! info "See also"
 
-        Before using this connector please take into account [spark-hdfs-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-file-df-connection-spark-hdfs-prerequisites][]
 
     !!! note
 
         Supports only reading files as Spark DataFrame and writing DataFrame to files.
 
         Does NOT support file operations, like create, delete, rename, etc. For these operations,
-        use [HDFS][onetl.connection.file_connection.hdfs.connection.HDFS] connection.
+        use [onetl.connection.file_connection.hdfs.connection.HDFS][] connection.
 
     !!! success "Added in 0.9.0"
 
     Parameters
     ----------
-    cluster : str
+    cluster
         Cluster name.
 
         Used for:
@@ -61,7 +55,7 @@ class SparkHDFS(SparkFileDFConnection):
                 if latter is passed and if some hooks are bound to
                 [Slots.get_cluster_namenodes][onetl.connection.file_df_connection.spark_hdfs.slots.SparkHDFSSlots.get_cluster_namenodes].
 
-    host : str, optional
+    host
         Hadoop namenode host. For example: `namenode1.domain.com`.
 
         Should be an active namenode (NOT standby).
@@ -72,14 +66,14 @@ class SparkHDFS(SparkFileDFConnection):
         [Slots.is_namenode_active][onetl.connection.file_df_connection.spark_hdfs.slots.SparkHDFSSlots.is_namenode_active],
         onETL will iterate over cluster namenodes to detect which one is active.
 
-    ipc_port : int, default: `8020`
+    ipc_port
         Port of Hadoop namenode (IPC protocol).
 
         If omitted, but there are some hooks bound to
         [Slots.get_ipc_port][onetl.connection.file_df_connection.spark_hdfs.slots.SparkHDFSSlots.get_ipc_port],
         onETL will try to detect port number for a specific `cluster`.
 
-    spark : `pyspark.sql.SparkSession`
+    spark
         Spark session
 
     Examples
@@ -117,7 +111,9 @@ class SparkHDFS(SparkFileDFConnection):
             spark=spark,
         ).check()
         ```
+
     === "Create SparkHDFS connection with anonymous auth"
+
         ```python
         from onetl.connection import SparkHDFS
         from pyspark.sql import SparkSession
@@ -132,9 +128,10 @@ class SparkHDFS(SparkFileDFConnection):
             spark=spark,
         ).check()
         ```
+
     === "Use cluster name to detect active namenode"
 
-        Can be used only if some third-party plugin provides [spark-hdfs-slots][] implementation
+        Can be used only if some third-party plugin provides [DBR-onetl-connection-file-df-connection-spark-hdfs-slots][] implementation
 
         ```python
         # Create Spark session
@@ -145,24 +142,30 @@ class SparkHDFS(SparkFileDFConnection):
         ```
     """
 
-    Slots = SparkHDFSSlots
+    DEFAULT_IPC_PORT: ClassVar[int] = 8020
 
-    cluster: Cluster
-    host: Optional[Host] = None
-    ipc_port: int = Field(default=8020, alias=avoid_alias("port"))  # type: ignore[literal-required]
+    Slots: ClassVar = SparkHDFSSlots
 
-    _active_host: Optional[str] = PrivateAttr(default=None)
+    cluster: Cluster | None = None
+    host: Host | None = None
+    ipc_port: int = Field(alias=avoid_alias("port"), default=DEFAULT_IPC_PORT, validate_default=True)  # type: ignore[literal-required]
+
+    _active_host: str | None = PrivateAttr(default=None)
 
     @slot
     def path_from_string(self, path: os.PathLike | str) -> RemotePath:
         return RemotePath(os.fspath(path))
 
     @property
-    def instance_url(self):
-        return self.cluster
+    def instance_url(self) -> str:
+        if self.cluster:
+            return "hdfs://" + self.cluster
+        return f"hdfs://{self.host}"
 
     def __str__(self):
-        return f"HDFS[{self.cluster}]"
+        if self.cluster:
+            return f"HDFS[{self.cluster}]"
+        return f"HDFS[{self.host}]"
 
     def __enter__(self):
         return self
@@ -171,9 +174,9 @@ class SparkHDFS(SparkFileDFConnection):
         self.close()
 
     @slot
-    def close(self):
+    def close(self) -> Self:
         """
-        Close all connections created to HDFS. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Close all connections created to HDFS. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
@@ -181,7 +184,7 @@ class SparkHDFS(SparkFileDFConnection):
 
         Returns
         -------
-        Self
+        :
             Connection itself.
 
         Examples
@@ -212,9 +215,9 @@ class SparkHDFS(SparkFileDFConnection):
 
     @slot
     @classmethod
-    def get_current(cls, spark: SparkSession):
+    def get_current(cls, spark: "SparkSession"):
         """
-        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Create connection for current cluster. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Automatically sets up current cluster name as `cluster`.
 
@@ -227,9 +230,8 @@ class SparkHDFS(SparkFileDFConnection):
 
         Parameters
         ----------
-        spark : SparkSession
-
-            See [SparkHDFS][] constructor documentation.
+        spark : pyspark.sql.SparkSession
+            Spark session
 
         Examples
         --------
@@ -254,7 +256,20 @@ class SparkHDFS(SparkFileDFConnection):
         log.info("|%s|   Got %r", cls.__name__, current_cluster)
         return cls(cluster=current_cluster, spark=spark)  # type: ignore[arg-type]
 
-    @validator("cluster")
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_cluster_or_hostname_set(cls, values):
+        host = values.get("host")
+        cluster = values.get("cluster")
+
+        if not cluster and not host:
+            msg = "You should pass either host or cluster name"
+            raise ValueError(msg)
+
+        return values
+
+    @field_validator("cluster", mode="before")
+    @classmethod
     def _validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
@@ -269,56 +284,61 @@ class SparkHDFS(SparkFileDFConnection):
 
         return validated_cluster
 
-    @validator("host")
-    def _validate_host_name(cls, host, values):
-        cluster = values.get("cluster")
+    @field_validator("host", mode="before")
+    @classmethod
+    def _validate_host_name(cls, host, info: ValidationInfo):
+        cluster = info.data.get("cluster")
 
         log.debug("|%s| Normalizing namenode %r host...", cls.__name__, host)
         namenode = cls.Slots.normalize_namenode_host(host, cluster) or host
         if namenode != host:
             log.debug("|%s|   Got %r", cls.__name__, namenode)
 
-        log.debug("|%s| Checking if %r is a known namenode of cluster %r ...", cls.__name__, namenode, cluster)
-        known_namenodes = cls.Slots.get_cluster_namenodes(cluster)
-        if known_namenodes and namenode not in known_namenodes:
-            msg = (
-                f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: "
-                f"{sorted(known_namenodes)!r}"
-            )
-            raise ValueError(msg)
+        if cluster:
+            log.debug("|%s| Checking if %r is a known namenode of cluster %r ...", cls.__name__, namenode, cluster)
+            known_namenodes = cls.Slots.get_cluster_namenodes(cluster)
+            if known_namenodes and namenode not in known_namenodes:
+                msg = (
+                    f"Namenode {namenode!r} is not in the known nodes list of cluster {cluster!r}: "
+                    f"{sorted(known_namenodes)!r}"
+                )
+                raise ValueError(msg)
 
         return namenode
 
-    @validator("ipc_port", always=True)
-    def _validate_port_number(cls, port, values):
+    @model_validator(mode="before")
+    def _validate_port_number(cls, values):
+        port = values.get("port") or values.pop("ipc_port", None)
         cluster = values.get("cluster")
-        if cluster:
-            log.debug("|%s| Getting IPC port of cluster %r ...", cls.__name__, cluster)
-            result = cls.Slots.get_ipc_port(cluster) or port
-            if result != port:
-                log.debug("|%s|   Got %r", cls.__name__, result)
-            return result
 
-        return port
+        if cluster and not port:
+            log.debug("|%s| Getting IPC port of cluster %r ...", cls.__name__, cluster)
+            port = cls.Slots.get_ipc_port(cluster)
+            if port:
+                log.debug("|%s|   Got %r", cls.__name__, port)
+
+        values["port"] = port or cls.DEFAULT_IPC_PORT
+        return values
 
     def _get_active_namenode(self) -> str:
         class_name = self.__class__.__name__
-        log.info("|%s| Detecting active namenode of cluster %r ...", class_name, self.cluster)
+        cluster = cast("str", self.cluster)
+        log.info("|%s| Detecting active namenode of cluster %r ...", class_name, cluster)
 
-        namenodes = self.Slots.get_cluster_namenodes(self.cluster)
+        namenodes = self.Slots.get_cluster_namenodes(cluster)
         if not namenodes:
-            msg = f"Cannot get list of namenodes for a cluster {self.cluster!r}"
+            msg = f"Cannot get list of namenodes for a cluster {cluster!r}"
             raise RuntimeError(msg)
 
         nodes_len = len(namenodes)
         for i, namenode in enumerate(namenodes, start=1):
             log.debug("|%s|   Trying namenode %r (%d of %d) ...", class_name, namenode, i, nodes_len)
-            if self.Slots.is_namenode_active(namenode, self.cluster):
+            if self.Slots.is_namenode_active(namenode, cluster):
                 log.info("|%s|     Node %r is active!", class_name, namenode)
                 return namenode
             log.debug("|%s|     Node %r is not active, skipping", class_name, namenode)
 
-        msg = f"Cannot detect active namenode for cluster {self.cluster!r}"
+        msg = f"Cannot detect active namenode for cluster {cluster!r}"
         raise RuntimeError(msg)
 
     def _get_host(self) -> str:

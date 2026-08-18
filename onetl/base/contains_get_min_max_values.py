@@ -1,10 +1,6 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
-from typing import Any
-
-from typing_extensions import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from onetl.hwm.window import Window
 
@@ -23,5 +19,5 @@ class ContainsGetMinMaxValues(Protocol):
         where: Any | None = None,
     ) -> tuple[Any, Any]:
         """
-        Get MIN and MAX values for the column in the source. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get MIN and MAX values for the column in the source. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
         """

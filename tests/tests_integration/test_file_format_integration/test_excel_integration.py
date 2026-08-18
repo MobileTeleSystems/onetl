@@ -18,8 +18,8 @@ try:
 except ImportError:
     pytest.skip("Missing pandas or pyspark", allow_module_level=True)
 
-if spark_version.startswith("4.1"):
-    pytest.skip("Excel is not supported in Spark 4.1", allow_module_level=True)
+if spark_version.startswith(("4.1", "4.2")):
+    pytest.skip("Excel is not supported in Spark 4.1/4.2", allow_module_level=True)
 
 pytestmark = [pytest.mark.local_fs, pytest.mark.file_df_connection, pytest.mark.connection, pytest.mark.excel]
 

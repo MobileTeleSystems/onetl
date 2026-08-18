@@ -1,14 +1,10 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
+from onetl.strategy.base_strategy import BaseStrategy
 from onetl.strategy.snapshot_strategy import SnapshotStrategy
-
-if TYPE_CHECKING:
-    from onetl.strategy.base_strategy import BaseStrategy
 
 log = logging.getLogger(__name__)
 

@@ -1,13 +1,16 @@
 site_name: onETL Docs
 site_url: !ENV READTHEDOCS_CANONICAL_URL
-docs_dir: docs                             # Where to find the English markdown files
-site_dir: generated                        # Where to put the English HTML files
+docs_dir: docs
+site_dir: generated
+
+exclude_docs: |
+  changelog/RELEASE_TEMPLATE.md
+  changelog/next_release/
 
 theme:
   name: material
-  custom_dir: overrides
-  logo: _static/images/logo.svg                      # The logo is shared by all languages
-  favicon: _static/images/icon.svg                   # The favicon is shared by all languages
+  logo: _static/images/logo.svg
+  favicon: _static/images/icon.svg
   language: en
   features:
     - navigation.indexes
@@ -30,28 +33,16 @@ theme:
     - yaml
 
 extra_css:
-  - _static/stylesheets/autodoc_pydantic.css         # CSS is shared by all languages
+  - _static/stylesheets/mermaid_zoom.css
+  - _static/stylesheets/autodoc_pydantic.css
 
 extra_javascript:
   - _static/javascripts/mermaid_zoom.js
-  - _static/javascripts/readthedocs.js
-
-extra:                                              # Language Selection
-  onetl_logo_wide: '[![onETL logo](_static/images/logo_wide.svg)](https://github.com/MTSWebServices/onetl)'
-  repo_status_badge: '[![Repo status - Active](https://www.repostatus.org/badges/latest/active.svg)](https://github.com/MTSWebServices/onetl)'
-  pypi_release_bage: '[![PyPI - Latest Release](https://img.shields.io/pypi/v/onetl)](https://pypi.org/project/onetl/)'
-  pypi_license_bage: '[![PyPI - License](https://img.shields.io/pypi/l/onetl.svg)](https://github.com/MTSWebServices/onetl/blob/develop/LICENSE.txt)'
-  pypi_pyversion_bage: '[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/onetl.svg)](https://pypi.org/project/onetl/)'
-  pypi_downloads_bage: '[![PyPI - Downloads](https://img.shields.io/pypi/dm/onetl)](https://pypi.org/project/onetl/)'
-  docs_status_badge: '[![Documentation - ReadTheDocs](https://readthedocs.org/projects/onetl/badge/?version=stable)](https://onetl.readthedocs.io/)'
-  ci_status_badge: '[![Github Actions - latest CI build status](https://github.com/MTSWebServices/onetl/workflows/Tests/badge.svg)](https://github.com/MTSWebServices/onetl/actions)'
-  precommit_badge: '[![pre-commit.ci Status](https://results.pre-commit.ci/badge/github/MTSWebServices/onetl/develop.svg)](https://results.pre-commit.ci/latest/github/MTSWebServices/onetl/develop)'
-  test_cov_badge: '[![Test coverage - percent](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/MTSOnGithub/03e73a82ecc4709934540ce8201cc3b4/raw/onetl_badge.json)](https://github.com/MTSWebServices/onetl/actions)'
-  etl_entities_link: '[`etl-entities`](https://github.com/MTSWebServices/etl-entities)'
-  support_hooks: '[![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](hooks/index.md)'
 
 plugins:
-  - autorefs
+  - search
+  - autorefs:
+      resolve_closest: true
   - literate-nav:
       nav_file: nav.md
   - mkdocstrings:
@@ -60,19 +51,34 @@ plugins:
         python:
           paths: [..]
           options:
+            show_bases: false
             show_source: false
-            show_root_heading: false
+            show_root_heading: true
             show_root_toc_entry: false
             show_root_full_path: false
             heading_level: 3
             docstring_style: numpy
             docstring_section_style: list
-            inherited_members: true
+            inherited_members: false
+            show_if_no_docstring: false
+            show_docstring_attributes: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            unwrap_annotated: true
+            parameter_headings: true
+            show_labels: false
+            scoped_crossrefs: true
+            docstring_options:
+              warn_unknown_params: false
+              warn_missing_types: false
             extensions:
               - scripts/griffe_expand_refs.py:ExpandShortRefs
-              - griffe_inherited_docstrings
-            # - griffe_pydantic: {schema: false}
-  - macros
+              - griffe_fieldz:
+                  include_inherited: true
+                  include_private: false
+                  add_fields_to: docstring-parameters
+                  remove_fields_from_members: true
+                  strip_annotated: true
   # - i18n:
   #     docs_structure: folder
   #     languages:
@@ -84,6 +90,9 @@ plugins:
   #         name: Русский
   #         build: false
   - towncrier
+  - git-revision-date-localized
+  - privacy:
+      enabled: !ENV [READTHEDOCS, false]
 
 markdown_extensions:
   - footnotes
@@ -93,8 +102,7 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.critic
   - pymdownx.snippets:
-      # When building locally from mddocs/ directory, change base_path to: .
-      base_path: mddocs
+      base_path: .
       check_paths: true
   - toc:
       permalink: true

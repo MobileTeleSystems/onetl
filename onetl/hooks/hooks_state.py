@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 from contextlib import contextmanager
 
@@ -86,9 +84,9 @@ class HooksState:
 
         !!! note
 
-            If hooks were stopped by [stop_all_hooks][], they will not be resumed
+            If hooks were stopped by [[onetl.hooks.hooks_state.stop_all_hooks][], they will not be resumed
             after exiting the context/decorated function.
-            You should call [resume_all_hooks][] explicitly.
+            You should call [onetl.hooks.hooks_state.resume_all_hooks][] explicitly.
 
         !!! success "Added in 0.7.0"
 

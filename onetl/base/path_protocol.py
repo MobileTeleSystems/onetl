@@ -1,11 +1,7 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-from typing_extensions import Protocol, TypeAlias, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, TypeAlias, runtime_checkable
 
 from onetl.base.path_stat_protocol import PathStatProtocol
 from onetl.base.pure_path_protocol import PurePathProtocol

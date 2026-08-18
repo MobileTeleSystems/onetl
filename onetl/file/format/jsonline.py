@@ -1,15 +1,8 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
+from typing import TYPE_CHECKING, ClassVar, Literal
 
-from typing import TYPE_CHECKING, ClassVar, Optional, Union
-
-from typing_extensions import Literal
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field
 
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
@@ -21,7 +14,7 @@ if TYPE_CHECKING:
 @support_hooks
 class JSONLine(ReadWriteFileFormat):
     """
-    JSONLine file format (each line of file contains a JSON object). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    JSONLine file format (each line of file contains a JSON object). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark JSON](https://spark.apache.org/docs/latest/sql-data-sources-json.html) file format.
 
@@ -45,11 +38,13 @@ class JSONLine(ReadWriteFileFormat):
         The set of supported options depends on Spark version.
 
     === "Reading files"
+
         ```python
         from onetl.file.format import JSONLine
 
         jsonline = JSONLine(encoding="UTF-8", mode="PERMISSIVE")
         ```
+
     === "Writing files"
 
         !!! warning
@@ -67,13 +62,13 @@ class JSONLine(ReadWriteFileFormat):
 
     multiLine: Literal[False] = False
 
-    encoding: Optional[str] = None
+    encoding: str | None = None
     """
     Encoding of the JSONLine files.
     Default `UTF-8`.
     """
 
-    lineSep: Optional[str] = None
+    lineSep: str | None = None
     """
     Character used to separate lines in the JSONLine files.
 
@@ -82,7 +77,7 @@ class JSONLine(ReadWriteFileFormat):
       * `\\n` for writing.
     """
 
-    compression: Union[str, Literal["none", "bzip2", "gzip", "lz4", "snappy", "deflate"], None] = None
+    compression: str | Literal["none", "bzip2", "gzip", "lz4", "snappy", "deflate"] | None = None
     """
     Compression codec of the JSONLine file.
     Default `none`.
@@ -92,7 +87,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for writing files.
     """
 
-    ignoreNullFields: Optional[bool] = None
+    ignoreNullFields: bool | None = None
     """
     If `True` and field value is `null`, don't add field into resulting object
     Default is value of `spark.sql.jsonGenerator.ignoreNullFields` (`True`).
@@ -102,7 +97,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for writing files.
     """
 
-    allowComments: Optional[bool] = None
+    allowComments: bool | None = None
     """
     If `True`, add support for C/C++/Java style comments (`//`, `/* */`).
     Default `False`, meaning that JSONLine files should not contain comments.
@@ -112,7 +107,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    allowUnquotedFieldNames: Optional[bool] = None
+    allowUnquotedFieldNames: bool | None = None
     """
     If `True`, allow JSON object field names without quotes (JavaScript-style).
     Default `False`.
@@ -122,7 +117,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    allowSingleQuotes: Optional[bool] = None
+    allowSingleQuotes: bool | None = None
     """
     If `True`, allow JSON object field names to be wrapped with single quotes (`'`).
     Default `True`.
@@ -132,7 +127,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    allowNumericLeadingZeros: Optional[bool] = None
+    allowNumericLeadingZeros: bool | None = None
     """
     If `True`, allow leading zeros in numbers (e.g. `00012`).
     Default `False`.
@@ -142,7 +137,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    allowNonNumericNumbers: Optional[bool] = None
+    allowNonNumericNumbers: bool | None = None
     """
     If `True`, allow numbers to contain non-numeric characters, like:
       * scientific notation (e.g. `12e10`).
@@ -157,7 +152,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    allowBackslashEscapingAnyCharacter: Optional[bool] = None
+    allowBackslashEscapingAnyCharacter: bool | None = None
     """
     If `True`, prefix `\\` can escape any character.
     Default `False`.
@@ -167,7 +162,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    allowUnquotedControlChars: Optional[bool] = None
+    allowUnquotedControlChars: bool | None = None
     """
     If `True`, allow unquoted control characters (ASCII values 0-31) in strings without escaping them with `\\`.
     Default `False`.
@@ -177,7 +172,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    mode: Optional[Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"]] = None
+    mode: Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"] | None = None
     """
     How to handle parsing errors:
       * `PERMISSIVE` - set field value as `null`, move raw data to [columnNameOfCorruptRecord][] column.
@@ -191,7 +186,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    columnNameOfCorruptRecord: Optional[str] = Field(default=None, min_length=1)
+    columnNameOfCorruptRecord: str | None = Field(default=None, min_length=1)
     """
     Name of column to put corrupt records in.
     Default is `_corrupt_record`.
@@ -230,7 +225,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    samplingRatio: Optional[float] = Field(default=None, ge=0, le=1)
+    samplingRatio: float | None = Field(default=None, ge=0, le=1)
     """
     While inferring schema, read the specified fraction of file rows.
     Default `1`.
@@ -240,7 +235,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    primitivesAsString: Optional[bool] = None
+    primitivesAsString: bool | None = None
     """
     If `True`, infer all primitive types (string, integer, float, boolean) as strings.
     Default `False`.
@@ -250,7 +245,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    prefersDecimal: Optional[bool] = None
+    prefersDecimal: bool | None = None
     """
     If `True`, infer all floating-point values as `Decimal`.
     Default `False`.
@@ -260,7 +255,7 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    dropFieldIfAllNull: Optional[bool] = None
+    dropFieldIfAllNull: bool | None = None
     """
     If `True` and inferred column is always null or empty array, exclude if from DataFrame schema.
     Default `False`.
@@ -270,19 +265,19 @@ class JSONLine(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    dateFormat: Optional[str] = Field(default=None, min_length=1)
+    dateFormat: str | None = Field(default=None, min_length=1)
     """
     String format for `DateType()` representation.
     Default is `yyyy-MM-dd`.
     """
 
-    timestampFormat: Optional[str] = Field(default=None, min_length=1)
+    timestampFormat: str | None = Field(default=None, min_length=1)
     """
     String format for `TimestampType()` representation.
     Default is `yyyy-MM-dd'T'HH:mm:ss[.SSS][XXX]`.
     """
 
-    timestampNTZFormat: Optional[str] = Field(default=None, min_length=1)
+    timestampNTZFormat: str | None = Field(default=None, min_length=1)
     """
     String format for `TimestampNTZType()` representation.
     Default is `yyyy-MM-dd'T'HH:mm:ss[.SSS]`.
@@ -292,13 +287,13 @@ class JSONLine(ReadWriteFileFormat):
         Added in Spark 3.2.0
     """
 
-    timezone: Optional[str] = Field(default=None, min_length=1, alias="timeZone")
+    timezone: str | None = Field(default=None, min_length=1, alias="timeZone")
     """
     Allows to override timezone used for parsing or serializing date and timestamp values.
     By default, `spark.sql.session.timeZone` is used.
     """
 
-    locale: Optional[str] = Field(default=None, min_length=1)
+    locale: str | None = Field(default=None, min_length=1)
     """
     Locale name used to parse dates and timestamps.
     Default is `en-US`.
@@ -307,18 +302,15 @@ class JSONLine(ReadWriteFileFormat):
 
         Used only for reading files.
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        extra = "allow"
+    model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     @slot
-    def check_if_supported(self, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: "SparkSession") -> None:
         # always available
         pass
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True, exclude={"multiLine"})
+        options_dict = self.model_dump(by_alias=True, exclude_none=True, exclude={"multiLine"})
         options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

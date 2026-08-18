@@ -1,16 +1,13 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 import secrets
+import time
 import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 
-try:
-    from pydantic.v1 import SecretStr, validator
-except (ImportError, AttributeError):
-    from pydantic import SecretStr, validator  # type: ignore[no-redef, assignment]
+from humanize import naturaldelta
+from pydantic import SecretStr, field_validator
 
 from onetl._util.java import try_import_java_class
 from onetl._util.spark import override_job_description
@@ -39,7 +36,7 @@ from onetl.hwm import Window
 from onetl.log import log_lines, log_with_indent
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
 log = logging.getLogger(__name__)
@@ -65,23 +62,24 @@ class JDBCConnection(JDBCMixin, DBConnection):
     DRIVER: ClassVar[str]
     _CHECK_QUERY: ClassVar[str] = "SELECT 1"
 
-    JDBCOptions = JDBCMixinOptions
-    FetchOptions = JDBCFetchOptions
-    ExecuteOptions = JDBCExecuteOptions
-    Dialect = JDBCDialect
-    ReadOptions = JDBCReadOptions
-    SQLOptions = JDBCSQLOptions
-    WriteOptions = JDBCWriteOptions
-    Options = JDBCLegacyOptions
+    JDBCOptions: ClassVar = JDBCMixinOptions  # type: ignore[misc]
+    FetchOptions: ClassVar = JDBCFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = JDBCExecuteOptions  # type: ignore[misc]
+    Dialect: ClassVar = JDBCDialect
+    ReadOptions: ClassVar = JDBCReadOptions
+    SQLOptions: ClassVar = JDBCSQLOptions
+    WriteOptions: ClassVar = JDBCWriteOptions
+    Options: ClassVar = JDBCLegacyOptions
 
-    @validator("spark")
-    def _check_java_class_imported(cls, spark):
+    @field_validator("spark", mode="before")
+    @classmethod
+    def _check_java_class_imported(cls, spark: "SparkSession") -> "SparkSession":
         try:
             try_import_java_class(spark, cls.DRIVER)
         except Exception as e:
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=cls.DRIVER,
-                package_source=cls.__name__,
+                package_source=cls.__name__,  # type: ignore[attr-defined]
                 args="",
             )
             raise ValueError(msg) from e
@@ -112,9 +110,9 @@ class JDBCConnection(JDBCMixin, DBConnection):
         self,
         query: str,
         options: JDBCSQLOptions | dict | None = None,
-    ) -> DataFrame:
+    ) -> "DataFrame":
         """
-        **Lazily** execute SELECT statement **on Spark executor** and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        **Lazily** execute SELECT statement **on Spark executor** and return DataFrame. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Same as `spark.read.jdbc(query)`.
 
@@ -122,18 +120,17 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
         Parameters
         ----------
-        query : str
+        query
 
             SQL query to be executed.
 
-        options : dict, [SQLOptions][], default: `None`
+        options
 
             Spark options to be used while fetching data.
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame
-
+        :
             Spark dataframe
 
         """
@@ -141,7 +138,9 @@ class JDBCConnection(JDBCMixin, DBConnection):
         if isinstance(options, JDBCReadOptions):
             msg = "Using `ReadOptions` for `sql` method is deprecated, use `SQLOptions` instead."
             warnings.warn(msg, UserWarning, stacklevel=3)
-            options = self.SQLOptions.parse_obj(options.dict(exclude={"partitioning_mode"}, exclude_none=True))
+            options = self.SQLOptions.model_validate(
+                options.model_dump(exclude={"partitioning_mode"}, exclude_none=True)
+            )
 
         query = clear_statement(query)
 
@@ -149,30 +148,34 @@ class JDBCConnection(JDBCMixin, DBConnection):
         log.info("|%s| Executing SQL query (on executor):", self.__class__.__name__)
         log_lines(log, query)
 
-        try:
-            with override_job_description(self.spark, f"{self}.sql()"):
+        with override_job_description(self.spark, f"{self}.sql()"):
+            started = time.perf_counter()
+            try:
                 df = self._query_on_executor(query, self.SQLOptions.parse(options))
-        except Exception:
-            log.exception("|%s| Query failed!", self.__class__.__name__)
-            raise
+            except Exception:
+                elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+                log.exception("|%s| Query failed after %s!", self.__class__.__name__, elapsed)
+                raise
 
-        log.info("|Spark| DataFrame successfully created from SQL statement")
-        return df
+            elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+            log.info("|Spark| DataFrame successfully created from SQL statement in %s", elapsed)
+            return df
 
     @slot
     def read_source_as_df(  # noqa: PLR0913
         self,
+        *,
         source: str,
         columns: list[str] | None = None,
         hint: str | None = None,
         where: str | None = None,
-        df_schema: StructType | None = None,
+        df_schema: "StructType | None" = None,
         window: Window | None = None,
         limit: int | None = None,
         options: JDBCReadOptions | None = None,
-    ) -> DataFrame:
+    ) -> "DataFrame":
         if isinstance(options, JDBCLegacyOptions):
-            raw_options = self.ReadOptions.parse(options.dict(exclude_unset=True))
+            raw_options = self.ReadOptions.parse(options.model_dump(exclude_unset=True))
         else:
             raw_options = self.ReadOptions.parse(options)
 
@@ -225,7 +228,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
 
         result = self._query_on_executor(query, self.ReadOptions.parse(read_options))
 
-        log.info("|Spark| DataFrame successfully created from SQL statement ")
+        log.info("|Spark| DataFrame successfully created from SQL statement")
         if alias:
             result = result.drop(alias)
 
@@ -234,12 +237,12 @@ class JDBCConnection(JDBCMixin, DBConnection):
     @slot
     def write_df_to_target(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         target: str,
         options: JDBCWriteOptions | None = None,
     ) -> None:
         if isinstance(options, JDBCLegacyOptions):
-            write_options = self.WriteOptions.parse(options.dict(exclude_unset=True))
+            write_options = self.WriteOptions.parse(options.model_dump(exclude_unset=True))
         else:
             write_options = self.WriteOptions.parse(options)
 
@@ -261,7 +264,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         source: str,
         columns: list[str] | None = None,
         options: JDBCReadOptions | None = None,
-    ) -> StructType:
+    ) -> "StructType":
         log.info("|%s| Detected dialect: '%s'", self.__class__.__name__, self._get_spark_dialect_class_name())
         log.info("|%s| Fetching schema of table %r ...", self.__class__.__name__, source)
 
@@ -322,7 +325,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
         self,
         query: str,
         options: JDBCSQLOptions | JDBCReadOptions,
-    ) -> DataFrame:
+    ) -> "DataFrame":
         jdbc_properties = self._get_jdbc_properties(options, exclude={"partitioning_mode"}, exclude_none=True)
         return self.spark.read.format("jdbc").options(dbtable=f"({query}) T", **jdbc_properties).load()
 
@@ -335,7 +338,7 @@ class JDBCConnection(JDBCMixin, DBConnection):
             options.copy(
                 update={"fetchsize": fetchsize},
                 exclude={"partition_column", "lower_bound", "upper_bound", "num_partitions", "partitioning_mode"},
-            ).dict(),
+            ).model_dump(),
         )
 
     def _set_lower_upper_bound(

@@ -1,10 +1,7 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
-
-from typing_extensions import Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from onetl.base.path_protocol import PathWithStatsProtocol
 

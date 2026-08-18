@@ -3,17 +3,17 @@
   oracle-version: 11.2.0.2-slim-faststart
   db-name: XE
   spark-version: '3.2'
-  pydantic-version: 1
-  python-version: '3.7'
+  etl-entities-version: 2
+  python-version: '3.10'
   java-version: 8
-  os: ubuntu-22.04
+  os: ubuntu-latest
 
 3_5_x: &3_5_x
   oracle-image: gvenzl/oracle-free
   oracle-version: 23.26.1-slim-faststart
   db-name: FREEPDB1
   spark-version: '3.5'
-  pydantic-version: 2
+  etl-entities-version: 3
   python-version: '3.13'
   java-version: 20
   os: ubuntu-latest
@@ -23,23 +23,22 @@
   oracle-version: 23.26.1-slim-faststart
   db-name: FREEPDB1
   spark-version: '4.0'
-  pydantic-version: 2
+  etl-entities-version: 3
   python-version: '3.14'
   # https://issues.apache.org/jira/browse/SPARK-54276
   java-version: 22
   os: ubuntu-latest
 
-4_1_x: &4_1_x
+4_2_x: &4_2_x
   oracle-image: gvenzl/oracle-free
   oracle-version: 23.26.1-slim-faststart
   db-name: FREEPDB1
-  spark-version: '4.1'
-  pydantic-version: 2
+  spark-version: '4.2'
+  etl-entities-version: 3
   python-version: '3.14'
-  # https://issues.apache.org/jira/browse/SPARK-54276
-  java-version: 22
+  java-version: 25
   os: ubuntu-latest
 
 matrix:
   small: [*3_5_x]
-  full: [*3_2_x, *3_5_x, *4_0_x, *4_1_x]
+  full: [*3_2_x, *3_5_x, *4_0_x, *4_2_x]

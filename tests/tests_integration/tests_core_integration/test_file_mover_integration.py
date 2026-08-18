@@ -235,7 +235,7 @@ def test_file_mover_file_filter_file_size(request, file_connection_with_path_and
     with caplog.at_level(logging.INFO):
         move_result = mover.run()
         assert "    filters = [" in caplog.text
-        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "        FileSizeRange(min='1B', max=None)," in caplog.text
         assert "    ]" in caplog.text
 
     assert not move_result.failed
@@ -347,7 +347,7 @@ def test_file_mover_several_file_filters(request, file_connection_with_path_and_
         move_result = mover.run()
         assert "    filters = [" in caplog.text
         assert "        Glob('*.csv')," in caplog.text
-        assert "        FileSizeRange(min='1.0B', max=None)," in caplog.text
+        assert "        FileSizeRange(min='1B'," in caplog.text
         assert "    ]" in caplog.text
 
     assert not move_result.failed
@@ -505,7 +505,8 @@ def test_file_mover_run_without_files_and_source_path(file_connection):
         connection=file_connection,
         target_path=target_path,
     )
-    with pytest.raises(ValueError, match="Neither file list nor `source_path` are passed"):
+    msg = "Cannot call FileMover.run() without files arg or with source_path=None"
+    with pytest.raises(ValueError, match=re.escape(msg)):
         mover.run()
 
 

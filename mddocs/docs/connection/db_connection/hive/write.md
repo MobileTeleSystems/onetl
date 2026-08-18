@@ -167,4 +167,3 @@ then `sort_columns` should start with `repartition_columns` or be equal to it.
 ::: onetl.connection.db_connection.hive.options.HiveWriteOptions
     options:
         inherited_members: true
-        show_root_heading: true

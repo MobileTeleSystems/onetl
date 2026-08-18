@@ -1,14 +1,9 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from logging import getLogger
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
-try:
-    from pydantic.v1 import Field, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, validator  # type: ignore[no-redef, assignment]
+from pydantic import Field, field_validator
 
 from onetl._util.spark import try_import_pyspark
 from onetl.base import BaseDBConnection
@@ -23,23 +18,22 @@ log = getLogger(__name__)
 
 
 class DBConnection(BaseDBConnection, FrozenModel):
-    spark: SparkSession = Field(repr=False)
+    spark: "SparkSession" = Field(repr=False)
 
-    Dialect = DBDialect
+    Dialect: ClassVar = DBDialect
 
-    @classmethod
-    def _forward_refs(cls) -> dict[str, type]:
+    def __new__(cls, *args, **kwargs):
         try_import_pyspark()
 
         from pyspark.sql import SparkSession
 
-        # avoid importing pyspark unless user called the constructor,
-        # as we allow user to use `Connection.get_packages()` for creating Spark session
-        refs = super()._forward_refs()
-        refs["SparkSession"] = SparkSession
-        return refs
+        _ = SparkSession
 
-    @validator("spark")
+        cls.model_rebuild()
+        return super().__new__(cls)
+
+    @field_validator("spark", mode="before")
+    @classmethod
     def _check_spark_session_alive(cls, spark):
         # https://stackoverflow.com/a/36044685
         msg = "Spark session is stopped. Please recreate Spark session."
@@ -54,6 +48,6 @@ class DBConnection(BaseDBConnection, FrozenModel):
 
     def _log_parameters(self):
         log.info("|%s| Using connection parameters:", self.__class__.__name__)
-        parameters = self.dict(exclude_none=True, exclude={"spark"})
+        parameters = self.model_dump(exclude_none=True, exclude={"spark"})
         for attr, value in parameters.items():
             log_with_indent(log, "%s = %r", attr, value)

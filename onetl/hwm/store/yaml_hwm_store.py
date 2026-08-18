@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import operator
+import os
 import re
 from typing import ClassVar
 
@@ -15,13 +14,8 @@ from etl_entities.hwm_store import (
 )
 from platformdirs import user_data_dir
 
-try:
-    from pydantic.v1 import validator
-except (ImportError, AttributeError):
-    from pydantic import validator  # type: ignore[no-redef, assignment]
-
 from onetl.hooks import slot, support_hooks
-from onetl.impl import FrozenModel, LocalPath
+from onetl.impl import LocalPath
 
 DATA_PATH = LocalPath(user_data_dir("onETL", "ONEtools"))
 
@@ -55,13 +49,12 @@ def default_hwm_store_class(klass: type[BaseHWMStore]) -> type[BaseHWMStore]:
 @default_hwm_store_class
 @register_hwm_store_class("yaml")
 @support_hooks
-class YAMLHWMStore(BaseHWMStore, FrozenModel):
-    r"""YAML **local store** for HWM values. Used as default HWM store. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+class YAMLHWMStore(BaseHWMStore):
+    r"""YAML **local store** for HWM values. Used as default HWM store. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Parameters
     ----------
-    path : `pathlib.Path` or `str`
-
+    path
         Folder name there HWM value files will be stored.
 
         Default:
@@ -70,9 +63,11 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         * `C:\Documents and Settings\<User>\Application Data\oneTools\onETL\yml_hwm_store` on Windows
         * `~/Library/Application Support/onETL/yml_hwm_store` on MacOS
 
-    encoding : str, default: `utf-8`
-
+    encoding
         Encoding of files with HWM value
+
+    keep_history
+        Keep history of old HWM values in YAML file
 
     Examples
     --------
@@ -106,10 +101,11 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
     # "~/.local/share/onETL/id__public.mydata__postgres_postgres.domain.com_5432__myprocess__myhostname.yml"
     # with encoding="utf-8" and save a serialized HWM values to this file
     ```
+
     With all options
 
     ```python
-    with YAMLHWMStore(path="/my/store", encoding="utf-8"):
+    with YAMLHWMStore(path="/my/store", encoding="utf-8", keep_history=True):
         with IncrementalStrategy():
             df = reader.run()
             writer.run(df)
@@ -118,8 +114,8 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
     # "/my/store/id__public.mydata__postgres_postgres.domain.com_5432__myprocess__myhostname.yml"
     # with encoding="utf-8" and save a serialized HWM values to this file
     ```
-    File content example:
 
+    File content example:
     ```yaml
     - column:
         name: id
@@ -154,20 +150,38 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
     ```
     """
 
-    class Config:
-        frozen = True
-
     path: LocalPath = DATA_PATH / "yml_hwm_store"
     encoding: str = "utf-8"
+    keep_history: bool = True
 
     ITEMS_DELIMITER_PATTERN: ClassVar[re.Pattern] = re.compile("[#@|]+")
     PROHIBITED_SYMBOLS_PATTERN: ClassVar[re.Pattern] = re.compile(r"[=:/\\]+")
 
-    @validator("path", pre=True, always=True)
-    def validate_path(cls, path):
+    if hasattr(BaseHWMStore, "model_config"):
+        # pydantic v2
+        model_config: ClassVar = {"frozen": True, "extra": "forbid"}
+    else:
+
+        class Config:
+            # pydantic v1
+            frozen = True
+            extra = "forbid"
+
+    def __init__(
+        self,
+        *,
+        path: os.PathLike | str = DATA_PATH / "yml_hwm_store",
+        encoding="utf-8",
+        keep_history: bool = True,
+    ):
         path = LocalPath(path).expanduser().resolve()
         path.mkdir(parents=True, exist_ok=True)
-        return path
+
+        super().__init__(
+            path=path,
+            encoding=encoding,
+            keep_history=keep_history,
+        )
 
     @slot
     def get_hwm(self, name: str) -> HWM | None:
@@ -177,14 +191,17 @@ class YAMLHWMStore(BaseHWMStore, FrozenModel):
         if not data:
             return None
 
-        latest = sorted(data, key=operator.itemgetter("modified_time"))[-1]
+        latest = sorted(data, key=operator.itemgetter("modified_time"))[-1]  # noqa: FURB192
         return HWMTypeRegistry.parse(latest)
 
     @slot
     def set_hwm(self, hwm: HWM) -> LocalPath:
         """Save HWM value. Returns path to the YAML file."""
         data = self._load(hwm.name)
-        self._dump(hwm.name, [hwm.serialize(), *data])
+        to_save: list[dict] = [hwm.serialize()]
+        if self.keep_history:
+            to_save.extend(data)
+        self._dump(hwm.name, to_save)
         return self.get_file_path(hwm.name)
 
     @classmethod

@@ -1,12 +1,10 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 import os
 import textwrap
 import warnings
-from typing import Any, Optional
+from typing import Any
 
 from etl_entities.hwm import HWM
 from etl_entities.hwm_store import HWMStoreStackManager
@@ -19,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 class HWMStrategy(BaseStrategy):
-    hwm: Optional[HWM] = None
+    hwm: HWM | None = None
 
     @property
     def current(self) -> Edge:

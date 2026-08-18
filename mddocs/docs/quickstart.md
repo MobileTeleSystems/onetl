@@ -1,181 +1,6 @@
-# onETL { #DBR-onetl-quickstart-onetl }
+# Quick start { #DBR-onetl-quickstart-quick-start }
 
-{{ repo_status_badge }}
-{{ pypi_release_bage }}
-{{ pypi_license_bage }}
-{{ pypi_pyversion_bage }}
-{{ pypi_downloads_bage }}
-
-{{ docs_status_badge }}
-{{ ci_status_badge  }}
-{{ precommit_badge  }}
-{{ test_cov_badge }}
-
-{{ onetl_logo_wide }}
-
-----8<----
-docs/include_0.md
-----8<----
-
-
-
-## Documentation { #DBR-onetl-quickstart-documentation }
-
-See at [ReadTheDocs](https://onetl.readthedocs.io/en/latest/)
-
-## How to install { #DBR-onetl-quickstart-how-to-install }
-
-
-
-### Minimal installation { #DBR-onetl-quickstart-minimal-installation }
-
-
-
-Base `onetl` package contains:
-
-- `DBReader`, `DBWriter` and related classes
-- `FileDownloader`, `FileUploader`, `FileMover` and related classes, like file filters & limits
-- `FileDFReader`, `FileDFWriter` and related classes, like file formats
-- Read Strategies & HWM classes
-- Plugins support
-
-It can be installed via:
-
-```bash
-pip install onetl
-```
-
-!!! warning
-
-    This method does NOT include any connections.
-
-    This method is recommended for use in third-party libraries which require for `onetl` to be installed,
-    but do not use its connection classes.
-
-### With DB and FileDF connections { #DBR-onetl-quickstart-with-db-and-filedf-connections }
-
-
-
-All DB connection classes (`Clickhouse`, `Greenplum`, `Hive` and others)
-and all FileDF connection classes (`SparkHDFS`, `SparkLocalFS`, `SparkS3`)
-require Spark to be installed.
-
-
-
-Firstly, you should install JDK. The exact installation instruction depends on your OS, here are some examples:
-
-```bash
-yum install java-1.8.0-openjdk-devel  # CentOS 7
-dnf install java-11-openjdk-devel  # CentOS 8
-apt-get install openjdk-11-jdk  # Debian-based
-```
-
-
-
-#### Compatibility matrix { #DBR-onetl-quickstart-compatibility-matrix }
-
-| Spark                                                     | Python      | Java       | Scala |
-| --------------------------------------------------------- | ----------- | ---------- | ----- |
-| [3.2.x](https://spark.apache.org/docs/3.2.4/#downloading) | 3.7  - 3.10 | 8u201 - 11 | 2.12  |
-| [3.3.x](https://spark.apache.org/docs/3.3.4/#downloading) | 3.7  - 3.12 | 8u201 - 17 | 2.12  |
-| [3.4.x](https://spark.apache.org/docs/3.4.4/#downloading) | 3.7  - 3.12 | 8u362 - 20 | 2.12  |
-| [3.5.x](https://spark.apache.org/docs/3.5.5/#downloading) | 3.8  - 3.13 | 8u371 - 20 | 2.12  |
-| [4.0.x](https://spark.apache.org/docs/4.0.1/#downloading) | 3.9  - 3.14 |   17 - 22  | 2.13  |
-| [4.1.x](https://spark.apache.org/docs/4.1.1/#downloading) | 3.10 - 3.14 |   17 - 22  | 2.13  |
-
-
-
-Then you should install PySpark via passing `spark` to `extras`:
-
-```bash
-pip install "onetl[spark]"  # install latest PySpark
-```
-
-or install PySpark explicitly:
-
-```bash
-pip install onetl pyspark==3.5.8  # install a specific PySpark version
-```
-
-or inject PySpark to `sys.path` in some other way BEFORE creating a class instance.
-**Otherwise connection object cannot be created.**
-
-### With File connections { #DBR-onetl-quickstart-with-file-connections }
-
-
-
-All File (but not *FileDF*) connection classes (`FTP`, `SFTP`, `HDFS` and so on) requires specific Python clients to be installed.
-
-Each client can be installed explicitly by passing connector name (in lowercase) to `extras`:
-
-```bash
-pip install "onetl[ftp]"  # specific connector
-pip install "onetl[ftp,ftps,sftp,hdfs,s3,webdav,samba]"  # multiple connectors
-```
-
-To install all file connectors at once you can pass `files` to `extras`:
-
-```bash
-pip install "onetl[files]"
-```
-
-**Otherwise class import will fail.**
-
-### With Kerberos support { #DBR-onetl-quickstart-with-kerberos-support }
-
-
-
-Most of Hadoop instances set up with Kerberos support,
-so some connections require additional setup to work properly.
-
-- `HDFS`
-  Uses [requests-kerberos](https://pypi.org/project/requests-kerberos/) and
-  [GSSApi](https://pypi.org/project/gssapi/) for authentication.
-  It also uses `kinit` executable to generate Kerberos ticket.
-- `Hive` and `SparkHDFS`
-  require Kerberos ticket to exist before creating Spark session.
-
-So you need to install OS packages with:
-
-- `krb5` libs
-- Headers for `krb5`
-- `gcc` or other compiler for C sources
-
-The exact installation instruction depends on your OS, here are some examples:
-
-```bash
-apt install libkrb5-dev krb5-user gcc  # Debian-based
-dnf install krb5-devel krb5-libs krb5-workstation gcc  # CentOS, OracleLinux
-```
-
-Also you should pass `kerberos` to `extras` to install required Python packages:
-
-```bash
-pip install "onetl[kerberos]"
-```
-
-### Full bundle { #DBR-onetl-quickstart-full-bundle }
-
-
-
-To install all connectors and dependencies, you can pass `all` into `extras`:
-
-```bash
-pip install "onetl[all]"
-
-# this is just the same as
-pip install "onetl[spark,files,kerberos]"
-```
-
-!!! warning
-
-    This method consumes a lot of disk space, and requires for Java & Kerberos libraries to be installed into your OS.
-
-
-
-## Quick start { #DBR-onetl-quickstart-quick-start }
-
-### MSSQL → Hive { #DBR-onetl-quickstart-mssql-hive }
+## MSSQL → Hive { #DBR-onetl-quickstart-mssql-hive }
 
 Read data from MSSQL, transform & write to Hive.
 
@@ -276,7 +101,7 @@ db_writer.run(df_to_write)
 # Success!
 ```
 
-### SFTP → HDFS { #DBR-onetl-quickstart-sftp-hdfs }
+## SFTP → HDFS { #DBR-onetl-quickstart-sftp-hdfs }
 
 Download files from SFTP & upload them to HDFS.
 
@@ -396,7 +221,7 @@ upload_result.raise_if_failed() or upload_result.raise_if_empty() or upload_resu
 # Success!
 ```
 
-### S3 → Postgres { #DBR-onetl-quickstart-s3-postgres }
+## S3 → Postgres { #DBR-onetl-quickstart-s3-postgres }
 
 Read files directly from S3 path, convert them to dataframe, transform it and then write to a database.
 
@@ -426,7 +251,7 @@ from onetl.db import DBWriter
 setup_logging()
 
 # Initialize new SparkSession with Hadoop AWS libraries and Postgres driver loaded
-maven_packages = SparkS3.get_packages(spark_version="3.5.5") + Postgres.get_packages()
+maven_packages = SparkS3.get_packages() + Postgres.get_packages()
 exclude_packages = SparkS3.get_exclude_packages()
 spark = (
     SparkSession.builder.appName("spark_app_onetl_demo")

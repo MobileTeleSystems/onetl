@@ -79,4 +79,3 @@ Especially if there are indexes or partitions for columns used in `where` clause
 ::: onetl.connection.db_connection.mssql.options.MSSQLReadOptions
     options:
         inherited_members: true
-        show_root_heading: true

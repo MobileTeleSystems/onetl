@@ -1,21 +1,14 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 import warnings
-from typing import TYPE_CHECKING, ClassVar, Optional, Union, cast
+from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
-from typing_extensions import Literal
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
-from onetl._util.spark import get_spark_version, stringify
+from onetl._util.spark import get_pyspark_version, get_spark_version, stringify
 from onetl._util.version import Version
 from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.file.format.file_format import ReadWriteFileFormat
@@ -25,7 +18,6 @@ if TYPE_CHECKING:
     from pyspark.sql import Column, SparkSession
     from pyspark.sql.types import StructType
 
-
 log = logging.getLogger(__name__)
 PARSE_COLUMN_UNSUPPORTED_OPTIONS = {"inferSchema", "samplingRatio"}
 
@@ -33,7 +25,7 @@ PARSE_COLUMN_UNSUPPORTED_OPTIONS = {"inferSchema", "samplingRatio"}
 @support_hooks
 class XML(ReadWriteFileFormat):
     """
-    XML file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    XML file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Databricks Spark XML](https://github.com/databricks/spark-xml) file format.
 
@@ -60,12 +52,13 @@ class XML(ReadWriteFileFormat):
         The set of supported options depends on `spark-xml` version.
 
     === "Reading files"
+
         ```python
         from onetl.file.format import XML
         from pyspark.sql import SparkSession
 
         # Create Spark session with XML package loaded
-        maven_packages = XML.get_packages(spark_version="3.5.8")
+        maven_packages = XML.get_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
             .config("spark.jars.packages", ",".join(maven_packages))
@@ -74,6 +67,7 @@ class XML(ReadWriteFileFormat):
 
         xml = XML(rowTag="item", mode="PERMISSIVE")
         ```
+
     === "Writing files"
 
         !!! warning
@@ -98,7 +92,7 @@ class XML(ReadWriteFileFormat):
     XML tag that encloses each row in XML. Required.
     """
 
-    rootTag: Optional[str] = None
+    rootTag: str | None = None
     """
     XML tag that encloses content of all DataFrame. Default is `ROWS`.
 
@@ -107,7 +101,7 @@ class XML(ReadWriteFileFormat):
         Used only for writing files.
     """
 
-    compression: Union[str, Literal["bzip2", "gzip", "lz4", "snappy"], None] = None
+    compression: str | Literal["bzip2", "gzip", "lz4", "snappy"] | None = None
     """
     Compression codec. By default no compression is used.
 
@@ -116,39 +110,39 @@ class XML(ReadWriteFileFormat):
         Used only for writing files.
     """
 
-    timestampFormat: Optional[str] = None
+    timestampFormat: str | None = None
     """
     Format string used for parsing or serializing timestamp values.
     By default, ISO 8601 format is used (`yyyy-MM-ddTHH:mm:ss.SSSZ`).
     """
 
-    dateFormat: Optional[str] = None
+    dateFormat: str | None = None
     """
     Format string used for parsing or serializing date values.
     By default, ISO 8601 format is used (`yyyy-MM-dd`).
     """
 
-    timezone: Optional[str] = None
+    timezone: str | None = None
     """
     Allows to override timezone used for parsing or serializing date and timestamp values.
     By default, `spark.sql.session.timeZone` is used.
     """
 
-    nullValue: Optional[str] = None
+    nullValue: str | None = None
     """
     String value used to represent null. Default is `null` string.
     """
 
-    ignoreSurroundingSpaces: Optional[bool] = None
+    ignoreSurroundingSpaces: bool | None = None
     """
     If `True`, trim surrounding spaces while parsing values. Default `false`.
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
-    mode: Optional[Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"]] = None
+    mode: Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"] | None = None
     """
     How to handle parsing errors:
       * `PERMISSIVE` - set field value as `null`, move raw data to [columnNameOfCorruptRecord][] column.
@@ -159,10 +153,10 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
-    columnNameOfCorruptRecord: Optional[str] = None
+    columnNameOfCorruptRecord: str | None = None
     """
     Name of DataFrame column there corrupted row is stored with `mode=PERMISSIVE`.
 
@@ -195,49 +189,49 @@ class XML(ReadWriteFileFormat):
         ```
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
-    inferSchema: Optional[bool] = None
+    inferSchema: bool | None = None
     """
     If `True`, try to infer the input schema by reading a sample of the file (see [samplingRatio][]).
     Default `False` which means that all parsed columns will be `StringType()`.
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
-    samplingRatio: Optional[float] = Field(default=None, ge=0, le=1)
+    samplingRatio: float | None = Field(default=None, ge=0, le=1)
     """
     For `inferSchema=True`, read the specified fraction of rows to infer the schema.
     Default `1`.
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
-    charset: Optional[str] = None
+    charset: str | None = None
     """
     File encoding. Default is `UTF-8`
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
-    valueTag: Optional[str] = None
+    valueTag: str | None = None
     """
     Value used to replace missing values while parsing attributes like `<sometag someattr>`.
     Default `_VALUE`.
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
-    attributePrefix: Optional[str] = None
+    attributePrefix: str | None = None
     """
     While parsing tags containing attributes like `<sometag attr="value">`, attributes are stored as
     DataFrame schema columns with specified prefix, e.g. `_attr`.
@@ -245,20 +239,20 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
-    excludeAttribute: Optional[bool] = None
+    excludeAttribute: bool | None = None
     """
     If `True`, exclude attributes while parsing tags like `<sometag attr="value">`.
     Default `false`.
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
-    wildcardColName: Optional[str] = None
+    wildcardColName: str | None = None
     """
     Name of column or columns which should be preserved as raw XML string, and not parsed.
 
@@ -269,20 +263,20 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
-    ignoreNamespace: Optional[bool] = None
+    ignoreNamespace: bool | None = None
     """
     If `True`, all namespaces like `<ns:tag>` will be ignored and treated as just `<tag>`.
     Default `False`.
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
-    rowValidationXSDPath: Optional[str] = None
+    rowValidationXSDPath: str | None = None
     """
     Path to XSD file which should be used to validate each row.
     If row does not match XSD, it will be treated as error, behavior depends on [mode][] value.
@@ -301,10 +295,10 @@ class XML(ReadWriteFileFormat):
 
     !!! note
 
-        Used only for reading files or by [parse_column][] function.
+        Used only for reading files or by [parse_column][] method.
     """
 
-    declaration: Optional[str] = None
+    declaration: str | None = None
     """
     Content of `<?XML ... ?>` declaration.
     Default is `version="1.0" encoding="UTF-8" standalone="yes"`.
@@ -314,7 +308,7 @@ class XML(ReadWriteFileFormat):
         Used only for writing files.
     """
 
-    arrayElementName: Optional[str] = None
+    arrayElementName: str | None = None
     """
     If DataFrame column is `ArrayType`, its content will be written to XML
     inside `<arrayElementName>...</arrayElementName>` tag.
@@ -324,22 +318,18 @@ class XML(ReadWriteFileFormat):
 
         Used only for writing files.
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        prohibited_options = frozenset(("path",))  # filled by FileDFReader/FileDFWriter
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=frozenset(("path",)), known_options=[], extra="allow")  # type: ignore[typeddict-unknown-key]
 
     @slot
     @classmethod
     def get_packages(
         cls,
-        spark_version: str,
+        spark_version: str | None = None,
         scala_version: str | None = None,
         package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
@@ -349,15 +339,17 @@ class XML(ReadWriteFileFormat):
 
         Parameters
         ----------
-        spark_version : str
+        spark_version
             Spark version in format `major.minor.patch`.
 
-        scala_version : str, optional
+            If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
+
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
 
-        package_version : str, optional
+        package_version
             Package version in format `major.minor.patch`. Default is `0.18.0`.
 
             See [Maven index](https://mvnrepository.com/artifact/com.databricks/spark-xml)
@@ -367,19 +359,14 @@ class XML(ReadWriteFileFormat):
 
                 Version `0.13` and below are not supported.
 
-            !!! note
-
-                It is not guaranteed that custom package versions are supported.
-                Tests are performed only for default version.
-
         Examples
         --------
 
         ```python
         from onetl.file.format import XML
 
-        XML.get_packages(spark_version="3.5.8")
-        XML.get_packages(spark_version="3.5.8", scala_version="2.12")
+        XML.get_packages()
+        XML.get_packages(package_version="0.18.0")
         XML.get_packages(
             spark_version="3.5.8",
             scala_version="2.12",
@@ -387,7 +374,7 @@ class XML(ReadWriteFileFormat):
         )
         ```
         """
-        spark_ver = Version(spark_version)
+        spark_ver = Version(spark_version) if spark_version else get_pyspark_version()
         if spark_ver.major >= 4:  # noqa: PLR2004
             # since Spark 4.0, XML is bundled with Spark
             return []
@@ -405,7 +392,7 @@ class XML(ReadWriteFileFormat):
         return [f"com.databricks:spark-xml_{scala_ver.format('{0}.{1}')}:{version}"]
 
     @slot
-    def check_if_supported(self, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: "SparkSession") -> None:
         version = get_spark_version(spark)
         if version.major >= 4:  # noqa: PLR2004
             # since Spark 4.0, XML is bundled with Spark
@@ -423,7 +410,7 @@ class XML(ReadWriteFileFormat):
             )
             raise ValueError(msg) from e
 
-    def parse_column(self, column: str | Column, schema: StructType) -> Column:
+    def parse_column(self, column: "str | Column", schema: "StructType") -> "Column":
         """
         Parses an XML string column into a structured Spark SQL column using the `from_xml` function
         provided by the [Databricks Spark XML library](https://github.com/databricks/spark-xml#pyspark-notes)
@@ -477,16 +464,16 @@ class XML(ReadWriteFileFormat):
 
         Parameters
         ----------
-        column : str | Column
+        column
             The name of the column or the column object containing XML strings/bytes to parse.
 
-        schema : StructType
+        schema
             The schema to apply when parsing the XML data.
             This defines the structure of the output DataFrame column.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with deserialized data, with the same structure as the provided schema.
             Column name is the same as input column.
 
@@ -543,7 +530,7 @@ class XML(ReadWriteFileFormat):
         else:
             column_name, column = column, col(column).cast("string")
 
-        options = self.dict(by_alias=True, exclude_none=True)
+        options = self.model_dump(by_alias=True, exclude_none=True)
         version = get_spark_version(spark)
         if version.major >= 4:  # noqa: PLR2004
             from pyspark.sql.functions import from_xml  # type: ignore[attr-defined]
@@ -565,7 +552,7 @@ class XML(ReadWriteFileFormat):
         return Column(jc).alias(column_name)
 
     def _check_unsupported_serialization_options(self):
-        current_options = self.dict(by_alias=True, exclude_none=True)
+        current_options = self.model_dump(by_alias=True, exclude_none=True)
         unsupported_options = current_options.keys() & PARSE_COLUMN_UNSUPPORTED_OPTIONS
         if unsupported_options:
             warnings.warn(
@@ -575,7 +562,7 @@ class XML(ReadWriteFileFormat):
             )
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = self.model_dump(by_alias=True, exclude_none=True)
         options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

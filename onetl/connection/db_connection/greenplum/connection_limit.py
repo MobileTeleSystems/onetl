@@ -1,12 +1,10 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import textwrap
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(slots=True)
 class GreenplumConnectionLimit:
     maximum: int
     reserved: int

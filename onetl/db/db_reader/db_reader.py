@@ -1,23 +1,18 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
+import sys
 import textwrap
+import time
 import warnings
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-import frozendict
-from etl_entities.hwm import HWM, ColumnHWM, KeyValueHWM
-from etl_entities.old_hwm import IntHWM as OldColumnHWM
-from etl_entities.source import Column, Table
-
-try:
-    from pydantic.v1 import Field, PrivateAttr, root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import Field, PrivateAttr, root_validator, validator  # type: ignore[no-redef, assignment]
+from etl_entities.hwm import HWM, ColumnHWM, HWMTypeRegistry, KeyValueHWM
+from humanize import naturaldelta
+from pydantic import Field, PrivateAttr, ValidationInfo, field_validator, model_validator
 
 from onetl._util.alias import avoid_alias
+from onetl._util.process import get_process_info
 from onetl._util.spark import override_job_description, try_import_pyspark
 from onetl.base import (
     BaseDBConnection,
@@ -41,21 +36,24 @@ from onetl.strategy.batch_hwm_strategy import BatchHWMStrategy
 from onetl.strategy.hwm_strategy import HWMStrategy
 from onetl.strategy.strategy_manager import StrategyManager
 
-log = getLogger(__name__)
+if sys.version_info < (3, 15):
+    from frozendict import frozendict
 
 if TYPE_CHECKING:
     from pyspark.sql.dataframe import DataFrame
     from pyspark.sql.types import StructField, StructType
 
+log = getLogger(__name__)
+
 
 @support_hooks
 class DBReader(FrozenModel):
     """Allows you to read data from a table with specified database connection
-    and parameters, and return its content as Spark dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    and parameters, and return its content as Spark dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     !!! note
 
-        DBReader can return different results depending on [strategy][]
+        DBReader can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
     !!! note
 
@@ -69,10 +67,10 @@ class DBReader(FrozenModel):
 
     Parameters
     ----------
-    connection : [onetl.connection.BaseDBConnection][]
-        Class which contains DB connection properties. See [db-connections][] section
+    connection
+        Class which contains DB connection properties. See [DBR-onetl-connection-db-connection-db-connections][] section
 
-    source : str
+    source
         Table/collection/etc name to read data from.
 
         If connection has schema support, you need to specify the full name of the source
@@ -81,7 +79,7 @@ class DBReader(FrozenModel):
         !!! info "Changed in 0.7.0"
             Renamed `table` → `source`
 
-    columns : list of str, default: None
+    columns
         The list of columns to be read.
 
         If RDBMS supports any kind of expressions, you can pass them too.
@@ -108,7 +106,7 @@ class DBReader(FrozenModel):
             Syntax `DBReader(columns="col1, col2")` (string instead of list) is not supported,
             and will be removed in v1.0.0
 
-    where : Any, default: `None`
+    where
         Custom `where` for SQL query or MongoDB pipeline.
 
         `where` syntax depends on the source. For example, SQL sources
@@ -129,7 +127,7 @@ class DBReader(FrozenModel):
 
             Some sources does not support data filtering.
 
-    hwm : type[HWM] | None, default: `None`
+    hwm
         HWM class to be used as [HWM](https://etl-entities.readthedocs.io/en/stable/hwm/index.html) value.
 
         ```python
@@ -156,7 +154,7 @@ class DBReader(FrozenModel):
         !!! info "Changed in 0.10.0"
             Replaces deprecated `hwm_column` and `hwm_expression`  attributes
 
-    hint : Any, default: `None`
+    hint
         Hint expression used for querying the data.
 
         `hint` syntax depends on the source. For example, SQL sources
@@ -175,7 +173,7 @@ class DBReader(FrozenModel):
 
             Some sources does not support hints.
 
-    df_schema : StructType, optional, default: `None`
+    df_schema
         Spark DataFrame schema, used for proper type casting of the rows.
 
         ```python
@@ -208,7 +206,7 @@ class DBReader(FrozenModel):
 
             Some sources does not support passing dataframe schema.
 
-    options : dict, [onetl.connection.BaseDBConnection.ReadOptions][], default: `None`
+    options
         Spark read options, like partitioning mode.
 
         ```python
@@ -227,6 +225,7 @@ class DBReader(FrozenModel):
     --------
 
     === "Minimal example"
+
         ```python
         from onetl.db import DBReader
         from onetl.connection import Postgres
@@ -239,7 +238,9 @@ class DBReader(FrozenModel):
         # read data from table "fiddle.dummy"
         df = reader.run()
         ```
+
     === "With custom reading options"
+
         ```python
         from onetl.connection import Postgres
         from onetl.db import DBReader
@@ -253,7 +254,9 @@ class DBReader(FrozenModel):
         # read data from table "fiddle.dummy"
         df = reader.run()
         ```
+
     === "Full example"
+
         ```python
         from onetl.db import DBReader
         from onetl.connection import Postgres
@@ -274,9 +277,10 @@ class DBReader(FrozenModel):
         # read data from table "fiddle.dummy"
         df = reader.run()
         ```
+
     === "Incremental reading"
 
-        See [strategy][] for more examples
+        See [strategy][DBR-onetl-strategy-read-strategies] for more examples
 
         ```python
         from onetl.strategy import IncrementalStrategy
@@ -301,69 +305,89 @@ class DBReader(FrozenModel):
 
     connection: BaseDBConnection
     source: str = Field(alias=avoid_alias("table"))  # type: ignore[literal-required]
-    columns: Optional[List[str]] = Field(default=None, min_items=1)
-    where: Optional[Any] = None
-    hint: Optional[Any] = None
-    df_schema: Optional[StructType] = None
-    hwm_column: Optional[Union[str, tuple]] = None
-    hwm_expression: Optional[str] = None
-    hwm: Optional[Union[AutoDetectHWM, ColumnHWM, KeyValueHWM]] = None
-    options: Optional[GenericOptions] = None
+    columns: list[str] | None = Field(default=None, min_length=1, validate_default=True)
+    where: Any | None = Field(default=None, validate_default=True)
+    hint: Any | None = Field(default=None, validate_default=True)
+    df_schema: "StructType | None" = Field(default=None, validate_default=True)
+    hwm: AutoDetectHWM | ColumnHWM | KeyValueHWM | None = Field(default=None, validate_default=True)
+    options: GenericOptions | None = Field(default=None, validate_default=True)
 
-    AutoDetectHWM = AutoDetectHWM
+    AutoDetectHWM: ClassVar = AutoDetectHWM
 
     _connection_checked: bool = PrivateAttr(default=False)
 
-    @validator("source", always=True)
-    def validate_source(cls, value: str, values):
-        if "connection" not in values:
+    def __new__(cls, *args, **kwargs):
+        try_import_pyspark()
+
+        from pyspark.sql.types import StructType
+
+        _ = StructType
+
+        cls.model_rebuild()
+        return super().__new__(cls)
+
+    @field_validator("source", mode="before")
+    @classmethod
+    def _validate_source(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
             return value
-        connection: BaseDBConnection = values["connection"]
         return connection.dialect.validate_name(value)
 
-    @validator("columns", always=True, pre=True)
-    def validate_columns(cls, value: str | list[str] | None, values: dict) -> list[str] | None:
-        if "connection" not in values:
-            return value  # type: ignore[return-value]
-        connection: BaseDBConnection = values["connection"]
+    @field_validator("columns", mode="before")
+    @classmethod
+    def _validate_columns(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
         return connection.dialect.validate_columns(value)
 
-    @validator("where", always=True)
-    def validate_where(cls, value: Any, values: dict) -> Any:
-        if "connection" not in values:
-            return value  # type: ignore[return-value]
-        connection: BaseDBConnection = values["connection"]
+    @field_validator("where", mode="before")
+    @classmethod
+    def _validate_where(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
         result = connection.dialect.validate_where(value)
         if isinstance(result, dict):
-            return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
+            return frozendict(result)  # type: ignore[attr-defined, operator]
         return result
 
-    @validator("hint", always=True)
-    def validate_hint(cls, value: Any, values: dict) -> Any:
-        if "connection" not in values:
-            return value  # type: ignore[return-value]
-        connection: BaseDBConnection = values["connection"]
+    @field_validator("hint", mode="before")
+    @classmethod
+    def _validate_hint(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
         result = connection.dialect.validate_hint(value)
         if isinstance(result, dict):
-            return frozendict.frozendict(result)  # type: ignore[attr-defined, operator]
+            return frozendict(result)  # type: ignore[attr-defined, operator]
         return result
 
-    @validator("df_schema", always=True)
-    def validate_df_schema(cls, value: StructType | None, values: dict) -> StructType | None:
-        if "connection" not in values:
-            return value  # type: ignore[return-value]
-        connection: BaseDBConnection = values["connection"]
+    @field_validator("df_schema", mode="before")
+    @classmethod
+    def _validate_df_schema(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
         return connection.dialect.validate_df_schema(value)
 
-    @root_validator(skip_on_failure=True)
-    def validate_hwm(cls, values: dict) -> dict:
-        connection: BaseDBConnection = values["connection"]
-        source: str = values["source"]
-        hwm_column: str | tuple[str, str] | None = values.get("hwm_column")
-        hwm_expression: str | None = values.get("hwm_expression")
+    @model_validator(mode="before")
+    @classmethod
+    def _deprecated_hwm_column_to_hwm(cls, values: dict) -> dict:
+        connection: BaseDBConnection | None = values.get("connection")
+        if not connection:
+            return values
+
+        source = values.get("source")
+        if not source:
+            return values
+
+        hwm_column: str | tuple[str, str] | None = values.pop("hwm_column", None)
+        hwm_expression: str | None = values.pop("hwm_expression", None)
         hwm: HWM | None = values.get("hwm")
 
-        if hwm_column is not None:
+        if hwm_column:
             if hwm:
                 msg = "Please pass either DBReader(hwm=...) or DBReader(hwm_column=...), not both"
                 raise ValueError(msg)
@@ -382,11 +406,11 @@ class DBReader(FrozenModel):
                     )
                     raise ValueError(error_message)
 
-            # convert old parameters to new one
-            old_hwm = OldColumnHWM(
-                source=Table(name=source, instance=connection.instance_url),  # type: ignore[arg-type]
-                column=Column(name=hwm_column),  # type: ignore[arg-type]
-            )
+            process_name, hostname = get_process_info()
+            hwm_column = cast("str", hwm_column)
+            hwm_expression = cast("str | None", hwm_expression)
+            # backported HWM.qualified_name from etl_entities v1/v2
+            qualified_name = f"{hwm_column}#{source}@{connection.instance_url}#{process_name}@{hostname}"
             warnings.warn(
                 textwrap.dedent(
                     f"""
@@ -395,7 +419,7 @@ class DBReader(FrozenModel):
 
                     Instead use:
                         hwm=DBReader.AutoDetectHWM(
-                            name={old_hwm.qualified_name!r},
+                            name={qualified_name!r},
                             expression={hwm_column!r},
                         )
                     """,
@@ -403,19 +427,41 @@ class DBReader(FrozenModel):
                 UserWarning,
                 stacklevel=2,
             )
+
             hwm = AutoDetectHWM(
-                name=old_hwm.qualified_name,
+                name=qualified_name,
                 expression=hwm_expression or hwm_column,
             )
 
-        if hwm and not hwm.expression:
+        values["hwm"] = hwm
+        return values
+
+    # etl-entities v1 uses pydantic v1 models
+    # which are not compatible with pydantic v2.
+    # using a plain validator here
+    @field_validator("hwm", mode="plain")
+    @classmethod
+    def _validate_hwm(cls, hwm, info: ValidationInfo):
+        if not hwm:
+            return None
+
+        if not isinstance(hwm, (ColumnHWM, KeyValueHWM, AutoDetectHWM)):
+            hwm = HWMTypeRegistry.parse(hwm)
+
+        if not isinstance(hwm, (ColumnHWM, KeyValueHWM, AutoDetectHWM)):
+            msg = f"Expected ColumnHWM or KeyValueHWM, got {hwm.__class__.__name__}"
+            raise ValueError(msg)  # noqa: TRY004
+
+        hwm = cast("ColumnHWM | KeyValueHWM | AutoDetectHWM", hwm)
+        if not hwm.expression:
             msg = "`hwm.expression` cannot be None"
             raise ValueError(msg)
 
-        if hwm and not hwm.entity:
+        source = info.data.get("source")
+        if not hwm.entity:
             hwm = hwm.copy(update={"entity": source})
 
-        if hwm and hwm.entity != source:
+        if hwm.entity != source:
             error_message = textwrap.dedent(
                 f"""
                 Passed `hwm.source` is different from `source`.
@@ -431,36 +477,41 @@ class DBReader(FrozenModel):
             )
             raise ValueError(error_message)
 
-        values["hwm"] = connection.dialect.validate_hwm(hwm)
-        values["hwm_column"] = None
-        values["hwm_expression"] = None
-        return values
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return hwm
 
-    @validator("options", pre=True, always=True)
-    def validate_options(cls, options, values):
-        connection = values.get("connection")
+        return connection.dialect.validate_hwm(hwm)
+
+    @field_validator("options", mode="before")
+    @classmethod
+    def _validate_options(cls, value, info: ValidationInfo):
+        connection: BaseDBConnection | None = info.data.get("connection")
+        if not connection:
+            return value
+
         read_options_class = getattr(connection, "ReadOptions", None)
         if read_options_class:
-            return read_options_class.parse(options)
+            return read_options_class.parse(value)
 
-        if options:
-            msg = f"{connection.__class__.__name__} does not implement ReadOptions, but {options!r} is passed"
+        if value:
+            msg = f"{connection.__class__.__name__} does not implement ReadOptions, but {value!r} is passed"
             raise ValueError(msg)
 
         return None
 
     @slot
     def has_data(self) -> bool:
-        """Returns `True` if there is some data in the source, `False` otherwise. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        """Returns `True` if there is some data in the source, `False` otherwise. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
-            This method can return different results depending on [strategy][]
+            This method can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
         !!! warning
 
             If [hwm](https://etl-entities.readthedocs.io/en/stable/hwm/index.html) is used,
-            then method should be called inside [strategy][] context.
+            then method should be called inside [strategy][DBR-onetl-strategy-read-strategies] context.
             And vise-versa, if HWM is not used, this method should not be called within strategy.
 
         !!! success "Added in 0.10.0"
@@ -485,7 +536,8 @@ class DBReader(FrozenModel):
         ```
         """
 
-        entity_boundary_log(log, msg=f"{self.__class__.__name__}.has_data() starts")
+        method = f"{self.__class__.__name__}.has_data"
+        entity_boundary_log(log, f"{method}() started")
         self._check_strategy()
 
         if not self._connection_checked:
@@ -493,38 +545,46 @@ class DBReader(FrozenModel):
             self.connection.check()
             self._connection_checked = True
 
-        job_description = f"{self.connection} -> {self.__class__.__name__}.has_data({self.source})"
-        with override_job_description(self.connection.spark, job_description):
-            window, limit = self._calculate_window_and_limit()
-            if limit == 0:
-                return False
+        with override_job_description(self.connection.spark, f"{self.connection} -> {method}({self.source})"):
+            started = time.perf_counter()
+            try:
+                window, limit = self._calculate_window_and_limit()
+                if limit == 0:
+                    return False
 
-            df = self.connection.read_source_as_df(
-                source=str(self.source),
-                columns=self.columns,
-                hint=self.hint,
-                where=self.where,
-                df_schema=self.df_schema,
-                window=window,
-                limit=1,
-                **self._get_read_kwargs(),
-            )
-
-            entity_boundary_log(log, msg=f"{self.__class__.__name__}.has_data() ends", char="-")
-            return bool(df.take(1))
+                df = self.connection.read_source_as_df(
+                    source=str(self.source),
+                    columns=self.columns,
+                    hint=self.hint,
+                    where=self.where,
+                    df_schema=self.df_schema,
+                    window=window,
+                    limit=1,
+                    **self._get_read_kwargs(),
+                )
+                return bool(df.take(1))
+            except Exception:
+                log.error(  # noqa: TRY400
+                    "|%s| Error while reading dataframe",
+                    self.__class__.__name__,
+                )
+                raise
+            finally:
+                elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+                entity_boundary_log(log, f"{method}() ended in %s", elapsed, char="-")
 
     @slot
     def raise_if_no_data(self) -> None:
-        """Raises exception `NoDataError` if source does not contain any data. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        """Raises exception `NoDataError` if source does not contain any data. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
-            This method can return different results depending on [strategy][]
+            This method can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
         !!! warning
 
             If [hwm](https://etl-entities.readthedocs.io/en/stable/hwm/index.html) is used,
-            then method should be called inside [strategy][] context.
+            then method should be called inside [strategy][DBR-onetl-strategy-read-strategies] context.
             And vise-versa, if HWM is not used, this method should not be called within strategy.
 
         !!! success "Added in 0.10.0"
@@ -534,7 +594,7 @@ class DBReader(FrozenModel):
         RuntimeError
             Current strategy is not compatible with HWM parameter.
 
-        [onetl.exception.NoDataError][]
+        onetl.exception.NoDataError
             There is no data in source.
 
         Examples
@@ -553,25 +613,25 @@ class DBReader(FrozenModel):
             raise NoDataError(msg)
 
     @slot
-    def run(self) -> DataFrame:
+    def run(self) -> "DataFrame":
         """
-        Reads data from source table and saves as Spark dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Reads data from source table and saves as Spark dataframe. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
-            This method can return different results depending on [strategy][]
+            This method can return different results depending on [strategy][DBR-onetl-strategy-read-strategies]
 
         !!! warning
 
             If [hwm](https://etl-entities.readthedocs.io/en/stable/index.html) is used,
-            then method should be called inside [strategy][] context.
+            then method should be called inside [strategy][DBR-onetl-strategy-read-strategies] context.
             And vise-versa, if HWM is not used, this method should not be called within strategy.
 
         !!! success "Added in 0.1.0"
 
         Returns
         -------
-        df : pyspark.sql.dataframe.DataFrame
+        :
             Spark dataframe
 
         Examples
@@ -584,7 +644,8 @@ class DBReader(FrozenModel):
         ```
         """
 
-        entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() starts")
+        method = f"{self.__class__.__name__}.run"
+        entity_boundary_log(log, f"{method}() started")
         self._check_strategy()
 
         if not self._connection_checked:
@@ -592,28 +653,35 @@ class DBReader(FrozenModel):
             self.connection.check()
             self._connection_checked = True
 
-        job_description = f"{self.connection} -> {self.__class__.__name__}.run({self.source})"
-        with override_job_description(self.connection.spark, job_description):
-            window, limit = self._calculate_window_and_limit()
+        with override_job_description(self.connection.spark, f"{self.connection} -> {method}({self.source})"):
+            try:
+                started = time.perf_counter()
+                window, limit = self._calculate_window_and_limit()
 
-            # update the HWM with the stop value
-            if self.hwm and window:
-                strategy: HWMStrategy = StrategyManager.get_current()  # type: ignore[assignment]
-                strategy.update_hwm(window.stop_at.value)
+                # update the HWM with the stop value
+                if self.hwm and window:
+                    strategy: HWMStrategy = StrategyManager.get_current()  # type: ignore[assignment]
+                    strategy.update_hwm(window.stop_at.value)
 
-            df = self.connection.read_source_as_df(
-                source=str(self.source),
-                columns=self.columns,
-                hint=self.hint,
-                where=self.where,
-                df_schema=self.df_schema,
-                window=window,
-                limit=limit,
-                **self._get_read_kwargs(),
-            )
-
-        entity_boundary_log(log, msg=f"{self.__class__.__name__}.run() ends", char="-")
-        return df
+                return self.connection.read_source_as_df(
+                    source=str(self.source),
+                    columns=self.columns,
+                    hint=self.hint,
+                    where=self.where,
+                    df_schema=self.df_schema,
+                    window=window,
+                    limit=limit,
+                    **self._get_read_kwargs(),
+                )
+            except Exception:
+                log.error(  # noqa: TRY400
+                    "|%s| Error while reading dataframe",
+                    self.__class__.__name__,
+                )
+                raise
+            finally:
+                elapsed = naturaldelta(time.perf_counter() - started, minimum_unit="milliseconds")
+                entity_boundary_log(log, f"{method}() ended in %s", elapsed, char="-")
 
     def _check_strategy(self):
         strategy = StrategyManager.get_current()
@@ -695,14 +763,13 @@ class DBReader(FrozenModel):
         )
         raise RuntimeError(error_message)
 
-    def _get_hwm_field(self, hwm: HWM) -> StructField:
+    def _get_hwm_field(self, hwm: HWM) -> "StructField":
         log.info(
             "|%s| Getting Spark type for HWM expression: %r",
             self.__class__.__name__,
             hwm.expression,
         )
 
-        result: StructField
         if self.df_schema:
             schema = {field.name.casefold(): field for field in self.df_schema}
             column = hwm.expression.casefold()
@@ -811,13 +878,13 @@ class DBReader(FrozenModel):
         log_with_indent(log, "source = '%s'", self.source)
 
         if self.hint:
-            log_json(log, self.hint, "hint")
+            log_json(log, self.hint, name="hint")
 
         if self.columns:
             log_collection(log, "columns", self.columns)
 
         if self.where:
-            log_json(log, self.where, "where")
+            log_json(log, self.where, name="where")
 
         if self.df_schema:
             empty_df = self.connection.spark.createDataFrame([], self.df_schema)
@@ -826,7 +893,7 @@ class DBReader(FrozenModel):
         if self.hwm:
             log_hwm(log, self.hwm)
 
-        options = self.options.dict(by_alias=True, exclude_none=True) if self.options else None
+        options = self.options.model_dump(by_alias=True, exclude_none=True) if self.options else None
         log_options(log, options)
 
     def _get_read_kwargs(self) -> dict:
@@ -834,14 +901,3 @@ class DBReader(FrozenModel):
             return {"options": self.options}
 
         return {}
-
-    @classmethod
-    def _forward_refs(cls) -> dict[str, type]:
-        try_import_pyspark()
-        from pyspark.sql.types import StructType
-
-        # avoid importing pyspark unless user called the constructor,
-        # as we allow user to use `Connection.get_packages()` for creating Spark session
-        refs = super()._forward_refs()
-        refs["StructType"] = StructType
-        return refs

@@ -1,19 +1,14 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 import textwrap
 from contextlib import contextmanager
 from math import inf
 from typing import TYPE_CHECKING, Any
 
-from onetl._util.version import Version
+from pydantic import SecretStr
 
-try:
-    from pydantic.v1 import SecretStr
-except (ImportError, AttributeError):
-    from pydantic import SecretStr  # type: ignore[no-redef, assignment]
+from onetl._util.version import Version
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
@@ -84,7 +79,7 @@ def stringify(value: Any, *, quote: bool = False) -> Any:
 
 
 @contextmanager
-def inject_spark_param(conf: RuntimeConfig, name: str, value: Any):
+def inject_spark_param(conf: "RuntimeConfig", name: str, value: Any):
     """
     Inject a parameter into a Spark session, and return previous value after exit.
 
@@ -109,7 +104,7 @@ def try_import_pyspark():
     Try to import PySpark, or raise exception if missing.
     """
     try:
-        import pyspark  # noqa: F401
+        import pyspark
     except (ImportError, NameError) as e:
         raise ImportError(
             textwrap.dedent(
@@ -123,16 +118,26 @@ def try_import_pyspark():
                 """,
             ).strip(),
         ) from e
+    else:
+        return pyspark
 
 
-def get_spark_version(spark_session: SparkSession) -> Version:
+def get_pyspark_version() -> Version:
+    """
+    Get PySpark version
+    """
+    pyspark = try_import_pyspark()
+    return Version(pyspark.__version__)
+
+
+def get_spark_version(spark_session: "SparkSession") -> Version:
     """
     Get Spark version from active Spark session
     """
     return Version(spark_session.version)
 
 
-def estimate_dataframe_size(df: DataFrame) -> int:
+def estimate_dataframe_size(df: "DataFrame") -> int:
     """
     Estimate in-memory DataFrame size in bytes. If cannot be estimated, return 0.
 
@@ -148,7 +153,7 @@ def estimate_dataframe_size(df: DataFrame) -> int:
         return 0
 
 
-def get_executor_total_cores(spark_session: SparkSession, *, include_driver: bool = False) -> tuple[float, dict]:
+def get_executor_total_cores(spark_session: "SparkSession", *, include_driver: bool = False) -> tuple[float, dict]:
     """
     Calculate maximum number of cores which can be used by Spark on all executors.
 
@@ -203,7 +208,7 @@ def get_executor_total_cores(spark_session: SparkSession, *, include_driver: boo
 
 
 @contextmanager
-def override_job_description(spark_session: SparkSession, job_description: str):
+def override_job_description(spark_session: "SparkSession", job_description: str):
     """
     Override Spark job description.
 
@@ -222,7 +227,7 @@ def override_job_description(spark_session: SparkSession, job_description: str):
         spark_context.setLocalProperty(SPARK_JOB_DESCRIPTION_PROPERTY, original_description)  # type: ignore[arg-type]
 
 
-def get_client_info(spark_session: SparkSession, limit: int | None = None, unsupported: str = "") -> str:
+def get_client_info(spark_session: "SparkSession", limit: int | None = None, unsupported: str = "") -> str:
     """Get client info string for DB connections"""
     from onetl import __version__ as onetl_version
 

@@ -74,5 +74,5 @@ def test_file_uploader_options_mode_deprecated(options, value, message):
 
 
 def test_file_uploader_options_if_exists_wrong_value():
-    with pytest.raises(ValueError, match="value is not a valid enumeration member"):
+    with pytest.raises(ValueError, match="Input should be"):
         FileUploader.Options(if_exists="wrong_mode")

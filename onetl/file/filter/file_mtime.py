@@ -1,18 +1,11 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Optional
 
-from onetl.base.path_protocol import PathWithStatsProtocol
-
-try:
-    from pydantic.v1 import root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import root_validator, validator  # type: ignore[no-redef, assignment]
+from pydantic import field_validator, model_validator
 
 from onetl.base import BaseFileFilter, PathProtocol
+from onetl.base.path_protocol import PathWithStatsProtocol
 from onetl.impl import FrozenModel
 
 
@@ -32,11 +25,11 @@ class FileModifiedTime(BaseFileFilter, FrozenModel):
     Parameters
     ----------
 
-    since : datetime, optional
+    since
 
         Minimal allowed file modification time. `None` means no limit.
 
-    until : datetime, optional
+    until
 
         Maximum allowed file modification time. `None` means no limit.
 
@@ -66,33 +59,32 @@ class FileModifiedTime(BaseFileFilter, FrozenModel):
     ```
     """
 
-    since: Optional[datetime] = None
-    until: Optional[datetime] = None
+    since: datetime | None = None
+    until: datetime | None = None
 
-    @root_validator(skip_on_failure=True)
-    def _validate_since_until(cls, values):
-        since = values.get("since")
-        until = values.get("until")
-
-        if since is None and until is None:
+    @model_validator(mode="after")
+    def _validate_since_until(self):
+        if self.since is None and self.until is None:
             msg = "Either since or until must be specified"
             raise ValueError(msg)
 
         # since and until can be tz-naive and tz-aware, which are cannot be compared.
-        if since and until and since.timestamp() > until.timestamp():
+        if self.since and self.until and self.since.timestamp() > self.until.timestamp():
             msg = "since cannot be greater than until"
             raise ValueError(msg)
 
-        return values
+        return self
 
-    @validator("since", "until", pre=True)
+    @field_validator("since", "until", mode="before")
+    @classmethod
     def _parse_isoformat(cls, value):
         if isinstance(value, str):
             # Pydantic doesn't allow values like "YYYY-MM-DD" as input, but .fromisoformat() does
             return datetime.fromisoformat(value)
         return value
 
-    @validator("since", "until")
+    @field_validator("since", "until", mode="after")
+    @classmethod
     def _always_include_tz(cls, value):
         if value.tzinfo is None:
             # tz-naive datetime should be converted to tz-aware

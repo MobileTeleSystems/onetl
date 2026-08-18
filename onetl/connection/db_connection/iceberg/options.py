@@ -1,17 +1,11 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from enum import Enum
-from typing import Any, Dict
+from typing import Any
+
+from pydantic import ConfigDict, Field
 
 from onetl._util.alias import avoid_alias
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
-
 from onetl.impl import GenericOptions
 
 PROHIBITED_OPTIONS = frozenset(
@@ -36,10 +30,7 @@ class IcebergTableExistBehavior(str, Enum):
 class IcebergWriteOptions(GenericOptions):
     """Iceberg source writing options."""
 
-    class Config:
-        extra = "allow"
-        known_options: frozenset = frozenset()
-        prohibited_options = PROHIBITED_OPTIONS
+    model_config = ConfigDict(extra="allow", prohibited_options=PROHIBITED_OPTIONS)  # type: ignore[typeddict-unknown-key]
 
     if_exists: IcebergTableExistBehavior = Field(  # type: ignore[literal-required]
         default=IcebergTableExistBehavior.APPEND,
@@ -48,97 +39,98 @@ class IcebergWriteOptions(GenericOptions):
     """Behavior of writing data into existing table.
 
     Possible values:
-        * `append` (default)
-            Appends data into existing table, or create table if it does not exist.
 
-            Same as Spark's `df.writeTo(table).using("iceberg").append()`.
+    * `append` (default)
+        Appends data into existing table, or create table if it does not exist.
 
-            ??? note "Behavior in details"
+        Same as Spark's `df.writeTo(table).using("iceberg").append()`.
 
-                * Table does not exist
-                    Table is created.
+        ??? note "Behavior in details"
 
-                * Table exists and not partitioned
-                    Data is appended to a table. Table DDL (including partition spec) is unchanged.
+            * Table does not exist
+                Table is created.
 
-                * Table exists and partitioned
-                    If a partition is present only in dataframe
-                        Partition is created.
-                    If a partition is present in both dataframe and table
-                        Data is appended to existing partition.
+            * Table exists and not partitioned
+                Data is appended to a table. Table DDL (including partition spec) is unchanged.
 
-                    !!! warning
+            * Table exists and partitioned
+                If a partition is present only in dataframe
+                    Partition is created.
+                If a partition is present in both dataframe and table
+                    Data is appended to existing partition.
 
-                        This mode does not check whether table already contains
-                        rows from dataframe, so duplicated rows can be created.
+                !!! warning
 
-                        To implement deduplication, write data to staging table first,
-                        and then perform some deduplication logic using [sql][].
+                    This mode does not check whether table already contains
+                    rows from dataframe, so duplicated rows can be created.
 
-                * Table exists and partitioned, but some partitions are present only in table, not dataframe
-                    Existing partitions are left intact.
+                    To implement deduplication, write data to staging table first,
+                    and then perform some deduplication logic using [sql][DBR-onetl-connection-db-connection-iceberg-sql-reading-from-iceberg-using-iceberg-sql] method.
 
-        * `replace_overlapping_partitions`
-            Overwrites data in the existing partitions, or create table if it does not exist.
+            * Table exists and partitioned, but some partitions are present only in table, not dataframe
+                Existing partitions are left intact.
 
-            Same as Spark's `df.writeTo(table).using("iceberg").overwritePartitions()`
+    * `replace_overlapping_partitions`
+        Overwrites data in the existing partitions, or create table if it does not exist.
 
-            !!! danger
+        Same as Spark's `df.writeTo(table).using("iceberg").overwritePartitions()`
 
-                This mode does make sense **ONLY** if the table is partitioned.
-                **IF NOT, YOU'LL LOSE YOUR DATA!**
+        !!! danger
 
-            ??? note "Behavior in details"
+            This mode does make sense **ONLY** if the table is partitioned.
+            **IF NOT, YOU'LL LOSE YOUR DATA!**
 
-                * Table does not exist
-                    Table is created.
+        ??? note "Behavior in details"
 
-                * Table exists and not partitioned
-                    Data is **overwritten in all the table**. Table DDL (including partition spec) is unchanged.
+            * Table does not exist
+                Table is created.
 
-                * Table exists and partitioned
-                    If a partition is present only in dataframe
-                        Partition is created.
-                    If a partition is present in both dataframe and table
-                        Existing partition **replaced** with data from dataframe.
-                    If a partition is present only in table, not dataframe
-                        Existing partition is left intact.
+            * Table exists and not partitioned
+                Data is **overwritten in all the table**. Table DDL (including partition spec) is unchanged.
 
-        * `replace_entire_table`
-            **Recreates table** (via `DROP + CREATE`), **deleting all existing data**.
-            **All existing partitions are dropped.**
+            * Table exists and partitioned
+                If a partition is present only in dataframe
+                    Partition is created.
+                If a partition is present in both dataframe and table
+                    Existing partition **replaced** with data from dataframe.
+                If a partition is present only in table, not dataframe
+                    Existing partition is left intact.
 
-            Same as Spark's `df.writeTo(table).createOrReplace()`
+    * `replace_entire_table`
+        **Recreates table** (via `DROP + CREATE`), **deleting all existing data**.
+        **All existing partitions are dropped.**
 
-            !!! warning
+        Same as Spark's `df.writeTo(table).createOrReplace()`
 
-                Table is recreated
-                **instead of using original table options**. Be careful
+        !!! warning
 
-        * `ignore`
-            Ignores the write operation if the table already exists.
+            Table is recreated
+            **instead of using original table options**. Be careful
 
-            ??? note "Behavior in details"
+    * `ignore`
+        Ignores the write operation if the table already exists.
 
-                * Table does not exist
-                    Table is created.
+        ??? note "Behavior in details"
 
-                * Table exists
-                    If the table exists, **no further action is taken**.
+            * Table does not exist
+                Table is created.
 
-        * `error`
-            Raises an error if the table already exists.
+            * Table exists
+                If the table exists, **no further action is taken**.
 
-            ??? note "Behavior in details"
+    * `error`
+        Raises an error if the table already exists.
 
-                * Table does not exist
-                    Table is created.
+        ??? note "Behavior in details"
 
-                * Table exists
-                    If the table exists, **raises an error**.
+            * Table does not exist
+                Table is created.
+
+            * Table exists
+                If the table exists, **raises an error**.
     """
 
-    table_properties: Dict[str, Any] = Field(default_factory=dict)
+    table_properties: dict[str, Any] = Field(default_factory=dict)
     """TBLPROPERTIES to add to freshly created table.
 
     Examples: `{"location": "/path"}`

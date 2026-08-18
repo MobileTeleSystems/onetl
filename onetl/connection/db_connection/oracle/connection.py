@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 import os
 import re
@@ -10,18 +8,12 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from decimal import Decimal
 from textwrap import indent
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from onetl._util.spark import get_client_info
-
-try:
-    from pydantic.v1 import root_validator
-except (ImportError, AttributeError):
-    from pydantic import root_validator  # type: ignore[no-redef, assignment]
-
-from etl_entities.instance import Host
+from pydantic import ConfigDict, model_validator
 
 from onetl._util.classproperty import classproperty
+from onetl._util.spark import get_client_info
 from onetl._util.version import Version
 from onetl.connection.db_connection.jdbc_connection import JDBCConnection
 from onetl.connection.db_connection.jdbc_connection.options import JDBCReadOptions
@@ -39,7 +31,7 @@ from onetl.connection.db_connection.oracle.options import (
 )
 from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
-from onetl.impl import GenericOptions
+from onetl.impl import GenericOptions, Host
 from onetl.log import BASE_LOG_INDENT, log_lines
 
 # do not import PySpark here, as we allow user to use `Oracle.get_packages()` for creating Spark session
@@ -60,7 +52,7 @@ CREATE_DDL_PATTERN = re.compile(
 )
 
 
-@dataclass
+@dataclass(slots=True)
 class ErrorPosition:
     line: int
     position: int
@@ -73,45 +65,56 @@ class ErrorPosition:
 
 
 class OracleExtra(GenericOptions):
-    class Config:
-        extra = "allow"
+    """
+    Extra options for Oracle connection.
+
+    You can pass here any property supported by Oracle JDBC driver,
+    even if it is not mentioned in this documentation.
+
+    See:
+
+    * [Oracke JDBC Driver documentation](https://docs.oracle.com/en/database/oracle/oracle-database/23/jajdb/oracle/jdbc/OracleDriver.html)
+    * [Oracle server documentation](https://docs.oracle.com/cd/A97335_02/apps.102/a83724/basic1.htm#1024018)
+    """
+
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class Oracle(JDBCConnection):
-    """Oracle JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """Oracle JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on Maven package [com.oracle.database.jdbc:ojdbc8:23.26.1.0.0](https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8/23.26.1.0.0)
     ([official Oracle JDBC driver](https://www.oracle.com/cis/database/technologies/appdev/jdbc-downloads.html)).
 
     !!! info "See also"
 
-        Before using this connector please take into account [oracle-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-oracle-prerequisites][]
 
     !!! success "Added in 0.1.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of Oracle database. For example: `test.oracle.domain.com` or `193.168.1.10`
 
-    port : int, default: `1521`
+    port
         Port of Oracle database
 
-    user : str
-        User, which have proper access to the database. For example: `SOME_USER`
+    user
+        User for database connection
 
-    password : str
+    password
         Password for database connection
 
-    sid : str, default: `None`
+    sid
         Sid of oracle database. For example: `XE`
 
         !!! warning
 
             You should provide either `sid` or `service_name`, not both of them
 
-    service_name : str, default: `None`
+    service_name
         Specifies one or more names by which clients can connect to the instance.
 
         For example: `PDB1`.
@@ -120,17 +123,12 @@ class Oracle(JDBCConnection):
 
             You should provide either `sid` or `service_name`, not both of them
 
-    spark : `pyspark.sql.SparkSession`
-        Spark session.
+    spark
+        Spark session
 
-    extra : dict, default: `None`
-        Specifies one or more extra parameters by which clients can connect to the instance.
-
-        For example: `{"remarksReporting": "false"}`
-
-        See official documentation:
-            * [Connection parameters](https://docs.oracle.com/en/database/oracle/oracle-database/23/jajdb/oracle/jdbc/OracleDriver.html)
-            * [Connection properties](https://docs.oracle.com/cd/A97335_02/apps.102/a83724/basic1.htm#1024018)
+    extra
+        Extra parameters passed directly to JDBC driver.
+        For example: `{"remarksReporting": "false"}`.
 
     Examples
     --------
@@ -177,18 +175,18 @@ class Oracle(JDBCConnection):
 
     host: Host
     port: int = 1521
-    sid: Optional[str] = None
-    service_name: Optional[str] = None
+    sid: str | None = None
+    service_name: str | None = None
     extra: OracleExtra = OracleExtra()
 
-    ReadOptions = OracleReadOptions
-    WriteOptions = OracleWriteOptions
-    SQLOptions = OracleSQLOptions
-    FetchOptions = OracleFetchOptions
-    ExecuteOptions = OracleExecuteOptions
+    ReadOptions: ClassVar = OracleReadOptions
+    WriteOptions: ClassVar = OracleWriteOptions
+    SQLOptions: ClassVar = OracleSQLOptions
+    FetchOptions: ClassVar = OracleFetchOptions  # type: ignore[misc]
+    ExecuteOptions: ClassVar = OracleExecuteOptions  # type: ignore[misc]
 
-    Extra = OracleExtra
-    Dialect = OracleDialect
+    Extra: ClassVar = OracleExtra
+    Dialect: ClassVar = OracleDialect
 
     DRIVER: ClassVar[str] = "oracle.jdbc.driver.OracleDriver"
     _CHECK_QUERY: ClassVar[str] = "SELECT 1 FROM dual"
@@ -201,15 +199,15 @@ class Oracle(JDBCConnection):
         package_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         Allows specifying custom JDBC driver versions for Oracle.
 
         Parameters
         ----------
-        java_version : str, optional
+        java_version
             Java major version, defaults to "8". Must be "8" or "11".
-        package_version : str, optional
+        package_version
             Specifies the version of the Oracle JDBC driver to use. Defaults to "23.26.1.0.0".
 
         Examples
@@ -255,7 +253,7 @@ class Oracle(JDBCConnection):
     @property
     def jdbc_params(self) -> dict:
         result = super().jdbc_params
-        result.update(self.extra.dict(by_alias=True))
+        result.update(self.extra.model_dump(by_alias=True))
         # https://stackoverflow.com/questions/35072134/why-am-i-getting-format-error-property-is-vsession-program-connecting-to-o/35072449#35072449
         result["v$session.program"] = result.get("v$session.program", get_client_info(self.spark, limit=48))
         return result
@@ -297,27 +295,24 @@ class Oracle(JDBCConnection):
             max_value = int(max_value)
         return min_value, max_value
 
-    @root_validator
-    def _only_one_of_sid_or_service_name(cls, values):
-        sid = values.get("sid")
-        service_name = values.get("service_name")
-
-        if sid and service_name:
-            msg = "Only one of parameters ``sid``, ``service_name`` can be set, got both"
+    @model_validator(mode="after")
+    def _only_one_of_sid_or_service_name(self):
+        if self.sid and self.service_name:
+            msg = "Only one of parameters `sid`, `service_name` can be set, got both"
             raise ValueError(msg)
 
-        if not sid and not service_name:
-            msg = "One of parameters ``sid``, ``service_name`` should be set, got none"
+        if not self.sid and not self.service_name:
+            msg = "One of parameters `sid`, `service_name` should be set, got none"
             raise ValueError(msg)
 
-        return values
+        return self
 
-    def _call_on_driver(
+    def _call_with_count_on_driver(
         self,
         query: str,
         options: JDBCExecuteOptions,
-    ) -> DataFrame | None:
-        result = super()._call_on_driver(query, options)
+    ) -> "tuple[DataFrame | None, int]":
+        result = super()._call_with_count_on_driver(query, options)
         self._handle_compile_errors(query.strip(), options)
         return result
 

@@ -10,13 +10,25 @@ pytestmark = [pytest.mark.s3, pytest.mark.file_df_connection, pytest.mark.connec
 @pytest.mark.parametrize(
     ("spark_version", "scala_version", "package"),
     [
+        # Detect using pyspark version
+        (None, None, "org.apache.spark:spark-hadoop-cloud_{scala_ver}:{pyspark_ver}"),
+        # Override Spark version
         ("3.5.8", None, "org.apache.spark:spark-hadoop-cloud_2.12:3.5.8"),
-        ("3.5.8", "2.12", "org.apache.spark:spark-hadoop-cloud_2.12:3.5.8"),
+        # Override Scala version
+        (None, "2.13", "org.apache.spark:spark-hadoop-cloud_2.13:{pyspark_ver}"),
         ("3.5.8", "2.13", "org.apache.spark:spark-hadoop-cloud_2.13:3.5.8"),
+        # Scala version contain three digits when only two needed
+        ("3.5.8", "2.13.1", "org.apache.spark:spark-hadoop-cloud_2.13:3.5.8"),
     ],
 )
 def test_spark_s3_get_packages(spark_version, scala_version, package):
-    assert SparkS3.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
+    import pyspark
+
+    pyspark_ver = pyspark.__version__
+    scala_ver = "2.12" if pyspark_ver.startswith("3") else "2.13"
+
+    expected = package.format(pyspark_ver=pyspark_ver, scala_ver=scala_ver)
+    assert SparkS3.get_packages(spark_version=spark_version, scala_version=scala_version) == [expected]
 
 
 def test_spark_s3_missing_package(spark_no_packages):
@@ -175,7 +187,7 @@ def test_spark_s3_without_path_style_access(spark_mock_hadoop_3):
 )
 @pytest.mark.parametrize("prefix", ["", "spark.hadoop.", "fs.s3a.", "fs.s3a.bucket.mybucket."])
 def test_spark_s3_extra_allowed_options(name, value, prefix):
-    extra = SparkS3.Extra.parse({prefix + name: value}).dict()
+    extra = SparkS3.Extra.parse({prefix + name: value}).model_dump()
     assert extra[name] == value
 
 

@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from abc import abstractmethod
 
 from onetl.connection.db_connection.db_connection import DBDialect

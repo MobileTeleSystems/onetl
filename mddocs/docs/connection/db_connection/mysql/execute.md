@@ -93,10 +93,8 @@ mysql.execute(
     options:
         inherited_members: true
         members: true
-        show_root_heading: true
 
 ::: onetl.connection.db_connection.mysql.options.MySQLExecuteOptions
     options:
         inherited_members: true
         members: true
-        show_root_heading: true

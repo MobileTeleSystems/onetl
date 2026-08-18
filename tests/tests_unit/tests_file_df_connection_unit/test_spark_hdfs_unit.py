@@ -4,7 +4,6 @@ import re
 
 import pytest
 
-from onetl.base import BaseFileDFConnection
 from onetl.connection import SparkHDFS
 from onetl.hooks import hook
 
@@ -13,29 +12,26 @@ pytestmark = [pytest.mark.hdfs, pytest.mark.file_df_connection, pytest.mark.conn
 
 def test_spark_hdfs_with_cluster(spark_mock):
     conn = SparkHDFS(cluster="rnd-dwh", spark=spark_mock)
-    assert isinstance(conn, BaseFileDFConnection)
     assert conn.cluster == "rnd-dwh"
     assert conn.host is None
     assert conn.ipc_port == 8020
-    assert conn.instance_url == "rnd-dwh"
+    assert conn.instance_url == "hdfs://rnd-dwh"
     assert str(conn) == "HDFS[rnd-dwh]"
 
 
 def test_spark_hdfs_with_cluster_and_host(spark_mock):
     conn = SparkHDFS(cluster="rnd-dwh", host="some-host.domain.com", spark=spark_mock)
-    assert isinstance(conn, BaseFileDFConnection)
     assert conn.cluster == "rnd-dwh"
     assert conn.host == "some-host.domain.com"
-    assert conn.instance_url == "rnd-dwh"
+    assert conn.instance_url == "hdfs://rnd-dwh"
     assert str(conn) == "HDFS[rnd-dwh]"
 
 
 def test_spark_hdfs_with_port(spark_mock):
     conn1 = SparkHDFS(cluster="rnd-dwh", ipc_port=9020, spark=spark_mock)
-    assert isinstance(conn1, BaseFileDFConnection)
     assert conn1.cluster == "rnd-dwh"
     assert conn1.ipc_port == 9020
-    assert conn1.instance_url == "rnd-dwh"
+    assert conn1.instance_url == "hdfs://rnd-dwh"
     assert str(conn1) == "HDFS[rnd-dwh]"
 
     conn2 = SparkHDFS(cluster="rnd-dwh", port=9020, spark=spark_mock)
@@ -43,12 +39,23 @@ def test_spark_hdfs_with_port(spark_mock):
     assert conn1 == conn2
 
 
-def test_spark_hdfs_without_cluster(spark_mock):
-    with pytest.raises(ValueError):
+def test_spark_hdfs_without_cluster_and_host(spark_mock):
+    with pytest.raises(ValueError, match="You should pass either host or cluster name"):
         SparkHDFS(spark=spark_mock)
 
-    with pytest.raises(ValueError):
-        SparkHDFS(host="some", spark=spark_mock)
+
+def test_spark_hdfs_without_cluster(spark_mock):
+    conn1 = SparkHDFS(host="some", spark=spark_mock)
+    assert conn1.host == "some"
+    assert conn1.cluster is None
+    assert conn1.ipc_port == 8020
+    assert conn1.instance_url == "hdfs://some"
+
+    conn2 = SparkHDFS(host="some", port=9020, spark=spark_mock)
+    assert conn2.host == "some"
+    assert conn2.cluster is None
+    assert conn2.ipc_port == 9020
+    assert conn2.instance_url == "hdfs://some"
 
 
 def test_spark_hdfs_spark_stopped(spark_stopped):
@@ -108,7 +115,7 @@ def test_spark_hdfs_get_cluster_namenodes_hook(request, spark_mock):
 def test_spark_hdfs_normalize_namenode_host_hook(request, spark_mock):
     @SparkHDFS.Slots.normalize_namenode_host.bind
     @hook
-    def normalize_namenode_host(host: str, cluster: str) -> str:
+    def normalize_namenode_host(host: str, cluster: str | None) -> str:
         host = host.lower()
         if cluster == "rnd-dwh" and not host.endswith(".domain.com"):
             host += ".domain.com"
@@ -117,7 +124,7 @@ def test_spark_hdfs_normalize_namenode_host_hook(request, spark_mock):
     request.addfinalizer(normalize_namenode_host.disable)
 
     assert SparkHDFS(host="some-node", cluster="rnd-dwh", spark=spark_mock).host == "some-node.domain.com"
-    assert SparkHDFS(host="some-node", cluster="rnd-prod", spark=spark_mock).host == "some-node"
+    assert SparkHDFS(host="some-node", spark=spark_mock).host == "some-node"
 
 
 def test_spark_hdfs_get_ipc_port_hook(request, spark_mock):

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 from onetl.base import BaseFileFilter
 from onetl.base.path_protocol import PathProtocol
@@ -18,10 +18,10 @@ def match_all_filters(path: PathProtocol, filters: Iterable[BaseFileFilter]) -> 
 
     Parameters
     ----------
-    path : [onetl.base.path_protocol.PathProtocol][]
+    path
         Path to check.
 
-    filters : Iterable of [onetl.base.base_file_filter.BaseFileFilter][]
+    filters
         Filters to test path against.
 
     Returns

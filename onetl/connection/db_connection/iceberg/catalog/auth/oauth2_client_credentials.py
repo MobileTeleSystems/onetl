@@ -1,18 +1,13 @@
 # SPDX-FileCopyrightText: 2025-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from datetime import timedelta
-from typing import List, Optional
+from typing import Annotated
 
-try:
-    from pydantic.v1 import AnyUrl, Field, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import AnyUrl, Field, SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import Field, HttpUrl, SecretStr, UrlConstraints
 
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.iceberg.catalog.auth import IcebergRESTCatalogAuth
-from onetl.impl.frozen_model import FrozenModel
+from onetl.impl import FrozenModel
 
 
 class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenModel):
@@ -27,33 +22,34 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
 
     Parameters
     ----------
-    client_secret : str
+    client_secret
         OAuth2 client secret.
 
-    client_id : str, optional
+    client_id
         OAuth2 client ID. In most OAuth2 server implementations it is [mandatory](https://www.oauth.com/oauth2-servers/client-registration/client-id-secret/).
 
-    token_refresh_interval : timedelta, optional
+    token_refresh_interval
         Interval for [automatic token refresh](https://www.oauth.com/oauth2-servers/access-tokens/refreshing-access-tokens/).
         Default: 1 hour. Set to `None` to disable automatic refresh.
 
-    oauth2_token_endpoint : str, optional
+    oauth2_token_endpoint
         OAuth2 endpoint for fetching tokens. If not provided, uses the REST catalog's
         `v1/oauth/tokens` endpoint.
 
-    scopes : List[str], default: []
+    scopes
         [OAuth2 scopes](https://www.oauth.com/oauth2-servers/scope/) to request.
 
-    audience : str, optional
+    audience
         OAuth2 `audience` param.
 
-    resource : str, optional
+    resource
         OAuth2 `resource` param.
 
     Examples
     --------
 
     === "OAuth2"
+
         ```python
         from onetl.connection import Iceberg
 
@@ -62,7 +58,9 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
             client_secret="my_client_secret",
         )
         ```
+
     === "OAuth2 with optional fields"
+
         ```python
         from datetime import timedelta
         from onetl.connection import Iceberg
@@ -87,20 +85,26 @@ class IcebergRESTCatalogOAuth2ClientCredentials(IcebergRESTCatalogAuth, FrozenMo
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Util.java#L366
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Util.java#L389-L404
     client_secret: SecretStr
-    client_id: Optional[str] = None
+    client_id: str | None = None
 
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Properties.java#L33-L39C58
-    token_refresh_interval: Optional[timedelta] = timedelta(hours=1)
+    token_refresh_interval: timedelta | None = timedelta(hours=1)
 
     # by default uses v1/oauth/tokens endpoint of RESTCatalog server
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Properties.java#L30-L31C30
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/auth/OAuth2Manager.java#L275-L293
     # https://github.com/apache/iceberg/blob/720ef99720a1c59e4670db983c951243dffc4f3e/core/src/main/java/org/apache/iceberg/rest/ResourcePaths.java#L57-L59
-    oauth2_token_endpoint: Optional[AnyUrl] = None
+    oauth2_token_endpoint: (
+        Annotated[
+            HttpUrl,
+            UrlConstraints(host_required=True, preserve_empty_path=True),
+        ]
+        | None
+    ) = None
 
-    scopes: List[str] = Field(default_factory=list)
-    audience: Optional[str] = None
-    resource: Optional[str] = None
+    scopes: list[str] = Field(default_factory=list)
+    audience: str | None = None
+    resource: str | None = None
 
     def get_config(self) -> dict[str, str]:
         config = {

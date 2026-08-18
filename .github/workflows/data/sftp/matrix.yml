@@ -1,13 +1,13 @@
 min: &min
   # prior image versions does not accept incoming connections, seems like a bug
   openssh-version: 8.1_p1-r0-ls5
-  pydantic-version: 1
-  python-version: '3.7'
-  os: ubuntu-22.04
+  etl-entities-version: 2
+  python-version: '3.10'
+  os: ubuntu-latest
 
 max: &max
   openssh-version: 9.9_p2-r0-ls193
-  pydantic-version: 2
+  etl-entities-version: 3
   python-version: '3.14'
   os: ubuntu-latest
 

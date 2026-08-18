@@ -1,0 +1,33 @@
+{
+  "realm": "onetl-kafka",
+  "enabled": true,
+  "sslRequired": "none",
+  "accessTokenLifespan": 600,
+  "clientScopes": [
+    {
+      "name": "kafka",
+      "protocol": "openid-connect",
+      "attributes": {
+        "display.on.consent.screen": "false",
+        "include.in.token.scope": "true"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "onetl-kafka",
+      "name": "onETL Kafka integration tests",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "123UsedForTestOnly@!",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "optionalClientScopes": [
+        "kafka"
+      ]
+    }
+  ]
+}

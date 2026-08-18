@@ -1,14 +1,9 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import warnings
 from enum import Enum
 
-try:
-    from pydantic.v1 import Field, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, root_validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, model_validator
 
 from onetl._util.alias import avoid_alias
 from onetl.impl import GenericOptions
@@ -96,7 +91,7 @@ class MongoDBCollectionExistBehavior(str, Enum):
 class MongoDBPipelineOptions(GenericOptions):
     """Aggregation pipeline options for MongoDB connector.
 
-    The only difference from [MongoDB.ReadOptions][MongoDBReadOptions]
+    The only difference from [MongoDB.ReadOptions][onetl.connection.db_connection.mongodb.options.MongoDBReadOptions]
     that latter does not allow to pass the `hint` parameter.
 
     !!! warning
@@ -126,10 +121,11 @@ class MongoDBPipelineOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        prohibited_options = PIPELINE_PROHIBITED_OPTIONS
-        known_options = KNOWN_READ_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        prohibited_options=PIPELINE_PROHIBITED_OPTIONS,
+        known_options=KNOWN_READ_OPTIONS,
+        extra="allow",  # type: ignore[typeddict-unknown-key]
+    )
 
 
 class MongoDBReadOptions(GenericOptions):
@@ -162,10 +158,7 @@ class MongoDBReadOptions(GenericOptions):
     ```
     """
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        known_options = KNOWN_READ_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, known_options=KNOWN_READ_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
 
 class MongoDBWriteOptions(GenericOptions):
@@ -207,73 +200,71 @@ class MongoDBWriteOptions(GenericOptions):
     """Behavior of writing data into existing collection.
 
     Possible values:
-        * `append` (default)
-            Adds new objects into existing collection.
 
-            ??? note "Behavior in details"
+    * `append` (default)
+        Adds new objects into existing collection.
 
-                * Collection does not exist
-                    Collection is created using options provided by user
-                    (`shardkey` and others).
+        ??? note "Behavior in details"
 
-                * Collection exists
-                    Data is appended to a collection.
+            * Collection does not exist
+                Collection is created using options provided by user
+                (`shardkey` and others).
 
-                    !!! warning
+            * Collection exists
+                Data is appended to a collection.
 
-                        This mode does not check whether collection already contains
-                        objects from dataframe, so duplicated objects can be created.
+                !!! warning
 
-        * `replace_entire_collection`
-            **Collection is deleted and then created**.
+                    This mode does not check whether collection already contains
+                    objects from dataframe, so duplicated objects can be created.
 
-            ??? note "Behavior in details"
+    * `replace_entire_collection`
+        **Collection is deleted and then created**.
 
-                * Collection does not exist
-                    Collection is created using options provided by user
-                    (`shardkey` and others).
+        ??? note "Behavior in details"
 
-                * Collection exists
-                    Collection content is replaced with dataframe content.
+            * Collection does not exist
+                Collection is created using options provided by user
+                (`shardkey` and others).
 
-        * `ignore`
-            Ignores the write operation if the collection already exists.
+            * Collection exists
+                Collection content is replaced with dataframe content.
 
-            ??? note "Behavior in details"
+    * `ignore`
+        Ignores the write operation if the collection already exists.
 
-                * Collection does not exist
-                    Collection is created using options provided by user
+        ??? note "Behavior in details"
 
-                * Collection exists
-                    The write operation is ignored, and no data is written to the collection.
+            * Collection does not exist
+                Collection is created using options provided by user
 
-        * `error`
-            Raises an error if the collection already exists.
+            * Collection exists
+                The write operation is ignored, and no data is written to the collection.
 
-            ??? note "Behavior in details"
+    * `error`
+        Raises an error if the collection already exists.
 
-                * Collection does not exist
-                    Collection is created using options provided by user
+        ??? note "Behavior in details"
 
-                * Collection exists
-                    An error is raised, and no data is written to the collection.
+            * Collection does not exist
+                Collection is created using options provided by user
+
+            * Collection exists
+                An error is raised, and no data is written to the collection.
 
     !!! info "Changed in 0.9.0"
         Renamed `mode` → `if_exists`
     """
+    model_config = ConfigDict(prohibited_options=PROHIBITED_OPTIONS, known_options=KNOWN_WRITE_OPTIONS, extra="allow")  # type: ignore[typeddict-unknown-key]
 
-    class Config:
-        prohibited_options = PROHIBITED_OPTIONS
-        known_options = KNOWN_WRITE_OPTIONS
-        extra = "allow"
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _mode_is_deprecated(cls, values):
         if "mode" in values:
             warnings.warn(
                 "Option `MongoDB.WriteOptions(mode=...)` is deprecated since v0.9.0 and will be removed in v1.0.0. "
                 "Use `MongoDB.WriteOptions(if_exists=...)` instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
         return values

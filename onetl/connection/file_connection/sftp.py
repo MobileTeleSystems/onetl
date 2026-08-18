@@ -1,28 +1,19 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import contextlib
 import os
 import textwrap
 import warnings
 from logging import getLogger
 from stat import S_ISDIR, S_ISREG
-from typing import Optional
+from typing import ClassVar
 
-from etl_entities.instance import Host
-
-from onetl.impl.generic_options import GenericOptions
-
-try:
-    from pydantic.v1 import Field, FilePath, SecretStr, root_validator
-except (ImportError, AttributeError):
-    from pydantic import Field, FilePath, SecretStr, root_validator  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, FilePath, SecretStr, model_validator
 
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
 from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath
+from onetl.impl import GenericOptions, Host, LocalPath, RemotePath
 
 try:
     from paramiko import ProxyCommand, SSHClient, SSHConfig, WarningPolicy
@@ -55,19 +46,21 @@ class SFTPExtra(GenericOptions):
 
     You can pass here any parameters supported by [paramiko.SSHClient](https://docs.paramiko.org/en/stable/api/client.html#paramiko.client.SSHClient).
 
+    !!! success "Added in 0.16.0"
+
     Parameters
     ---------
-    host_key_check : bool, default: `False`
+    host_key_check
         Set to `True` to validate the SSH server's host key.
-    timeout : float, default: `None`
+    timeout
         Optional timeout (in seconds) for the TCP connect.
-    banner_timeout : float, default: `None`
+    banner_timeout
         Optional timeout (in seconds) for the SSH banner.
-    auth_timeout : float, default: `None`
+    auth_timeout
         Optional timeout (in seconds) for the SSH authentication.
-    channel_timeout : float, default: `None`
+    channel_timeout
         Optional timeout (in seconds) for the SSH channel.
-    compress : bool, default: `False`
+    compress
         Set to `True` to enable compression.
 
         !!! warning
@@ -76,19 +69,17 @@ class SFTPExtra(GenericOptions):
     """
 
     host_key_check: bool = False
-    timeout: Optional[float] = None
-    banner_timeout: Optional[float] = None
-    auth_timeout: Optional[float] = None
-    channel_timeout: Optional[float] = None
+    timeout: float | None = None
+    banner_timeout: float | None = None
+    auth_timeout: float | None = None
+    channel_timeout: float | None = None
     compress: bool = False
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class SFTP(FileConnection, RenameDirMixin):
-    """SFTP file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """SFTP file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Paramiko library](https://pypi.org/project/paramiko/).
 
@@ -102,28 +93,28 @@ class SFTP(FileConnection, RenameDirMixin):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     !!! success "Added in 0.1.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of SFTP source. For example: `192.168.1.19`
 
-    port : int, default: `22`
+    port
         Port of SFTP source
 
-    user : str
+    user
         User, which have access to the file source. For example: `someuser`
 
-    password : str, optional.
+    password
         Password for SFTP connection, optional.
 
-    key_file : str, optional.
+    key_file
         Path to private key file, optional.
 
-    extra : SFTPExtra, default: `SFTPExtra()`
+    extra
         Extra options for SFTP connection
 
     Examples
@@ -169,16 +160,17 @@ class SFTP(FileConnection, RenameDirMixin):
 
     host: Host
     port: int = 22
-    user: Optional[str] = None
-    password: Optional[SecretStr] = None
-    key_file: Optional[FilePath] = None
+    user: str | None = None
+    password: SecretStr | None = None
+    key_file: FilePath | None = None
     extra: SFTPExtra = Field(default_factory=SFTPExtra)
 
-    Extra = SFTPExtra
+    Extra: ClassVar = SFTPExtra
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def _extra_fallback(cls, values):
-        extra_dict = cls.Extra.parse(values.get("extra")).dict(exclude_unset=True, by_alias=True)
+        extra_dict = cls.Extra.parse(values.get("extra")).model_dump(exclude_unset=True, by_alias=True)
         for key in ["timeout", "host_key_check", "compress"]:
             if key not in values:
                 continue
@@ -188,7 +180,7 @@ class SFTP(FileConnection, RenameDirMixin):
                 f"Option `{key}` is deprecated since v0.16.0 and will be removed in v1.0.0. "
                 f"Use extra={cls.__name__}.Extra({key}={value!r}) instead",
                 category=UserWarning,
-                stacklevel=5,
+                stacklevel=3,
             )
             extra_dict[key] = value
         values["extra"] = cls.Extra.parse(extra_dict)
@@ -219,7 +211,7 @@ class SFTP(FileConnection, RenameDirMixin):
             # Default is RejectPolicy
             client.set_missing_host_key_policy(WarningPolicy())  # noqa: S507
 
-        extra = self.extra.dict(by_alias=True, exclude={"host_key_check"})
+        extra = self.extra.model_dump(by_alias=True, exclude={"host_key_check"})
         client.connect(
             hostname=self.host,
             port=self.port,

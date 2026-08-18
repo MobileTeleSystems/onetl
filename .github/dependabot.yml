@@ -21,7 +21,23 @@ updates:
       - type:dependency
     versioning-strategy: increase-if-necessary
     ignore:
-      - dependency-name: autodoc-pydantic
+      - dependency-name: etl-entities
+        update-types: [version-update:semver-major]
+      - dependency-name: pydantic
+        update-types: [version-update:semver-major]
+      - dependency-name: pyspark
+        update-types: [version-update:semver-major]
+      - dependency-name: pandas
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      - dependency-name: numpy
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      - dependency-name: pymongo
+        update-types: [version-update:semver-major]
+      - dependency-name: setuptools
+        update-types: [version-update:semver-major]
+      - dependency-name: pytest
+        update-types: [version-update:semver-major]
+      - dependency-name: pytest-rerunfailures
         update-types: [version-update:semver-major]
     # https://til.simonwillison.net/github/dependabot-python-setup
     groups:

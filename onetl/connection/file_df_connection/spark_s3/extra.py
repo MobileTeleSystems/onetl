@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 import re
 
+from pydantic import ConfigDict
+
 from onetl.impl import GenericOptions
 
 PROHIBITED_OPTIONS = frozenset(
@@ -29,7 +31,8 @@ class SparkS3Extra(GenericOptions):
     See SparkS3 documentation.
     """
 
-    class Config:
-        strip_prefixes = ("spark.hadoop.", "fs.s3a.", re.compile(r"bucket\.[^.]+\."))
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        strip_prefixes=("spark.hadoop.", "fs.s3a.", re.compile(r"bucket\.[^.]+\.")),  # type: ignore[typeddict-unknown-key]
+        prohibited_options=PROHIBITED_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )

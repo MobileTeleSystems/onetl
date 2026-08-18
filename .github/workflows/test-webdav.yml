@@ -5,7 +5,7 @@ on:
       webdav-version:
         required: true
         type: string
-      pydantic-version:
+      etl-entities-version:
         required: true
         type: string
       python-version:
@@ -21,12 +21,12 @@ on:
 
 jobs:
   test-webdav:
-    name: Run WebDAV tests (server=${{ inputs.webdav-version }}, pydantic=${{ inputs.pydantic-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
+    name: Run WebDAV tests (server=${{ inputs.webdav-version }}, etl-entities=${{ inputs.etl-entities-version }}, python=${{ inputs.python-version }}, os=${{ inputs.os }})
     runs-on: ${{ inputs.os }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Start WebDAV
         run: |
@@ -36,7 +36,7 @@ jobs:
           WEBDAV_IMAGE: chonjay21/webdav:${{ inputs.webdav-version }}
 
       - name: Set up Python ${{ inputs.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ inputs.python-version }}
 
@@ -66,7 +66,7 @@ jobs:
           export "PYTEST=coverage run -m pytest --junitxml=reports/junit/webdav-${RANDOM}.xml"
           make test-no-spark UV_ARGS="--extra webdav" PYTEST_ARGS="-m webdav"
         env:
-          PYDANTIC_VERSION: ${{ inputs.pydantic-version }}
+          ETL_ENTITIES_VERSION: ${{ inputs.etl-entities-version }}
 
       - name: Dump WebDAV logs on failure
         if: failure()

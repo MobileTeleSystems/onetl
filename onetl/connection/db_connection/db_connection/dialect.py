@@ -1,22 +1,21 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
+
+from etl_entities.hwm import HWM
 
 from onetl.base import BaseDBDialect
 from onetl.hwm import Edge, Window
 from onetl.hwm.store import SparkTypeToHWM
 
 if TYPE_CHECKING:
-    from etl_entities.hwm import HWM
     from pyspark.sql.types import StructField
 
 
 class DBDialect(BaseDBDialect):
-    def detect_hwm_class(self, field: StructField) -> type[HWM] | None:
+    def detect_hwm_class(self, field: "StructField") -> type[HWM] | None:
         return SparkTypeToHWM.get(field.dataType)
 
     def get_sql_query(  # noqa: PLR0913

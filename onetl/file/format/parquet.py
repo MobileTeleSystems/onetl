@@ -1,10 +1,8 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
+from typing import TYPE_CHECKING, ClassVar, Literal
 
-from typing import TYPE_CHECKING, ClassVar, Optional, Union
-
-from typing_extensions import Literal
+from pydantic import ConfigDict
 
 from onetl.file.format.file_format import ReadWriteFileFormat
 from onetl.hooks import slot, support_hooks
@@ -27,7 +25,7 @@ PARQUET_LIBRARY_OPTIONS = frozenset(
 @support_hooks
 class Parquet(ReadWriteFileFormat):
     """
-    Parquet file format (columnar). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    Parquet file format (columnar). [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark Parquet Files](https://spark.apache.org/docs/latest/sql-data-sources-parquet.html) file format.
 
@@ -53,12 +51,15 @@ class Parquet(ReadWriteFileFormat):
         you should call method `Parquet.parse({"parquet.option": True})`.
 
     === "Reading files"
+
         ```python
         from onetl.file.format import Parquet
 
         parquet = Parquet(mergeSchema=True)
         ```
+
     === "Writing files"
+
         ```python
         from onetl.file.format import Parquet
 
@@ -78,7 +79,7 @@ class Parquet(ReadWriteFileFormat):
 
     name: ClassVar[str] = "parquet"
 
-    mergeSchema: Optional[bool] = None
+    mergeSchema: bool | None = None
     """
     Merge schemas of all Parquet files being read into a single schema.
     By default, Spark config option `spark.sql.parquet.mergeSchema` value is used (`false`).
@@ -88,11 +89,7 @@ class Parquet(ReadWriteFileFormat):
         Used only for reading files.
     """
 
-    compression: Union[
-        str,
-        Literal["uncompressed", "snappy", "gzip", "lzo", "brotli", "lz4", "lz4raw", "zstd"],
-        None,
-    ] = None
+    compression: str | Literal["uncompressed", "snappy", "gzip", "lzo", "brotli", "lz4", "lz4raw", "zstd"] | None = None
     """
     Compression codec of the Parquet files.
     By default, Spark config option `spark.sql.parquet.compression.codec` value is used (`snappy`).
@@ -101,19 +98,19 @@ class Parquet(ReadWriteFileFormat):
 
         Used only for writing files.
     """
-
-    class Config:
-        known_options = PARQUET_LIBRARY_OPTIONS
-        prohibited_options = PROHIBITED_OPTIONS
-        extra = "allow"
+    model_config = ConfigDict(
+        known_options=PARQUET_LIBRARY_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        prohibited_options=PROHIBITED_OPTIONS,  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )
 
     @slot
-    def check_if_supported(self, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: "SparkSession") -> None:
         # always available
         pass
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True)
+        options_dict = self.model_dump(by_alias=True, exclude_none=True)
         options_dict = dict(sorted(options_dict.items()))
         if any("." in field for field in options_dict):
             return f"{self.__class__.__name__}.parse({options_dict})"

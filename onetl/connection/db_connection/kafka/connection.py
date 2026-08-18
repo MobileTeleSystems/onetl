@@ -1,23 +1,18 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import json
 import logging
 from contextlib import closing
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from etl_entities.instance import Cluster
-
-try:
-    from pydantic.v1 import root_validator, validator
-except (ImportError, AttributeError):
-    from pydantic import root_validator, validator  # type: ignore[no-redef, assignment]
+from pydantic import Field, ValidationInfo, field_validator
+from typing_extensions import Self
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
 from onetl._util.spark import (
     get_client_info,
+    get_pyspark_version,
     get_spark_version,
     override_job_description,
     stringify,
@@ -29,6 +24,9 @@ from onetl.connection.db_connection.kafka.extra import KafkaExtra
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.connection.db_connection.kafka.kafka_basic_auth import KafkaBasicAuth
 from onetl.connection.db_connection.kafka.kafka_kerberos_auth import KafkaKerberosAuth
+from onetl.connection.db_connection.kafka.kafka_oauth2_client_credentials import (
+    KafkaOAuth2ClientCredentials,
+)
 from onetl.connection.db_connection.kafka.kafka_plaintext_protocol import (
     KafkaPlaintextProtocol,
 )
@@ -44,10 +42,11 @@ from onetl.connection.db_connection.kafka.slots import KafkaSlots
 from onetl.exception import MISSING_JVM_CLASS_MSG, TargetAlreadyExistsError
 from onetl.hooks import slot, support_hooks
 from onetl.hwm.window import Window
+from onetl.impl import Cluster
 from onetl.log import log_collection, log_with_indent
 
 if TYPE_CHECKING:
-    from pyspark.sql import DataFrame
+    from pyspark.sql import DataFrame, SparkSession
     from pyspark.sql.types import StructType
 
 log = logging.getLogger(__name__)
@@ -62,7 +61,7 @@ class Kafka(DBConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [kafka-prerequisites][]
+        Before using this connector please take into account [DBR-onetl-connection-db-connection-kafka-prerequisites][]
 
     !!! note
 
@@ -73,19 +72,30 @@ class Kafka(DBConnection):
     Parameters
     ----------
 
-    addresses : list[str]
+    addresses
         A list of broker addresses, for example `["192.168.1.10:9092", "192.168.1.11:9092"]`.
 
-    cluster : str
-        Cluster name. Used for HWM and lineage.
+        !!! warning
 
-    auth : KafkaAuth, default: `None`
+            You should pass at least one of these arguments: `cluster`, `addresses`.
+
+    cluster
+        Cluster name.
+
+        This can be used to get broker addresses dynamically, if `addresses` is not set.
+        Requires [Slots.get_cluster_addresses][onetl.connection.db_connection.kafka.slots.KafkaSlots.get_cluster_addresses] hook to be bound.
+
+        !!! warning
+
+            You should pass at least one of these arguments: `cluster`, `addresses`.
+
+    auth
         Kafka authentication mechanism. `None` means anonymous auth.
 
-    protocol : KafkaProtocol, default: [PlaintextProtocol][onetl.connection.db_connection.kafka.kafka_plaintext_protocol.KafkaPlaintextProtocol]
+    protocol
         Kafka security protocol.
 
-    extra : dict, default: `None`
+    extra
         A dictionary of additional properties to be used when connecting to Kafka.
 
         These are Kafka-specific properties that control behavior of the producer or consumer. See:
@@ -106,6 +116,7 @@ class Kafka(DBConnection):
             },
         )
         ```
+
         !!! warning
 
             Options that populated from connection
@@ -115,12 +126,13 @@ class Kafka(DBConnection):
     --------
 
     === "Create Kafka connection with `PLAINTEXT` protocol and `SCRAM-SHA-256` auth"
+
         ```python
         from onetl.connection import Kafka
         from pyspark.sql import SparkSession
 
         # Create Spark session with Kafka connector loaded
-        maven_packages = Kafka.get_packages(spark_version="3.5.8")
+        maven_packages = Kafka.get_packages()
         exclude_packages = Kafka.get_exclude_packages()
         spark = (
             SparkSession.builder.appName("spark-app-name")
@@ -132,7 +144,6 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
             auth=Kafka.ScramAuth(
                 user="me",
                 password="abc",
@@ -141,7 +152,9 @@ class Kafka(DBConnection):
             spark=spark,
         ).check()
         ```
+
     === "Create Kafka connection with `PLAINTEXT` protocol and Kerberos (`GSSAPI`) auth"
+
         ```python
         # Create Spark session with Kafka connector loaded
         ...
@@ -149,7 +162,6 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
             auth=Kafka.KerberosAuth(
                 principal="me@example.com",
                 keytab="/path/to/keytab",
@@ -158,7 +170,9 @@ class Kafka(DBConnection):
             spark=spark,
         ).check()
         ```
+
     === "Create Kafka connection with `SASL_SSL` protocol and `SCRAM-SHA-512` auth"
+
         ```python
         from pathlib import Path
 
@@ -168,7 +182,6 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
             protocol=Kafka.SSLProtocol(
                 # read client certificate and private key from file
                 keystore_type="PEM",
@@ -186,7 +199,35 @@ class Kafka(DBConnection):
             spark=spark,
         ).check()
         ```
+
+    === "Create Kafka connection with `SASL_SSL` protocol and `OAUTHBEARER` auth"
+
+        ```python
+        from pathlib import Path
+
+        # Create Spark session with Kafka connector loaded
+        ...
+
+        # Create connection
+        kafka = Kafka(
+            addresses=["mybroker:9092", "anotherbroker:9092"],
+            protocol=Kafka.SSLProtocol(
+                # read server public certificate from file
+                truststore_type="PEM",
+                truststore_certificates=Path("/path/to/server.crt").read_text(),
+            ),
+            auth=Kafka.OAuth2ClientCredentials(
+                client_id="my-client",
+                client_secret="my-secret",
+                oauth2_token_endpoint="https://keycloak.example.com/realms/my-realm/protocol/openid-connect/token",
+                scopes=["kafka"],
+            ),
+            spark=spark,
+        ).check()
+        ```
+
     === "Create Kafka connection with extra options"
+
         ```python
         # Create Spark session with Kafka connector loaded
         ...
@@ -194,29 +235,29 @@ class Kafka(DBConnection):
         # Create connection
         kafka = Kafka(
             addresses=["mybroker:9092", "anotherbroker:9092"],
-            cluster="my-cluster",
             protocol=...,
             auth=...,
             extra={"max.request.size": 1024 * 1024},  # <--
             spark=spark,
         ).check()
         ```
-    """  # noqa: E501
+    """
 
-    BasicAuth = KafkaBasicAuth
-    KerberosAuth = KafkaKerberosAuth
-    ScramAuth = KafkaScramAuth
-    ReadOptions = KafkaReadOptions
-    WriteOptions = KafkaWriteOptions
-    SSLProtocol = KafkaSSLProtocol
-    Extra = KafkaExtra
-    Dialect = KafkaDialect
-    PlaintextProtocol = KafkaPlaintextProtocol
-    Slots = KafkaSlots
+    BasicAuth: ClassVar = KafkaBasicAuth
+    KerberosAuth: ClassVar = KafkaKerberosAuth
+    OAuth2ClientCredentials: ClassVar = KafkaOAuth2ClientCredentials
+    ScramAuth: ClassVar = KafkaScramAuth
+    ReadOptions: ClassVar = KafkaReadOptions
+    WriteOptions: ClassVar = KafkaWriteOptions
+    SSLProtocol: ClassVar = KafkaSSLProtocol
+    Extra: ClassVar = KafkaExtra
+    Dialect: ClassVar = KafkaDialect
+    PlaintextProtocol: ClassVar = KafkaPlaintextProtocol
+    Slots: ClassVar = KafkaSlots
 
-    cluster: Cluster
-    addresses: List[str]
-    auth: Optional[KafkaAuth] = None
+    cluster: Cluster | None = None
+    addresses: list[str] = Field(default_factory=list, min_length=1, validate_default=True)
+    auth: KafkaAuth | None = None
     protocol: KafkaProtocol = PlaintextProtocol()
     extra: KafkaExtra = KafkaExtra()
 
@@ -256,15 +297,16 @@ class Kafka(DBConnection):
     @slot
     def read_source_as_df(  # noqa: PLR0913
         self,
+        *,
         source: str,
         columns: list[str] | None = None,
         hint: Any | None = None,
         where: Any | None = None,
-        df_schema: StructType | None = None,
+        df_schema: "StructType | None" = None,
         window: Window | None = None,
         limit: int | None = None,
         options: KafkaReadOptions | None = None,
-    ) -> DataFrame:
+    ) -> "DataFrame":
         log.info("|%s| Reading data from topic %r", self.__class__.__name__, source)
         if source not in self._get_topics():
             msg = f"Topic {source!r} doesn't exist"
@@ -272,7 +314,7 @@ class Kafka(DBConnection):
 
         result_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
         if options:
-            result_options.update(options.dict(by_alias=True, exclude_none=True))
+            result_options.update(options.model_dump(by_alias=True, exclude_none=True))
         result_options["subscribe"] = source
 
         if window and window.expression == "offset":
@@ -304,7 +346,7 @@ class Kafka(DBConnection):
     @slot
     def write_df_to_target(
         self,
-        df: DataFrame,
+        df: "DataFrame",
         target: str,
         options: KafkaWriteOptions | None = None,
     ) -> None:
@@ -333,7 +375,7 @@ class Kafka(DBConnection):
             log.warning("The 'topic' column in the DataFrame will be overridden with value %r", target)
 
         write_options = {f"kafka.{key}": value for key, value in self._get_connection_properties().items()}
-        write_options.update(options.dict(by_alias=True, exclude_none=True, exclude={"if_exists"}))
+        write_options.update(options.model_dump(by_alias=True, exclude_none=True, exclude={"if_exists"}))
         write_options["topic"] = target
 
         # As of Apache Spark version 3.5.8, the mode 'error' is not functioning as expected.
@@ -354,7 +396,7 @@ class Kafka(DBConnection):
         source: str,
         columns: list[str] | None = None,
         options: KafkaReadOptions | None = None,
-    ) -> StructType:
+    ) -> "StructType":
         from pyspark.sql.types import (
             ArrayType,
             BinaryType,
@@ -396,21 +438,23 @@ class Kafka(DBConnection):
     @classmethod
     def get_packages(
         cls,
-        spark_version: str,
+        spark_version: str | None = None,
         scala_version: str | None = None,
     ) -> list[str]:
         """
-        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be downloaded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         See [Maven package index](https://mvnrepository.com/artifact/org.apache.spark/spark-sql-kafka-0-10)
         for all available packages.
 
         Parameters
         ----------
-        spark_version : str
+        spark_version
             Spark version in format `major.minor.patch`.
 
-        scala_version : str, optional
+            If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
+
+        scala_version
             Scala version in format `major.minor`.
 
             If `None`, `spark_version` is used to determine Scala version.
@@ -421,12 +465,12 @@ class Kafka(DBConnection):
         ```python
         from onetl.connection import Kafka
 
-        Kafka.get_packages(spark_version="3.5.8")
+        Kafka.get_packages()
         Kafka.get_packages(spark_version="3.5.8", scala_version="2.12")
         ```
         """
 
-        spark_ver = Version(spark_version).min_digits(3)
+        spark_ver = Version(spark_version).min_digits(3) if spark_version else get_pyspark_version()
         scala_ver = Version(scala_version).min_digits(2) if scala_version else get_default_scala_version(spark_ver)
         return [
             f"org.apache.spark:spark-sql-kafka-0-10_{scala_ver.format('{0}.{1}')}:{spark_ver.format('{0}.{1}.{2}')}",
@@ -436,7 +480,7 @@ class Kafka(DBConnection):
     @classmethod
     def get_exclude_packages(cls) -> list[str]:
         """
-        Get package names to be excluded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Get package names to be excluded by Spark. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.13.0"
 
@@ -472,9 +516,9 @@ class Kafka(DBConnection):
         self.close()
 
     @slot
-    def close(self):
+    def close(self) -> Self:
         """
-        Close all connections created to Kafka. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Close all connections created to Kafka. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! note
 
@@ -482,7 +526,7 @@ class Kafka(DBConnection):
 
         Returns
         -------
-        Self
+        :
             Connection itself
 
         Examples
@@ -568,27 +612,18 @@ class Kafka(DBConnection):
         return min_offsets, max_offsets
 
     @property
-    def instance_url(self):
-        return "kafka://" + self.cluster
+    def instance_url(self) -> str:
+        if self.cluster:
+            return "kafka://" + self.cluster
+        return "kafka://" + ",".join(sorted(self.addresses))
 
     def __str__(self):
-        return f"{self.__class__.__name__}[{self.cluster}]"
+        if self.cluster:
+            return f"{self.__class__.__name__}[{self.cluster}]"
+        return f"{self.__class__.__name__}[" + ",".join(sorted(self.addresses)) + "]"
 
-    @root_validator(pre=True)
-    def _get_addresses_by_cluster(cls, values):
-        cluster = values.get("cluster")
-        addresses = values.get("addresses")
-        if not addresses:
-            cluster_addresses = cls.Slots.get_cluster_addresses(cluster) or []
-            if cluster_addresses:
-                log.debug("|%s| Set cluster %r addresses: %r", cls.__name__, cluster, cluster_addresses)
-                values["addresses"] = cluster_addresses
-            else:
-                msg = "Passed empty parameter 'addresses'"
-                raise ValueError(msg)
-        return values
-
-    @validator("cluster")
+    @field_validator("cluster", mode="before")
+    @classmethod
     def _validate_cluster_name(cls, cluster):
         log.debug("|%s| Normalizing cluster %r name...", cls.__name__, cluster)
         validated_cluster = cls.Slots.normalize_cluster_name(cluster) or cluster
@@ -603,26 +638,31 @@ class Kafka(DBConnection):
 
         return validated_cluster
 
-    @validator("addresses")
-    def _validate_addresses(cls, value, values):
-        cluster = values.get("cluster")
+    @field_validator("addresses", mode="before")
+    @classmethod
+    def _validate_addresses(cls, value, info: ValidationInfo):
+        cluster = info.data.get("cluster")
 
         log.debug("|%s| Normalizing addresses %r names...", cls.__name__, value)
 
-        validated_addresses = [cls.Slots.normalize_address(address, cluster) or address for address in value]
-        if validated_addresses != value:
-            log.debug("|%s| Got %r", cls.__name__, validated_addresses)
+        addresses = [cls.Slots.normalize_address(address, cluster) or address for address in value]
+        if addresses != value:
+            log.debug("|%s| Got %r", cls.__name__, addresses)
 
-        cluster_addresses = set(cls.Slots.get_cluster_addresses(cluster) or [])
-        unknown_addresses = set(validated_addresses) - cluster_addresses
-        if cluster_addresses and unknown_addresses:
-            msg = f"Cluster {cluster!r} does not contain addresses {unknown_addresses!r}"
+        known = []
+        if cluster:
+            known = cls.Slots.get_cluster_addresses(cluster) or []
+
+        unknown = (set(addresses) - set(known)) if known else set()
+        if unknown:
+            msg = f"Cluster {cluster!r} does not contain addresses {sorted(unknown)!r}"
             raise ValueError(msg)
 
-        return validated_addresses
+        return addresses or known
 
-    @validator("spark")
-    def _check_java_class_imported(cls, spark):
+    @field_validator("spark", mode="before")
+    @classmethod
+    def _check_java_class_imported(cls, spark: "SparkSession") -> "SparkSession":
         java_class = "org.apache.spark.sql.kafka010.KafkaSourceProvider"
 
         try:
@@ -631,7 +671,7 @@ class Kafka(DBConnection):
             spark_version = get_spark_version(spark).format("{0}.{1}")
             msg = MISSING_JVM_CLASS_MSG.format(
                 java_class=java_class,
-                package_source=cls.__name__,
+                package_source=cls.__name__,  # type: ignore[attr-defined]
                 args=f"spark_version='{spark_version}'",
             )
             raise ValueError(msg) from e
@@ -639,7 +679,7 @@ class Kafka(DBConnection):
 
     def _get_connection_properties(self) -> dict:
         result = {"bootstrap.servers": ",".join(self.addresses)}
-        result.update(self.extra.dict(by_alias=True, exclude_none=True))
+        result.update(self.extra.model_dump(by_alias=True, exclude_none=True))
         result.update(self.protocol.get_options(self))
         if self.auth:
             result.update(self.auth.get_options(self))
@@ -678,4 +718,4 @@ class Kafka(DBConnection):
         log_collection(log, "addresses", self.addresses, max_items=10)
         log_with_indent(log, "protocol = %r", self.protocol)
         log_with_indent(log, "auth = %r", self.auth)
-        log_with_indent(log, "extra = %r", self.extra.dict(by_alias=True, exclude_none=True))
+        log_with_indent(log, "extra = %r", self.extra.model_dump(by_alias=True, exclude_none=True))

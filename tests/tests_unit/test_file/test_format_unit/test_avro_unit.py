@@ -10,10 +10,13 @@ pytestmark = [pytest.mark.avro]
 @pytest.mark.parametrize(
     ("spark_version", "scala_version", "package"),
     [
+        # Detect using pyspark version
+        (None, None, "org.apache.spark:spark-avro_{scala_ver}:{pyspark_ver}"),
         # Detect Scala version by Spark version
         ("3.2.0", None, "org.apache.spark:spark-avro_2.12:3.2.0"),
         ("3.5.8", None, "org.apache.spark:spark-avro_2.12:3.5.8"),
         # Override Scala version
+        (None, "2.13", "org.apache.spark:spark-avro_2.13:{pyspark_ver}"),
         ("3.2.0", "2.12", "org.apache.spark:spark-avro_2.12:3.2.0"),
         ("3.2.0", "2.12", "org.apache.spark:spark-avro_2.12:3.2.0"),
         ("3.5.8", "2.12", "org.apache.spark:spark-avro_2.12:3.5.8"),
@@ -23,7 +26,13 @@ pytestmark = [pytest.mark.avro]
     ],
 )
 def test_avro_get_packages(spark_version, scala_version, package):
-    assert Avro.get_packages(spark_version=spark_version, scala_version=scala_version) == [package]
+    import pyspark
+
+    pyspark_ver = pyspark.__version__
+    scala_ver = "2.12" if pyspark_ver.startswith("3") else "2.13"
+
+    expected = package.format(pyspark_ver=pyspark_ver, scala_ver=scala_ver)
+    assert Avro.get_packages(spark_version=spark_version, scala_version=scala_version) == [expected]
 
 
 @pytest.mark.parametrize(

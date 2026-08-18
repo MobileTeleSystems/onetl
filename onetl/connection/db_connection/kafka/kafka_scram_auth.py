@@ -1,22 +1,15 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
+from typing import TYPE_CHECKING, Literal
 
-from typing import TYPE_CHECKING
-
-try:
-    from pydantic.v1 import Field, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
-
-from typing_extensions import Literal
+from pydantic import ConfigDict, Field, SecretStr
 
 from onetl._util.spark import stringify
 from onetl.connection.db_connection.kafka.kafka_auth import KafkaAuth
 from onetl.impl import GenericOptions
 
 if TYPE_CHECKING:
-    from onetl.connection import Kafka
+    from onetl.connection.db_connection.kafka.connection import Kafka
 
 
 class KafkaScramAuth(KafkaAuth, GenericOptions):
@@ -61,13 +54,12 @@ class KafkaScramAuth(KafkaAuth, GenericOptions):
     user: str = Field(alias="username")
     password: SecretStr
     digest: Literal["SHA-256", "SHA-512"]
-
-    class Config:
-        strip_prefixes = ("kafka.",)
-        # https://kafka.apache.org/documentation/#producerconfigs_sasl.login.class
-        known_options = frozenset(("sasl.login.*",))
-        prohibited_options = frozenset(("sasl.mechanism", "sasl.jaas.config"))
-        extra = "allow"
+    model_config = ConfigDict(
+        strip_prefixes=("kafka.",),  # type: ignore[typeddict-unknown-key]
+        known_options=frozenset(("sasl.login.*",)),  # type: ignore[typeddict-unknown-key]
+        prohibited_options=frozenset(("sasl.mechanism", "sasl.jaas.config")),  # type: ignore[typeddict-unknown-key]
+        extra="allow",
+    )
 
     def get_jaas_conf(self) -> str:
         return (
@@ -76,9 +68,11 @@ class KafkaScramAuth(KafkaAuth, GenericOptions):
             f'password="{self.password.get_secret_value()}";'
         )
 
-    def get_options(self, kafka: Kafka) -> dict:
+    def get_options(self, kafka: "Kafka") -> dict:
         result = {
-            key: value for key, value in self.dict(by_alias=True, exclude_none=True).items() if key.startswith("sasl.")
+            key: value
+            for key, value in self.model_dump(by_alias=True, exclude_none=True).items()
+            if key.startswith("sasl.")
         }
         result.update(
             {
@@ -88,6 +82,6 @@ class KafkaScramAuth(KafkaAuth, GenericOptions):
         )
         return stringify(result)
 
-    def cleanup(self, kafka: Kafka) -> None:
+    def cleanup(self, kafka: "Kafka") -> None:
         # nothing to cleanup
         pass

@@ -1,16 +1,9 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import warnings
-from typing import TYPE_CHECKING, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
-from typing_extensions import Literal
-
-try:
-    from pydantic.v1 import Field
-except (ImportError, AttributeError):
-    from pydantic import Field  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field
 
 from onetl._util.spark import stringify
 from onetl.file.format.file_format import ReadOnlyFileFormat
@@ -19,7 +12,6 @@ from onetl.hooks import slot, support_hooks
 if TYPE_CHECKING:
     from pyspark.sql import Column, SparkSession
     from pyspark.sql.types import ArrayType, MapType, StructType
-
 
 PARSE_COLUMN_UNSUPPORTED_OPTIONS = {
     "encoding",
@@ -34,7 +26,7 @@ PARSE_COLUMN_UNSUPPORTED_OPTIONS = {
 @support_hooks
 class JSON(ReadOnlyFileFormat):
     """
-    JSON file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    JSON file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [Spark JSON](https://spark.apache.org/docs/latest/sql-data-sources-json.html) file format.
 
@@ -78,7 +70,7 @@ class JSON(ReadOnlyFileFormat):
 
     multiLine: Literal[True] = True
 
-    encoding: Optional[str] = None
+    encoding: str | None = None
     """
     Encoding of the JSON file.
     Default `UTF-8`.
@@ -90,7 +82,7 @@ class JSON(ReadOnlyFileFormat):
         Ignored by [parse_column][] and [serialize_column][] methods.
     """
 
-    lineSep: Optional[str] = None
+    lineSep: str | None = None
     """
     Character used to separate lines in the JSON file.
 
@@ -106,7 +98,7 @@ class JSON(ReadOnlyFileFormat):
         as they handle each DataFrame row separately.
     """
 
-    allowComments: Optional[bool] = None
+    allowComments: bool | None = None
     """
     If `True`, add support for C/C++/Java style comments (`//`, `/* */`).
     Default `False`, meaning that JSON files should not contain comments.
@@ -116,7 +108,7 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    allowUnquotedFieldNames: Optional[bool] = None
+    allowUnquotedFieldNames: bool | None = None
     """
     If `True`, allow JSON object field names without quotes (JavaScript-style).
     Default `False`.
@@ -126,7 +118,7 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    allowSingleQuotes: Optional[bool] = None
+    allowSingleQuotes: bool | None = None
     """
     If `True`, allow JSON object field names to be wrapped with single quotes (`'`).
     Default `True`.
@@ -136,7 +128,7 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    allowNumericLeadingZeros: Optional[bool] = None
+    allowNumericLeadingZeros: bool | None = None
     """
     If `True`, allow leading zeros in numbers (e.g. `00012`).
     Default `False`.
@@ -146,7 +138,7 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    allowNonNumericNumbers: Optional[bool] = None
+    allowNonNumericNumbers: bool | None = None
     """
     If `True`, allow numbers to contain non-numeric characters, like:
       * scientific notation (e.g. `12e10`).
@@ -161,7 +153,7 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    allowBackslashEscapingAnyCharacter: Optional[bool] = None
+    allowBackslashEscapingAnyCharacter: bool | None = None
     """
     If `True`, prefix `\\` can escape any character.
     Default `False`.
@@ -171,7 +163,7 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    allowUnquotedControlChars: Optional[bool] = None
+    allowUnquotedControlChars: bool | None = None
     """
     If `True`, allow unquoted control characters (ASCII values 0-31) in strings without escaping them with `\\`.
     Default `False`.
@@ -181,7 +173,7 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    mode: Optional[Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"]] = None
+    mode: Literal["PERMISSIVE", "DROPMALFORMED", "FAILFAST"] | None = None
     """
     How to handle parsing errors:
       * `PERMISSIVE` - set field value as `null`, move raw data to [columnNameOfCorruptRecord][] column.
@@ -195,7 +187,7 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    columnNameOfCorruptRecord: Optional[str] = Field(default=None, min_length=1)
+    columnNameOfCorruptRecord: str | None = Field(default=None, min_length=1)
     """
     Name of column to put corrupt records in.
     Default is `_corrupt_record`.
@@ -234,17 +226,17 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files and [parse_column][] method.
     """
 
-    samplingRatio: Optional[float] = Field(default=None, ge=0, le=1)
+    samplingRatio: float | None = Field(default=None, ge=0, le=1)
     """
     While inferring schema, read the specified fraction of file rows.
     Default `1`.
 
     !!! note
 
-        Used only for reading files. Ignored by [parse_column][] function.
+        Used only for reading files. Ignored by [parse_column][] method.
     """
 
-    primitivesAsString: Optional[bool] = None
+    primitivesAsString: bool | None = None
     """
     If `True`, infer all primitive types (string, integer, float, boolean) as strings.
     Default `False`.
@@ -254,7 +246,7 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files. Ignored by [parse_column][] method.
     """
 
-    prefersDecimal: Optional[bool] = None
+    prefersDecimal: bool | None = None
     """
     If `True`, infer all floating-point values as `Decimal`.
     Default `False`.
@@ -264,7 +256,7 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files. Ignored by [parse_column][] method.
     """
 
-    dropFieldIfAllNull: Optional[bool] = None
+    dropFieldIfAllNull: bool | None = None
     """
     If `True` and inferred column is always null or empty array, exclude if from DataFrame schema.
     Default `False`.
@@ -274,19 +266,19 @@ class JSON(ReadOnlyFileFormat):
         Used only for reading files. Ignored by [parse_column][] method.
     """
 
-    dateFormat: Optional[str] = Field(default=None, min_length=1)
+    dateFormat: str | None = Field(default=None, min_length=1)
     """
     String format for `DateType()` representation.
     Default is `yyyy-MM-dd`.
     """
 
-    timestampFormat: Optional[str] = Field(default=None, min_length=1)
+    timestampFormat: str | None = Field(default=None, min_length=1)
     """
     String format for `TimestampType()` representation.
     Default is `yyyy-MM-dd'T'HH:mm:ss[.SSS][XXX]`.
     """
 
-    timestampNTZFormat: Optional[str] = Field(default=None, min_length=1)
+    timestampNTZFormat: str | None = Field(default=None, min_length=1)
     """
     String format for `TimestampNTZType()` representation.
     Default is `yyyy-MM-dd'T'HH:mm:ss[.SSS]`.
@@ -296,13 +288,13 @@ class JSON(ReadOnlyFileFormat):
         Added in Spark 3.2.0
     """
 
-    timezone: Optional[str] = Field(default=None, min_length=1, alias="timeZone")
+    timezone: str | None = Field(default=None, min_length=1, alias="timeZone")
     """
     Allows to override timezone used for parsing or serializing date and timestamp values.
     By default, `spark.sql.session.timeZone` is used.
     """
 
-    locale: Optional[str] = Field(default=None, min_length=1)
+    locale: str | None = Field(default=None, min_length=1)
     """
     Locale name used to parse dates and timestamps.
     Default is `en-US`.
@@ -311,17 +303,14 @@ class JSON(ReadOnlyFileFormat):
 
         Used only for reading files and [parse_column][] method.
     """
-
-    class Config:
-        known_options: frozenset[str] = frozenset()
-        extra = "allow"
+    model_config = ConfigDict(extra="allow", known_options=[])  # type: ignore[typeddict-unknown-key]
 
     @slot
-    def check_if_supported(self, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: "SparkSession") -> None:
         # always available
         pass
 
-    def parse_column(self, column: str | Column, schema: StructType | ArrayType | MapType) -> Column:
+    def parse_column(self, column: "str | Column", schema: "StructType | ArrayType | MapType") -> "Column":
         """
         Parses a JSON string column to a structured Spark SQL column using Spark's
         [from_json](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html)
@@ -331,16 +320,16 @@ class JSON(ReadOnlyFileFormat):
 
         Parameters
         ----------
-        column : str | Column
+        column
             The name of the column or the column object containing JSON strings/bytes to parse.
 
-        schema : StructType | ArrayType | MapType
+        schema
             The schema to apply when parsing the JSON data.
             This defines the structure of the output DataFrame column.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with deserialized data, with the same structure as the provided schema.
             Column name is the same as input column.
 
@@ -402,10 +391,10 @@ class JSON(ReadOnlyFileFormat):
         else:
             column_name, column = column, col(column).cast("string")
 
-        options = stringify(self.dict(by_alias=True, exclude_none=True))
+        options = stringify(self.model_dump(by_alias=True, exclude_none=True))
         return from_json(column, schema, options).alias(column_name)  # type: ignore[arg-type]
 
-    def serialize_column(self, column: str | Column) -> Column:
+    def serialize_column(self, column: "str | Column") -> "Column":
         """
         Serializes a structured Spark SQL column into a JSON string column using Spark's
         [to_json](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.to_json.html) function.
@@ -414,12 +403,12 @@ class JSON(ReadOnlyFileFormat):
 
         Parameters
         ----------
-        column : str | Column
+        column
             The name of the column or the column object containing the data to serialize to JSON format.
 
         Returns
         -------
-        pyspark.sql.Column
+        :
             Column with string JSON data. Column name is the same as input column.
 
         Examples
@@ -456,7 +445,7 @@ class JSON(ReadOnlyFileFormat):
         |-- key: string (nullable = true)
         |-- value: string (nullable = true)
         ```
-        """  # noqa: E501
+        """
         from pyspark.sql import Column, SparkSession
         from pyspark.sql.functions import col, to_json
 
@@ -469,11 +458,11 @@ class JSON(ReadOnlyFileFormat):
         else:
             column_name, column = column, col(column)
 
-        options = stringify(self.dict(by_alias=True, exclude_none=True))
+        options = stringify(self.model_dump(by_alias=True, exclude_none=True))
         return to_json(column, options).alias(column_name)
 
     def _check_unsupported_serialization_options(self):
-        current_options = self.dict(by_alias=True, exclude_none=True)
+        current_options = self.model_dump(by_alias=True, exclude_none=True)
         unsupported_options = current_options.keys() & PARSE_COLUMN_UNSUPPORTED_OPTIONS
         if unsupported_options:
             warnings.warn(
@@ -484,7 +473,7 @@ class JSON(ReadOnlyFileFormat):
             )
 
     def __repr__(self):
-        options_dict = self.dict(by_alias=True, exclude_none=True, exclude={"multiLine"})
+        options_dict = self.model_dump(by_alias=True, exclude_none=True, exclude={"multiLine"})
         options_dict = dict(sorted(options_dict.items()))
         options_kwargs = ", ".join(f"{k}={v!r}" for k, v in options_dict.items())
         return f"{self.__class__.__name__}({options_kwargs})"

@@ -1,22 +1,19 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
-import sys
+from collections.abc import Callable, Generator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from enum import Enum
 from functools import wraps
-from typing import Callable, Generator, Generic, TypeVar
-
-from typing_extensions import Protocol, runtime_checkable
+from typing import Generic, ParamSpec, Protocol, TypeVar, overload, runtime_checkable
 
 from onetl.log import NOTICE
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
+P = ParamSpec("P")
 
 
 class HookPriority(int, Enum):
@@ -32,14 +29,14 @@ class HookPriority(int, Enum):
     "Hooks with this priority will run first."
 
     NORMAL = 0
-    "Hooks with this priority will run after [FIRST][] but before [LAST][]."
+    "Hooks with this priority will run after [onetl.hooks.hook.HookPriority.FIRST][] but before [onetl.hooks.hook.HookPriority.LAST][]."
 
     LAST = 1
     "Hooks with this priority will run last."
 
 
 @dataclass
-class Hook(Generic[T]):
+class Hook(Generic[P, T]):
     """
     Hook representation.
 
@@ -47,18 +44,17 @@ class Hook(Generic[T]):
 
     Parameters
     ----------
+    callback
 
-        callback : `typing.Callable`
+        Some callable object which will be wrapped into a Hook, like function or ContextManager class.
 
-            Some callable object which will be wrapped into a Hook, like function or ContextManager class.
+    enabled
 
-        enabled : bool
+        Will hook be executed or not. Useful for debugging.
 
-            Will hook be executed or not. Useful for debugging.
+    priority
 
-        priority : HookPriority
-
-            Changes hooks priority, see `HookPriority` documentation.
+        Changes hooks priority, see `HookPriority` documentation.
 
     Examples
     --------
@@ -75,7 +71,7 @@ class Hook(Generic[T]):
     ```
     """
 
-    callback: Callable[..., T]
+    callback: Callable[P, T]
     enabled: bool = True
     priority: HookPriority = HookPriority.NORMAL
 
@@ -220,7 +216,7 @@ class Hook(Generic[T]):
             )
             self.enabled = True
 
-    def __call__(self, *args, **kwargs) -> T | ContextDecorator:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
         """
         Calls the original callback with passed args.
 
@@ -244,7 +240,7 @@ class Hook(Generic[T]):
         """
         result = self.callback(*args, **kwargs)
         if isinstance(result, Generator):
-            return ContextDecorator(result)
+            return ContextDecorator(result)  # type: ignore[return-value]
         return result
 
 
@@ -270,7 +266,7 @@ class ContextDecorator:
     """
 
     def __init__(self, gen: Generator):
-        self.gen: Generator = gen
+        self.gen = gen
         self.first_yield_result = None
 
     def __enter__(self):
@@ -299,26 +295,27 @@ class ContextDecorator:
 
         return self
 
-    def __exit__(self, exc_type, value, traceback):
+    def __exit__(self, typ, value, traceback):
         """
         Copy of `contextlib._GeneratorContextManager.__exit__`
         """
-
-        if exc_type is None:
-            try:
-                next(self.gen)
-            except StopIteration:
-                return False
-            msg = "generator didn't stop"
-            raise RuntimeError(msg)
+        if typ is None:
+            # Faster way to run next(self.gen) and check for StopIteration:
+            for _ in self.gen:
+                try:
+                    msg = "generator didn't stop"
+                    raise RuntimeError(msg)
+                finally:
+                    self.gen.close()
+            return False
 
         if value is None:
             # Need to force instantiation so we can reliably
             # tell if we get the same exception back
-            value = value or exc_type()
+            value = typ()
 
         try:
-            self.gen.throw(exc_type, value, traceback)
+            self.gen.throw(typ, value, traceback)
         except StopIteration as exc:
             # Suppress StopIteration *unless* it's the same exception that
             # was passed to throw().  This prevents a StopIteration
@@ -327,30 +324,35 @@ class ContextDecorator:
         except RuntimeError as exc:
             # Don't re-raise the passed in exception. (issue27122)
             if exc is value:
+                exc.__traceback__ = traceback
                 return False
-            # Likewise, avoid suppressing if a StopIteration exception
+            # Avoid suppressing if a StopIteration exception
             # was passed to throw() and later wrapped into a RuntimeError
-            # (see PEP 479).
-            if exc_type is StopIteration and exc.__cause__ is value:
+            # (see PEP 479 for sync generators; async generators also
+            # have this behavior). But do this only if the exception wrapped
+            # by the RuntimeError is actually Stop(Async)Iteration (see
+            # issue29692).
+            if isinstance(value, StopIteration) and exc.__cause__ is value:
+                value.__traceback__ = traceback
                 return False
             raise
-        except:
+        except BaseException as exc:
             # only re-raise if it's *not* the exception that was
             # passed to throw(), because __exit__() must not raise
             # an exception unless __exit__() itself failed.  But throw()
             # has to raise the exception to signal propagation, so this
             # fixes the impedance mismatch between the throw() protocol
             # and the __exit__() protocol.
-            #
-            # This cannot use 'except BaseException as exc' (as in the
-            # async implementation) to maintain compatibility with
-            # Python 2, where old-style class exceptions are not caught
-            # by 'except BaseException'.
-            if sys.exc_info()[1] is value:
-                return False
-            raise
-        msg = "generator didn't stop after throw()"
-        raise RuntimeError(msg)
+            if exc is not value:
+                raise
+            exc.__traceback__ = traceback
+            return False
+
+        try:
+            msg = "generator didn't stop after throw()"
+            raise RuntimeError(msg)
+        finally:
+            self.gen.close()
 
     def process_result(self, result):
         """
@@ -383,7 +385,19 @@ class ContextDecorator:
         return None
 
 
-def hook(inp: Callable[..., T] | None = None, *, enabled: bool = True, priority: HookPriority = HookPriority.NORMAL):
+@overload
+def hook(
+    inp: Callable[P, T], *, enabled: bool = True, priority: HookPriority = HookPriority.NORMAL
+) -> Callable[P, T]: ...
+
+
+@overload
+def hook(
+    inp: None, *, enabled: bool = True, priority: HookPriority = HookPriority.NORMAL
+) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
+
+
+def hook(inp=None, *, enabled=True, priority=HookPriority.NORMAL):
     """
     Initialize hook from callable/context manager.
 
@@ -393,6 +407,7 @@ def hook(inp: Callable[..., T] | None = None, *, enabled: bool = True, priority:
     --------
 
     === "Decorate a function or generator"
+
         ```python
         from onetl.hooks import hook, HookPriority
 
@@ -407,7 +422,9 @@ def hook(inp: Callable[..., T] | None = None, *, enabled: bool = True, priority:
             ...
 
         ```
+
     === "Decorate a context manager"
+
         ```python
         from onetl.hooks import hook, HookPriority
 
@@ -448,7 +465,7 @@ def hook(inp: Callable[..., T] | None = None, *, enabled: bool = True, priority:
         ```
     """
 
-    def inner_wrapper(callback: Callable[..., T]):
+    def inner_wrapper(callback: Callable[P, T]) -> Callable[P, T]:
         if isinstance(callback, Hook):
             msg = "@hook decorator can be applied only once"
             raise TypeError(msg)

@@ -14,8 +14,6 @@ For headings with an existing { #old } anchor, all [text][old] references in all
 are updated to [text][new].
 """
 
-from __future__ import annotations
-
 import argparse
 import re
 import sys

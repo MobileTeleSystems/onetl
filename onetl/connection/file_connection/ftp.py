@@ -1,28 +1,18 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import ftplib  # nosec
 import os
 import textwrap
 from logging import getLogger
-from typing import Optional
+from typing import ClassVar
 
-from etl_entities.instance import Host
-
-from onetl.impl.generic_options import GenericOptions
-
-try:
-    from pydantic.v1 import Field, SecretStr
-except (ImportError, AttributeError):
-    from pydantic import Field, SecretStr  # type: ignore[no-redef, assignment]
+from pydantic import ConfigDict, Field, SecretStr
 
 from onetl.base import PathStatProtocol
 from onetl.connection.file_connection.file_connection import FileConnection
 from onetl.connection.file_connection.mixins.rename_dir_mixin import RenameDirMixin
 from onetl.hooks import slot, support_hooks
-from onetl.impl import LocalPath, RemotePath
-from onetl.impl.remote_path_stat import RemotePathStat
+from onetl.impl import GenericOptions, Host, LocalPath, RemotePath, RemotePathStat
 
 try:
     from ftputil import FTPHost
@@ -51,24 +41,25 @@ class FTPExtra(GenericOptions):
 
     You can pass here any parameters supported by [ftputil.session.session_factory](https://ftputil.sschwarzer.net/documentation#session-factories).
 
+    !!! success "Added in 0.16.0"
+
     Parameters
     ---------
-    use_passive_mode : bool, optional
+    use_passive_mode
         Set to `True` to use passive mode, ``False`` to use active mode, ``None`` for autodetect
-    encoding : str, default: `utf-8`
+
+    encoding
         File path encoding
     """
 
-    use_passive_mode: Optional[bool] = None
+    use_passive_mode: bool | None = None
     encoding: str = "utf-8"
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 @support_hooks
 class FTP(FileConnection, RenameDirMixin):
-    """FTP file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+    """FTP file connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
     Based on [FTPUtil library](https://pypi.org/project/ftputil/).
 
@@ -82,29 +73,29 @@ class FTP(FileConnection, RenameDirMixin):
         # or
         pip install "onetl[files]"
         ```
-        See [install-files][] installation instruction for more details.
+        See [DBR-onetl-install-files-file-connections][] installation instruction for more details.
 
     !!! success "Added in 0.1.0"
 
     Parameters
     ----------
-    host : str
+    host
         Host of FTP source. For example: `ftp.domain.com`
 
-    port : int, default: `21`
+    port
         Port of FTP source
 
-    user : str, default: `None`
+    user
         User, which have access to the file source. For example: `someuser`.
 
         `None` means that the user is anonymous.
 
-    password : str, default: `None`
+    password
         Password for file source connection.
 
         `None` means that the user is anonymous.
 
-    extra : FTPExtra, default: `FTPExtra()`
+    extra
         Extra options
 
     Examples
@@ -138,12 +129,12 @@ class FTP(FileConnection, RenameDirMixin):
 
     host: Host
     port: int = 21
-    user: Optional[str] = None
-    password: Optional[SecretStr] = None
+    user: str | None = None
+    password: SecretStr | None = None
 
     extra: FTPExtra = Field(default_factory=FTPExtra)
 
-    Extra = FTPExtra
+    Extra: ClassVar = FTPExtra
 
     @property
     def instance_url(self) -> str:
@@ -161,7 +152,7 @@ class FTP(FileConnection, RenameDirMixin):
         Returns a FTP connection object
         """
 
-        extra = self.extra.dict(by_alias=True)
+        extra = self.extra.model_dump(by_alias=True)
         extra.setdefault("debug_level", 0)
 
         session_factory = ftp_session.session_factory(

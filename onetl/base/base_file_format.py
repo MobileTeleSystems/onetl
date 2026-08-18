@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
@@ -17,9 +15,9 @@ class BaseReadableFileFormat(ABC):
     """
 
     @abstractmethod
-    def check_if_supported(self, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: "SparkSession") -> None:
         """
-        Check if Spark session does support this file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Check if Spark session does support this file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
@@ -30,15 +28,15 @@ class BaseReadableFileFormat(ABC):
         """
 
     @abstractmethod
-    def apply_to_reader(self, reader: DataFrameReader) -> DataFrameReader:
+    def apply_to_reader(self, reader: "DataFrameReader") -> "DataFrameReader":
         """
-        Apply provided format to `pyspark.sql.DataFrameReader`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Apply provided format to `pyspark.sql.DataFrameReader`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
         Returns
         -------
-        pyspark.sql.DataFrameReader
+        :
             DataFrameReader with options applied.
         """
 
@@ -51,9 +49,9 @@ class BaseWritableFileFormat(ABC):
     """
 
     @abstractmethod
-    def check_if_supported(self, spark: SparkSession) -> None:
+    def check_if_supported(self, spark: "SparkSession") -> None:
         """
-        Check if Spark session does support this file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Check if Spark session does support this file format. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
@@ -64,14 +62,14 @@ class BaseWritableFileFormat(ABC):
         """
 
     @abstractmethod
-    def apply_to_writer(self, writer: DataFrameWriter) -> DataFrameWriter:
+    def apply_to_writer(self, writer: "DataFrameWriter") -> "DataFrameWriter":
         """
-        Apply provided format to `pyspark.sql.DataFrameWriter`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)](/hooks/)
+        Apply provided format to `pyspark.sql.DataFrameWriter`. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
         !!! success "Added in 0.9.0"
 
         Returns
         -------
-        pyspark.sql.DataFrameWriter
+        :
             DataFrameWriter with options applied.
         """

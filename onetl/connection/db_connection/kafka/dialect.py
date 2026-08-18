@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING
 
@@ -54,7 +52,7 @@ class KafkaDialect(
             raise ValueError(msg)
         return hwm
 
-    def detect_hwm_class(self, field: StructField) -> type[KeyValueIntHWM] | None:
+    def detect_hwm_class(self, field: "StructField") -> type[KeyValueIntHWM] | None:
         kafka_field_to_hwm_class = {
             "offset": KeyValueIntHWM,
             # add "timestamp" in future

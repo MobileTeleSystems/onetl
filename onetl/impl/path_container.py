@@ -1,17 +1,16 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
+from collections.abc import Sequence
 from dataclasses import astuple, dataclass
-from typing import Generic, Sequence, TypeVar
+from typing import Generic, TypeVar
 
 from onetl.base import PurePathProtocol
 
 PurePath = TypeVar("PurePath", bound=PurePathProtocol)
 
 
-@dataclass(eq=False, frozen=True)
+@dataclass(eq=False, frozen=True, slots=True)
 class PathContainer(Generic[PurePath]):
     """
     Read-only container for `pathlib.PurePath`-like classes with some custom logic.

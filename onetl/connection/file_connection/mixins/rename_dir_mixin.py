@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import annotations
-
 import os
 from abc import abstractmethod
 from logging import getLogger
@@ -29,18 +27,18 @@ class RenameDirMixin(BaseFileConnection):
 
         Parameters
         ----------
-        source_dir_path : str or `os.PathLike`
+        source_dir_path
             Old directory path
 
-        target_dir_path : str or `os.PathLike`
+        target_dir_path
             New directory path
 
-        replace : bool, default `False`
+        replace
             If `True`, existing directory will be replaced.
 
         Returns
         -------
-        PathWithStatsProtocol
+        :
             New directory path with stats.
 
         Raises
@@ -48,10 +46,10 @@ class RenameDirMixin(BaseFileConnection):
         NotADirectoryError
             Path is not a directory
 
-        [onetl.exception.DirectoryNotFoundError][]
+        onetl.exception.DirectoryNotFoundError
             Path does not exist
 
-        [onetl.exception.DirectoryExistsError][]
+        onetl.exception.DirectoryExistsError
             Directory already exists, and `replace=False`
 
         Examples
