@@ -42,7 +42,7 @@ dependencies = [
     "ordered-set",
     "platformdirs",
     "psutil",
-    "pydantic>=2.0,<3",
+    "pydantic>=2.12,<3",
     "pyyaml",
     # https://github.com/python/typing_extensions/pull/188
     "typing-extensions>=4.5.0",
