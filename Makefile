@@ -3,8 +3,6 @@
 include .env.local
 
 SPARK_EXTERNAL_IP := $(shell docker network inspect onetl_onetl --format '{{ (index .IPAM.Config 0).Gateway }}')
-VERSION := $(shell cat onetl/VERSION)
-DATE := $(shell date --rfc-3339=date)
 SPARK_VERSION ?= 3.5
 ETL_ENTITIES_VERSION ?= 3
 VIRTUAL_ENV ?= .venv
@@ -12,6 +10,9 @@ PYTHON = ${VIRTUAL_ENV}/bin/python
 PIP = ${VIRTUAL_ENV}/bin/pip
 UV ?= ${VIRTUAL_ENV}/bin/uv
 PYTEST ?= pytest
+VERSION := $(shell cat onetl/VERSION)
+VERSION_SLUG := $(shell cat onetl/VERSION | tr '.' '-')
+DATE := $(shell date --rfc-3339=date)
 
 # Fix docker build and docker compose build using different backends
 COMPOSE_DOCKER_CLI_BUILD = 1
@@ -124,13 +125,16 @@ docs-serve: ##@Docs Run docs server
 docs-generate-changelog: ##@Docs Generate changelog
 	echo "Building changelog for ${VERSION}"
 	cp "mddocs/docs/changelog/RELEASE_TEMPLATE.md" "mddocs/docs/changelog/temp_RELEASE_TEMPLATE.md"
-	towncrier build "--version=${VERSION}" --yes
+	${UV} run towncrier build "--version=${VERSION}" --yes
 	mv "mddocs/docs/changelog/RELEASE_TEMPLATE.md" "mddocs/docs/changelog/${VERSION}.md"
 	mv "mddocs/docs/changelog/temp_RELEASE_TEMPLATE.md" "mddocs/docs/changelog/RELEASE_TEMPLATE.md"
 
 	# Remove content above the version number heading in the `${VERSION}.md` file
-	awk '/##/,0' "mddocs/docs/changelog/${VERSION}.md" > temp && mv temp "mddocs/docs/changelog/${VERSION}.md"
+	awk '!/towncrier release notes start/' "mddocs/docs/changelog/${VERSION}.md" | sed '/./,$$!d' > temp && mv temp "mddocs/docs/changelog/${VERSION}.md"
+
+	# Fix anchors in the `${VERSION}.md` file
+	sed "s#DBR-onetl-changelog-${VERSION}#DBR-onetl-changelog-${VERSION_SLUG}#" "mddocs/docs/changelog/${VERSION}.md" > temp && mv temp "mddocs/docs/changelog/${VERSION}.md"
 
 	# Update Changelog Index and Navigation
-	sed "s#\(.*NEXT_RELEASE.*\)#\1\n- [${VERSION} (${DATE})][DBR-onetl-changelog-${VERSION}]#" "mddocs/docs/changelog/index.md" > temp && mv temp "mddocs/docs/changelog/index.md"
+	sed "s#\(.*NEXT_RELEASE.*\)#\1\n- [${VERSION} (${DATE})][DBR-onetl-changelog-${VERSION_SLUG}]#" "mddocs/docs/changelog/index.md" > temp && mv temp "mddocs/docs/changelog/index.md"
 	sed "s#\(.*NEXT_RELEASE.*\)#\1\n    * [${VERSION}](changelog/${VERSION}.md)#" "mddocs/docs/nav.md" > temp && mv temp "mddocs/docs/nav.md"

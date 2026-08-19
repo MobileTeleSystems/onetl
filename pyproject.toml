@@ -355,7 +355,7 @@ filename = "mddocs/docs/changelog/RELEASE_TEMPLATE.md"
 start_string = "<!-- towncrier release notes start -->\n"
 underlines = ["", "", ""]
 directory = "mddocs/docs/changelog/next_release/"
-title_format = "# {version} ({project_date})"
+title_format = "# {version} ({project_date}) {{ #DBR-onetl-changelog-{version} }}"
 issue_format = "[#{issue}](https://github.com/MTSWebServices/onetl/issues/{issue})"
 
 [[tool.towncrier.type]]
