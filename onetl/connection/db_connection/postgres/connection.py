@@ -51,6 +51,11 @@ class PostgresExtra(GenericOptions):
     x2 performance on batch writes
     """
 
+    assumeMinServerVersion: str = "9.4"
+    """
+    Send connection params to server as early as possible
+    """
+
     model_config = ConfigDict(extra="allow")
 
 

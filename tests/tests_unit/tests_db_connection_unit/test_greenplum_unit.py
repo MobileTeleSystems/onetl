@@ -92,6 +92,7 @@ def test_greenplum(spark_mock):
         "url": "jdbc:postgresql://some_host:5432/database",
         "ApplicationName": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
         "tcpKeepAlive": "true",
+        "assumeMinServerVersion": "9.4",
     }
     assert conn._get_connector_params("some.table") == {
         "user": "user",
@@ -100,7 +101,7 @@ def test_greenplum(spark_mock):
         "url": (
             "jdbc:postgresql://some_host:5432/database?"
             f"ApplicationName=local-123%20abc%20onETL%2F{onetl_version}%20Spark%2F{spark_mock.version}&"
-            "tcpKeepAlive=true"
+            "assumeMinServerVersion=9.4&tcpKeepAlive=true"
         ),
         "dbschema": "some",
         "dbtable": "table",
@@ -129,6 +130,7 @@ def test_greenplum_with_port(spark_mock):
         "driver": "org.postgresql.Driver",
         "url": "jdbc:postgresql://some_host:5000/database",
         "ApplicationName": f"local-123 abc onETL/{onetl_version} Spark/{spark_mock.version}",
+        "assumeMinServerVersion": "9.4",
         "tcpKeepAlive": "true",
     }
     assert conn._get_connector_params("some.table") == {
@@ -138,7 +140,7 @@ def test_greenplum_with_port(spark_mock):
         "url": (
             "jdbc:postgresql://some_host:5000/database?"
             f"ApplicationName=local-123%20abc%20onETL%2F{onetl_version}%20Spark%2F{spark_mock.version}&"
-            "tcpKeepAlive=true"
+            "assumeMinServerVersion=9.4&tcpKeepAlive=true"
         ),
         "dbschema": "some",
         "dbtable": "table",
@@ -163,6 +165,7 @@ def test_greenplum_with_extra(spark_mock):
             "autosave": "always",
             "tcpKeepAlive": "false",
             "ApplicationName": "override",
+            "assumeMinServerVersion": "9.6",
             "options": "-c search_path=public",
             "server.port": 8000,
             "pool.maxSize": 40,
@@ -180,6 +183,7 @@ def test_greenplum_with_extra(spark_mock):
         "url": "jdbc:postgresql://some_host:5432/database",
         "ApplicationName": "override",
         "tcpKeepAlive": "false",
+        "assumeMinServerVersion": "9.6",
         "autosave": "always",
         "options": "-c search_path=public",
     }
@@ -188,7 +192,7 @@ def test_greenplum_with_extra(spark_mock):
         "password": "passwd",
         "driver": "org.postgresql.Driver",
         "url": (
-            "jdbc:postgresql://some_host:5432/database?ApplicationName=override&"
+            "jdbc:postgresql://some_host:5432/database?ApplicationName=override&assumeMinServerVersion=9.6&"
             "autosave=always&options=-c%20search_path%3Dpublic&tcpKeepAlive=false"
         ),
         "dbschema": "some",

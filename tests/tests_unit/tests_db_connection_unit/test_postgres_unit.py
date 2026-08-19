@@ -93,6 +93,7 @@ def test_postgres(spark_mock):
         "tcpKeepAlive": "true",
         "reWriteBatchedInserts": "true",
         "stringtype": "unspecified",
+        "assumeMinServerVersion": "9.4",
     }
 
     assert "passwd" not in repr(conn)
@@ -121,6 +122,7 @@ def test_postgres_with_port(spark_mock):
         "tcpKeepAlive": "true",
         "reWriteBatchedInserts": "true",
         "stringtype": "unspecified",
+        "assumeMinServerVersion": "9.4",
     }
 
     assert conn.instance_url == "postgres://some_host:5000/database"
@@ -145,6 +147,7 @@ def test_postgres_with_extra(spark_mock):
             "reWriteBatchedInserts": "false",
             "ApplicationName": "override",
             "ssl": "true",
+            "assumeMinServerVersion": "9.6",
         },
         spark=spark_mock,
     )
@@ -161,6 +164,7 @@ def test_postgres_with_extra(spark_mock):
         "reWriteBatchedInserts": "false",
         "ApplicationName": "override",
         "ssl": "true",
+        "assumeMinServerVersion": "9.6",
     }
 
 

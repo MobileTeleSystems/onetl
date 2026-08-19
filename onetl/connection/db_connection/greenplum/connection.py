@@ -74,6 +74,11 @@ class GreenplumExtra(GenericOptions):
     Avoid closing connections from server side while connector is moving data to executors before insert.
     """
 
+    assumeMinServerVersion: str = "9.4"
+    """
+    Send connection params to server as early as possible
+    """
+
     model_config = ConfigDict(extra="allow", prohibited_options=JDBCMixinOptions.model_config["prohibited_options"])  # type: ignore[typeddict-unknown-key]
 
 
