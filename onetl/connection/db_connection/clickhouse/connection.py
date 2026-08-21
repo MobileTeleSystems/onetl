@@ -55,7 +55,7 @@ class Clickhouse(JDBCConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-db-connection-clickhouse-prerequisites][]
+        Before using this connector please take into account [Clickhouse prerequisites][DBR-onetl-connection-db-connection-clickhouse-prerequisites]
 
     !!! success "Added in 0.1.0"
 

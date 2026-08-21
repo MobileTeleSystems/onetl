@@ -89,7 +89,7 @@ class Oracle(JDBCConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-db-connection-oracle-prerequisites][]
+        Before using this connector please take into account [Oracle prerequisites][DBR-onetl-connection-db-connection-oracle-prerequisites]
 
     !!! success "Added in 0.1.0"
 

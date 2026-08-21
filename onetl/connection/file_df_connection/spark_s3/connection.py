@@ -47,7 +47,7 @@ class SparkS3(SparkFileDFConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-file-df-connection-spark-s3-prerequisites][]
+        Before using this connector please take into account [SparkS3 prerequisites][DBR-onetl-connection-file-df-connection-spark-s3-prerequisites]
 
     !!! note
 

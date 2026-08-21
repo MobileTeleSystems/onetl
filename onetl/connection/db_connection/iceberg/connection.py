@@ -52,7 +52,7 @@ class Iceberg(DBConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-db-connection-iceberg-prerequisites][]
+        Before using this connector please take into account [Iceberg prerequisites][DBR-onetl-connection-db-connection-iceberg-prerequisites]
 
     !!! success "Added in 0.14.0"
 

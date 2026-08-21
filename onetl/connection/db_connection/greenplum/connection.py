@@ -92,7 +92,7 @@ class Greenplum(JDBCMixin, DBConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-db-connection-greenplum-prerequisites][]
+        Before using this connector please take into account [Greenplum prerequisites][DBR-onetl-connection-db-connection-greenplum-prerequisites]
 
     !!! success "Added in 0.5.0"
 

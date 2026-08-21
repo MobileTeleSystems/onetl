@@ -41,7 +41,7 @@ class Hive(DBConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-db-connection-hive-prerequisites][]
+        Before using this connector please take into account [Hive prerequisites][DBR-onetl-connection-db-connection-hive-prerequisites]
 
     !!! success "Added in 0.1.0"
 

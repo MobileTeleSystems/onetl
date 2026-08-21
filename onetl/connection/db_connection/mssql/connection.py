@@ -48,7 +48,7 @@ class MSSQL(JDBCConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-db-connection-mssql-prerequisites][]
+        Before using this connector please take into account [MSSQL prerequisites][DBR-onetl-connection-db-connection-mssql-prerequisites]
 
     Parameters
     ----------

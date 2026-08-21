@@ -60,7 +60,7 @@ class MongoDB(DBConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-db-connection-mongodb-prerequisites][]
+        Before using this connector please take into account [MongoDB prerequisites][DBR-onetl-connection-db-connection-mongodb-prerequisites]
 
     !!! success "Added in 0.7.0"
 

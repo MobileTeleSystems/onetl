@@ -68,7 +68,7 @@ class Postgres(JDBCConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-db-connection-postgres-prerequisites][]
+        Before using this connector please take into account [Postgres prerequisites]DBR-onetl-connection-db-connection-postgres-prerequisites]
 
     !!! success "Added in 0.1.0"
 

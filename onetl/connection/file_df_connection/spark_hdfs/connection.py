@@ -33,7 +33,7 @@ class SparkHDFS(SparkFileDFConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-file-df-connection-spark-hdfs-prerequisites][]
+        Before using this connector please take into account [SparkHDFS prerequisites][DBR-onetl-connection-file-df-connection-spark-hdfs-prerequisites]
 
     !!! note
 

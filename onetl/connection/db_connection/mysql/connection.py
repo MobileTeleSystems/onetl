@@ -43,7 +43,7 @@ class MySQL(JDBCConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-db-connection-mysql-prerequisites][]
+        Before using this connector please take into account [MySQL prerequisites]DBR-onetl-connection-db-connection-mysql-prerequisites]
 
     !!! success "Added in 0.1.0"
 

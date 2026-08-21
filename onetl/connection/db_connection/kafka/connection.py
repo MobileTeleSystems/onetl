@@ -61,7 +61,7 @@ class Kafka(DBConnection):
 
     !!! info "See also"
 
-        Before using this connector please take into account [DBR-onetl-connection-db-connection-kafka-prerequisites][]
+        Before using this connector please take into account [Kafka prerequisites][DBR-onetl-connection-db-connection-kafka-prerequisites]
 
     !!! note
 
