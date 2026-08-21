@@ -59,7 +59,7 @@ plugins:
             heading_level: 3
             docstring_style: numpy
             docstring_section_style: list
-            inherited_members: false
+            inherited_members: true
             show_if_no_docstring: false
             show_docstring_attributes: false
             show_symbol_type_heading: true
