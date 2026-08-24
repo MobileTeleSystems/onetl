@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
+import sys
 import textwrap
 import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 from urllib.parse import quote, urlencode, urlparse, urlunparse
 
 from pydantic import ConfigDict, SecretStr, field_validator
-from typing_extensions import deprecated
 
 from onetl._util.classproperty import classproperty
 from onetl._util.java import try_import_java_class
@@ -43,6 +43,11 @@ from onetl.hooks import slot, support_hooks
 from onetl.hwm import Window
 from onetl.impl import GenericOptions, Host
 from onetl.log import log_lines, log_with_indent
+
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame

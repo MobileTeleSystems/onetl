@@ -3,11 +3,11 @@
 import getpass
 import logging
 import os
+import sys
 from contextlib import suppress
 from typing import TYPE_CHECKING, ClassVar, cast
 
 from pydantic import Field, PrivateAttr, ValidationInfo, field_validator, model_validator
-from typing_extensions import Self
 
 from onetl._util.alias import avoid_alias
 from onetl.base import PurePathProtocol
@@ -17,6 +17,11 @@ from onetl.connection.file_df_connection.spark_file_df_connection import (
 from onetl.connection.file_df_connection.spark_hdfs.slots import SparkHDFSSlots
 from onetl.hooks import slot, support_hooks
 from onetl.impl import Cluster, Host, RemotePath
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession

@@ -1,13 +1,18 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+import sys
 import textwrap
 import warnings
 
 from pydantic import field_validator
-from typing_extensions import deprecated
 
 from onetl.base import BaseFileLimit, PathProtocol
 from onetl.impl import FrozenModel
+
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
 
 
 @deprecated("Deprecated in 0.8.0 and will be removed in 1.0.0. Use MaxFilesCount instead", category=None)

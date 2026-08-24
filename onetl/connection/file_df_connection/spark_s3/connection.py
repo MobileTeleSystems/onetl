@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
+import sys
 import warnings
 from contextlib import suppress
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from pydantic import Field, SecretStr, field_validator, model_validator
-from typing_extensions import Self
 
 from onetl._util.hadoop import get_hadoop_config
 from onetl._util.java import try_import_java_class
@@ -29,6 +29,11 @@ from onetl.exception import MISSING_JVM_CLASS_MSG
 from onetl.hooks import slot, support_hooks
 from onetl.impl import Host, RemotePath
 from onetl.log import log_options
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession

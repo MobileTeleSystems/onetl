@@ -2,14 +2,19 @@
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import re
+import sys
 from collections.abc import Iterable
 from fnmatch import fnmatch
 from typing import TypeVar
 
 from pydantic import ConfigDict, model_validator
-from typing_extensions import Self
 
 from onetl.impl.frozen_model import FrozenModel
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 log = logging.getLogger(__name__)
 T = TypeVar("T", bound="GenericOptions")

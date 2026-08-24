@@ -3,13 +3,17 @@
 import io
 import json
 import logging
+import sys
 from collections.abc import Collection, Iterable, Mapping
 from contextlib import redirect_stdout
 from enum import Enum
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import deprecated
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
 
 if TYPE_CHECKING:
     from etl_entities.hwm import HWM

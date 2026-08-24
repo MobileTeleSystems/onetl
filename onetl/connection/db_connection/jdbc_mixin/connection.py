@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 import logging
+import sys
 import time
 import warnings
 from abc import abstractmethod
@@ -11,7 +12,6 @@ from typing import TYPE_CHECKING, ClassVar, TypeVar
 
 from humanize import naturaldelta
 from pydantic import Field, SecretStr
-from typing_extensions import Self
 
 from onetl._metrics.command import SparkCommandMetrics
 from onetl._util.java import get_java_gateway
@@ -33,6 +33,11 @@ from onetl.connection.db_connection.jdbc_mixin.options import (
 from onetl.hooks import slot, support_hooks
 from onetl.impl import GenericOptions
 from onetl.log import log_lines
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession

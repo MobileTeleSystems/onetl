@@ -1,15 +1,20 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+import sys
 import warnings
 from enum import Enum
 from typing import Any
 
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import deprecated
 
 from onetl._util.alias import avoid_alias
 from onetl.base import BaseWritableFileFormat
 from onetl.impl import GenericOptions
+
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
 
 
 class HiveTableExistBehavior(str, Enum):

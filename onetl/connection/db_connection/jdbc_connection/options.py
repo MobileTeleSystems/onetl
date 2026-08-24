@@ -1,14 +1,19 @@
 # SPDX-FileCopyrightText: 2023-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+import sys
 import warnings
 from enum import Enum
 
 from pydantic import ConfigDict, Field, PositiveInt, model_validator
-from typing_extensions import deprecated
 
 from onetl._util.alias import avoid_alias
 from onetl.connection.db_connection.jdbc_mixin.options import JDBCFetchOptions
 from onetl.impl import GenericOptions
+
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
 
 # options from spark.read.jdbc which are populated by JDBCConnection methods
 GENERIC_PROHIBITED_OPTIONS = frozenset(

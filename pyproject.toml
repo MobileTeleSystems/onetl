@@ -45,7 +45,7 @@ dependencies = [
     "pydantic>=2.12,<3",
     "pyyaml",
     # https://github.com/python/typing_extensions/pull/188
-    "typing-extensions>=4.5.0",
+    "typing-extensions>=4.6.2; python_version < '3.13'",
 ]
 dynamic = ["version"]
 

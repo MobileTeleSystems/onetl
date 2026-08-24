@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 import json
 import logging
+import sys
 from contextlib import closing
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import Field, ValidationInfo, field_validator
-from typing_extensions import Self
 
 from onetl._util.java import try_import_java_class
 from onetl._util.scala import get_default_scala_version
@@ -44,6 +44,11 @@ from onetl.hooks import slot, support_hooks
 from onetl.hwm.window import Window
 from onetl.impl import Cluster
 from onetl.log import log_collection, log_with_indent
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession

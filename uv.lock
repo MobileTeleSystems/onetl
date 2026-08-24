@@ -2559,7 +2559,7 @@ dependencies = [
     { name = "psutil" },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-5-onetl-test-etl-entities-2' and extra == 'group-5-onetl-test-etl-entities-3') or (extra == 'group-5-onetl-test-spark-3-2' and extra == 'group-5-onetl-test-spark-3-3') or (extra == 'group-5-onetl-test-spark-3-2' and extra == 'group-5-onetl-test-spark-3-4') or (extra == 'group-5-onetl-test-spark-3-2' and extra == 'group-5-onetl-test-spark-3-5') or (extra == 'group-5-onetl-test-spark-3-2' and extra == 'group-5-onetl-test-spark-4-0') or (extra == 'group-5-onetl-test-spark-3-2' and extra == 'group-5-onetl-test-spark-4-1') or (extra == 'group-5-onetl-test-spark-3-2' and extra == 'group-5-onetl-test-spark-4-2') or (extra == 'group-5-onetl-test-spark-3-3' and extra == 'group-5-onetl-test-spark-3-4') or (extra == 'group-5-onetl-test-spark-3-3' and extra == 'group-5-onetl-test-spark-3-5') or (extra == 'group-5-onetl-test-spark-3-3' and extra == 'group-5-onetl-test-spark-4-0') or (extra == 'group-5-onetl-test-spark-3-3' and extra == 'group-5-onetl-test-spark-4-1') or (extra == 'group-5-onetl-test-spark-3-3' and extra == 'group-5-onetl-test-spark-4-2') or (extra == 'group-5-onetl-test-spark-3-4' and extra == 'group-5-onetl-test-spark-3-5') or (extra == 'group-5-onetl-test-spark-3-4' and extra == 'group-5-onetl-test-spark-4-0') or (extra == 'group-5-onetl-test-spark-3-4' and extra == 'group-5-onetl-test-spark-4-1') or (extra == 'group-5-onetl-test-spark-3-4' and extra == 'group-5-onetl-test-spark-4-2') or (extra == 'group-5-onetl-test-spark-3-5' and extra == 'group-5-onetl-test-spark-4-0') or (extra == 'group-5-onetl-test-spark-3-5' and extra == 'group-5-onetl-test-spark-4-1') or (extra == 'group-5-onetl-test-spark-3-5' and extra == 'group-5-onetl-test-spark-4-2') or (extra == 'group-5-onetl-test-spark-4-0' and extra == 'group-5-onetl-test-spark-4-1') or (extra == 'group-5-onetl-test-spark-4-0' and extra == 'group-5-onetl-test-spark-4-2') or (extra == 'group-5-onetl-test-spark-4-1' and extra == 'group-5-onetl-test-spark-4-2')" },
 ]
 
 [package.optional-dependencies]
@@ -2787,7 +2787,7 @@ requires-dist = [
     { name = "pyyaml" },
     { name = "requests-kerberos", marker = "extra == 'all'", specifier = ">=0.7.0" },
     { name = "requests-kerberos", marker = "extra == 'kerberos'", specifier = ">=0.7.0" },
-    { name = "typing-extensions", specifier = ">=4.5.0" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'", specifier = ">=4.6.2" },
     { name = "webdavclient3", marker = "extra == 'all'" },
     { name = "webdavclient3", marker = "extra == 'files'" },
     { name = "webdavclient3", marker = "extra == 'webdav'" },

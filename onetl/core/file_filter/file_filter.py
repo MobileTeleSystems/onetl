@@ -3,14 +3,19 @@
 import glob
 import os
 import re
+import sys
 import textwrap
 import warnings
 
 from pydantic import Field, field_validator, model_validator
-from typing_extensions import deprecated
 
 from onetl.base import BaseFileFilter, PathProtocol
 from onetl.impl import FrozenModel, RemotePath
+
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
 
 
 @deprecated("Deprecated in 0.8.0 and will be removed in 1.0.0. Use Glob, Regexp or ExcludeDir instead", category=None)

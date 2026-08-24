@@ -1,9 +1,13 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+import sys
 from abc import ABC, abstractmethod
 from typing import TypeVar
 
-from typing_extensions import Self
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 T = TypeVar("T")
 

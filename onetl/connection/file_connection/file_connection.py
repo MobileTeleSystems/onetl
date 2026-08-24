@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2021-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
 import os
+import sys
 import threading
 from abc import abstractmethod
 from collections.abc import Iterable, Iterator
@@ -10,7 +11,6 @@ from typing import Any
 
 from humanize import naturalsize
 from pydantic import PrivateAttr
-from typing_extensions import Self
 
 from onetl.base import (
     BaseFileConnection,
@@ -36,6 +36,11 @@ from onetl.impl import (
     path_repr,
 )
 from onetl.log import log_with_indent
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 log = getLogger(__name__)
 
