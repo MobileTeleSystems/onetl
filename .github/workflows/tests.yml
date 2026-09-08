@@ -414,7 +414,7 @@ jobs:
 
       - name: Coverage comment
         id: coverage
-        uses: MishaKav/pytest-coverage-comment@v1.11.2
+        uses: MishaKav/pytest-coverage-comment@v1.12.2
         with:
           pytest-xml-coverage-path: ./reports/coverage.xml
           default-branch: develop
