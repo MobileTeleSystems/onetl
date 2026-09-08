@@ -38,7 +38,7 @@ class MySQLExtra(GenericOptions):
 class MySQL(JDBCConnection):
     """MySQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
-    Based on Maven package [com.mysql:mysql-connector-j:9.7.0](https://mvnrepository.com/artifact/com.mysql/mysql-connector-j/9.7.0)
+    Based on Maven package [com.mysql:mysql-connector-j:26.7.0](https://mvnrepository.com/artifact/com.mysql/mysql-connector-j/26.7.0)
     ([official MySQL JDBC driver](https://dev.mysql.com/doc/connector-j/en/)).
 
     !!! info "See also"
@@ -130,7 +130,7 @@ class MySQL(JDBCConnection):
         Parameters
         ----------
         package_version
-            Specifies the version of the MySQL JDBC driver to use. Defaults to `9.7.0`.
+            Specifies the version of the MySQL JDBC driver to use. Defaults to `26.7.0`.
 
             !!! success "Added in 0.11.0"
 
@@ -145,7 +145,7 @@ class MySQL(JDBCConnection):
         MySQL.get_packages(package_version="8.2.0")
         ```
         """
-        default_version = "9.7.0"
+        default_version = "26.7.0"
         version = Version(package_version or default_version).min_digits(3)
 
         return [f"com.mysql:mysql-connector-j:{version}"]
@@ -155,7 +155,7 @@ class MySQL(JDBCConnection):
         """Get package name to be downloaded by Spark."""
         msg = "`MySQL.package` will be removed in 1.0.0, use `MySQL.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "com.mysql:mysql-connector-j:9.7.0"
+        return "com.mysql:mysql-connector-j:26.7.0"
 
     @property
     def jdbc_url(self) -> str:
