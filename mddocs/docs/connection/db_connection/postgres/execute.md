@@ -40,7 +40,6 @@ df = postgres.fetch(
     "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
     options=Postgres.FetchOptions(queryTimeout=10),
 )
-postgres.close()
 value = df.collect()[0][0]  # get value from first row and first column
 ```
 

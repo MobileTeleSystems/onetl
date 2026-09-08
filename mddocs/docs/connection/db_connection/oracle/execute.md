@@ -43,7 +43,6 @@ df = oracle.fetch(
     "SELECT value FROM some.reference_table WHERE key = 'some_constant'",
     options=Oracle.FetchOptions(queryTimeout=10),
 )
-oracle.close()
 value = df.collect()[0][0]  # get value from first row and first column
 ```
 
