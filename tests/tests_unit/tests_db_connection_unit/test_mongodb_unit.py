@@ -12,25 +12,25 @@ pytestmark = [pytest.mark.mongodb, pytest.mark.db_connection, pytest.mark.connec
 def test_mongodb_package():
     warning_msg = re.escape("will be removed in 1.0.0, use `MongoDB.get_packages(spark_version=")
     with pytest.warns(UserWarning, match=warning_msg):
-        assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"
-        assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"
-        assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"
+        assert MongoDB.package_spark_3_2 == "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"
+        assert MongoDB.package_spark_3_3 == "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"
+        assert MongoDB.package_spark_3_4 == "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"
 
 
 @pytest.mark.parametrize(
     ("spark_version", "scala_version", "package_version", "package"),
     [
-        (None, None, None, "org.mongodb.spark:mongo-spark-connector_{scala_ver}:10.6.1"),
+        (None, None, None, "org.mongodb.spark:mongo-spark-connector_{scala_ver}:10.7.0"),
         (None, None, "10.1.1", "org.mongodb.spark:mongo-spark-connector_{scala_ver}:10.1.1"),
-        (None, "2.12", None, "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
-        (None, "2.13", None, "org.mongodb.spark:mongo-spark-connector_2.13:10.6.1"),
+        (None, "2.12", None, "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"),
+        (None, "2.13", None, "org.mongodb.spark:mongo-spark-connector_2.13:10.7.0"),
         (None, "2.13", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
-        ("3.2", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
-        ("3.3", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
-        ("3.4", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
-        ("3.5", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"),
-        ("4.0", None, None, "org.mongodb.spark:mongo-spark-connector_2.13:10.6.1"),
-        ("4.1", None, None, "org.mongodb.spark:mongo-spark-connector_2.13:10.6.1"),
+        ("3.2", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"),
+        ("3.3", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"),
+        ("3.4", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"),
+        ("3.5", None, None, "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"),
+        ("4.0", None, None, "org.mongodb.spark:mongo-spark-connector_2.13:10.7.0"),
+        ("4.1", None, None, "org.mongodb.spark:mongo-spark-connector_2.13:10.7.0"),
         ("3.2", None, "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),
         ("3.2", "2.13", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.13:10.1.1"),
         ("3.2.4", "2.12.1", "10.1.1", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1"),

@@ -55,7 +55,7 @@ class MongoDBExtra(GenericOptions):
 class MongoDB(DBConnection):
     """MongoDB connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
-    Based on package [org.mongodb.spark:mongo-spark-connector:10.6.1](https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector_2.12/10.6.1)
+    Based on package [org.mongodb.spark:mongo-spark-connector:10.7.0](https://mvnrepository.com/artifact/org.mongodb.spark/mongo-spark-connector_2.12/10.7.0)
     ([MongoDB connector for Spark](https://www.mongodb.com/docs/spark-connector/current/))
 
     !!! info "See also"
@@ -161,7 +161,7 @@ class MongoDB(DBConnection):
             Used only if `scala_version=None`. If `None`, imports `pyspark` and uses `pyspark.__version__` instead.
 
         package_version
-            Specifies the version of the MongoDB Spark connector to use. Defaults to `10.6.1`.
+            Specifies the version of the MongoDB Spark connector to use. Defaults to `10.7.0`.
 
             !!! success "Added in 0.11.0"
 
@@ -173,11 +173,11 @@ class MongoDB(DBConnection):
         MongoDB.get_packages()
 
         # specify custom connector version
-        MongoDB.get_packages(package_version="10.6.1")
+        MongoDB.get_packages(package_version="10.7.0")
         ```
         """
 
-        default_package_version = "10.6.1"
+        default_package_version = "10.7.0"
 
         if scala_version:
             scala_ver = Version(scala_version).min_digits(2)
@@ -199,7 +199,7 @@ class MongoDB(DBConnection):
             "use `MongoDB.get_packages(spark_version='3.2')` instead"
         )
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"
 
     @classproperty
     def package_spark_3_3(cls) -> str:
@@ -209,7 +209,7 @@ class MongoDB(DBConnection):
             "use `MongoDB.get_packages(spark_version='3.3')` instead"
         )
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"
 
     @classproperty
     def package_spark_3_4(cls) -> str:
@@ -219,7 +219,7 @@ class MongoDB(DBConnection):
             "use `MongoDB.get_packages(spark_version='3.4')` instead"
         )
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.mongodb.spark:mongo-spark-connector_2.12:10.6.1"
+        return "org.mongodb.spark:mongo-spark-connector_2.12:10.7.0"
 
     @slot
     def pipeline(
