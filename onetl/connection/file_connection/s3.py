@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2022-present MTS PJSC
 # SPDX-License-Identifier: Apache-2.0
+import contextlib
 import io
 import logging
 import os
@@ -576,12 +577,10 @@ class S3(FileConnection):
 
         directory_path_str = self._delete_absolute_path_slash(path) + "/"
         generator = self.client.list_objects(bucket_name=self.bucket, prefix=directory_path_str)
-        try:
+        with contextlib.closing(generator):
             for _ in generator:
                 return True
             return False
-        finally:
-            generator.close()
 
     def _is_file(self, path: RemotePath) -> bool:
         path_str = self._delete_absolute_path_slash(path)
