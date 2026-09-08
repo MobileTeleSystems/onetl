@@ -18,9 +18,8 @@ class MySQLDialect(JDBCDialect):
         return super().validate_name(value)
 
     def get_partition_column_hash(self, partition_column: str, num_partitions: int) -> str:
-        # MD5 is the fastest hash function https://stackoverflow.com/a/3118889/23601543
-        # But it returns 32 char string (128 bit), which we need to convert to integer
-        return f"CAST(CONV(RIGHT(MD5({partition_column}), 16), 16, 10) AS UNSIGNED) % {num_partitions}"
+        # CRC32 is the fastest hash function https://stackoverflow.com/a/3118889/23601543
+        return f"CRC32({partition_column}) % {num_partitions}"
 
     def get_partition_column_mod(self, partition_column: str, num_partitions: int) -> str:
         # Return positive value even for negative input
