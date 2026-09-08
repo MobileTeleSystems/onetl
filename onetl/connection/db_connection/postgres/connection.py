@@ -63,7 +63,7 @@ class PostgresExtra(GenericOptions):
 class Postgres(JDBCConnection):
     """PostgreSQL JDBC connection. [![support hooks](https://img.shields.io/badge/%20-support%20hooks-blue)][DBR-onetl-hooks]
 
-    Based on Maven package [org.postgresql:postgresql:42.7.11](https://mvnrepository.com/artifact/org.postgresql/postgresql/42.7.11)
+    Based on Maven package [org.postgresql:postgresql:42.7.13](https://mvnrepository.com/artifact/org.postgresql/postgresql/42.7.13)
     ([official Postgres JDBC driver](https://jdbc.postgresql.org/)).
 
     !!! info "See also"
@@ -168,7 +168,7 @@ class Postgres(JDBCConnection):
         Parameters
         ----------
         package_version
-            Specifies the version of the PostgreSQL JDBC driver to use.  Defaults to `42.7.11`.
+            Specifies the version of the PostgreSQL JDBC driver to use.  Defaults to `42.7.13`.
 
         Examples
         --------
@@ -182,7 +182,7 @@ class Postgres(JDBCConnection):
         Postgres.get_packages(package_version="42.6.0")
         ```
         """
-        default_version = "42.7.11"
+        default_version = "42.7.13"
         version = Version(package_version or default_version).min_digits(3)
 
         return [f"org.postgresql:postgresql:{version}"]
@@ -192,7 +192,7 @@ class Postgres(JDBCConnection):
         """Get package name to be downloaded by Spark."""
         msg = "`Postgres.package` will be removed in 1.0.0, use `Postgres.get_packages()` instead"
         warnings.warn(msg, UserWarning, stacklevel=3)
-        return "org.postgresql:postgresql:42.7.11"
+        return "org.postgresql:postgresql:42.7.13"
 
     @property
     def jdbc_url(self) -> str:
