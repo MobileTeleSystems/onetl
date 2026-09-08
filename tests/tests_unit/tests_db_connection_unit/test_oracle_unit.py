@@ -33,8 +33,8 @@ def test_oracle_get_packages_no_input():
         ("9", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc8:21.13.0.0"]),
         ("11", None, ["com.oracle.database.jdbc:ojdbc11:23.26.3.0.0"]),
         ("11", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc11:21.13.0.0"]),
-        ("17", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc11:21.13.0.0"]),
-        ("20", "23.26.3.0.0", ["com.oracle.database.jdbc:ojdbc11:23.26.3.0.0"]),
+        ("17", "21.13.0.0", ["com.oracle.database.jdbc:ojdbc17:21.13.0.0"]),
+        ("20", "23.26.3.0.0", ["com.oracle.database.jdbc:ojdbc17:23.26.3.0.0"]),
     ],
 )
 def test_oracle_get_packages(java_version, package_version, expected_packages):
